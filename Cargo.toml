@@ -1,0 +1,37 @@
+[package]
+name = "splatter_iron"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+thiserror = "2"
+eframe = "0"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+
+[profile.dev]
+overflow-checks = true
+incremental = true
+panic = "unwind"
+codegen-units = 1024
+
+[profile.release]
+strip = "symbols"
+lto = "fat"
+build-override.strip = true
+incremental = false
+debug = false
+codegen-units = 1
+panic = "abort"
+
+[lints.rust]
+unused = "warn"
+dead_code = "warn"
+unused_imports = "warn"
+unused_variables = "warn"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
