@@ -21,7 +21,7 @@ struct Canvas {
 }
 
 impl serde::Serialize for Layer {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
         todo!()
     }
 }
@@ -33,7 +33,7 @@ impl serde::Deserialize for Layer {
 }
 
 impl serde::Serialize for Canvas {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+    fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
         todo!()
     }
 }
