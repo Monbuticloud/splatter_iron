@@ -17,7 +17,7 @@ struct Canvas {
     pixels: Vec<Layer>,
     hight: u32,
     width: u32,
-    past_state: [Vec<Layer>; 10],
+    past_state: [Option<Vec<Layer>>; 10],
 }
 
 impl serde::Serialize for Layer {
@@ -49,6 +49,17 @@ struct MyApp {
     canvas: Canvas,
 }
 
+impl Default for Canvas {
+    fn default() -> Self {
+        Self {
+            pixels: vec![Layer { pixels: vec![egui::Color32::WHITE; 12 * 1000 * 1000] }],
+            hight: 3000,
+            width: 4000,
+            past_state: [None; 10],
+        }
+    }
+}
+
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let mut is_quitting = false;
@@ -60,7 +71,7 @@ impl eframe::App for MyApp {
             }
 
             let load_button = top_panel.button("Load");
-            if load_buttonbutton.clicked() {
+            if load_button.clicked() {
                 todo!();
             }
             let new_button = top_panel.button("New");
@@ -72,7 +83,7 @@ impl eframe::App for MyApp {
                 todo!();
             }
             let import_button = top_panel.button("Import");
-            if button.clicked() {
+            if import_button.clicked() {
                 todo!();
             }
             let close_button = top_panel.button("Close");
