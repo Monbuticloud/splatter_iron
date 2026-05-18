@@ -6,10 +6,13 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.102"
 thiserror = "2.0.18"
-eframe = "0.34.2"
+eframe = { version = "0.34.2", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
 tokio = { version = "1.52.3", features = ["full"] }
+ecolor = { version = "0.34.2", features = ["serde"] }
+rayon = "1.5.3"
 zstd = "0.13.3"
+rand = "0.10.1"
 
 [profile.dev]
 overflow-checks = true
