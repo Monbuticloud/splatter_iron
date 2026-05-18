@@ -4,20 +4,22 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1"
-thiserror = "2"
-eframe = "0"
-serde = { version = "1", features = ["derive"] }
-tokio = { version = "1", features = ["full"] }
+anyhow = "1.0.102"
+thiserror = "2.0.18"
+eframe = "0.34.2"
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = { version = "1.52.3", features = ["full"] }
+zstd = "0.13.3"
 
 [profile.dev]
 overflow-checks = true
 incremental = true
 panic = "unwind"
-codegen-units = 1024
+codegen-units = 2048
+opt-level = 0
 
 [profile.release]
-strip = "symbols"
+strip = true
 lto = "fat"
 build-override.strip = true
 incremental = false
