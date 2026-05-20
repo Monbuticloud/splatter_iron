@@ -49,13 +49,13 @@ fn composite_all_layers(layers: &[Vec<Color32>], output: &mut Vec<Color32>) {
     }
 }
 
-fn composite_layers_parallel(layers: &[Layer], output: &mut [egui::Color32]) {
+fn composite_layers_parallel_rgba(layers: &[Layer], output: &mut [u8]) {
     if layers.is_empty() {
         return;
     }
 
     output
-        .par_iter_mut()
+        .par_chunks_mut(4)
         .enumerate()
         .for_each(|(i, out_px)| {
             let mut px = layers[0].pixels[i];
@@ -64,7 +64,10 @@ fn composite_layers_parallel(layers: &[Layer], output: &mut [egui::Color32]) {
                 px = alpha_blend(px, layer.pixels[i]);
             }
 
-            *out_px = px;
+            out_px[0] = px.r();
+            out_px[1] = px.g();
+            out_px[2] = px.b();
+            out_px[3] = px.a();
         });
 }
 
@@ -90,9 +93,8 @@ struct Canvas {
     #[serde(skip)]
     placeholder_texture: Option<TextureHandle>,
     #[serde(skip)]
-    output_pixels: Vec<Color32>,
-    #[serde(skip)]
     output_rgba: Vec<u8>,
+
     render_next_frame: bool,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -159,7 +161,6 @@ impl Default for Canvas {
             height: 3000,
             width: 4000,
             output_rgba: Vec::new(),
-            output_pixels: Vec::new(),
 
             rendered_layers: None,
             placeholder_texture: None,
@@ -218,23 +219,11 @@ impl eframe::App for MyApp {
 
             let size = (self.canvas.width as usize) * (self.canvas.height as usize);
 
-            if self.canvas.output_pixels.len() != size {
-                self.canvas.output_pixels = vec![egui::Color32::TRANSPARENT; size];
+            if self.canvas.output_rgba.len() != size * 4 {
+                self.canvas.output_rgba = vec![0; size * 4];
             }
 
-            composite_layers_parallel(&self.canvas.pixels, &mut self.canvas.output_pixels);
-            let image_size = [self.canvas.width as usize, self.canvas.height as usize];
-            let source_size_vec2 = egui::Vec2::new(
-                self.canvas.width as f32,
-                self.canvas.height as f32
-            );
-            for (i, c) in self.canvas.output_pixels.iter().enumerate() {
-                let base = i * 4;
-                self.canvas.output_rgba[base] = c.r();
-                self.canvas.output_rgba[base + 1] = c.g();
-                self.canvas.output_rgba[base + 2] = c.b();
-                self.canvas.output_rgba[base + 3] = c.a();
-            }
+            composite_layers_parallel_rgba(&self.canvas.pixels, &mut self.canvas.output_rgba);
             let image = egui::ColorImage::from_rgba_unmultiplied(
                 [self.canvas.width as usize, self.canvas.height as usize],
                 &self.canvas.output_rgba
