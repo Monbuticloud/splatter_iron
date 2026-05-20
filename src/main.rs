@@ -1,4 +1,4 @@
-use std::default;
+use std::{ default, time::Duration };
 
 use eframe::egui::{ self, Panel, TextureHandle, Color32 };
 use serde::{ self, Deserialize, Serialize };
@@ -95,6 +95,12 @@ struct Canvas {
     output_rgba: Vec<u8>,
     render_next_frame: bool,
 }
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RenderState {
+    Warm(Duration),
+    Cold,
+    Frozen,
+}
 
 struct MyApp {
     savefile_path: String,
@@ -107,6 +113,7 @@ struct MyApp {
     canvas: Canvas,
     input_color_text: String,
     input_radius_text: String,
+    render_state: RenderState,
 }
 
 impl Default for MyApp {
@@ -114,6 +121,7 @@ impl Default for MyApp {
         Self {
             savefile_path: String::new(),
             canvas: Canvas::default(),
+            render_state: RenderState::Cold,
             current_tool: CurrentTool::SquareTool,
             current_color: Color32::from_rgba_unmultiplied(255, 255, 255, 255),
             current_layer: 0,
@@ -130,17 +138,20 @@ impl Default for Canvas {
     fn default() -> Self {
         // let mut rng = rand::thread_rng();
         let mut rng = rng();
+        // let layers: Vec<Layer> = vec![Layer {
+        //     pixels: (0..12 * 1_000_000)
+        //         .map(|_| {
+        //             egui::Color32::from_rgba_unmultiplied(
+        //                 rng.random_range(0..255),
+        //                 rng.random_range(0..255),
+        //                 rng.random_range(0..255),
+        //                 255
+        //             )
+        //         })
+        //         .collect(),
+        // }];
         let layers: Vec<Layer> = vec![Layer {
-            pixels: (0..12 * 1_000_000)
-                .map(|_| {
-                    egui::Color32::from_rgba_unmultiplied(
-                        rng.random_range(0..255),
-                        rng.random_range(0..255),
-                        rng.random_range(0..255),
-                        255
-                    )
-                })
-                .collect(),
+            pixels: vec![egui::Color32::TRANSPARENT; 12 * 1_000_000],
         }];
         Self {
             pixels: layers,
@@ -173,8 +184,31 @@ fn draw_square(
 }
 
 impl eframe::App for MyApp {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        if self.canvas.render_next_frame || self.canvas.rendered_layers.is_none() {
+    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            self.render_state = RenderState::Frozen;
+            return;
+        }
+        let dt = Duration::from_millis((ui.ctx().input(|i| i.predicted_dt) * 1000.0) as u64);
+
+        match self.render_state {
+            RenderState::Warm(duration) => {
+                self.render_state = RenderState::Warm(duration.saturating_sub(dt));
+            }
+            RenderState::Cold => {
+                ui.request_repaint_after(dt * 2);
+            }
+            RenderState::Frozen => {
+                self.render_state = RenderState::Cold;
+                return;
+            }
+        }
+
+        if
+            (self.canvas.render_next_frame || self.canvas.rendered_layers.is_none()) &&
+            self.render_state != RenderState::Frozen
+        {
             let size = (self.canvas.width as usize) * (self.canvas.height as usize);
 
             if self.canvas.output_rgba.len() != size * 4 {
@@ -268,132 +302,146 @@ impl eframe::App for MyApp {
             }
         });
 
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            if let Some(tex) = &self.canvas.rendered_layers {
-                let avail = ui.available_size();
-                let tex_size = tex.size_vec2();
+        let central_response = egui::CentralPanel
+            ::default()
 
-                let scale = (avail.x / tex_size.x).min(avail.y / tex_size.y);
-                let draw_size = tex_size * scale;
+            .show_inside(ui, |ui| {
+                if let Some(tex) = &self.canvas.rendered_layers {
+                    let avail = ui.available_size();
+                    let tex_size = tex.size_vec2();
 
-                let response = ui.add(
-                    egui::Image::new(tex).fit_to_exact_size(draw_size).sense(egui::Sense::drag())
-                );
+                    let scale = (avail.x / tex_size.x).min(avail.y / tex_size.y);
+                    let draw_size = tex_size * scale;
 
-                if response.dragged() {
-                    if let Some(pos) = response.interact_pointer_pos() {
-                        let local = pos - response.rect.min;
-                        let uv = egui::vec2(
-                            local.x / response.rect.width(),
-                            local.y / response.rect.height()
-                        );
+                    let response = ui.add(
+                        egui::Image
+                            ::new(tex)
+                            .fit_to_exact_size(draw_size)
+                            .sense(egui::Sense::click_and_drag())
+                    );
+                    // let rect = ui.max_rect();
+                    // let response = ui.allocate_rect(rect, egui::Sense::hover());
 
-                        let pixel_x = (uv.x * (self.canvas.width as f32)).floor() as u32;
-                        let pixel_y = (uv.y * (self.canvas.height as f32)).floor() as u32;
+                    if response.hovered() {
+                        self.render_state = RenderState::Warm(Duration::from_millis(550));
+                    }
 
-                        // println!("uv = {:?}, px = {}, {}", uv, pixel_x, pixel_y);
+                    if response.dragged() {
+                        if let Some(pos) = response.interact_pointer_pos() {
+                            let local = pos - response.rect.min;
+                            let uv = egui::vec2(
+                                local.x / response.rect.width(),
+                                local.y / response.rect.height()
+                            );
 
-                        match self.current_tool {
-                            CurrentTool::SquareTool => {
-                                // Handle square tool logic
-                                self.canvas.render_next_frame = true;
-                                // if selected at the edge of the canvas, it should only draw a partial square
-                                let half_radius = (self.radius as i32) / 2;
-                                let start_x = pixel_x.saturating_sub(half_radius as u32);
-                                let end_x = (pixel_x + (half_radius as u32)).min(
-                                    self.canvas.width - 1
-                                );
-                                let start_y = pixel_y.saturating_sub(half_radius as u32);
-                                let end_y = (pixel_y + (half_radius as u32)).min(
-                                    self.canvas.height - 1
-                                );
-                                if self.past_tool != Some(CurrentTool::SquareTool) {
-                                    draw_square(
-                                        start_x,
-                                        start_y,
-                                        end_x,
-                                        end_y,
-                                        &mut self.canvas,
-                                        self.current_color
+                            let pixel_x = (uv.x * (self.canvas.width as f32)).floor() as u32;
+                            let pixel_y = (uv.y * (self.canvas.height as f32)).floor() as u32;
+
+                            // println!("uv = {:?}, px = {}, {}", uv, pixel_x, pixel_y);
+
+                            match self.current_tool {
+                                CurrentTool::SquareTool => {
+                                    // Handle square tool logic
+                                    self.canvas.render_next_frame = true;
+                                    // if selected at the edge of the canvas, it should only draw a partial square
+                                    let half_radius = (self.radius as i32) / 2;
+                                    let start_x = pixel_x.saturating_sub(half_radius as u32);
+                                    let end_x = (pixel_x + (half_radius as u32)).min(
+                                        self.canvas.width
                                     );
-                                } else {
-                                    // draw_square(
-                                    //     start_x,
-                                    //     start_y,
-                                    //     end_x,
-                                    //     end_y,
-                                    //     &mut self.canvas,
-                                    //     self.current_color
-                                    // );
-                                    //interpolate past pos
-                                    // const AMOUNT_TO_INTERPOLATE: u32 = 10;
-                                    let amount_to_interpolate: u32 = (
-                                        (self.past_position.unwrap_or((0, 0)).0 as i32) -
-                                        (pixel_x as i32)
-                                    )
-                                        .abs()
-                                        .min(48) as u32;
-                                    if let Some((past_x, past_y)) = self.past_position {
-                                        for i in 1..=amount_to_interpolate {
-                                            let interp_x =
-                                                past_x +
-                                                (
-                                                    ((((pixel_x as i32) - (past_x as i32)) *
-                                                        (i as i32)) /
-                                                        (amount_to_interpolate as i32)) as u32
+                                    let start_y = pixel_y.saturating_sub(half_radius as u32);
+                                    let end_y = (pixel_y + (half_radius as u32)).min(
+                                        self.canvas.height
+                                    );
+                                    if self.past_tool != Some(CurrentTool::SquareTool) {
+                                        draw_square(
+                                            start_x,
+                                            start_y,
+                                            end_x,
+                                            end_y,
+                                            &mut self.canvas,
+                                            self.current_color
+                                        );
+                                    } else {
+                                        // draw_square(
+                                        //     start_x,
+                                        //     start_y,
+                                        //     end_x,
+                                        //     end_y,
+                                        //     &mut self.canvas,
+                                        //     self.current_color
+                                        // );
+                                        //interpolate past pos
+                                        // const AMOUNT_TO_INTERPOLATE: u32 = 10;
+                                        let amount_to_interpolate: u32 = (
+                                            (self.past_position.unwrap_or((0, 0)).0 as i32) -
+                                            (pixel_x as i32)
+                                        )
+                                            .abs()
+                                            .min(48)
+                                            .max(12) as u32;
+                                        if let Some((past_x, past_y)) = self.past_position {
+                                            for i in 1..=amount_to_interpolate {
+                                                let interp_x =
+                                                    past_x +
+                                                    (
+                                                        ((((pixel_x as i32) - (past_x as i32)) *
+                                                            (i as i32)) /
+                                                            (amount_to_interpolate as i32)) as u32
+                                                    );
+                                                let interp_y =
+                                                    past_y +
+                                                    (
+                                                        ((((pixel_y as i32) - (past_y as i32)) *
+                                                            (i as i32)) /
+                                                            (amount_to_interpolate as i32)) as u32
+                                                    );
+                                                let interp_start_x = interp_x.saturating_sub(
+                                                    half_radius as u32
                                                 );
-                                            let interp_y =
-                                                past_y +
-                                                (
-                                                    ((((pixel_y as i32) - (past_y as i32)) *
-                                                        (i as i32)) /
-                                                        (amount_to_interpolate as i32)) as u32
+                                                let interp_end_x = (
+                                                    interp_x + (half_radius as u32)
+                                                ).min(self.canvas.width - 1);
+                                                let interp_start_y = interp_y.saturating_sub(
+                                                    half_radius as u32
                                                 );
-                                            let interp_start_x = interp_x.saturating_sub(
-                                                half_radius as u32
-                                            );
-                                            let interp_end_x = (
-                                                interp_x + (half_radius as u32)
-                                            ).min(self.canvas.width - 1);
-                                            let interp_start_y = interp_y.saturating_sub(
-                                                half_radius as u32
-                                            );
-                                            let interp_end_y = (
-                                                interp_y + (half_radius as u32)
-                                            ).min(self.canvas.height - 1);
-                                            draw_square(
-                                                interp_start_x,
-                                                interp_start_y,
-                                                interp_end_x,
-                                                interp_end_y,
-                                                &mut self.canvas,
-                                                self.current_color
-                                            );
+                                                let interp_end_y = (
+                                                    interp_y + (half_radius as u32)
+                                                ).min(self.canvas.height - 1);
+                                                draw_square(
+                                                    interp_start_x,
+                                                    interp_start_y,
+                                                    interp_end_x,
+                                                    interp_end_y,
+                                                    &mut self.canvas,
+                                                    self.current_color
+                                                );
+                                            }
                                         }
                                     }
                                 }
+                                CurrentTool::CircleTool => {
+                                    // Handle circle tool logic
+                                    todo!();
+                                }
+                                CurrentTool::SquareEraserTool => {
+                                    // Handle square eraser tool logic
+                                    todo!();
+                                }
+                                CurrentTool::CircleEraserTool => {
+                                    // Handle circle eraser tool logic
+                                    todo!();
+                                }
                             }
-                            CurrentTool::CircleTool => {
-                                // Handle circle tool logic
-                                todo!();
-                            }
-                            CurrentTool::SquareEraserTool => {
-                                // Handle square eraser tool logic
-                                todo!();
-                            }
-                            CurrentTool::CircleEraserTool => {
-                                // Handle circle eraser tool logic
-                                todo!();
-                            }
+                            self.past_tool = Some(self.current_tool.clone());
+                            self.past_position = Some((pixel_x, pixel_y));
                         }
-                        self.past_tool = Some(self.current_tool.clone());
-                        self.past_position = Some((pixel_x, pixel_y));
+                    } else {
+                        self.past_tool = None;
+                        self.past_position = None;
                     }
-                } else {
-                    self.past_tool = None;
                 }
-            }
-        });
+            });
         egui::SidePanel::right("right").show(ui, |ui| {
             ui.label("Settings");
 
