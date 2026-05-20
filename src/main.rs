@@ -13,23 +13,22 @@ fn main() -> eframe::Result {
         Box::new(|_| Ok(Box::new(MyApp::default())))
     )
 }
+
+#[inline(always)]
 fn alpha_blend(dst: egui::Color32, src: egui::Color32) -> egui::Color32 {
-    let sa = (src.a() as f32) / 255.0;
-    let da = (dst.a() as f32) / 255.0;
+    let sa = src.a() as u32;
+    let da = dst.a() as u32;
 
-    let out_a = sa + da * (1.0 - sa);
+    let inv_sa = 255 - sa;
 
-    if out_a <= 0.0 {
-        return egui::Color32::TRANSPARENT;
-    }
+    let out_a = sa + (da * inv_sa + 127) / 255;
 
-    let r = (((src.r() as f32) * sa + (dst.r() as f32) * da * (1.0 - sa)) / out_a) as u8;
-    let g = (((src.g() as f32) * sa + (dst.g() as f32) * da * (1.0 - sa)) / out_a) as u8;
-    let b = (((src.b() as f32) * sa + (dst.b() as f32) * da * (1.0 - sa)) / out_a) as u8;
+    let r = ((src.r() as u32) * sa + ((dst.r() as u32) * da * inv_sa) / 255) / out_a.max(1);
+    let g = ((src.g() as u32) * sa + ((dst.g() as u32) * da * inv_sa) / 255) / out_a.max(1);
+    let b = ((src.b() as u32) * sa + ((dst.b() as u32) * da * inv_sa) / 255) / out_a.max(1);
 
-    egui::Color32::from_rgba_unmultiplied(r, g, b, (out_a * 255.0) as u8)
+    egui::Color32::from_rgba_unmultiplied(r as u8, g as u8, b as u8, out_a as u8)
 }
-
 fn blend_layers(bottom: &[Color32], top: &[Color32], output: &mut [Color32]) {
     for i in 0..bottom.len() {
         output[i] = alpha_blend(bottom[i], top[i]);
@@ -49,25 +48,49 @@ fn composite_all_layers(layers: &[Vec<Color32>], output: &mut Vec<Color32>) {
     }
 }
 
-fn composite_layers_parallel_rgba(layers: &[Layer], output: &mut [u8]) {
-    if layers.is_empty() {
+fn composite_layers_parallel_rgba(
+    layers: &[Layer],
+    output: &mut [u8],
+    image_width: usize,
+    image_height: usize
+) {
+    if layers.is_empty() || image_width == 0 || image_height == 0 {
         return;
     }
 
+    let bytes_per_row = image_width * 4;
+    let rows_per_tile = 32;
+    let bytes_per_tile = bytes_per_row * rows_per_tile;
+
     output
-        .par_chunks_mut(4)
+        .par_chunks_mut(bytes_per_tile)
         .enumerate()
-        .for_each(|(i, out_px)| {
-            let mut px = layers[0].pixels[i];
+        .for_each(|(tile_index, tile_output)| {
+            let tile_start_row = tile_index * rows_per_tile;
+            let tile_row_count = tile_output.len() / bytes_per_row;
 
-            for layer in &layers[1..] {
-                px = alpha_blend(px, layer.pixels[i]);
+            for local_row in 0..tile_row_count {
+                let y = tile_start_row + local_row;
+
+                if y >= image_height {
+                    break;
+                }
+
+                for x in 0..image_width {
+                    let pixel_index = y * image_width + x;
+                    let mut composited_pixel = layers[0].pixels[pixel_index];
+
+                    for layer in &layers[1..] {
+                        composited_pixel = alpha_blend(composited_pixel, layer.pixels[pixel_index]);
+                    }
+
+                    let output_byte_index = local_row * bytes_per_row + x * 4;
+                    tile_output[output_byte_index] = composited_pixel.r();
+                    tile_output[output_byte_index + 1] = composited_pixel.g();
+                    tile_output[output_byte_index + 2] = composited_pixel.b();
+                    tile_output[output_byte_index + 3] = composited_pixel.a();
+                }
             }
-
-            out_px[0] = px.r();
-            out_px[1] = px.g();
-            out_px[2] = px.b();
-            out_px[3] = px.a();
         });
 }
 
@@ -223,7 +246,12 @@ impl eframe::App for MyApp {
                 self.canvas.output_rgba = vec![0; size * 4];
             }
 
-            composite_layers_parallel_rgba(&self.canvas.pixels, &mut self.canvas.output_rgba);
+            composite_layers_parallel_rgba(
+                &self.canvas.pixels,
+                &mut self.canvas.output_rgba,
+                self.canvas.width as usize,
+                self.canvas.height as usize
+            );
             let image = egui::ColorImage::from_rgba_unmultiplied(
                 [self.canvas.width as usize, self.canvas.height as usize],
                 &self.canvas.output_rgba
@@ -367,7 +395,7 @@ impl eframe::App for MyApp {
                                             (pixel_x as i32)
                                         )
                                             .abs()
-                                            .min(48)
+                                            .min(96)
                                             .max(12) as u32;
                                         if let Some((past_x, past_y)) = self.past_position {
                                             for i in 1..=amount_to_interpolate {
