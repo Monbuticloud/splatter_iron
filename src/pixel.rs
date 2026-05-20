@@ -1,26 +1,40 @@
 use eframe::egui::Color32;
 
-/// Alpha-blend src over dst.
-pub fn alpha_blend(dst: Color32, src: Color32) -> Color32 {
-    let sa = (src.a() as f32) / 255.0;
-    let da = (dst.a() as f32) / 255.0;
-
-    let out_a = sa + da * (1.0 - sa);
-
-    if out_a <= 0.0 {
+/// Premultiply a straight-alpha Color32.
+pub fn premultiply(color: Color32) -> Color32 {
+    let alpha = color.a();
+    if alpha == 255 {
+        return color;
+    }
+    if alpha == 0 {
         return Color32::TRANSPARENT;
     }
 
-    let r = (((src.r() as f32) * sa + (dst.r() as f32) * da * (1.0 - sa)) / out_a) as u8;
-    let g = (((src.g() as f32) * sa + (dst.g() as f32) * da * (1.0 - sa)) / out_a) as u8;
-    let b = (((src.b() as f32) * sa + (dst.b() as f32) * da * (1.0 - sa)) / out_a) as u8;
-
-    Color32::from_rgba_unmultiplied(r, g, b, (out_a * 255.0) as u8)
+    let red = (((color.r() as u32) * (alpha as u32) + 127) / 255) as u8;
+    let green = (((color.g() as u32) * (alpha as u32) + 127) / 255) as u8;
+    let blue = (((color.b() as u32) * (alpha as u32) + 127) / 255) as u8;
+    Color32::from_rgba_premultiplied(red, green, blue, alpha)
 }
 
-/// Blend two pixel buffers element-wise.
+/// Alpha-blend premultiplied src over premultiplied dst.
+/// Result is premultiplied.
+pub fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
+    let source_alpha = source.a() as u32;
+    let destination_alpha = destination.a() as u32;
+    let inverse_source_alpha = 255 - source_alpha;
+
+    let red = (source.r() as u32) + ((destination.r() as u32) * inverse_source_alpha) / 255;
+    let green = (source.g() as u32) + ((destination.g() as u32) * inverse_source_alpha) / 255;
+    let blue = (source.b() as u32) + ((destination.b() as u32) * inverse_source_alpha) / 255;
+
+    let alpha = source_alpha + (destination_alpha * inverse_source_alpha) / 255;
+
+    Color32::from_rgba_premultiplied(red as u8, green as u8, blue as u8, alpha as u8)
+}
+
+/// Blend two premultiplied pixel buffers element-wise.
 pub fn blend_layers(bottom: &[Color32], top: &[Color32], output: &mut [Color32]) {
-    for i in 0..bottom.len() {
-        output[i] = alpha_blend(bottom[i], top[i]);
+    for index in 0..bottom.len() {
+        output[index] = alpha_blend(bottom[index], top[index]);
     }
 }

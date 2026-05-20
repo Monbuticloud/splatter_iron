@@ -4,7 +4,7 @@ use eframe::egui::{ self, Color32, TextureHandle };
 use rayon::prelude::*;
 use serde::{ Deserialize, Serialize };
 
-use crate::pixel;
+use crate::pixel::{self, premultiply};
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Layer {
@@ -86,11 +86,12 @@ pub fn draw_square(
     canvas: &mut Canvas,
     color: Color32
 ) {
+    let pm_color = premultiply(color);
     for x in start_x..end_x {
         for y in start_y..end_y {
             let idx = (x + y * canvas.width) as usize;
             if idx < canvas.pixels[0].pixels.len() {
-                canvas.pixels[0].pixels[idx] = color;
+                canvas.pixels[0].pixels[idx] = pm_color;
             }
         }
     }

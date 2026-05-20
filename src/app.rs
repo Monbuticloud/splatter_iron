@@ -26,7 +26,7 @@ impl Default for MyApp {
             canvas: Canvas::default(),
             render_state: RenderState::Cold,
             current_tool: CurrentTool::SquareTool,
-            current_color: Color32::from_rgba_unmultiplied(255, 255, 255, 255),
+            current_color: Color32::from_rgba_premultiplied(255, 255, 255, 255),
             current_layer: 0,
             radius: 100,
             input_color_text: String::from("(255, 255, 255, 255)"),
@@ -78,7 +78,7 @@ impl eframe::App for MyApp {
                 &self.canvas.pixels,
                 &mut self.canvas.output_rgba
             );
-            let image = egui::ColorImage::from_rgba_unmultiplied(
+            let image = egui::ColorImage::from_rgba_premultiplied(
                 [self.canvas.width as usize, self.canvas.height as usize],
                 &self.canvas.output_rgba
             );
