@@ -1,1 +1,6 @@
 target
+lib
+lib/*
+zig
+profile.json.gz
+.DS_Store

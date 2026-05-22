@@ -1,9 +1,10 @@
-use std::time::Duration;
+use std::{ time::Duration };
 
 use eframe::egui::{ self, Color32, Panel };
-use serde::{ Deserialize, Serialize };
+// use serde::{ Deserialize, Serialize };
 
-use crate::canvas::{ self, Canvas, CurrentTool, RenderState };
+use crate::canvas::{ self, Canvas, CurrentTool, Layer, RenderState };
+use crate::undo::*;
 
 pub struct MyApp {
     pub savefile_path: String,
@@ -17,6 +18,14 @@ pub struct MyApp {
     pub input_color_text: String,
     pub input_radius_text: String,
     pub render_state: RenderState,
+    pub pending_delete_layer: Option<usize>,
+}
+
+enum LayerAction {
+    Delete(usize),
+    MoveUp(usize),
+    MoveDown(usize),
+    Select(usize),
 }
 
 impl Default for MyApp {
@@ -29,6 +38,7 @@ impl Default for MyApp {
             current_color: Color32::from_rgba_premultiplied(255, 255, 255, 255),
             current_layer: 0,
             radius: 100,
+            pending_delete_layer: None,
             input_color_text: String::from("(255, 255, 255, 255)"),
             input_radius_text: String::from("100"),
             past_tool: None,
@@ -51,7 +61,7 @@ impl eframe::App for MyApp {
                 self.render_state = RenderState::Warm(duration.saturating_sub(dt));
             }
             RenderState::Cold => {
-                ui.request_repaint_after(dt * 2);
+                ui.request_repaint_after(dt * 5);
             }
             RenderState::Frozen => {
                 self.render_state = RenderState::Cold;
@@ -60,8 +70,10 @@ impl eframe::App for MyApp {
         }
 
         if
-            (self.canvas.render_next_frame || self.canvas.rendered_layers.is_none()) &&
-            self.render_state != RenderState::Frozen
+            self.canvas.render_next_frame ||
+            self.canvas.rendered_layers.is_none()
+            // &&
+            // self.render_state != RenderState::Frozen
         {
             let size = (self.canvas.width as usize) * (self.canvas.height as usize);
 
@@ -133,6 +145,100 @@ impl eframe::App for MyApp {
             if square_paint_tool_button.clicked() {
                 self.current_tool = CurrentTool::SquareTool;
             }
+            let circle_paint_tool_button = ui.button("Circle Tool");
+            if circle_paint_tool_button.clicked() {
+                self.current_tool = CurrentTool::CircleTool;
+            }
+            let square_eraser_tool_button = ui.button("Square Eraser");
+            if square_eraser_tool_button.clicked() {
+                self.current_tool = CurrentTool::SquareEraserTool;
+            }
+            let circle_eraser_tool_button = ui.button("Circle Eraser");
+            if circle_eraser_tool_button.clicked() {
+                self.current_tool = CurrentTool::CircleEraserTool;
+            }
+        });
+
+        let right_panel = Panel::right("right");
+
+        right_panel.show_inside(ui, |ui| {
+            ui.label("Settings");
+
+            ui.color_edit_button_srgba(&mut self.current_color);
+            ui.add(egui::DragValue::new(&mut self.radius).range(0..=300));
+            let current_layer_text = format!("Current Layer: {}", self.current_layer);
+
+            let add_layer_button = ui.button("Add Layer");
+            if add_layer_button.clicked() {
+                self.canvas.pixels.push(Layer {
+                    pixels: vec![Color32::TRANSPARENT; (self.canvas.width * self.canvas.height) as usize],
+                });
+                // self.canvas.render_next_frame = true;
+            }
+
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                let mut status = None;
+                for (i, layer) in self.canvas.pixels.iter().enumerate() {
+                    let layer_panel = egui::CollapsingHeader
+                        ::new(format!("Layer {}", i))
+                        .show(ui, |ui| {
+                            let delete_button = ui.button("Delete");
+                            if delete_button.clicked() {
+                                status = Some(LayerAction::Delete(i));
+                            }
+
+                            let move_up_button = ui.button("Move Up");
+                            if move_up_button.clicked() && i > 0 {
+                                // self.canvas.pixels.swap(i, i - 1);
+                                status = Some(LayerAction::MoveUp(i));
+                            }
+
+                            let move_down_button = ui.button("Move Down");
+                            if move_down_button.clicked() && i < self.canvas.pixels.len() - 1 {
+                                // self.canvas.pixels.swap(i, i + 1);``
+                                status = Some(LayerAction::MoveDown(i));
+                            }
+
+                            let select_button = ui.button("Select");
+                            if select_button.clicked() {
+                                status = Some(LayerAction::Select(i));
+                            }
+                            if i == self.current_layer {
+                                ui.label("Currently Selected");
+                            }
+                        });
+                }
+                if let Some(layer_action) = status {
+                    match layer_action {
+                        LayerAction::Delete(index) => {
+                            if self.pending_delete_layer == Some(index) {
+                                self.pending_delete_layer = None;
+                                self.canvas.pixels.remove(index);
+                                self.canvas.render_next_frame = true;
+                            } else {
+                                self.pending_delete_layer = Some(index);
+                            }
+                        }
+                        LayerAction::MoveUp(index) => {
+                            if index > 0 {
+                                self.canvas.pixels.swap(index, index - 1);
+                                self.canvas.render_next_frame = true;
+                                self.current_layer = index - 1;
+                            }
+                        }
+                        LayerAction::MoveDown(index) => {
+                            if index < self.canvas.pixels.len() - 1 {
+                                self.canvas.pixels.swap(index, index + 1);
+                                self.canvas.render_next_frame = true;
+                                self.current_layer = index + 1;
+                            }
+                        }
+                        LayerAction::Select(index) => {
+                            self.current_layer = index;
+                        }
+                    }
+                }
+            });
         });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
@@ -151,6 +257,7 @@ impl eframe::App for MyApp {
                 );
 
                 if response.hovered() {
+                    self.pending_delete_layer = None;
                     self.render_state = RenderState::Warm(Duration::from_millis(550));
                 }
 
@@ -168,75 +275,73 @@ impl eframe::App for MyApp {
                         match self.current_tool {
                             CurrentTool::SquareTool => {
                                 self.canvas.render_next_frame = true;
-                                let half_radius = (self.radius as i32) / 2;
-                                let start_x = pixel_x.saturating_sub(half_radius as u32);
-                                let end_x = (pixel_x + (half_radius as u32)).min(self.canvas.width);
-                                let start_y = pixel_y.saturating_sub(half_radius as u32);
-                                let end_y = (pixel_y + (half_radius as u32)).min(
-                                    self.canvas.height
-                                );
+
                                 if self.past_tool != Some(CurrentTool::SquareTool) {
+                                    let half = self.radius / 2;
+
+                                    let start_x = pixel_x.saturating_sub(half);
+                                    let end_x = (pixel_x + half).min(self.canvas.width - 1);
+
+                                    let start_y = pixel_y.saturating_sub(half);
+                                    let end_y = (pixel_y + half).min(self.canvas.height - 1);
+
                                     canvas::draw_square(
                                         start_x,
                                         start_y,
                                         end_x,
                                         end_y,
                                         &mut self.canvas,
-                                        self.current_color
+                                        self.current_color,
+                                        self.current_layer
                                     );
-                                } else {
-                                    let amount_to_interpolate: u32 = (
-                                        (self.past_position.unwrap_or((0, 0)).0 as i32) -
-                                        (pixel_x as i32)
-                                    )
-                                        .abs()
-                                        .min(48)
-                                        .max(12) as u32;
-                                    if let Some((past_x, past_y)) = self.past_position {
-                                        for i in 1..=amount_to_interpolate {
-                                            let interp_x =
-                                                past_x +
-                                                (
-                                                    ((((pixel_x as i32) - (past_x as i32)) *
-                                                        (i as i32)) /
-                                                        (amount_to_interpolate as i32)) as u32
-                                                );
-                                            let interp_y =
-                                                past_y +
-                                                (
-                                                    ((((pixel_y as i32) - (past_y as i32)) *
-                                                        (i as i32)) /
-                                                        (amount_to_interpolate as i32)) as u32
-                                                );
-                                            let interp_start_x = interp_x.saturating_sub(
-                                                half_radius as u32
-                                            );
-                                            let interp_end_x = (
-                                                interp_x + (half_radius as u32)
-                                            ).min(self.canvas.width - 1);
-                                            let interp_start_y = interp_y.saturating_sub(
-                                                half_radius as u32
-                                            );
-                                            let interp_end_y = (
-                                                interp_y + (half_radius as u32)
-                                            ).min(self.canvas.height - 1);
-                                            canvas::draw_square(
-                                                interp_start_x,
-                                                interp_start_y,
-                                                interp_end_x,
-                                                interp_end_y,
-                                                &mut self.canvas,
-                                                self.current_color
-                                            );
-                                        }
-                                    }
+                                } else if let Some((past_x, past_y)) = self.past_position {
+                                    canvas::draw_square_line(
+                                        past_x,
+                                        past_y,
+                                        pixel_x,
+                                        pixel_y,
+                                        self.radius,
+                                        &mut self.canvas,
+                                        self.current_color,
+                                        self.current_layer
+                                    );
                                 }
                             }
                             CurrentTool::CircleTool => {
                                 todo!();
                             }
                             CurrentTool::SquareEraserTool => {
-                                todo!();
+                                self.canvas.render_next_frame = true;
+
+                                if self.past_tool != Some(CurrentTool::SquareEraserTool) {
+                                    let half = self.radius / 2;
+
+                                    let start_x = pixel_x.saturating_sub(half);
+                                    let end_x = (pixel_x + half).min(self.canvas.width - 1);
+
+                                    let start_y = pixel_y.saturating_sub(half);
+                                    let end_y = (pixel_y + half).min(self.canvas.height - 1);
+
+                                    canvas::draw_square(
+                                        start_x,
+                                        start_y,
+                                        end_x,
+                                        end_y,
+                                        &mut self.canvas,
+                                        Color32::TRANSPARENT,
+                                        self.current_layer
+                                    );
+                                } else if let Some((past_x, past_y)) = self.past_position {
+                                    canvas::erase_square_line(
+                                        past_x,
+                                        past_y,
+                                        pixel_x,
+                                        pixel_y,
+                                        self.radius,
+                                        &mut self.canvas,
+                                        self.current_layer
+                                    );
+                                }
                             }
                             CurrentTool::CircleEraserTool => {
                                 todo!();
@@ -251,12 +356,7 @@ impl eframe::App for MyApp {
                 }
             }
         });
-        egui::SidePanel::right("right").show(ui, |ui| {
-            ui.label("Settings");
 
-            ui.color_edit_button_srgba(&mut self.current_color);
-            ui.add(egui::DragValue::new(&mut self.radius).clamp_range(0..=200));
-        });
         if is_quitting {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         }

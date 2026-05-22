@@ -8,18 +8,22 @@ anyhow = "1.0.102"
 thiserror = "2.0.18"
 eframe = { version = "0.34.2", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
-tokio = { version = "1.52.3", features = ["full"] }
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "fs"] }
 ecolor = { version = "0.34.2", features = ["serde"] }
 rayon = "1.5.3"
-zstd = "0.13.3"
+zstd = { version = "0.13.3", features = ["zstdmt"] }
 rand = "0.10.1"
+wide = "1.4.0"
+mimalloc = "0.1.51"
+target = "2.1.0"
+
 
 [profile.dev]
 overflow-checks = true
 incremental = true
 panic = "unwind"
-codegen-units = 2048
-opt-level = 0
+codegen-units = 512
+opt-level = 1
 
 [profile.release]
 strip = true
@@ -28,7 +32,12 @@ build-override.strip = true
 incremental = false
 debug = false
 codegen-units = 1
+opt-level = 3
 panic = "abort"
+
+# Enable only when profiling, as it can interfere with optimizations and cause false positives.
+# debug = true
+
 
 [lints.rust]
 unused = "warn"
