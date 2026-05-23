@@ -19,6 +19,9 @@ pub struct MyApp {
     pub input_radius_text: String,
     pub render_state: RenderState,
     pub pending_delete_layer: Option<usize>,
+
+    pub stroke_stack: Vec<Stroke>,
+    pub redo_index: usize, // 0 = most recent stroke, 1 = one before that, etc. If a stroke is made after undoing, redo_index resets to 0 and all strokes above it are removed from the stack.
 }
 
 enum LayerAction {
@@ -43,6 +46,8 @@ impl Default for MyApp {
             input_radius_text: String::from("100"),
             past_tool: None,
             past_position: None,
+            stroke_stack: Vec::new(),
+            redo_index: 0,
         }
     }
 }
