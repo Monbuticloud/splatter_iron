@@ -144,32 +144,29 @@ impl MyApp {
             }
         }
 
-        if self.stroke_stack.len() > 1 {
-            let undo_button = ui.button("Undo");
+        if self.stroke_stack.len() > 0 {
+            let undo_btn = ui.button("Undo");
+            let redo_btn = ui.button("Redo");
 
-            if
-                self.redo_index < self.stroke_stack.len() &&
-                (ui.input(
-                    |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift
-                ) || undo_button.clicked())
+            // Undo: cmd+Z or Undo button
+            if self.redo_index < self.stroke_stack.len() &&
+               (ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift) || undo_btn.clicked())
             {
-                self.redo_index -= 1;
-                // redo action
-                let stroke = &self.stroke_stack[self.stroke_stack.len() - self.redo_index];
-                redo_stroke(&mut self.canvas, stroke);
+                let idx = self.stroke_stack.len() - 1 - self.redo_index;
+                undo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
+                self.redo_index += 1;
                 self.canvas.render_next_frame = true;
             }
 
-            if
-                (ui.input(|i| {
-                    (i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
-                        (i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift)
-                }) || undo_button.clicked()) &&
-                self.redo_index < self.stroke_stack.len()
+            // Redo: cmd+shift+Z, cmd+Y, or Redo button
+            if self.redo_index > 0 &&
+               (ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift)
+                || ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command)
+                || redo_btn.clicked())
             {
-                self.redo_index += 1;
-                let stroke = &self.stroke_stack[self.stroke_stack.len() - self.redo_index];
-                undo_stroke(&mut self.canvas, stroke);
+                let idx = self.stroke_stack.len() - self.redo_index;
+                self.redo_index -= 1;
+                redo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
                 self.canvas.render_next_frame = true;
             }
         }

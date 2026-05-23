@@ -166,9 +166,9 @@ pub fn draw_square_line(
     let target_x = end_x as i32;
     let target_y = end_y as i32;
 
-    let delta_x = (target_x - current_x).abs();
+    let delta_x = target_x.abs_diff(current_x) as i32;
     let step_x = if current_x < target_x { 1 } else { -1 };
-    let delta_y = -(target_y - current_y).abs();
+    let delta_y = -(target_y.abs_diff(current_y) as i32);
     let step_y = if current_y < target_y { 1 } else { -1 };
     let mut error = delta_x + delta_y;
 
@@ -177,12 +177,12 @@ pub fn draw_square_line(
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
-        let brush_end_x = (current_x + (half_radius as i32) + 1).min(width as i32) as u32;
+        let brush_end_x = (current_x.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(width as i32) as u32;
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
-        let brush_end_y = (current_y + (half_radius as i32) + 1).min(height as i32) as u32;
+        let brush_end_y = (current_y.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(height as i32) as u32;
 
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
@@ -194,7 +194,7 @@ pub fn draw_square_line(
         if current_x == target_x && current_y == target_y {
             break;
         }
-        let error_doubled = error << 1;
+        let error_doubled = error.saturating_mul(2);
         if error_doubled >= delta_y {
             error += delta_y;
             current_x += step_x;
@@ -225,19 +225,21 @@ pub fn draw_square_line(
     // Second pass: draw the line
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
-    let mut error = (target_x - current_x).abs() + -(target_y - current_y).abs();
+    let sp_delta_x = target_x.abs_diff(start_x as i32) as i32;
+    let sp_delta_y = -(target_y.abs_diff(start_y as i32) as i32);
+    let mut error = sp_delta_x + sp_delta_y;
 
     loop {
         let brush_start_x = current_x
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
-        let brush_end_x = (current_x + (half_radius as i32) + 1).min(width as i32) as u32;
+        let brush_end_x = (current_x.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(width as i32) as u32;
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
-        let brush_end_y = (current_y + (half_radius as i32) + 1).min(height as i32) as u32;
+        let brush_end_y = (current_y.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(height as i32) as u32;
 
         fill_square_impl(
             pixels,
@@ -252,13 +254,13 @@ pub fn draw_square_line(
         if current_x == target_x && current_y == target_y {
             break;
         }
-        let error_doubled = error << 1;
-        if error_doubled >= -(target_y - current_y).abs() {
-            error += -(target_y - current_y).abs();
+        let error_doubled = error.saturating_mul(2);
+        if error_doubled >= sp_delta_y {
+            error += sp_delta_y;
             current_x += step_x;
         }
-        if error_doubled <= (target_x - current_x).abs() {
-            error += (target_x - current_x).abs();
+        if error_doubled <= sp_delta_x {
+            error += sp_delta_x;
             current_y += step_y;
         }
     }
@@ -295,9 +297,9 @@ pub fn erase_square_line(
     let target_x = end_x as i32;
     let target_y = end_y as i32;
 
-    let delta_x = (target_x - current_x).abs();
+    let delta_x = target_x.abs_diff(current_x) as i32;
     let step_x = if current_x < target_x { 1 } else { -1 };
-    let delta_y = -(target_y - current_y).abs();
+    let delta_y = -(target_y.abs_diff(current_y) as i32);
     let step_y = if current_y < target_y { 1 } else { -1 };
     let mut error = delta_x + delta_y;
 
@@ -306,12 +308,12 @@ pub fn erase_square_line(
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
-        let brush_end_x = (current_x + (half_radius as i32) + 1).min(width as i32) as u32;
+        let brush_end_x = (current_x.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(width as i32) as u32;
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
-        let brush_end_y = (current_y + (half_radius as i32) + 1).min(height as i32) as u32;
+        let brush_end_y = (current_y.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(height as i32) as u32;
 
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
@@ -323,7 +325,7 @@ pub fn erase_square_line(
         if current_x == target_x && current_y == target_y {
             break;
         }
-        let error_doubled = error << 1;
+        let error_doubled = error.saturating_mul(2);
         if error_doubled >= delta_y {
             error += delta_y;
             current_x += step_x;
@@ -354,19 +356,21 @@ pub fn erase_square_line(
     // Second pass: draw the line with TRANSPARENT
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
-    let mut error = (target_x - current_x).abs() + -(target_y - current_y).abs();
+    let sp_delta_x = target_x.abs_diff(start_x as i32) as i32;
+    let sp_delta_y = -(target_y.abs_diff(start_y as i32) as i32);
+    let mut error = sp_delta_x + sp_delta_y;
 
     loop {
         let brush_start_x = current_x
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
-        let brush_end_x = (current_x + (half_radius as i32) + 1).min(width as i32) as u32;
+        let brush_end_x = (current_x.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(width as i32) as u32;
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
-        let brush_end_y = (current_y + (half_radius as i32) + 1).min(height as i32) as u32;
+        let brush_end_y = (current_y.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(height as i32) as u32;
 
         fill_square_impl(
             pixels,
@@ -381,13 +385,13 @@ pub fn erase_square_line(
         if current_x == target_x && current_y == target_y {
             break;
         }
-        let error_doubled = error << 1;
-        if error_doubled >= -(target_y - current_y).abs() {
-            error += -(target_y - current_y).abs();
+        let error_doubled = error.saturating_mul(2);
+        if error_doubled >= sp_delta_y {
+            error += sp_delta_y;
             current_x += step_x;
         }
-        if error_doubled <= (target_x - current_x).abs() {
-            error += (target_x - current_x).abs();
+        if error_doubled <= sp_delta_x {
+            error += sp_delta_x;
             current_y += step_y;
         }
     }
