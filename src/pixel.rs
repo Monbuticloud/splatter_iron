@@ -58,7 +58,7 @@ pub fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
         (source_red + blend_channel(dest_red, inverse_alpha)) as u8,
         (source_green + blend_channel(dest_green, inverse_alpha)) as u8,
         (source_blue + blend_channel(dest_blue, inverse_alpha)) as u8,
-        (source_alpha + blend_channel(dest_alpha, inverse_alpha)) as u8,
+        (source_alpha + blend_channel(dest_alpha, inverse_alpha)) as u8
     )
 }
 
@@ -85,17 +85,9 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
     let pixel_count = layers[0].len();
     #[cfg(debug_assertions)]
     for (i, layer) in layers.iter().enumerate() {
-        assert_eq!(
-            layer.len(),
-            pixel_count,
-            "blend_layers: layer {i} length mismatch"
-        );
+        assert_eq!(layer.len(), pixel_count, "blend_layers: layer {i} length mismatch");
     }
-    assert_eq!(
-        output.len(),
-        pixel_count * 4,
-        "blend_layers: output length mismatch"
-    );
+    assert_eq!(output.len(), pixel_count * 4, "blend_layers: output length mismatch");
 
     // Fast path: single layer — just copy RGBA bytes directly
     if layers.len() == 1 {
@@ -130,14 +122,30 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
             let bottom_pixel_2 = bottom_layer[pixel_base + 2].to_array();
             let bottom_pixel_3 = bottom_layer[pixel_base + 3].to_array();
 
-            let mut accumulator_r =
-                u32x4::new([bottom_pixel_0[0] as u32, bottom_pixel_1[0] as u32, bottom_pixel_2[0] as u32, bottom_pixel_3[0] as u32]);
-            let mut accumulator_g =
-                u32x4::new([bottom_pixel_0[1] as u32, bottom_pixel_1[1] as u32, bottom_pixel_2[1] as u32, bottom_pixel_3[1] as u32]);
-            let mut accumulator_b =
-                u32x4::new([bottom_pixel_0[2] as u32, bottom_pixel_1[2] as u32, bottom_pixel_2[2] as u32, bottom_pixel_3[2] as u32]);
-            let mut accumulator_a =
-                u32x4::new([bottom_pixel_0[3] as u32, bottom_pixel_1[3] as u32, bottom_pixel_2[3] as u32, bottom_pixel_3[3] as u32]);
+            let mut accumulator_r = u32x4::new([
+                bottom_pixel_0[0] as u32,
+                bottom_pixel_1[0] as u32,
+                bottom_pixel_2[0] as u32,
+                bottom_pixel_3[0] as u32,
+            ]);
+            let mut accumulator_g = u32x4::new([
+                bottom_pixel_0[1] as u32,
+                bottom_pixel_1[1] as u32,
+                bottom_pixel_2[1] as u32,
+                bottom_pixel_3[1] as u32,
+            ]);
+            let mut accumulator_b = u32x4::new([
+                bottom_pixel_0[2] as u32,
+                bottom_pixel_1[2] as u32,
+                bottom_pixel_2[2] as u32,
+                bottom_pixel_3[2] as u32,
+            ]);
+            let mut accumulator_a = u32x4::new([
+                bottom_pixel_0[3] as u32,
+                bottom_pixel_1[3] as u32,
+                bottom_pixel_2[3] as u32,
+                bottom_pixel_3[3] as u32,
+            ]);
 
             // Blend remaining layers (1..) on top of accumulators
             for &layer_slice in &layers[1..] {
@@ -146,22 +154,50 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
                 let top_pixel_2 = layer_slice[pixel_base + 2].to_array();
                 let top_pixel_3 = layer_slice[pixel_base + 3].to_array();
 
-                let top_r =
-                    u32x4::new([top_pixel_0[0] as u32, top_pixel_1[0] as u32, top_pixel_2[0] as u32, top_pixel_3[0] as u32]);
-                let top_g =
-                    u32x4::new([top_pixel_0[1] as u32, top_pixel_1[1] as u32, top_pixel_2[1] as u32, top_pixel_3[1] as u32]);
-                let top_b =
-                    u32x4::new([top_pixel_0[2] as u32, top_pixel_1[2] as u32, top_pixel_2[2] as u32, top_pixel_3[2] as u32]);
-                let top_a =
-                    u32x4::new([top_pixel_0[3] as u32, top_pixel_1[3] as u32, top_pixel_2[3] as u32, top_pixel_3[3] as u32]);
+                let top_r = u32x4::new([
+                    top_pixel_0[0] as u32,
+                    top_pixel_1[0] as u32,
+                    top_pixel_2[0] as u32,
+                    top_pixel_3[0] as u32,
+                ]);
+                let top_g = u32x4::new([
+                    top_pixel_0[1] as u32,
+                    top_pixel_1[1] as u32,
+                    top_pixel_2[1] as u32,
+                    top_pixel_3[1] as u32,
+                ]);
+                let top_b = u32x4::new([
+                    top_pixel_0[2] as u32,
+                    top_pixel_1[2] as u32,
+                    top_pixel_2[2] as u32,
+                    top_pixel_3[2] as u32,
+                ]);
+                let top_a = u32x4::new([
+                    top_pixel_0[3] as u32,
+                    top_pixel_1[3] as u32,
+                    top_pixel_2[3] as u32,
+                    top_pixel_3[3] as u32,
+                ]);
 
                 let inverse_alpha = u32x4::splat(255) - top_a;
 
                 // Blend: accumulator = top + ((accumulator * inverse_alpha + 128) * 257) >> 16
-                accumulator_r = top_r + (((accumulator_r * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >> SHIFT_16);
-                accumulator_g = top_g + (((accumulator_g * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >> SHIFT_16);
-                accumulator_b = top_b + (((accumulator_b * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >> SHIFT_16);
-                accumulator_a = top_a + (((accumulator_a * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >> SHIFT_16);
+                accumulator_r =
+                    top_r +
+                    (((accumulator_r * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >>
+                        SHIFT_16);
+                accumulator_g =
+                    top_g +
+                    (((accumulator_g * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >>
+                        SHIFT_16);
+                accumulator_b =
+                    top_b +
+                    (((accumulator_b * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >>
+                        SHIFT_16);
+                accumulator_a =
+                    top_a +
+                    (((accumulator_a * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >>
+                        SHIFT_16);
             }
 
             // Write 4 blended pixels to output buffer as RGBA bytes
