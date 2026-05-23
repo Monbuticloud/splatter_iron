@@ -14,9 +14,21 @@ impl MyApp {
     #[inline(always)]
     pub fn show_right_panel(&mut self, ui: &mut egui::Ui) {
         ui.label("Settings");
+        ui.separator();
+        ui.label("Color Selector");
 
         ui.color_edit_button_srgba(&mut self.current_color);
-        ui.add(egui::DragValue::new(&mut self.radius).range(0..=300));
+
+        ui.separator();
+
+        ui.label("Undo/Redo Strength");
+        ui.add(egui::DragValue::new(&mut self.undo_redo_strength).range(1..=1000));
+
+        ui.label("::Brush Settings::");
+        ui.separator();
+        ui.label("Brush Radius:");
+        ui.add(egui::DragValue::new(&mut self.radius).range(0..=350));
+        ui.separator();
         let _current_layer_text = format!("Current Layer: {}", self.current_layer);
 
         let add_layer_button = ui.button("Add Layer");

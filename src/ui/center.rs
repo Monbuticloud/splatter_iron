@@ -62,12 +62,7 @@ impl MyApp {
                                     self.current_color,
                                     self.current_layer
                                 );
-                                self.stroke_stack.truncate(
-                                    self.stroke_stack.len() - self.redo_index
-                                );
-                                if self.stroke_stack.len() >= 100 { self.stroke_stack.pop_front(); }
-                                self.stroke_stack.push_back(stroke);
-                                self.redo_index = 0;
+                                self.push_stroke(stroke);
                             } else if let Some((past_x, past_y)) = self.past_position {
                                 let stroke = canvas::draw_square_line(
                                     past_x,
@@ -79,12 +74,7 @@ impl MyApp {
                                     self.current_color,
                                     self.current_layer
                                 );
-                                self.stroke_stack.truncate(
-                                    self.stroke_stack.len() - self.redo_index
-                                );
-                                if self.stroke_stack.len() >= 100 { self.stroke_stack.pop_front(); }
-                                self.stroke_stack.push_back(stroke);
-                                self.redo_index = 0;
+                                self.push_stroke(stroke);
                             }
                         }
                         CurrentTool::CircleTool => {
@@ -111,12 +101,7 @@ impl MyApp {
                                     Color32::TRANSPARENT,
                                     self.current_layer
                                 );
-                                self.stroke_stack.truncate(
-                                    self.stroke_stack.len() - self.redo_index
-                                );
-                                if self.stroke_stack.len() >= 100 { self.stroke_stack.pop_front(); }
-                                self.stroke_stack.push_back(stroke);
-                                self.redo_index = 0;
+                                self.push_stroke(stroke);
                             } else if let Some((past_x, past_y)) = self.past_position {
                                 let stroke = canvas::erase_square_line(
                                     past_x,
@@ -127,12 +112,7 @@ impl MyApp {
                                     &mut self.canvas,
                                     self.current_layer
                                 );
-                                self.stroke_stack.truncate(
-                                    self.stroke_stack.len() - self.redo_index
-                                );
-                                if self.stroke_stack.len() >= 100 { self.stroke_stack.pop_front(); }
-                                self.stroke_stack.push_back(stroke);
-                                self.redo_index = 0;
+                                self.push_stroke(stroke);
                             }
                         }
                         CurrentTool::CircleEraserTool => {
@@ -156,9 +136,12 @@ impl MyApp {
             if self.redo_index < self.stroke_stack.len() &&
                (ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift) || undo_btn.clicked())
             {
-                let idx = self.stroke_stack.len() - 1 - self.redo_index;
-                undo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
-                self.redo_index += 1;
+                let count = self.undo_redo_strength.min(self.stroke_stack.len() - self.redo_index);
+                for _ in 0..count {
+                    let idx = self.stroke_stack.len() - 1 - self.redo_index;
+                    undo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
+                    self.redo_index += 1;
+                }
                 self.canvas.render_next_frame = true;
             }
 
@@ -168,9 +151,12 @@ impl MyApp {
                 || ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command)
                 || redo_btn.clicked())
             {
-                let idx = self.stroke_stack.len() - self.redo_index;
-                self.redo_index -= 1;
-                redo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
+                let count = self.undo_redo_strength.min(self.redo_index);
+                for _ in 0..count {
+                    let idx = self.stroke_stack.len() - self.redo_index;
+                    self.redo_index -= 1;
+                    redo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
+                }
                 self.canvas.render_next_frame = true;
             }
         }

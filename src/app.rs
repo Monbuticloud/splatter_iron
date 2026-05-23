@@ -7,6 +7,24 @@ use crate::canvas::{ Canvas, CurrentTool, RenderState };
 use crate::pixel;
 use crate::undo::*;
 
+impl MyApp {
+    #[inline(always)]
+    pub fn push_stroke(&mut self, mut stroke: Stroke) {
+        self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
+        if self.stroke_stack.len() >= 100 {
+            let mut recycled = self.stroke_stack.pop_front().unwrap();
+            recycled.pixels.clear();
+            recycled.layer_index = stroke.layer_index;
+            recycled.width = stroke.width;
+            recycled.pixels.extend(stroke.pixels.drain(..));
+            self.stroke_stack.push_back(recycled);
+        } else {
+            self.stroke_stack.push_back(stroke);
+        }
+        self.redo_index = 0;
+    }
+}
+
 pub struct MyApp {
     pub savefile_path: String,
     pub current_tool: CurrentTool,
@@ -20,6 +38,7 @@ pub struct MyApp {
     pub input_radius_text: String,
     pub render_state: RenderState,
     pub pending_delete_layer: Option<usize>,
+    pub undo_redo_strength: usize,
 
     pub stroke_stack: VecDeque<Stroke>,
     pub redo_index: usize, // 0 = most recent stroke, 1 = one before that, etc. If a stroke is made after undoing, redo_index resets to 0 and all strokes above it are removed from the stack.
@@ -42,6 +61,7 @@ impl Default for MyApp {
             past_position: None,
             stroke_stack: VecDeque::new(),
             redo_index: 0,
+            undo_redo_strength: 1,
         }
     }
 }
