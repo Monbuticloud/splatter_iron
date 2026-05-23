@@ -2,7 +2,7 @@
 name = "splatter_iron"
 version = "0.1.1"
 edition = "2024"
-license = "AGPLv3"
+license = "agpl-3.0"
 authors = ["Nguyen Hoang Quoc Anh <hoangquocanhmon@icloud.com>"]
 description = "A simple paint program focused on performance and ease of use, currently in early development and not feature complete. Inspired by MS Paint and GIMP."
 keywords = [
