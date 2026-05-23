@@ -65,7 +65,8 @@ impl MyApp {
                                 self.stroke_stack.truncate(
                                     self.stroke_stack.len() - self.redo_index
                                 );
-                                self.stroke_stack.push(stroke);
+                                if self.stroke_stack.len() >= 100 { self.stroke_stack.pop_front(); }
+                                self.stroke_stack.push_back(stroke);
                                 self.redo_index = 0;
                             } else if let Some((past_x, past_y)) = self.past_position {
                                 let stroke = canvas::draw_square_line(
@@ -81,7 +82,8 @@ impl MyApp {
                                 self.stroke_stack.truncate(
                                     self.stroke_stack.len() - self.redo_index
                                 );
-                                self.stroke_stack.push(stroke);
+                                if self.stroke_stack.len() >= 100 { self.stroke_stack.pop_front(); }
+                                self.stroke_stack.push_back(stroke);
                                 self.redo_index = 0;
                             }
                         }
@@ -112,7 +114,8 @@ impl MyApp {
                                 self.stroke_stack.truncate(
                                     self.stroke_stack.len() - self.redo_index
                                 );
-                                self.stroke_stack.push(stroke);
+                                if self.stroke_stack.len() >= 100 { self.stroke_stack.pop_front(); }
+                                self.stroke_stack.push_back(stroke);
                                 self.redo_index = 0;
                             } else if let Some((past_x, past_y)) = self.past_position {
                                 let stroke = canvas::erase_square_line(
@@ -127,7 +130,8 @@ impl MyApp {
                                 self.stroke_stack.truncate(
                                     self.stroke_stack.len() - self.redo_index
                                 );
-                                self.stroke_stack.push(stroke);
+                                if self.stroke_stack.len() >= 100 { self.stroke_stack.pop_front(); }
+                                self.stroke_stack.push_back(stroke);
                                 self.redo_index = 0;
                             }
                         }
