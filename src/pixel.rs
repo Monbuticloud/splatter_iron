@@ -5,6 +5,7 @@ use wide::u32x4;
 ///
 /// **Caller must supply straight (non-premultiplied) RGB.**
 /// Calling this on an already-premultiplied pixel will darken colors again.
+#[inline(always)]
 pub fn premultiply(color: Color32) -> Color32 {
     let alpha = color.a();
     if alpha == 255 {
@@ -22,21 +23,31 @@ pub fn premultiply(color: Color32) -> Color32 {
 
 /// Alpha-blend premultiplied src over premultiplied dst.
 /// Result is premultiplied.
-pub fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
-    let src_a = source.a() as u32;
-    let dst_a = destination.a() as u32;
-    let inv_src_a = 255 - src_a;
+#[inline(always)]
+pub fn alpha_blend(dst: Color32, src: Color32) -> Color32 {
+    let sr = src.r() as u32;
+    let sg = src.g() as u32;
+    let sb = src.b() as u32;
+    let sa = src.a() as u32;
 
-    // src + ((dst * inv_src_a + 128) * 257) >> 16   (fixed-point divide by 255)
-    let red = (source.r() as u32) + ((((destination.r() as u32) * inv_src_a + 128) * 257) >> 16);
-    let green = (source.g() as u32) + ((((destination.g() as u32) * inv_src_a + 128) * 257) >> 16);
-    let blue = (source.b() as u32) + ((((destination.b() as u32) * inv_src_a + 128) * 257) >> 16);
-    let alpha = src_a + (((dst_a * inv_src_a + 128) * 257) >> 16);
+    let dr = dst.r() as u32;
+    let dg = dst.g() as u32;
+    let db = dst.b() as u32;
+    let da = dst.a() as u32;
 
-    // Correct fixed-point math guarantees each channel ∈ [0, 255],
-    // so the wrap-on-overflow cast is safe.
-    debug_assert!(red <= 255 && green <= 255 && blue <= 255 && alpha <= 255);
-    Color32::from_rgba_premultiplied(red as u8, green as u8, blue as u8, alpha as u8)
+    let inv = 255 - sa;
+
+    #[inline(always)]
+    fn blend(d: u32, inv: u32) -> u32 {
+        (d * inv + 128) >> 8
+    }
+
+    Color32::from_rgba_premultiplied(
+        (sr + blend(dr, inv)) as u8,
+        (sg + blend(dg, inv)) as u8,
+        (sb + blend(db, inv)) as u8,
+        (sa + blend(da, inv)) as u8
+    )
 }
 const ONE28: u32x4 = u32x4::splat(128);
 const TWO57: u32x4 = u32x4::splat(257);
@@ -44,6 +55,7 @@ const SIXTEEN: u32x4 = u32x4::splat(16);
 /// Blend two premultiplied pixel buffers element-wise, using SIMD (wide::u32x4)
 /// to process **4 pixels per iteration** — each u32x4 lane holds the same channel
 /// from 4 different pixels, achieving genuine pixel-level parallelism.
+#[inline]
 pub fn blend_layers(bottom: &[Color32], top: &[Color32], output: &mut [Color32]) {
     assert_eq!(bottom.len(), top.len());
     assert_eq!(bottom.len(), output.len());

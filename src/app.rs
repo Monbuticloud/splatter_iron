@@ -1,6 +1,6 @@
 use std::{ time::Duration };
 
-use eframe::egui::{ self, Color32, Panel };
+use eframe::egui::{ self, Color32, Frame, Panel };
 // use serde::{ Deserialize, Serialize };
 
 use crate::canvas::{ self, Canvas, CurrentTool, Layer, RenderState };
