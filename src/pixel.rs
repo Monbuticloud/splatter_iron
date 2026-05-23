@@ -52,79 +52,122 @@ pub fn alpha_blend(dst: Color32, src: Color32) -> Color32 {
 const ONE28: u32x4 = u32x4::splat(128);
 const TWO57: u32x4 = u32x4::splat(257);
 const SIXTEEN: u32x4 = u32x4::splat(16);
-/// Blend two premultiplied pixel buffers element-wise, using SIMD (wide::u32x4)
-/// to process **4 pixels per iteration** — each u32x4 lane holds the same channel
-/// from 4 different pixels, achieving genuine pixel-level parallelism.
-#[inline]
-pub fn blend_layers(bottom: &[Color32], top: &[Color32], output: &mut [Color32]) {
-    assert_eq!(bottom.len(), top.len());
-    assert_eq!(bottom.len(), output.len());
 
-    let len = bottom.len();
+/// Blend multiple premultiplied layers into an RGBA u8 output buffer.
+///
+/// Layers are composited bottom-to-top (index 0 = bottommost).
+/// Uses SIMD (wide::u32x4) to process 4 pixels per iteration.
+/// No heap allocation, no clones — only stack-local SIMD vectors.
+///
+/// # Panics
+/// - If `layers` is empty
+/// - If any layer has a different length from `layers[0]`
+/// - If `output.len() != layers[0].len() * 4`
+#[inline]
+pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
+    assert!(!layers.is_empty(), "blend_layers: at least one layer required");
+
+    let len = layers[0].len();
+    #[cfg(debug_assertions)]
+    for (i, layer) in layers.iter().enumerate() {
+        assert_eq!(layer.len(), len, "blend_layers: layer {i} length mismatch");
+    }
+    assert_eq!(output.len(), len * 4, "blend_layers: output length mismatch");
+
+    // Fast path: single layer — just copy bytes
+    if layers.len() == 1 {
+        let src = layers[0];
+        for i in 0..len {
+            let arr = src[i].to_array(); // [R, G, B, A]
+            let out_idx = i * 4;
+            output[out_idx]     = arr[0];
+            output[out_idx + 1] = arr[1];
+            output[out_idx + 2] = arr[2];
+            output[out_idx + 3] = arr[3];
+        }
+        return;
+    }
+
     let chunks = len / 4;
 
     for chunk in 0..chunks {
         let base = chunk * 4;
 
-        // Gather R/G/B/A from 4 top pixels into four u32x4
-        let mut tr = [0u32; 4];
-        let mut tg = [0u32; 4];
-        let mut tb = [0u32; 4];
-        let mut ta = [0u32; 4];
-        // Same for bottom pixels
-        let mut dr = [0u32; 4];
-        let mut dg = [0u32; 4];
-        let mut db = [0u32; 4];
-        let mut da = [0u32; 4];
-
-        for j in 0..4 {
-            let t = top[base + j].to_array();
-            let d = bottom[base + j].to_array();
-            tr[j] = t[0] as u32;
-            tg[j] = t[1] as u32;
-            tb[j] = t[2] as u32;
-            ta[j] = t[3] as u32;
-            dr[j] = d[0] as u32;
-            dg[j] = d[1] as u32;
-            db[j] = d[2] as u32;
-            da[j] = d[3] as u32;
+        // --- Load bottom layer (index 0) into SIMD accumulators ---
+        let mut acc_r_arr = [0u32; 4];
+        let mut acc_g_arr = [0u32; 4];
+        let mut acc_b_arr = [0u32; 4];
+        let mut acc_a_arr = [0u32; 4];
+        {
+            let btm = &layers[0];
+            for j in 0..4 {
+                let c = btm[base + j].to_array();
+                acc_r_arr[j] = c[0] as u32;
+                acc_g_arr[j] = c[1] as u32;
+                acc_b_arr[j] = c[2] as u32;
+                acc_a_arr[j] = c[3] as u32;
+            }
         }
 
-        let top_r = u32x4::new(tr);
-        let top_g = u32x4::new(tg);
-        let top_b = u32x4::new(tb);
-        let top_a = u32x4::new(ta);
-        let dst_r = u32x4::new(dr);
-        let dst_g = u32x4::new(dg);
-        let dst_b = u32x4::new(db);
-        let dst_a = u32x4::new(da);
+        let mut acc_r = u32x4::new(acc_r_arr);
+        let mut acc_g = u32x4::new(acc_g_arr);
+        let mut acc_b = u32x4::new(acc_b_arr);
+        let mut acc_a = u32x4::new(acc_a_arr);
 
-        let inv_a = u32x4::splat(255) - top_a;
+        // --- Blend remaining layers into accumulators ---
+        for &layer_slice in &layers[1..] {
+            let mut tr = [0u32; 4];
+            let mut tg = [0u32; 4];
+            let mut tb = [0u32; 4];
+            let mut ta = [0u32; 4];
+            for j in 0..4 {
+                let c = layer_slice[base + j].to_array();
+                tr[j] = c[0] as u32;
+                tg[j] = c[1] as u32;
+                tb[j] = c[2] as u32;
+                ta[j] = c[3] as u32;
+            }
 
-        // src + ((dst * inv_src_a + 128) * 257) >> 16  (per channel, 4 pixels in parallel)
+            let top_r = u32x4::new(tr);
+            let top_g = u32x4::new(tg);
+            let top_b = u32x4::new(tb);
+            let top_a = u32x4::new(ta);
 
-        let result_r = top_r + (((dst_r * inv_a + ONE28) * TWO57) >> SIXTEEN);
-        let result_g = top_g + (((dst_g * inv_a + ONE28) * TWO57) >> SIXTEEN);
-        let result_b = top_b + (((dst_b * inv_a + ONE28) * TWO57) >> SIXTEEN);
-        let result_a = top_a + (((dst_a * inv_a + ONE28) * TWO57) >> SIXTEEN);
+            let inv_a = u32x4::splat(255) - top_a;
 
-        let rr = result_r.to_array();
-        let rg = result_g.to_array();
-        let rb = result_b.to_array();
-        let ra = result_a.to_array();
+            // acc = top + ((acc * inv_a + 128) * 257) >> 16
+            acc_r = top_r + (((acc_r * inv_a + ONE28) * TWO57) >> SIXTEEN);
+            acc_g = top_g + (((acc_g * inv_a + ONE28) * TWO57) >> SIXTEEN);
+            acc_b = top_b + (((acc_b * inv_a + ONE28) * TWO57) >> SIXTEEN);
+            acc_a = top_a + (((acc_a * inv_a + ONE28) * TWO57) >> SIXTEEN);
+        }
+
+        // --- Write 4 pixels to output as bytes ---
+        let rr = acc_r.to_array();
+        let rg = acc_g.to_array();
+        let rb = acc_b.to_array();
+        let ra = acc_a.to_array();
 
         for j in 0..4 {
-            output[base + j] = Color32::from_rgba_premultiplied(
-                rr[j] as u8,
-                rg[j] as u8,
-                rb[j] as u8,
-                ra[j] as u8
-            );
+            let out_idx = (base + j) * 4;
+            output[out_idx]     = rr[j] as u8;
+            output[out_idx + 1] = rg[j] as u8;
+            output[out_idx + 2] = rb[j] as u8;
+            output[out_idx + 3] = ra[j] as u8;
         }
     }
 
     // Scalar remainder for pixels not covered by full chunks
     for i in chunks * 4..len {
-        output[i] = alpha_blend(bottom[i], top[i]);
+        let mut pixel = layers[0][i];
+        for &layer_slice in &layers[1..] {
+            pixel = alpha_blend(pixel, layer_slice[i]);
+        }
+        let arr = pixel.to_array();
+        let out_idx = i * 4;
+        output[out_idx]     = arr[0];
+        output[out_idx + 1] = arr[1];
+        output[out_idx + 2] = arr[2];
+        output[out_idx + 3] = arr[3];
     }
 }

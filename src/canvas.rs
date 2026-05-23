@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use eframe::egui::{ self, Color32, TextureHandle };
-use rayon::prelude::*;
 use serde::{ Deserialize, Serialize };
 
 use crate::pixel::{ self, premultiply };
@@ -44,25 +43,14 @@ impl Default for Canvas {
     }
 }
 
-/// Composite layers into RGBA byte buffer using parallel iteration.
+/// Composite layers into RGBA byte buffer using SIMD-accelerated blending.
 #[inline(always)]
 pub fn composite_layers_parallel_rgba(layers: &[Layer], output: &mut [u8]) {
     if layers.is_empty() {
         return;
     }
-    output
-        .par_chunks_mut(4)
-        .enumerate()
-        .for_each(|(i, output_pixel)| {
-            let mut pixel = layers[0].pixels[i];
-            for layer in &layers[1..] {
-                pixel = pixel::alpha_blend(pixel, layer.pixels[i]);
-            }
-            output_pixel[0] = pixel.r();
-            output_pixel[1] = pixel.g();
-            output_pixel[2] = pixel.b();
-            output_pixel[3] = pixel.a();
-        });
+    let layer_slices: Vec<&[Color32]> = layers.iter().map(|l| l.pixels.as_slice()).collect();
+    pixel::blend_layers(&layer_slices, output);
 }
 
 /// Internal: fill a rectangle without capturing undo data.
