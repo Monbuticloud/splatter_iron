@@ -1,4 +1,4 @@
-use eframe::egui::{self, Color32};
+use eframe::egui::{ self, Color32 };
 
 use crate::app::MyApp;
 use crate::canvas::Layer;

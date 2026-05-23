@@ -64,7 +64,7 @@ fn fill_square_impl(
     end_x: u32,
     start_y: u32,
     end_y: u32,
-    color: Color32,
+    color: Color32
 ) {
     for y in start_y..end_y {
         let row_start = (y as usize) * width;
@@ -82,7 +82,7 @@ pub fn draw_square(
     end_y: u32,
     canvas: &mut Canvas,
     color: egui::Color32,
-    layer: usize,
+    layer: usize
 ) -> Stroke {
     let color = premultiply(color);
     let color_u32 = undo::color32_to_u32(color);
@@ -149,7 +149,7 @@ pub fn draw_square_line(
     brush_radius: u32,
     canvas: &mut Canvas,
     color: egui::Color32,
-    layer: usize,
+    layer: usize
 ) -> Stroke {
     let color = premultiply(color);
     let color_u32 = undo::color32_to_u32(color);
@@ -173,15 +173,21 @@ pub fn draw_square_line(
     let mut error = delta_x + delta_y;
 
     loop {
-        let brush_start_x = current_x.saturating_sub(half_radius as i32).max(0).min(width as i32 - 1) as u32;
+        let brush_start_x = current_x
+            .saturating_sub(half_radius as i32)
+            .max(0)
+            .min((width as i32) - 1) as u32;
         let brush_end_x = (current_x + (half_radius as i32) + 1).min(width as i32) as u32;
-        let brush_start_y = current_y.saturating_sub(half_radius as i32).max(0).min(height as i32 - 1) as u32;
+        let brush_start_y = current_y
+            .saturating_sub(half_radius as i32)
+            .max(0)
+            .min((height as i32) - 1) as u32;
         let brush_end_y = (current_y + (half_radius as i32) + 1).min(height as i32) as u32;
 
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
             for x in brush_start_x..brush_end_x {
-                positions.push((row_start + x as usize) as u32);
+                positions.push((row_start + (x as usize)) as u32);
             }
         }
 
@@ -219,15 +225,29 @@ pub fn draw_square_line(
     // Second pass: draw the line
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
-    let mut error = (target_x - current_x).abs() + (-(target_y - current_y).abs());
+    let mut error = (target_x - current_x).abs() + -(target_y - current_y).abs();
 
     loop {
-        let brush_start_x = current_x.saturating_sub(half_radius as i32).max(0).min(width as i32 - 1) as u32;
+        let brush_start_x = current_x
+            .saturating_sub(half_radius as i32)
+            .max(0)
+            .min((width as i32) - 1) as u32;
         let brush_end_x = (current_x + (half_radius as i32) + 1).min(width as i32) as u32;
-        let brush_start_y = current_y.saturating_sub(half_radius as i32).max(0).min(height as i32 - 1) as u32;
+        let brush_start_y = current_y
+            .saturating_sub(half_radius as i32)
+            .max(0)
+            .min((height as i32) - 1) as u32;
         let brush_end_y = (current_y + (half_radius as i32) + 1).min(height as i32) as u32;
 
-        fill_square_impl(pixels, width, brush_start_x, brush_end_x, brush_start_y, brush_end_y, color);
+        fill_square_impl(
+            pixels,
+            width,
+            brush_start_x,
+            brush_end_x,
+            brush_start_y,
+            brush_end_y,
+            color
+        );
 
         if current_x == target_x && current_y == target_y {
             break;
@@ -258,7 +278,7 @@ pub fn erase_square_line(
     end_y: u32,
     brush_radius: u32,
     canvas: &mut Canvas,
-    layer: usize,
+    layer: usize
 ) -> Stroke {
     let transparent = Color32::TRANSPARENT;
     let transparent_u32 = undo::color32_to_u32(transparent);
@@ -282,15 +302,21 @@ pub fn erase_square_line(
     let mut error = delta_x + delta_y;
 
     loop {
-        let brush_start_x = current_x.saturating_sub(half_radius as i32).max(0).min(width as i32 - 1) as u32;
+        let brush_start_x = current_x
+            .saturating_sub(half_radius as i32)
+            .max(0)
+            .min((width as i32) - 1) as u32;
         let brush_end_x = (current_x + (half_radius as i32) + 1).min(width as i32) as u32;
-        let brush_start_y = current_y.saturating_sub(half_radius as i32).max(0).min(height as i32 - 1) as u32;
+        let brush_start_y = current_y
+            .saturating_sub(half_radius as i32)
+            .max(0)
+            .min((height as i32) - 1) as u32;
         let brush_end_y = (current_y + (half_radius as i32) + 1).min(height as i32) as u32;
 
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
             for x in brush_start_x..brush_end_x {
-                positions.push((row_start + x as usize) as u32);
+                positions.push((row_start + (x as usize)) as u32);
             }
         }
 
@@ -328,15 +354,29 @@ pub fn erase_square_line(
     // Second pass: draw the line with TRANSPARENT
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
-    let mut error = (target_x - current_x).abs() + (-(target_y - current_y).abs());
+    let mut error = (target_x - current_x).abs() + -(target_y - current_y).abs();
 
     loop {
-        let brush_start_x = current_x.saturating_sub(half_radius as i32).max(0).min(width as i32 - 1) as u32;
+        let brush_start_x = current_x
+            .saturating_sub(half_radius as i32)
+            .max(0)
+            .min((width as i32) - 1) as u32;
         let brush_end_x = (current_x + (half_radius as i32) + 1).min(width as i32) as u32;
-        let brush_start_y = current_y.saturating_sub(half_radius as i32).max(0).min(height as i32 - 1) as u32;
+        let brush_start_y = current_y
+            .saturating_sub(half_radius as i32)
+            .max(0)
+            .min((height as i32) - 1) as u32;
         let brush_end_y = (current_y + (half_radius as i32) + 1).min(height as i32) as u32;
 
-        fill_square_impl(pixels, width, brush_start_x, brush_end_x, brush_start_y, brush_end_y, transparent);
+        fill_square_impl(
+            pixels,
+            width,
+            brush_start_x,
+            brush_end_x,
+            brush_start_y,
+            brush_end_y,
+            transparent
+        );
 
         if current_x == target_x && current_y == target_y {
             break;

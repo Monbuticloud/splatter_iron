@@ -85,13 +85,11 @@ impl eframe::App for MyApp {
                 self.canvas.output_rgba = vec![0; size * 4];
             }
 
-            let layer_slices: Vec<&[Color32]> = self.canvas.pixels.iter()
+            let layer_slices: Vec<&[Color32]> = self.canvas.pixels
+                .iter()
                 .map(|l| l.pixels.as_slice())
                 .collect();
-            pixel::blend_layers(
-                &layer_slices,
-                &mut self.canvas.output_rgba
-            );
+            pixel::blend_layers(&layer_slices, &mut self.canvas.output_rgba);
             let image = egui::ColorImage::from_rgba_premultiplied(
                 [self.canvas.width as usize, self.canvas.height as usize],
                 &self.canvas.output_rgba

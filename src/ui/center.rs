@@ -1,9 +1,9 @@
 use std::time::Duration;
 
-use eframe::egui::{self, Color32};
+use eframe::egui::{ self, Color32 };
 
 use crate::app::MyApp;
-use crate::canvas::{self, CurrentTool, RenderState};
+use crate::canvas::{ self, CurrentTool, RenderState };
 
 impl MyApp {
     #[inline(always)]
