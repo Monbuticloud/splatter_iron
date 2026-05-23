@@ -290,7 +290,7 @@ impl eframe::App for MyApp {
                                     let start_y = pixel_y.saturating_sub(half);
                                     let end_y = (pixel_y + half).min(self.canvas.height - 1);
 
-                                    canvas::draw_square(
+                                    let stroke = canvas::draw_square(
                                         start_x,
                                         start_y,
                                         end_x,
@@ -299,8 +299,11 @@ impl eframe::App for MyApp {
                                         self.current_color,
                                         self.current_layer
                                     );
+                                    self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
+                                    self.stroke_stack.push(stroke);
+                                    self.redo_index = 0;
                                 } else if let Some((past_x, past_y)) = self.past_position {
-                                    canvas::draw_square_line(
+                                    let stroke = canvas::draw_square_line(
                                         past_x,
                                         past_y,
                                         pixel_x,
@@ -310,6 +313,9 @@ impl eframe::App for MyApp {
                                         self.current_color,
                                         self.current_layer
                                     );
+                                    self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
+                                    self.stroke_stack.push(stroke);
+                                    self.redo_index = 0;
                                 }
                             }
                             CurrentTool::CircleTool => {
@@ -327,7 +333,7 @@ impl eframe::App for MyApp {
                                     let start_y = pixel_y.saturating_sub(half);
                                     let end_y = (pixel_y + half).min(self.canvas.height - 1);
 
-                                    canvas::draw_square(
+                                    let stroke = canvas::draw_square(
                                         start_x,
                                         start_y,
                                         end_x,
@@ -336,8 +342,11 @@ impl eframe::App for MyApp {
                                         Color32::TRANSPARENT,
                                         self.current_layer
                                     );
+                                    self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
+                                    self.stroke_stack.push(stroke);
+                                    self.redo_index = 0;
                                 } else if let Some((past_x, past_y)) = self.past_position {
-                                    canvas::erase_square_line(
+                                    let stroke = canvas::erase_square_line(
                                         past_x,
                                         past_y,
                                         pixel_x,
@@ -346,6 +355,9 @@ impl eframe::App for MyApp {
                                         &mut self.canvas,
                                         self.current_layer
                                     );
+                                    self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
+                                    self.stroke_stack.push(stroke);
+                                    self.redo_index = 0;
                                 }
                             }
                             CurrentTool::CircleEraserTool => {
