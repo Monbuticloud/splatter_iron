@@ -89,7 +89,7 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
         return;
     }
 
-    let chunks = len / 4;
+    let chunks = len >> 2; // len / 4
     let aligned_len = chunks * 16; // 16 bytes per 4-pixel chunk
     let (buf_aligned, buf_remainder) = output.split_at_mut(aligned_len);
 

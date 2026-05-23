@@ -221,7 +221,7 @@ impl MyApp {
                             self.canvas.render_next_frame = true;
 
                             if self.past_tool != Some(CurrentTool::SquareTool) {
-                                let half = self.radius / 2;
+                                let half = self.radius >> 1; // self.radius / 2
 
                                 let start_x = pixel_x.saturating_sub(half);
                                 let end_x = (pixel_x + half).min(self.canvas.width - 1);
@@ -268,7 +268,7 @@ impl MyApp {
                             self.canvas.render_next_frame = true;
 
                             if self.past_tool != Some(CurrentTool::SquareEraserTool) {
-                                let half = self.radius / 2;
+                                let half = self.radius >> 1; // self.radius / 2
 
                                 let start_x = pixel_x.saturating_sub(half);
                                 let end_x = (pixel_x + half).min(self.canvas.width - 1);

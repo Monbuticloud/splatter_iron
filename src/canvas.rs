@@ -154,7 +154,7 @@ pub fn draw_square_line(
     let color = premultiply(color);
     let color_u32 = undo::color32_to_u32(color);
 
-    let half_radius = brush_radius / 2;
+    let half_radius = brush_radius >> 1; // brush_radius / 2
     let width = canvas.width as usize;
     let height = canvas.height;
 
@@ -263,7 +263,7 @@ pub fn erase_square_line(
     let transparent = Color32::TRANSPARENT;
     let transparent_u32 = undo::color32_to_u32(transparent);
 
-    let half_radius = brush_radius / 2;
+    let half_radius = brush_radius >> 1; // brush_radius / 2
     let width = canvas.width as usize;
     let height = canvas.height;
 
