@@ -177,12 +177,20 @@ pub fn draw_square_line(
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
-        let brush_end_x = (current_x.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(width as i32) as u32;
+        let brush_end_x = current_x
+            .saturating_add(half_radius as i32)
+            .saturating_add(1)
+            .max(0)
+            .min(width as i32) as u32;
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
-        let brush_end_y = (current_y.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(height as i32) as u32;
+        let brush_end_y = current_y
+            .saturating_add(half_radius as i32)
+            .saturating_add(1)
+            .max(0)
+            .min(height as i32) as u32;
 
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
@@ -234,12 +242,20 @@ pub fn draw_square_line(
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
-        let brush_end_x = (current_x.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(width as i32) as u32;
+        let brush_end_x = current_x
+            .saturating_add(half_radius as i32)
+            .saturating_add(1)
+            .max(0)
+            .min(width as i32) as u32;
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
-        let brush_end_y = (current_y.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(height as i32) as u32;
+        let brush_end_y = current_y
+            .saturating_add(half_radius as i32)
+            .saturating_add(1)
+            .max(0)
+            .min(height as i32) as u32;
 
         fill_square_impl(
             pixels,
@@ -308,12 +324,20 @@ pub fn erase_square_line(
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
-        let brush_end_x = (current_x.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(width as i32) as u32;
+        let brush_end_x = current_x
+            .saturating_add(half_radius as i32)
+            .saturating_add(1)
+            .max(0)
+            .min(width as i32) as u32;
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
-        let brush_end_y = (current_y.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(height as i32) as u32;
+        let brush_end_y = current_y
+            .saturating_add(half_radius as i32)
+            .saturating_add(1)
+            .max(0)
+            .min(height as i32) as u32;
 
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
@@ -365,12 +389,20 @@ pub fn erase_square_line(
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
-        let brush_end_x = (current_x.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(width as i32) as u32;
+        let brush_end_x = current_x
+            .saturating_add(half_radius as i32)
+            .saturating_add(1)
+            .max(0)
+            .min(width as i32) as u32;
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
-        let brush_end_y = (current_y.saturating_add(half_radius as i32).saturating_add(1)).max(0).min(height as i32) as u32;
+        let brush_end_y = current_y
+            .saturating_add(half_radius as i32)
+            .saturating_add(1)
+            .max(0)
+            .min(height as i32) as u32;
 
         fill_square_impl(
             pixels,

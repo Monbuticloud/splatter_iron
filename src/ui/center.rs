@@ -133,8 +133,11 @@ impl MyApp {
             let redo_btn = ui.button("Redo");
 
             // Undo: cmd+Z or Undo button
-            if self.redo_index < self.stroke_stack.len() &&
-               (ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift) || undo_btn.clicked())
+            if
+                self.redo_index < self.stroke_stack.len() &&
+                (ui.input(
+                    |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift
+                ) || undo_btn.clicked())
             {
                 let count = self.undo_redo_strength.min(self.stroke_stack.len() - self.redo_index);
                 for _ in 0..count {
@@ -146,10 +149,13 @@ impl MyApp {
             }
 
             // Redo: cmd+shift+Z, cmd+Y, or Redo button
-            if self.redo_index > 0 &&
-               (ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift)
-                || ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command)
-                || redo_btn.clicked())
+            if
+                self.redo_index > 0 &&
+                (ui.input(
+                    |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift
+                ) ||
+                    ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
+                    redo_btn.clicked())
             {
                 let count = self.undo_redo_strength.min(self.redo_index);
                 for _ in 0..count {
