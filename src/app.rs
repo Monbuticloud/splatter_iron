@@ -1,6 +1,6 @@
 use std::{ time::Duration };
 
-use eframe::egui::{ self, Color32, Frame, Panel };
+use eframe::egui::{ self, Color32, Panel };
 // use serde::{ Deserialize, Serialize };
 
 use crate::canvas::{ self, Canvas, CurrentTool, Layer, RenderState };
@@ -48,6 +48,275 @@ impl Default for MyApp {
             past_position: None,
             stroke_stack: Vec::new(),
             redo_index: 0,
+        }
+    }
+}
+
+impl MyApp {
+    fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
+        let mut is_quitting = false;
+        ui.horizontal(|ui| {
+            let save_button = ui.button("Save");
+            if save_button.clicked() {
+                todo!();
+            }
+
+            let load_button = ui.button("Load");
+            if load_button.clicked() {
+                todo!();
+            }
+            let new_button = ui.button("New");
+            if new_button.clicked() {
+                todo!();
+            }
+            let export_button = ui.button("Export").clicked();
+            if export_button {
+                todo!();
+            }
+            let import_button = ui.button("Import");
+            if import_button.clicked() {
+                todo!();
+            }
+            let close_button = ui.button("Close");
+            if close_button.clicked() {
+                is_quitting = true;
+            }
+        });
+        is_quitting
+    }
+
+    fn show_left_panel(&mut self, ui: &mut egui::Ui) {
+        let square_paint_tool_button = ui.button("Square Tool");
+        if square_paint_tool_button.clicked() {
+            self.current_tool = CurrentTool::SquareTool;
+        }
+        let circle_paint_tool_button = ui.button("Circle Tool");
+        if circle_paint_tool_button.clicked() {
+            self.current_tool = CurrentTool::CircleTool;
+        }
+        let square_eraser_tool_button = ui.button("Square Eraser");
+        if square_eraser_tool_button.clicked() {
+            self.current_tool = CurrentTool::SquareEraserTool;
+        }
+        let circle_eraser_tool_button = ui.button("Circle Eraser");
+        if circle_eraser_tool_button.clicked() {
+            self.current_tool = CurrentTool::CircleEraserTool;
+        }
+    }
+
+    fn show_right_panel(&mut self, ui: &mut egui::Ui) {
+        ui.label("Settings");
+
+        ui.color_edit_button_srgba(&mut self.current_color);
+        ui.add(egui::DragValue::new(&mut self.radius).range(0..=300));
+        let _current_layer_text = format!("Current Layer: {}", self.current_layer);
+
+        let add_layer_button = ui.button("Add Layer");
+        if add_layer_button.clicked() {
+            self.canvas.pixels.push(Layer {
+                pixels: vec![Color32::TRANSPARENT; (self.canvas.width * self.canvas.height) as usize],
+            });
+            // self.canvas.render_next_frame = true;
+        }
+
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            let mut status = None;
+            for (i, _layer) in self.canvas.pixels.iter().enumerate() {
+                let _layer_panel = egui::CollapsingHeader
+                    ::new(format!("Layer {}", i))
+                    .show(ui, |ui| {
+                        let delete_button = ui.button("Delete");
+                        if delete_button.clicked() {
+                            status = Some(LayerAction::Delete(i));
+                        }
+
+                        let move_up_button = ui.button("Move Up");
+                        if move_up_button.clicked() && i > 0 {
+                            // self.canvas.pixels.swap(i, i - 1);
+                            status = Some(LayerAction::MoveUp(i));
+                        }
+
+                        let move_down_button = ui.button("Move Down");
+                        if move_down_button.clicked() && i < self.canvas.pixels.len() - 1 {
+                            // self.canvas.pixels.swap(i, i + 1);``
+                            status = Some(LayerAction::MoveDown(i));
+                        }
+
+                        let select_button = ui.button("Select");
+                        if select_button.clicked() {
+                            status = Some(LayerAction::Select(i));
+                        }
+                        if i == self.current_layer {
+                            ui.label("Currently Selected");
+                        }
+                    });
+            }
+            if let Some(layer_action) = status {
+                match layer_action {
+                    LayerAction::Delete(index) => {
+                        if self.pending_delete_layer == Some(index) {
+                            self.pending_delete_layer = None;
+                            self.canvas.pixels.remove(index);
+                            self.canvas.render_next_frame = true;
+                        } else {
+                            self.pending_delete_layer = Some(index);
+                        }
+                    }
+                    LayerAction::MoveUp(index) => {
+                        if index > 0 {
+                            self.canvas.pixels.swap(index, index - 1);
+                            self.canvas.render_next_frame = true;
+                            self.current_layer = index - 1;
+                        }
+                    }
+                    LayerAction::MoveDown(index) => {
+                        if index < self.canvas.pixels.len() - 1 {
+                            self.canvas.pixels.swap(index, index + 1);
+                            self.canvas.render_next_frame = true;
+                            self.current_layer = index + 1;
+                        }
+                    }
+                    LayerAction::Select(index) => {
+                        self.current_layer = index;
+                    }
+                }
+            }
+        });
+    }
+
+    fn show_central_panel(&mut self, ui: &mut egui::Ui) {
+        if let Some(tex) = &self.canvas.rendered_layers {
+            let avail = ui.available_size();
+            let tex_size = tex.size_vec2();
+
+            let scale = (avail.x / tex_size.x).min(avail.y / tex_size.y);
+            let draw_size = tex_size * scale;
+
+            let response = ui.add(
+                egui::Image
+                    ::new(tex)
+                    .fit_to_exact_size(draw_size)
+                    .sense(egui::Sense::click_and_drag())
+            );
+
+            if response.hovered() {
+                self.pending_delete_layer = None;
+                self.render_state = RenderState::Warm(Duration::from_millis(550));
+            }
+
+            if response.dragged() {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    let local = pos - response.rect.min;
+                    let uv = egui::vec2(
+                        local.x / response.rect.width(),
+                        local.y / response.rect.height()
+                    );
+
+                    let pixel_x = (uv.x * (self.canvas.width as f32)).floor() as u32;
+                    let pixel_y = (uv.y * (self.canvas.height as f32)).floor() as u32;
+
+                    match self.current_tool {
+                        CurrentTool::SquareTool => {
+                            self.canvas.render_next_frame = true;
+
+                            if self.past_tool != Some(CurrentTool::SquareTool) {
+                                let half = self.radius / 2;
+
+                                let start_x = pixel_x.saturating_sub(half);
+                                let end_x = (pixel_x + half).min(self.canvas.width - 1);
+
+                                let start_y = pixel_y.saturating_sub(half);
+                                let end_y = (pixel_y + half).min(self.canvas.height - 1);
+
+                                let stroke = canvas::draw_square(
+                                    start_x,
+                                    start_y,
+                                    end_x,
+                                    end_y,
+                                    &mut self.canvas,
+                                    self.current_color,
+                                    self.current_layer
+                                );
+                                self.stroke_stack.truncate(
+                                    self.stroke_stack.len() - self.redo_index
+                                );
+                                self.stroke_stack.push(stroke);
+                                self.redo_index = 0;
+                            } else if let Some((past_x, past_y)) = self.past_position {
+                                let stroke = canvas::draw_square_line(
+                                    past_x,
+                                    past_y,
+                                    pixel_x,
+                                    pixel_y,
+                                    self.radius,
+                                    &mut self.canvas,
+                                    self.current_color,
+                                    self.current_layer
+                                );
+                                self.stroke_stack.truncate(
+                                    self.stroke_stack.len() - self.redo_index
+                                );
+                                self.stroke_stack.push(stroke);
+                                self.redo_index = 0;
+                            }
+                        }
+                        CurrentTool::CircleTool => {
+                            todo!();
+                        }
+                        CurrentTool::SquareEraserTool => {
+                            self.canvas.render_next_frame = true;
+
+                            if self.past_tool != Some(CurrentTool::SquareEraserTool) {
+                                let half = self.radius / 2;
+
+                                let start_x = pixel_x.saturating_sub(half);
+                                let end_x = (pixel_x + half).min(self.canvas.width - 1);
+
+                                let start_y = pixel_y.saturating_sub(half);
+                                let end_y = (pixel_y + half).min(self.canvas.height - 1);
+
+                                let stroke = canvas::draw_square(
+                                    start_x,
+                                    start_y,
+                                    end_x,
+                                    end_y,
+                                    &mut self.canvas,
+                                    Color32::TRANSPARENT,
+                                    self.current_layer
+                                );
+                                self.stroke_stack.truncate(
+                                    self.stroke_stack.len() - self.redo_index
+                                );
+                                self.stroke_stack.push(stroke);
+                                self.redo_index = 0;
+                            } else if let Some((past_x, past_y)) = self.past_position {
+                                let stroke = canvas::erase_square_line(
+                                    past_x,
+                                    past_y,
+                                    pixel_x,
+                                    pixel_y,
+                                    self.radius,
+                                    &mut self.canvas,
+                                    self.current_layer
+                                );
+                                self.stroke_stack.truncate(
+                                    self.stroke_stack.len() - self.redo_index
+                                );
+                                self.stroke_stack.push(stroke);
+                                self.redo_index = 0;
+                            }
+                        }
+                        CurrentTool::CircleEraserTool => {
+                            todo!();
+                        }
+                    }
+                    self.past_tool = Some(self.current_tool);
+                    self.past_position = Some((pixel_x, pixel_y));
+                }
+            } else {
+                self.past_tool = None;
+                self.past_position = None;
+            }
         }
     }
 }
@@ -114,265 +383,13 @@ impl eframe::App for MyApp {
             }
         }
 
-        let mut is_quitting = false;
-        Panel::top("top").show_inside(ui, |top_panel| {
-            top_panel.horizontal(|top_panel_alignment| {
-                let save_button = top_panel_alignment.button("Save");
-                if save_button.clicked() {
-                    todo!();
-                }
+        let is_quitting = Panel::top("top").show_inside(ui, |ui| self.show_top_panel(ui)).inner;
 
-                let load_button = top_panel_alignment.button("Load");
-                if load_button.clicked() {
-                    todo!();
-                }
-                let new_button = top_panel_alignment.button("New");
-                if new_button.clicked() {
-                    todo!();
-                }
-                let export_button = top_panel_alignment.button("Export").clicked();
-                if export_button {
-                    todo!();
-                }
-                let import_button = top_panel_alignment.button("Import");
-                if import_button.clicked() {
-                    todo!();
-                }
-                let close_button = top_panel_alignment.button("Close");
-                if close_button.clicked() {
-                    is_quitting = true;
-                }
-            });
-        });
+        Panel::left("side").show_inside(ui, |ui| self.show_left_panel(ui));
 
-        Panel::left("side").show_inside(ui, |ui| {
-            let square_paint_tool_button = ui.button("Square Tool");
-            if square_paint_tool_button.clicked() {
-                self.current_tool = CurrentTool::SquareTool;
-            }
-            let circle_paint_tool_button = ui.button("Circle Tool");
-            if circle_paint_tool_button.clicked() {
-                self.current_tool = CurrentTool::CircleTool;
-            }
-            let square_eraser_tool_button = ui.button("Square Eraser");
-            if square_eraser_tool_button.clicked() {
-                self.current_tool = CurrentTool::SquareEraserTool;
-            }
-            let circle_eraser_tool_button = ui.button("Circle Eraser");
-            if circle_eraser_tool_button.clicked() {
-                self.current_tool = CurrentTool::CircleEraserTool;
-            }
-        });
+        Panel::right("right").show_inside(ui, |ui| self.show_right_panel(ui));
 
-        let right_panel = Panel::right("right");
-
-        right_panel.show_inside(ui, |ui| {
-            ui.label("Settings");
-
-            ui.color_edit_button_srgba(&mut self.current_color);
-            ui.add(egui::DragValue::new(&mut self.radius).range(0..=300));
-            let current_layer_text = format!("Current Layer: {}", self.current_layer);
-
-            let add_layer_button = ui.button("Add Layer");
-            if add_layer_button.clicked() {
-                self.canvas.pixels.push(Layer {
-                    pixels: vec![Color32::TRANSPARENT; (self.canvas.width * self.canvas.height) as usize],
-                });
-                // self.canvas.render_next_frame = true;
-            }
-
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                let mut status = None;
-                for (i, layer) in self.canvas.pixels.iter().enumerate() {
-                    let layer_panel = egui::CollapsingHeader
-                        ::new(format!("Layer {}", i))
-                        .show(ui, |ui| {
-                            let delete_button = ui.button("Delete");
-                            if delete_button.clicked() {
-                                status = Some(LayerAction::Delete(i));
-                            }
-
-                            let move_up_button = ui.button("Move Up");
-                            if move_up_button.clicked() && i > 0 {
-                                // self.canvas.pixels.swap(i, i - 1);
-                                status = Some(LayerAction::MoveUp(i));
-                            }
-
-                            let move_down_button = ui.button("Move Down");
-                            if move_down_button.clicked() && i < self.canvas.pixels.len() - 1 {
-                                // self.canvas.pixels.swap(i, i + 1);``
-                                status = Some(LayerAction::MoveDown(i));
-                            }
-
-                            let select_button = ui.button("Select");
-                            if select_button.clicked() {
-                                status = Some(LayerAction::Select(i));
-                            }
-                            if i == self.current_layer {
-                                ui.label("Currently Selected");
-                            }
-                        });
-                }
-                if let Some(layer_action) = status {
-                    match layer_action {
-                        LayerAction::Delete(index) => {
-                            if self.pending_delete_layer == Some(index) {
-                                self.pending_delete_layer = None;
-                                self.canvas.pixels.remove(index);
-                                self.canvas.render_next_frame = true;
-                            } else {
-                                self.pending_delete_layer = Some(index);
-                            }
-                        }
-                        LayerAction::MoveUp(index) => {
-                            if index > 0 {
-                                self.canvas.pixels.swap(index, index - 1);
-                                self.canvas.render_next_frame = true;
-                                self.current_layer = index - 1;
-                            }
-                        }
-                        LayerAction::MoveDown(index) => {
-                            if index < self.canvas.pixels.len() - 1 {
-                                self.canvas.pixels.swap(index, index + 1);
-                                self.canvas.render_next_frame = true;
-                                self.current_layer = index + 1;
-                            }
-                        }
-                        LayerAction::Select(index) => {
-                            self.current_layer = index;
-                        }
-                    }
-                }
-            });
-        });
-
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            if let Some(tex) = &self.canvas.rendered_layers {
-                let avail = ui.available_size();
-                let tex_size = tex.size_vec2();
-
-                let scale = (avail.x / tex_size.x).min(avail.y / tex_size.y);
-                let draw_size = tex_size * scale;
-
-                let response = ui.add(
-                    egui::Image
-                        ::new(tex)
-                        .fit_to_exact_size(draw_size)
-                        .sense(egui::Sense::click_and_drag())
-                );
-
-                if response.hovered() {
-                    self.pending_delete_layer = None;
-                    self.render_state = RenderState::Warm(Duration::from_millis(550));
-                }
-
-                if response.dragged() {
-                    if let Some(pos) = response.interact_pointer_pos() {
-                        let local = pos - response.rect.min;
-                        let uv = egui::vec2(
-                            local.x / response.rect.width(),
-                            local.y / response.rect.height()
-                        );
-
-                        let pixel_x = (uv.x * (self.canvas.width as f32)).floor() as u32;
-                        let pixel_y = (uv.y * (self.canvas.height as f32)).floor() as u32;
-
-                        match self.current_tool {
-                            CurrentTool::SquareTool => {
-                                self.canvas.render_next_frame = true;
-
-                                if self.past_tool != Some(CurrentTool::SquareTool) {
-                                    let half = self.radius / 2;
-
-                                    let start_x = pixel_x.saturating_sub(half);
-                                    let end_x = (pixel_x + half).min(self.canvas.width - 1);
-
-                                    let start_y = pixel_y.saturating_sub(half);
-                                    let end_y = (pixel_y + half).min(self.canvas.height - 1);
-
-                                    let stroke = canvas::draw_square(
-                                        start_x,
-                                        start_y,
-                                        end_x,
-                                        end_y,
-                                        &mut self.canvas,
-                                        self.current_color,
-                                        self.current_layer
-                                    );
-                                    self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
-                                    self.stroke_stack.push(stroke);
-                                    self.redo_index = 0;
-                                } else if let Some((past_x, past_y)) = self.past_position {
-                                    let stroke = canvas::draw_square_line(
-                                        past_x,
-                                        past_y,
-                                        pixel_x,
-                                        pixel_y,
-                                        self.radius,
-                                        &mut self.canvas,
-                                        self.current_color,
-                                        self.current_layer
-                                    );
-                                    self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
-                                    self.stroke_stack.push(stroke);
-                                    self.redo_index = 0;
-                                }
-                            }
-                            CurrentTool::CircleTool => {
-                                todo!();
-                            }
-                            CurrentTool::SquareEraserTool => {
-                                self.canvas.render_next_frame = true;
-
-                                if self.past_tool != Some(CurrentTool::SquareEraserTool) {
-                                    let half = self.radius / 2;
-
-                                    let start_x = pixel_x.saturating_sub(half);
-                                    let end_x = (pixel_x + half).min(self.canvas.width - 1);
-
-                                    let start_y = pixel_y.saturating_sub(half);
-                                    let end_y = (pixel_y + half).min(self.canvas.height - 1);
-
-                                    let stroke = canvas::draw_square(
-                                        start_x,
-                                        start_y,
-                                        end_x,
-                                        end_y,
-                                        &mut self.canvas,
-                                        Color32::TRANSPARENT,
-                                        self.current_layer
-                                    );
-                                    self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
-                                    self.stroke_stack.push(stroke);
-                                    self.redo_index = 0;
-                                } else if let Some((past_x, past_y)) = self.past_position {
-                                    let stroke = canvas::erase_square_line(
-                                        past_x,
-                                        past_y,
-                                        pixel_x,
-                                        pixel_y,
-                                        self.radius,
-                                        &mut self.canvas,
-                                        self.current_layer
-                                    );
-                                    self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
-                                    self.stroke_stack.push(stroke);
-                                    self.redo_index = 0;
-                                }
-                            }
-                            CurrentTool::CircleEraserTool => {
-                                todo!();
-                            }
-                        }
-                        self.past_tool = Some(self.current_tool);
-                        self.past_position = Some((pixel_x, pixel_y));
-                    }
-                } else {
-                    self.past_tool = None;
-                    self.past_position = None;
-                }
-            }
-        });
+        egui::CentralPanel::default().show_inside(ui, |ui| self.show_central_panel(ui));
 
         if is_quitting {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
