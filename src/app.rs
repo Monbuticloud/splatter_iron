@@ -4,6 +4,7 @@ use eframe::egui::{ self, Color32, Panel };
 // use serde::{ Deserialize, Serialize };
 
 use crate::canvas::{ self, Canvas, CurrentTool, Layer, RenderState };
+use crate::pixel;
 use crate::undo::*;
 
 pub struct MyApp {
@@ -360,8 +361,11 @@ impl eframe::App for MyApp {
                 self.canvas.output_rgba = vec![0; size * 4];
             }
 
-            canvas::composite_layers_parallel_rgba(
-                &self.canvas.pixels,
+            let layer_slices: Vec<&[Color32]> = self.canvas.pixels.iter()
+                .map(|l| l.pixels.as_slice())
+                .collect();
+            pixel::blend_layers(
+                &layer_slices,
                 &mut self.canvas.output_rgba
             );
             let image = egui::ColorImage::from_rgba_premultiplied(

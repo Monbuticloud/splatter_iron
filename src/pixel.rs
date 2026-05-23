@@ -1,4 +1,5 @@
 use eframe::egui::Color32;
+use rayon::prelude::*;
 use wide::u32x4;
 
 /// Premultiply a straight-alpha Color32.
@@ -56,7 +57,7 @@ const SIXTEEN: u32x4 = u32x4::splat(16);
 /// Blend multiple premultiplied layers into an RGBA u8 output buffer.
 ///
 /// Layers are composited bottom-to-top (index 0 = bottommost).
-/// Uses SIMD (wide::u32x4) to process 4 pixels per iteration.
+/// Uses SIMD (wide::u32x4) + rayon parallelism to process 4 pixels per task.
 /// No heap allocation, no clones — only stack-local SIMD vectors.
 ///
 /// # Panics
@@ -89,49 +90,36 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
     }
 
     let chunks = len / 4;
+    let aligned_len = chunks * 16; // 16 bytes per 4-pixel chunk
+    let (buf_aligned, buf_remainder) = output.split_at_mut(aligned_len);
 
-    for chunk in 0..chunks {
-        let base = chunk * 4;
+    // --- Parallel SIMD for full 4-pixel chunks ---
+    buf_aligned.par_chunks_mut(16).enumerate().for_each(|(chunk_idx, out)| {
+        let base = chunk_idx * 4;
 
-        // --- Load bottom layer (index 0) into SIMD accumulators ---
-        let mut acc_r_arr = [0u32; 4];
-        let mut acc_g_arr = [0u32; 4];
-        let mut acc_b_arr = [0u32; 4];
-        let mut acc_a_arr = [0u32; 4];
-        {
-            let btm = &layers[0];
-            for j in 0..4 {
-                let c = btm[base + j].to_array();
-                acc_r_arr[j] = c[0] as u32;
-                acc_g_arr[j] = c[1] as u32;
-                acc_b_arr[j] = c[2] as u32;
-                acc_a_arr[j] = c[3] as u32;
-            }
-        }
+        // Load bottom layer (index 0) into SIMD accumulators
+        let btm = layers[0];
+        let c0 = btm[base + 0].to_array();
+        let c1 = btm[base + 1].to_array();
+        let c2 = btm[base + 2].to_array();
+        let c3 = btm[base + 3].to_array();
 
-        let mut acc_r = u32x4::new(acc_r_arr);
-        let mut acc_g = u32x4::new(acc_g_arr);
-        let mut acc_b = u32x4::new(acc_b_arr);
-        let mut acc_a = u32x4::new(acc_a_arr);
+        let mut acc_r = u32x4::new([c0[0] as u32, c1[0] as u32, c2[0] as u32, c3[0] as u32]);
+        let mut acc_g = u32x4::new([c0[1] as u32, c1[1] as u32, c2[1] as u32, c3[1] as u32]);
+        let mut acc_b = u32x4::new([c0[2] as u32, c1[2] as u32, c2[2] as u32, c3[2] as u32]);
+        let mut acc_a = u32x4::new([c0[3] as u32, c1[3] as u32, c2[3] as u32, c3[3] as u32]);
 
-        // --- Blend remaining layers into accumulators ---
+        // Blend remaining layers into accumulators
         for &layer_slice in &layers[1..] {
-            let mut tr = [0u32; 4];
-            let mut tg = [0u32; 4];
-            let mut tb = [0u32; 4];
-            let mut ta = [0u32; 4];
-            for j in 0..4 {
-                let c = layer_slice[base + j].to_array();
-                tr[j] = c[0] as u32;
-                tg[j] = c[1] as u32;
-                tb[j] = c[2] as u32;
-                ta[j] = c[3] as u32;
-            }
+            let t0 = layer_slice[base + 0].to_array();
+            let t1 = layer_slice[base + 1].to_array();
+            let t2 = layer_slice[base + 2].to_array();
+            let t3 = layer_slice[base + 3].to_array();
 
-            let top_r = u32x4::new(tr);
-            let top_g = u32x4::new(tg);
-            let top_b = u32x4::new(tb);
-            let top_a = u32x4::new(ta);
+            let top_r = u32x4::new([t0[0] as u32, t1[0] as u32, t2[0] as u32, t3[0] as u32]);
+            let top_g = u32x4::new([t0[1] as u32, t1[1] as u32, t2[1] as u32, t3[1] as u32]);
+            let top_b = u32x4::new([t0[2] as u32, t1[2] as u32, t2[2] as u32, t3[2] as u32]);
+            let top_a = u32x4::new([t0[3] as u32, t1[3] as u32, t2[3] as u32, t3[3] as u32]);
 
             let inv_a = u32x4::splat(255) - top_a;
 
@@ -142,32 +130,33 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
             acc_a = top_a + (((acc_a * inv_a + ONE28) * TWO57) >> SIXTEEN);
         }
 
-        // --- Write 4 pixels to output as bytes ---
+        // Write 4 pixels to output as bytes
         let rr = acc_r.to_array();
         let rg = acc_g.to_array();
         let rb = acc_b.to_array();
         let ra = acc_a.to_array();
 
         for j in 0..4 {
-            let out_idx = (base + j) * 4;
-            output[out_idx]     = rr[j] as u8;
-            output[out_idx + 1] = rg[j] as u8;
-            output[out_idx + 2] = rb[j] as u8;
-            output[out_idx + 3] = ra[j] as u8;
+            let out_idx = j * 4;
+            out[out_idx]     = rr[j] as u8;
+            out[out_idx + 1] = rg[j] as u8;
+            out[out_idx + 2] = rb[j] as u8;
+            out[out_idx + 3] = ra[j] as u8;
         }
-    }
+    });
 
-    // Scalar remainder for pixels not covered by full chunks
-    for i in chunks * 4..len {
-        let mut pixel = layers[0][i];
+    // --- Scalar remainder for pixels not covered by full chunks ---
+    let pixel_start = chunks * 4;
+    for (i, out) in buf_remainder.chunks_mut(4).enumerate() {
+        let pixel_idx = pixel_start + i;
+        let mut pixel = layers[0][pixel_idx];
         for &layer_slice in &layers[1..] {
-            pixel = alpha_blend(pixel, layer_slice[i]);
+            pixel = alpha_blend(pixel, layer_slice[pixel_idx]);
         }
         let arr = pixel.to_array();
-        let out_idx = i * 4;
-        output[out_idx]     = arr[0];
-        output[out_idx + 1] = arr[1];
-        output[out_idx + 2] = arr[2];
-        output[out_idx + 3] = arr[3];
+        out[0] = arr[0];
+        out[1] = arr[1];
+        out[2] = arr[2];
+        out[3] = arr[3];
     }
 }
