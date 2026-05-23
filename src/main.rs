@@ -1,6 +1,7 @@
 mod app;
 mod canvas;
 mod pixel;
+mod ui;
 mod undo;
 
 // use mimalloc::MiMalloc;
