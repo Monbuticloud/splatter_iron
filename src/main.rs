@@ -1,3 +1,7 @@
+// Copyright (C) 2026 Nguyen Hoang Quoc Anh
+// Alias: Mon, Monbuticloud
+// SPDX-License-Identifier: AGPL-3.0-only
+
 mod app;
 mod canvas;
 mod pixel;
