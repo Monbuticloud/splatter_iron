@@ -4,6 +4,19 @@ version = "0.1.1"
 edition = "2024"
 license = "AGPLv3"
 authors = ["Nguyen Hoang Quoc Anh <hoangquocanhmon@icloud.com>"]
+description = "A simple paint program focused on performance and ease of use, currently in early development and not feature complete. Inspired by MS Paint and GIMP."
+keywords = [
+    "paint",
+    "drawing",
+    "art",
+    "performance",
+    "simple",
+    "easy-to-use",
+    "egui",
+    "eframe",
+    "graphics",
+    "copy-left",
+]
 [dependencies]
 anyhow = "1.0.102"
 thiserror = "2.0.18"
