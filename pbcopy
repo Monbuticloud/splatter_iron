@@ -1,0 +1,143 @@
+commit 6d6044f4d251ecffbec35319f72181b7168255f0
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 19:02:45 2026 +0700
+
+    Refactor code for improved readability and consistency; adjust formatting in multiple files and remove unnecessary comments
+
+commit b5d684dd1a96c9acf665b62eba89abf31ac74fdc
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 19:01:07 2026 +0700
+
+    Refactor alpha_blend and blend_layers functions for improved readability and consistency; streamline assertions and formatting
+
+commit 69d88a6142984b3e7090918f86a4864390e675e6
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 18:59:48 2026 +0700
+
+    Refactor UI structure by separating panels into individual files and enhancing the central panel functionality; improve stroke undo/redo logic and code formatting
+
+commit 634799f73025644b6929695a439382dbe96463e1
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 18:44:10 2026 +0700
+
+    Refactor application structure by removing unused layer actions and moving UI logic to a new ui.rs file
+
+commit 346adec3cbb7303052ff4aca5ded0ae83d07d2ad
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 18:41:39 2026 +0700
+
+    Optimize division operations by replacing `/ 2` and `/ 4` with bitwise shifts `>> 1` and `>> 2` for improved performance
+
+commit 773ee98d2d2f9223336b0320e48968b6424c56ba
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 18:38:02 2026 +0700
+
+    Refactor blending logic to utilize rayon for parallel processing and improve performance; remove obsolete composite_layers_parallel_rgba function
+
+commit 049e6e2fd45dc5753f499ff04d6c7cce124e6f09
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 18:33:03 2026 +0700
+
+    Refactor blending functions to use SIMD for improved performance and support multiple layers
+
+commit 6df52e43da75fbddee598b005dd366f5cfcd082f
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 18:25:48 2026 +0700
+
+    Implement UI panels for tool selection, layer management, and rendering; refactor main UI logic
+
+commit 6465d04ed96fe5911dc6924e3687941ee34dc817
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 18:10:51 2026 +0700
+
+    Refactor stroke handling to improve undo/redo functionality and optimize drawing methods
+
+commit 7f6cbdd7ed685c590c00087f5ad3b999ff7615c1
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 17:58:55 2026 +0700
+
+    Add stroke stack and redo index to MyApp for enhanced undo/redo functionality
+
+commit 6523bf297b0cb5cf4482858e4b1b1a368de5b442
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 23 11:42:32 2026 +0700
+
+    Update dependencies and improve pixel blending functions for performance
+
+commit 05bc6edd95a8ee7d59fc292a5cef95731eb8556a
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Fri May 22 15:37:37 2026 +0700
+
+    Implement layer management and undo/redo functionality; update dependencies and optimize performance
+
+commit 59c2fde40c41c953de4c2829603af82b71f50ffd
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Wed May 20 19:16:47 2026 +0700
+
+    Refactor color handling to use premultiplied alpha for improved blending accuracy
+
+commit 09d239abbdcf3ab1634facef89c816db29767801
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Wed May 20 19:01:09 2026 +0700
+
+    Refactor main.rs to modularize application structure and improve organization
+
+commit a7d68385d17ac23096472a7f915b97a6ddbab894
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Wed May 20 18:30:26 2026 +0700
+
+    Refactor alpha_blend and composite_layers_parallel_rgba for improved performance and clarity
+
+commit 987909019b6c989b32e1bb240468bd3cb27393cb
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Wed May 20 17:24:50 2026 +0700
+
+    Refactor composite_layers_parallel to use RGBA output and improve performance with parallel processing
+
+commit f7fb2efaa42f5650fd98c45ddb0966f53ec7f1e1
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Wed May 20 17:17:14 2026 +0700
+
+    Add render state management and improve UI responsiveness in main.rs
+
+commit 59d200803e88bac9906ca6d0ea17e03f25b252b1
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Tue May 19 15:39:12 2026 +0700
+
+    Refactor main.rs to enhance drawing functionality and add current tool management
+
+commit 0c75d1cd2e71ca265de5088391f1031abb6736de
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Mon May 18 20:42:01 2026 +0700
+
+    Add new dependencies and refactor main.rs for improved functionality
+
+commit 1b55e3e430e6ff9b32a063c6a562d92d4f608d9c
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Mon May 18 19:39:28 2026 +0700
+
+    Add zstd dependency and enhance main.rs with blending functions
+
+commit 590c808744fbac856eec88777923a9485cff2f50
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 16 12:24:56 2026 +0700
+
+    Fix past_state type in Canvas and update default implementation
+
+commit 653126fb5c5665b7210675002a5909fca368b774
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 16 10:53:21 2026 +0700
+
+    Refactor serialization methods in Layer and Canvas to use a placeholder for the serializer
+
+commit 0de9592d0e96fd18054f59b765cf118572b27197
+Author: Monbuticloud <hoangquocanhmon@icloud.com>
+Date:   Sat May 16 10:51:42 2026 +0700
+
+    Initialize SplatterIron project with basic structure and dependencies
+    
+    - Created Cargo.toml with necessary dependencies and configurations.
+    - Implemented main application structure in src/main.rs.
+    - Defined Layer and Canvas structs with serialization and deserialization traits.
+    - Set up MyApp struct implementing eframe::App with a basic UI layout.
+    - Added placeholder functionality for UI buttons (Save, Load, New, Export, Import, Close).

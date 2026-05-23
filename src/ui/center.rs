@@ -4,6 +4,8 @@ use eframe::egui::{ self, Color32 };
 
 use crate::app::MyApp;
 use crate::canvas::{ self, CurrentTool, RenderState };
+use crate::pixel;
+use crate::undo::{ self, Stroke, StrokePixel, undo_stroke, redo_stroke };
 
 impl MyApp {
     #[inline(always)]
@@ -139,6 +141,36 @@ impl MyApp {
             } else {
                 self.past_tool = None;
                 self.past_position = None;
+            }
+        }
+
+        if self.stroke_stack.len() > 1 {
+            let undo_button = ui.button("Undo");
+
+            if
+                self.redo_index < self.stroke_stack.len() &&
+                (ui.input(
+                    |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift
+                ) || undo_button.clicked())
+            {
+                self.redo_index -= 1;
+                // redo action
+                let stroke = &self.stroke_stack[self.stroke_stack.len() - self.redo_index];
+                redo_stroke(&mut self.canvas, stroke);
+                self.canvas.render_next_frame = true;
+            }
+
+            if
+                (ui.input(|i| {
+                    (i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
+                        (i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift)
+                }) || undo_button.clicked()) &&
+                self.redo_index < self.stroke_stack.len()
+            {
+                self.redo_index += 1;
+                let stroke = &self.stroke_stack[self.stroke_stack.len() - self.redo_index];
+                undo_stroke(&mut self.canvas, stroke);
+                self.canvas.render_next_frame = true;
             }
         }
     }

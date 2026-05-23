@@ -12,9 +12,10 @@ tokio = { version = "1.52.3", features = ["rt-multi-thread", "fs"] }
 ecolor = { version = "0.34.2", features = ["serde"] }
 rayon = "1.5.3"
 zstd = { version = "0.13.3", features = ["zstdmt"] }
+
 # rand = "0.10.1"
 wide = "1.4.0"
-# mimalloc = "0.1.51"
+mimalloc = "0.1.51"
 target = "2.1.0"
 # type-layout = "0.2"
 
