@@ -20,6 +20,7 @@ zstd = { version = "0.13.3", features = ["zstdmt"] }
 wide = "1.4.0"
 mimalloc = "0.1.51"
 target = "2.1.0"
+bumpalo = { version = "3", features = ["collections"] }
 # type-layout = "0.2"
 
 # [dev-dependencies]

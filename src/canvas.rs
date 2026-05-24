@@ -149,7 +149,8 @@ pub fn draw_square_line(
     brush_radius: u32,
     canvas: &mut Canvas,
     color: egui::Color32,
-    layer: usize
+    layer: usize,
+    bump: &bumpalo::Bump
 ) -> Stroke {
     let color = premultiply(color);
     let color_u32 = undo::color32_to_u32(color);
@@ -159,7 +160,7 @@ pub fn draw_square_line(
     let height = canvas.height;
 
     // First pass: collect all unique pixel positions touched by the line
-    let mut positions = Vec::new();
+    let mut positions = bumpalo::collections::Vec::new_in(bump);
 
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
@@ -296,7 +297,8 @@ pub fn erase_square_line(
     end_y: u32,
     brush_radius: u32,
     canvas: &mut Canvas,
-    layer: usize
+    layer: usize,
+    bump: &bumpalo::Bump
 ) -> Stroke {
     let transparent = Color32::TRANSPARENT;
     let transparent_u32 = undo::color32_to_u32(transparent);
@@ -306,7 +308,7 @@ pub fn erase_square_line(
     let height = canvas.height;
 
     // First pass: collect all unique pixel positions touched by the line
-    let mut positions = Vec::new();
+    let mut positions = bumpalo::collections::Vec::new_in(bump);
 
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;

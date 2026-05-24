@@ -72,7 +72,8 @@ impl MyApp {
                                     self.radius,
                                     &mut self.canvas,
                                     self.current_color,
-                                    self.current_layer
+                                    self.current_layer,
+                                    &self.bump
                                 );
                                 self.push_stroke(stroke);
                             }
@@ -110,7 +111,8 @@ impl MyApp {
                                     pixel_y,
                                     self.radius,
                                     &mut self.canvas,
-                                    self.current_layer
+                                    self.current_layer,
+                                    &self.bump
                                 );
                                 self.push_stroke(stroke);
                             }

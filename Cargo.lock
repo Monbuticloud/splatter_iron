@@ -2962,6 +2962,7 @@ name = "splatter_iron"
 version = "0.1.2"
 dependencies = [
  "anyhow",
+ "bumpalo",
  "ecolor",
  "eframe",
  "mimalloc",
