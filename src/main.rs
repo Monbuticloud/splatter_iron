@@ -21,8 +21,6 @@ static INNER: MiMalloc = MiMalloc;
 // live allocated bytes
 static ALLOCATED: AtomicUsize = AtomicUsize::new(0);
 static TOTAL_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
-static HISTORY_ALLOC: Vec<(usize, usize)> = Vec::new();
-
 unsafe impl GlobalAlloc for TrackingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let ptr;
@@ -33,10 +31,6 @@ unsafe impl GlobalAlloc for TrackingAllocator {
         if !ptr.is_null() {
             ALLOCATED.fetch_add(layout.size(), Ordering::Relaxed);
             TOTAL_ALLOCATED.fetch_add(layout.size(), Ordering::Relaxed);
-            HISTORY_ALLOC.push((
-                ALLOCATED.load(Ordering::Relaxed),
-                TOTAL_ALLOCATED.load(Ordering::Relaxed),
-            ));
         }
 
         ptr
@@ -48,11 +42,6 @@ unsafe impl GlobalAlloc for TrackingAllocator {
         }
 
         ALLOCATED.fetch_sub(layout.size(), Ordering::Relaxed);
-
-        HISTORY_ALLOC.push((
-            ALLOCATED.load(Ordering::Relaxed),
-            TOTAL_ALLOCATED.load(Ordering::Relaxed),
-        ));
     }
 
     unsafe fn realloc(&self, ptr: *mut u8, old_layout: Layout, new_size: usize) -> *mut u8 {
@@ -70,10 +59,6 @@ unsafe impl GlobalAlloc for TrackingAllocator {
             } else {
                 ALLOCATED.fetch_sub(old - new_size, Ordering::Relaxed);
             }
-            HISTORY_ALLOC.push((
-                ALLOCATED.load(Ordering::Relaxed),
-                TOTAL_ALLOCATED.load(Ordering::Relaxed),
-            ));
         }
 
         new_ptr
@@ -98,12 +83,5 @@ fn main() -> eframe::Result {
     );
     println!("Total memory usage: {} bytes", TOTAL_ALLOCATED.load(Ordering::Relaxed));
     println!("Ending memory usage: {} bytes", ALLOCATED.load(Ordering::Relaxed));
-    println!(
-        "Peak memory usage: {} bytes",
-        HISTORY_ALLOC.iter()
-            .map(|(current, _)| *current)
-            .max()
-            .unwrap_or(0)
-    );
     res
 }
