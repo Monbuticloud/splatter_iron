@@ -65,6 +65,8 @@ impl Default for MyApp {
 
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        self.bump.reset();
+
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(50));
             self.render_state = RenderState::Frozen;
@@ -137,7 +139,5 @@ impl eframe::App for MyApp {
         if is_quitting {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         }
-
-        self.bump.reset();
     }
 }

@@ -104,13 +104,14 @@ impl MyApp {
                                 );
                                 self.push_stroke(stroke);
                             } else if let Some((past_x, past_y)) = self.past_position {
-                                let stroke = canvas::erase_square_line(
+                                let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
                                     pixel_x,
                                     pixel_y,
                                     self.radius,
                                     &mut self.canvas,
+                                    Color32::TRANSPARENT,
                                     self.current_layer,
                                     &self.bump
                                 );
