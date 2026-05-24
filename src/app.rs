@@ -11,7 +11,7 @@ impl MyApp {
     #[inline(always)]
     pub fn push_stroke(&mut self, mut stroke: Stroke) {
         self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
-        if self.stroke_stack.len() >= 100 {
+        if self.stroke_stack.len() >= 1000 {
             let mut recycled = self.stroke_stack.pop_front().unwrap();
             recycled.pixels.clear();
             recycled.layer_index = stroke.layer_index;
@@ -34,12 +34,9 @@ pub struct MyApp {
     pub past_position: Option<(u32, u32)>,
     pub radius: u32,
     pub canvas: Canvas,
-    pub input_color_text: String,
-    pub input_radius_text: String,
     pub render_state: RenderState,
     pub pending_delete_layer: Option<usize>,
     pub undo_redo_strength: usize,
-
     pub stroke_stack: VecDeque<Stroke>,
     pub redo_index: usize, // 0 = most recent stroke, 1 = one before that, etc. If a stroke is made after undoing, redo_index resets to 0 and all strokes above it are removed from the stack.
 }
@@ -55,13 +52,11 @@ impl Default for MyApp {
             current_layer: 0,
             radius: 100,
             pending_delete_layer: None,
-            input_color_text: String::from("(255, 255, 255, 255)"),
-            input_radius_text: String::from("100"),
             past_tool: None,
             past_position: None,
             stroke_stack: VecDeque::new(),
             redo_index: 0,
-            undo_redo_strength: 1,
+            undo_redo_strength: 5,
         }
     }
 }

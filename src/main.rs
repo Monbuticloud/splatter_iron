@@ -10,15 +10,100 @@ mod undo;
 
 use mimalloc::MiMalloc;
 
+use std::alloc::{ GlobalAlloc, Layout };
+use std::sync::atomic::{ AtomicUsize, Ordering };
+
+struct TrackingAllocator;
+
+// real allocator underneath
+static INNER: MiMalloc = MiMalloc;
+
+// live allocated bytes
+static ALLOCATED: AtomicUsize = AtomicUsize::new(0);
+static TOTAL_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
+static HISTORY_ALLOC: Vec<(usize, usize)> = Vec::new();
+
+unsafe impl GlobalAlloc for TrackingAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let ptr;
+        unsafe {
+            ptr = INNER.alloc(layout);
+        }
+
+        if !ptr.is_null() {
+            ALLOCATED.fetch_add(layout.size(), Ordering::Relaxed);
+            TOTAL_ALLOCATED.fetch_add(layout.size(), Ordering::Relaxed);
+            HISTORY_ALLOC.push((
+                ALLOCATED.load(Ordering::Relaxed),
+                TOTAL_ALLOCATED.load(Ordering::Relaxed),
+            ));
+        }
+
+        ptr
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        unsafe {
+            INNER.dealloc(ptr, layout);
+        }
+
+        ALLOCATED.fetch_sub(layout.size(), Ordering::Relaxed);
+
+        HISTORY_ALLOC.push((
+            ALLOCATED.load(Ordering::Relaxed),
+            TOTAL_ALLOCATED.load(Ordering::Relaxed),
+        ));
+    }
+
+    unsafe fn realloc(&self, ptr: *mut u8, old_layout: Layout, new_size: usize) -> *mut u8 {
+        let new_ptr;
+        unsafe {
+            new_ptr = INNER.realloc(ptr, old_layout, new_size);
+        }
+
+        if !new_ptr.is_null() {
+            let old = old_layout.size();
+
+            if new_size > old {
+                ALLOCATED.fetch_add(new_size - old, Ordering::Relaxed);
+                TOTAL_ALLOCATED.fetch_add(new_size - old, Ordering::Relaxed);
+            } else {
+                ALLOCATED.fetch_sub(old - new_size, Ordering::Relaxed);
+            }
+            HISTORY_ALLOC.push((
+                ALLOCATED.load(Ordering::Relaxed),
+                TOTAL_ALLOCATED.load(Ordering::Relaxed),
+            ));
+        }
+
+        new_ptr
+    }
+}
+
 #[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+static GLOBAL: TrackingAllocator = TrackingAllocator;
+
+pub fn allocated_bytes() -> usize {
+    ALLOCATED.load(Ordering::Relaxed)
+}
+
 // Unstable MiMalloc features can cause build issues, so we'll stick to the default allocator for now.
 // Never mind its just windows that has issues, linux and mac are fine. I'll just add a note about it in the readme (maybe) and leave it as is for now.
 
 fn main() -> eframe::Result {
-    eframe::run_native(
+    let res = eframe::run_native(
         "SplatterIron",
         eframe::NativeOptions::default(),
         Box::new(|_| Ok(Box::new(app::MyApp::default())))
-    )
+    );
+    println!("Total memory usage: {} bytes", TOTAL_ALLOCATED.load(Ordering::Relaxed));
+    println!("Ending memory usage: {} bytes", ALLOCATED.load(Ordering::Relaxed));
+    println!(
+        "Peak memory usage: {} bytes",
+        HISTORY_ALLOC.iter()
+            .map(|(current, _)| *current)
+            .max()
+            .unwrap_or(0)
+    );
+    res
 }

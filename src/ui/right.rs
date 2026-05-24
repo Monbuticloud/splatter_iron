@@ -72,9 +72,12 @@ impl MyApp {
             if let Some(layer_action) = status {
                 match layer_action {
                     LayerAction::Delete(index) => {
-                        if self.pending_delete_layer == Some(index) {
+                        if self.pending_delete_layer == Some(index) && self.canvas.pixels.len() > 1 {
                             self.pending_delete_layer = None;
                             self.canvas.pixels.remove(index);
+                            self.current_layer = self.current_layer
+                                .saturating_sub(1)
+                                .min(self.canvas.pixels.len() - 1);
                             self.canvas.render_next_frame = true;
                         } else {
                             self.pending_delete_layer = Some(index);
