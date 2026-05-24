@@ -4,8 +4,7 @@ use eframe::egui::{ self, Color32 };
 
 use crate::app::MyApp;
 use crate::canvas::{ self, CurrentTool, RenderState };
-use crate::pixel;
-use crate::undo::{ self, Stroke, StrokePixel, undo_stroke, redo_stroke };
+use crate::undo::{ undo_stroke, redo_stroke };
 
 impl MyApp {
     #[inline(always)]

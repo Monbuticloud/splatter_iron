@@ -64,9 +64,7 @@ impl Default for MyApp {
 }
 
 impl eframe::App for MyApp {
-    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
-        self.bump.reset();
-
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(50));
             self.render_state = RenderState::Frozen;
@@ -87,6 +85,8 @@ impl eframe::App for MyApp {
             }
         }
 
+        self.bump.reset();
+
         if
             self.canvas.render_next_frame ||
             self.canvas.rendered_layers.is_none()
@@ -99,10 +99,6 @@ impl eframe::App for MyApp {
                 self.canvas.output_rgba = vec![0; size * 4];
             }
             self.canvas.render_next_frame = false;
-
-            if self.canvas.output_rgba.len() != size * 4 {
-                self.canvas.output_rgba = vec![0; size * 4];
-            }
 
             let layer_slices: Vec<&[Color32]> = self.canvas.pixels
                 .iter()

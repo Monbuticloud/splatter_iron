@@ -139,8 +139,13 @@ pub fn draw_square(
 /// Uses Bresenham line algorithm. Returns sorted, deduplicated bump-allocated vec.
 #[inline(always)]
 fn collect_line_positions(
-    start_x: u32, start_y: u32, end_x: u32, end_y: u32,
-    brush_radius: u32, width: usize, height: u32,
+    start_x: u32,
+    start_y: u32,
+    end_x: u32,
+    end_y: u32,
+    brush_radius: u32,
+    width: usize,
+    height: u32,
     bump: &bumpalo::Bump
 ) -> bumpalo::collections::Vec<'_, u32> {
     let half_radius = brush_radius >> 1;
@@ -188,8 +193,14 @@ fn collect_line_positions(
             break;
         }
         let e2 = err.saturating_mul(2);
-        if e2 >= delta_y { err += delta_y; current_x += step_x; }
-        if e2 <= delta_x { err += delta_x; current_y += step_y; }
+        if e2 >= delta_y {
+            err += delta_y;
+            current_x += step_x;
+        }
+        if e2 <= delta_x {
+            err += delta_x;
+            current_y += step_y;
+        }
     }
 
     positions.sort_unstable();
@@ -199,9 +210,14 @@ fn collect_line_positions(
 
 #[inline(always)]
 pub fn draw_square_line(
-    start_x: u32, start_y: u32, end_x: u32, end_y: u32,
-    brush_radius: u32, canvas: &mut Canvas,
-    color: egui::Color32, layer: usize,
+    start_x: u32,
+    start_y: u32,
+    end_x: u32,
+    end_y: u32,
+    brush_radius: u32,
+    canvas: &mut Canvas,
+    color: egui::Color32,
+    layer: usize,
     bump: &bumpalo::Bump
 ) -> Stroke {
     let color = premultiply(color);
@@ -210,8 +226,14 @@ pub fn draw_square_line(
     let height = canvas.height;
 
     let positions = collect_line_positions(
-        start_x, start_y, end_x, end_y,
-        brush_radius, width, height, bump
+        start_x,
+        start_y,
+        end_x,
+        end_y,
+        brush_radius,
+        width,
+        height,
+        bump
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
