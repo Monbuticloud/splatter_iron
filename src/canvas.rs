@@ -136,9 +136,9 @@ pub fn draw_square(
 }
 
 /// Collect all unique pixel indices touched by a brush line from (start_x, start_y) to (end_x, end_y).
-/// Uses Bresenham line algorithm. Returns sorted, deduplicated bump-allocated vec.
+/// Uses Bresenham line algorithm + visited-stamp dedup (no sort).
 #[inline(always)]
-fn collect_line_positions(
+fn collect_line_positions<'a>(
     start_x: u32,
     start_y: u32,
     end_x: u32,
@@ -146,10 +146,12 @@ fn collect_line_positions(
     brush_radius: u32,
     width: usize,
     height: u32,
-    bump_allocator: &bumpalo::Bump
-) -> bumpalo::collections::Vec<'_, u32> {
+    visited: &'a mut [u32],
+    stamp: u32,
+    bump: &'a bumpalo::Bump
+) -> bumpalo::collections::Vec<'a, u32> {
     let half_radius = brush_radius >> 1;
-    let mut positions = bumpalo::collections::Vec::new_in(bump_allocator);
+    let mut positions = bumpalo::collections::Vec::new_in(bump);
 
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
@@ -185,7 +187,11 @@ fn collect_line_positions(
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
             for x in brush_start_x..brush_end_x {
-                positions.push((row_start + (x as usize)) as u32);
+                let idx = (row_start + (x as usize)) as u32;
+                if visited[idx as usize] != stamp {
+                    visited[idx as usize] = stamp;
+                    positions.push(idx);
+                }
             }
         }
 
@@ -203,8 +209,6 @@ fn collect_line_positions(
         }
     }
 
-    positions.sort_unstable();
-    positions.dedup();
     positions
 }
 
@@ -218,6 +222,8 @@ pub fn draw_square_line(
     canvas: &mut Canvas,
     color: egui::Color32,
     layer: usize,
+    visited: &mut [u32],
+    stamp: u32,
     bump_allocator: &bumpalo::Bump
 ) -> Stroke {
     let color = premultiply(color);
@@ -233,6 +239,8 @@ pub fn draw_square_line(
         brush_radius,
         width,
         height,
+        visited,
+        stamp,
         bump_allocator
     );
 

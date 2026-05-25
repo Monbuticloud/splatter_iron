@@ -136,6 +136,12 @@ impl MyApp {
                                 );
                                 self.push_stroke(stroke);
                             } else if let Some((past_x, past_y)) = self.previous_cursor_position {
+                                let stamp = self.visited_stamp;
+                                self.visited_stamp = self.visited_stamp.wrapping_add(1);
+                                if self.visited_stamp == 0 {
+                                    self.visited.fill(0);
+                                    self.visited_stamp = 1;
+                                }
                                 let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
@@ -145,6 +151,8 @@ impl MyApp {
                                     &mut self.canvas,
                                     self.current_color,
                                     self.current_layer,
+                                    &mut self.visited,
+                                    stamp,
                                     &self.bump_allocator
                                 );
                                 self.push_stroke(stroke);
@@ -176,6 +184,12 @@ impl MyApp {
                                 );
                                 self.push_stroke(stroke);
                             } else if let Some((past_x, past_y)) = self.previous_cursor_position {
+                                let stamp = self.visited_stamp;
+                                self.visited_stamp = self.visited_stamp.wrapping_add(1);
+                                if self.visited_stamp == 0 {
+                                    self.visited.fill(0);
+                                    self.visited_stamp = 1;
+                                }
                                 let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
@@ -185,6 +199,8 @@ impl MyApp {
                                     &mut self.canvas,
                                     Color32::TRANSPARENT,
                                     self.current_layer,
+                                    &mut self.visited,
+                                    stamp,
                                     &self.bump_allocator
                                 );
                                 self.push_stroke(stroke);

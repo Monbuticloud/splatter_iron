@@ -39,6 +39,8 @@ pub struct MyApp {
     pub undo_redo_strength: usize,
     pub show_brush_preview: bool,
     pub bump_allocator: bumpalo::Bump,
+    pub visited: Vec<u32>,
+    pub visited_stamp: u32,
     pub stroke_stack: VecDeque<Stroke>,
     pub redo_index: usize, // 0 = most recent stroke, 1 = one before that, etc. If a stroke is made after undoing, redo_index resets to 0 and all strokes above it are removed from the stack.
 }
@@ -61,6 +63,8 @@ impl Default for MyApp {
             undo_redo_strength: 5,
             show_brush_preview: true,
             bump_allocator: bumpalo::Bump::with_capacity(64 * 1024 * 1024),
+            visited: vec![0u32; 3_000_000],
+            visited_stamp: 1,
         }
     }
 }
