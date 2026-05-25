@@ -16,7 +16,7 @@ use std::sync::atomic::{ AtomicUsize, Ordering };
 struct TrackingAllocator;
 
 // real allocator underneath
-static INNER: MiMalloc = MiMalloc;
+static INNER_ALLOCATOR: MiMalloc = MiMalloc;
 
 // live allocated bytes
 static ALLOCATED: AtomicUsize = AtomicUsize::new(0);
@@ -25,7 +25,7 @@ unsafe impl GlobalAlloc for TrackingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let ptr;
         unsafe {
-            ptr = INNER.alloc(layout);
+            ptr = INNER_ALLOCATOR.alloc(layout);
         }
 
         if !ptr.is_null() {
@@ -38,7 +38,7 @@ unsafe impl GlobalAlloc for TrackingAllocator {
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         unsafe {
-            INNER.dealloc(ptr, layout);
+            INNER_ALLOCATOR.dealloc(ptr, layout);
         }
 
         ALLOCATED.fetch_sub(layout.size(), Ordering::Relaxed);
@@ -47,7 +47,7 @@ unsafe impl GlobalAlloc for TrackingAllocator {
     unsafe fn realloc(&self, ptr: *mut u8, old_layout: Layout, new_size: usize) -> *mut u8 {
         let new_ptr;
         unsafe {
-            new_ptr = INNER.realloc(ptr, old_layout, new_size);
+            new_ptr = INNER_ALLOCATOR.realloc(ptr, old_layout, new_size);
         }
 
         if !new_ptr.is_null() {

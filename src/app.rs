@@ -30,15 +30,15 @@ pub struct MyApp {
     pub current_tool: CurrentTool,
     pub current_color: Color32,
     pub current_layer: usize,
-    pub past_tool: Option<CurrentTool>,
-    pub past_position: Option<(u32, u32)>,
+    pub previous_tool: Option<CurrentTool>,
+    pub previous_cursor_position: Option<(u32, u32)>,
     pub radius: u32,
     pub canvas: Canvas,
     pub render_state: RenderState,
     pub pending_delete_layer: Option<usize>,
     pub undo_redo_strength: usize,
     pub show_brush_preview: bool,
-    pub bump: bumpalo::Bump,
+    pub bump_allocator: bumpalo::Bump,
     pub stroke_stack: VecDeque<Stroke>,
     pub redo_index: usize, // 0 = most recent stroke, 1 = one before that, etc. If a stroke is made after undoing, redo_index resets to 0 and all strokes above it are removed from the stack.
 }
@@ -54,13 +54,13 @@ impl Default for MyApp {
             current_layer: 0,
             radius: 100,
             pending_delete_layer: None,
-            past_tool: None,
-            past_position: None,
+            previous_tool: None,
+            previous_cursor_position: None,
             stroke_stack: VecDeque::new(),
             redo_index: 0,
             undo_redo_strength: 5,
             show_brush_preview: true,
-            bump: bumpalo::Bump::with_capacity(64 * 1024 * 1024),
+            bump_allocator: bumpalo::Bump::with_capacity(64 * 1024 * 1024),
         }
     }
 }
@@ -72,14 +72,18 @@ impl eframe::App for MyApp {
             self.render_state = RenderState::Frozen;
             return;
         }
-        let dt = Duration::from_millis((ui.ctx().input(|i| i.predicted_dt) * 1000.0) as u64);
+        let predicted_delta_time = Duration::from_millis(
+            (ui.ctx().input(|i| i.predicted_dt) * 1000.0) as u64
+        );
 
         match self.render_state {
             RenderState::Warm(duration) => {
-                self.render_state = RenderState::Warm(duration.saturating_sub(dt));
+                self.render_state = RenderState::Warm(
+                    duration.saturating_sub(predicted_delta_time)
+                );
             }
             RenderState::Cold => {
-                ui.request_repaint_after(dt * 5);
+                ui.request_repaint_after(predicted_delta_time * 5);
             }
             RenderState::Frozen => {
                 self.render_state = RenderState::Cold;
@@ -87,7 +91,7 @@ impl eframe::App for MyApp {
             }
         }
 
-        self.bump.reset();
+        self.bump_allocator.reset();
 
         if
             self.canvas.render_next_frame ||

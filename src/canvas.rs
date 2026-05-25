@@ -146,10 +146,10 @@ fn collect_line_positions(
     brush_radius: u32,
     width: usize,
     height: u32,
-    bump: &bumpalo::Bump
+    bump_allocator: &bumpalo::Bump
 ) -> bumpalo::collections::Vec<'_, u32> {
     let half_radius = brush_radius >> 1;
-    let mut positions = bumpalo::collections::Vec::new_in(bump);
+    let mut positions = bumpalo::collections::Vec::new_in(bump_allocator);
 
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
@@ -218,7 +218,7 @@ pub fn draw_square_line(
     canvas: &mut Canvas,
     color: egui::Color32,
     layer: usize,
-    bump: &bumpalo::Bump
+    bump_allocator: &bumpalo::Bump
 ) -> Stroke {
     let color = premultiply(color);
     let color_u32 = undo::color32_to_u32(color);
@@ -233,7 +233,7 @@ pub fn draw_square_line(
         brush_radius,
         width,
         height,
-        bump
+        bump_allocator
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
