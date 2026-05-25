@@ -1,4 +1,3 @@
-use serde;
 use std::path::Path;
 use zstd;
 

@@ -29,6 +29,11 @@ impl MyApp {
         ui.label("Brush Radius:");
         ui.add(egui::DragValue::new(&mut self.radius).range(0..=350));
         ui.checkbox(&mut self.show_brush_preview, "Brush Preview");
+
+        ui.separator();
+        ui.label("Save Path:");
+        ui.text_edit_singleline(&mut self.savefile_path);
+
         ui.separator();
         let _current_layer_text = format!("Current Layer: {}", self.current_layer);
 
