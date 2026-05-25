@@ -2,6 +2,21 @@ use eframe::egui::Color32;
 use rayon::prelude::*;
 use wide::u32x4;
 
+/// Un-premultiply a premultiplied-alpha Color32 back to straight alpha.
+/// Inverse of `premultiply`.
+#[inline(always)]
+pub fn unpremultiply(color: Color32) -> Color32 {
+    let alpha = color.a();
+    if alpha == 0 || alpha == 255 {
+        return color;
+    }
+    let alpha_u32 = alpha as u32;
+    let r = ((color.r() as u32 * 255) / alpha_u32).min(255) as u8;
+    let g = ((color.g() as u32 * 255) / alpha_u32).min(255) as u8;
+    let b = ((color.b() as u32 * 255) / alpha_u32).min(255) as u8;
+    Color32::from_rgba_unmultiplied(r, g, b, alpha)
+}
+
 /// Premultiply a straight-alpha Color32.
 ///
 /// **Caller must supply straight (non-premultiplied) RGB.**

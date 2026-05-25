@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::time::Duration;
 
 use eframe::egui::{ self, Color32, Rect, Pos2 };
@@ -37,6 +38,77 @@ impl MyApp {
                 .on_hover_cursor(egui::CursorIcon::Crosshair);
 
             response.context_menu(|ui| {
+                // --- Import ---
+                if ui.button("Import").clicked() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(
+                            "Images",
+                            &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif"],
+                        )
+                        .pick_file()
+                    {
+                        match files::import_image_as_canvas(&path) {
+                            Ok(canvas) => {
+                                self.canvas = canvas;
+                                self.savefile_path.clear();
+                                self.stroke_stack.clear();
+                                self.redo_index = 0;
+                                self.canvas.render_next_frame = true;
+                            }
+                            Err(e) => {
+                                eprintln!("Import failed: {e}");
+                            }
+                        }
+                        ui.close();
+                    }
+                }
+
+                // --- Export As submenu ---
+                ui.menu_button("Export As", |ui| {
+                    let export_formats: &[( &str, &[&str], image::ImageFormat )] = &[
+                        ("AVIF", &["avif"], image::ImageFormat::Avif),
+                        ("PNG",  &["png"],  image::ImageFormat::Png),
+                        ("JPEG", &["jpg", "jpeg"], image::ImageFormat::Jpeg),
+                        ("WebP", &["webp"], image::ImageFormat::WebP),
+                        ("GIF",  &["gif"],  image::ImageFormat::Gif),
+                        ("TIFF", &["tiff", "tif"], image::ImageFormat::Tiff),
+                    ];
+
+                    for &(label, extensions, fmt) in export_formats {
+                        if ui.button(label).clicked() {
+                            let default_ext = extensions[0];
+                            let default_name = format!("export.{default_ext}");
+                            if let Some(path) = rfd::FileDialog::new()
+                                .add_filter(label, extensions)
+                                .set_file_name(&default_name)
+                                .save_file()
+                            {
+                                if !self.canvas.output_rgba.is_empty() {
+                                    let path_str = path.display().to_string();
+                                    let path_str = if path_str.ends_with(default_ext) || extensions.iter().any(|ext| path_str.ends_with(ext)) {
+                                        path_str
+                                    } else {
+                                        format!("{path_str}.{default_ext}")
+                                    };
+                                    if let Err(e) = files::export_as_image(
+                                        &self.canvas.output_rgba,
+                                        self.canvas.width,
+                                        self.canvas.height,
+                                        Path::new(&path_str),
+                                        fmt,
+                                    ) {
+                                        eprintln!("Export failed: {e}");
+                                    }
+                                }
+                            }
+                            ui.close();
+                        }
+                    }
+                });
+
+                ui.separator();
+
+                // --- Save As ---
                 if ui.button("Save As").clicked() {
                     if let Some(path) = rfd::FileDialog::new()
                         .add_filter("SplatterCanvas", &["splattercanvas"])
