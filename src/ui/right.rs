@@ -28,6 +28,7 @@ impl MyApp {
         ui.separator();
         ui.label("Brush Radius:");
         ui.add(egui::DragValue::new(&mut self.radius).range(0..=350));
+        ui.checkbox(&mut self.show_brush_preview, "Brush Preview");
         ui.separator();
         let _current_layer_text = format!("Current Layer: {}", self.current_layer);
 

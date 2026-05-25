@@ -5,7 +5,7 @@ use eframe::egui::{ self, Color32, Panel };
 
 use crate::canvas::{ Canvas, CurrentTool, RenderState };
 use crate::pixel;
-use crate::undo::*;
+use crate::undo::Stroke;
 
 impl MyApp {
     #[inline(always)]
@@ -37,6 +37,7 @@ pub struct MyApp {
     pub render_state: RenderState,
     pub pending_delete_layer: Option<usize>,
     pub undo_redo_strength: usize,
+    pub show_brush_preview: bool,
     pub bump: bumpalo::Bump,
     pub stroke_stack: VecDeque<Stroke>,
     pub redo_index: usize, // 0 = most recent stroke, 1 = one before that, etc. If a stroke is made after undoing, redo_index resets to 0 and all strokes above it are removed from the stack.
@@ -58,6 +59,7 @@ impl Default for MyApp {
             stroke_stack: VecDeque::new(),
             redo_index: 0,
             undo_redo_strength: 5,
+            show_brush_preview: true,
             bump: bumpalo::Bump::with_capacity(64 * 1024 * 1024),
         }
     }
