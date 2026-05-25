@@ -10,7 +10,6 @@ use crate::files;
 use crate::undo::{ undo_stroke, redo_stroke };
 
 impl MyApp {
-    #[inline(always)]
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
         if self.canvas.rendered_layers.is_some() {
             self.handle_canvas_interaction(ui);
@@ -20,7 +19,6 @@ impl MyApp {
         }
     }
 
-    #[inline(always)]
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
         if let Some(tex) = &self.canvas.rendered_layers {
             let avail = ui.available_size();
@@ -160,12 +158,7 @@ impl MyApp {
                                 );
                                 self.push_stroke(stroke);
                             } else if let Some((past_x, past_y)) = self.previous_cursor_position {
-                                let stamp = self.visited_stamp;
-                                self.visited_stamp = self.visited_stamp.wrapping_add(1);
-                                if self.visited_stamp == 0 {
-                                    self.visited.fill(0);
-                                    self.visited_stamp = 1;
-                                }
+                                let stamp = self.next_stamp();
                                 let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
@@ -208,12 +201,7 @@ impl MyApp {
                                 );
                                 self.push_stroke(stroke);
                             } else if let Some((past_x, past_y)) = self.previous_cursor_position {
-                                let stamp = self.visited_stamp;
-                                self.visited_stamp = self.visited_stamp.wrapping_add(1);
-                                if self.visited_stamp == 0 {
-                                    self.visited.fill(0);
-                                    self.visited_stamp = 1;
-                                }
+                                let stamp = self.next_stamp();
                                 let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
@@ -244,7 +232,6 @@ impl MyApp {
         }
     }
 
-    #[inline(always)]
     fn handle_undo_redo_ui(&mut self, ui: &mut egui::Ui) {
         // Platform-aware modifier key label
         let mod_prefix = if ui.ctx().os() == OperatingSystem::Mac { "⌘" } else { "Ctrl+" };

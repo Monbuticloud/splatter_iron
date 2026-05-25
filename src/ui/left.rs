@@ -8,7 +8,6 @@ use crate::canvas::CurrentTool;
 const SELECTED_TOOL_COLOR: egui::Color32 = egui::Color32::from_rgb(128, 0, 128);
 
 impl MyApp {
-    #[inline(always)]
     pub fn show_left_panel(&mut self, ui: &mut egui::Ui) {
         // Temporarily override selection color to purple for tool buttons.
         // Using ui.selectable_value() gives us built-in highlight + click handling

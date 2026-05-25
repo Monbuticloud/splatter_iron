@@ -11,7 +11,6 @@ enum LayerAction {
 }
 
 impl MyApp {
-    #[inline(always)]
     pub fn show_right_panel(&mut self, ui: &mut egui::Ui) {
         ui.label("Settings");
         ui.separator();

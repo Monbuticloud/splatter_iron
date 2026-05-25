@@ -8,20 +8,28 @@ use crate::pixel;
 use crate::undo::Stroke;
 
 impl MyApp {
-    #[inline(always)]
     pub fn push_stroke(&mut self, mut stroke: Stroke) {
         self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
         if self.stroke_stack.len() >= 1000 {
             let mut recycled = self.stroke_stack.pop_front().unwrap();
-            recycled.pixels.clear();
             recycled.layer_index = stroke.layer_index;
             recycled.width = stroke.width;
-            recycled.pixels.extend(stroke.pixels.drain(..));
+            std::mem::swap(&mut recycled.pixels, &mut stroke.pixels);
             self.stroke_stack.push_back(recycled);
         } else {
             self.stroke_stack.push_back(stroke);
         }
         self.redo_index = 0;
+    }
+
+    #[inline(always)]
+    pub(crate) fn next_stamp(&mut self) -> u32 {
+        self.visited_stamp = self.visited_stamp.wrapping_add(1);
+        if self.visited_stamp == 0 {
+            self.visited.fill(0);
+            self.visited_stamp = 1;
+        }
+        self.visited_stamp
     }
 }
 

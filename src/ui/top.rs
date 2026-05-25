@@ -5,7 +5,6 @@ use crate::canvas::Canvas;
 use crate::files;
 
 impl MyApp {
-    #[inline(always)]
     pub fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
         let mut is_quitting = false;
         ui.horizontal(|ui| {

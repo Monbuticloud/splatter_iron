@@ -9,11 +9,10 @@ keywords = ["paint", "drawing", "graphics", "performance", "egui"]
 
 [dependencies]
 anyhow = "1.0.102"
-thiserror = "2.0.18"
+ecolor = { version = "0.34.2", features = ["serde"] }
 eframe = { version = "0.34.2", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
 # tokio = { version = "1.52.3", features = ["rt-multi-thread", "fs"] }
-ecolor = { version = "0.34.2", features = ["serde"] }
 rayon = "1.5.3"
 zstd = { version = "0.13.3", features = ["zstdmt"] }
 serde_json = "1.0.150"
