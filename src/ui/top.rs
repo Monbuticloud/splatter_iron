@@ -111,10 +111,11 @@ impl MyApp {
                 if
                     let Some(path) = rfd::FileDialog
                         ::new()
-                        .add_filter(
-                            "Images",
-                            &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif"]
-                        )
+                    .add_filter(
+                        "Images",
+                        &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
+                          "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff"],
+                    )
                         .pick_file()
                 {
                     match files::import_image_as_canvas(&path) {

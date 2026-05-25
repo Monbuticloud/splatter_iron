@@ -23,7 +23,7 @@ wide = "1.4.0"
 mimalloc = "0.1.51"
 # target = "2.1.0"
 bumpalo = { version = "3.20.3", features = ["collections"] }
-image = { version = "0.25.10", features = ["avif", "png", "jpeg", "webp", "gif", "tiff"] }
+image = { version = "0.25.10", features = ["avif", "png", "jpeg", "webp", "gif", "tiff", "tga", "ico", "pnm", "qoi", "exr", "hdr", "ff"] }
 # type-layout = "0.2"
 
 # [dev-dependencies]

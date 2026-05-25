@@ -43,7 +43,8 @@ impl MyApp {
                     if let Some(path) = rfd::FileDialog::new()
                         .add_filter(
                             "Images",
-                            &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif"],
+                            &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
+                              "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff"],
                         )
                         .pick_file()
                     {
@@ -66,12 +67,19 @@ impl MyApp {
                 // --- Export As submenu ---
                 ui.menu_button("Export As", |ui| {
                     let export_formats: &[( &str, &[&str], image::ImageFormat )] = &[
-                        ("AVIF", &["avif"], image::ImageFormat::Avif),
-                        ("PNG",  &["png"],  image::ImageFormat::Png),
-                        ("JPEG", &["jpg", "jpeg"], image::ImageFormat::Jpeg),
-                        ("WebP", &["webp"], image::ImageFormat::WebP),
-                        ("GIF",  &["gif"],  image::ImageFormat::Gif),
-                        ("TIFF", &["tiff", "tif"], image::ImageFormat::Tiff),
+                        ("AVIF",    &["avif"],                 image::ImageFormat::Avif),
+                        ("PNG",     &["png"],                  image::ImageFormat::Png),
+                        ("JPEG",    &["jpg", "jpeg"],          image::ImageFormat::Jpeg),
+                        ("WebP",    &["webp"],                 image::ImageFormat::WebP),
+                        ("GIF",     &["gif"],                  image::ImageFormat::Gif),
+                        ("TIFF",    &["tiff", "tif"],          image::ImageFormat::Tiff),
+                        ("TGA",     &["tga"],                  image::ImageFormat::Tga),
+                        ("ICO",     &["ico"],                  image::ImageFormat::Ico),
+                        ("PNM",     &["pnm", "pgm", "ppm", "pbm", "pam"], image::ImageFormat::Pnm),
+                        ("QOI",     &["qoi"],                  image::ImageFormat::Qoi),
+                        ("EXR",     &["exr"],                  image::ImageFormat::OpenExr),
+                        ("HDR",     &["hdr"],                  image::ImageFormat::Hdr),
+                        ("Farbfeld",&["ff"],                   image::ImageFormat::Farbfeld),
                     ];
 
                     for &(label, extensions, fmt) in export_formats {
