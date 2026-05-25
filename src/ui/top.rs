@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::app::MyApp;
+use crate::{ app::MyApp, files::get_save_data };
 
 impl MyApp {
     #[inline(always)]
@@ -9,7 +9,7 @@ impl MyApp {
         ui.horizontal(|ui| {
             let save_button = ui.button("Save");
             if save_button.clicked() {
-                todo!();
+                get_save_data(app);
             }
 
             let load_button = ui.button("Load");

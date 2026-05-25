@@ -7,7 +7,7 @@ mod canvas;
 mod pixel;
 mod ui;
 mod undo;
-
+mod files;
 use mimalloc::MiMalloc;
 
 use std::alloc::{ GlobalAlloc, Layout };
