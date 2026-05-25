@@ -6,6 +6,7 @@ use egui::os::OperatingSystem;
 
 use crate::app::MyApp;
 use crate::canvas::{ self, CurrentTool, RenderState };
+use crate::files;
 use crate::undo::{ undo_stroke, redo_stroke };
 
 impl MyApp {
@@ -36,6 +37,29 @@ impl MyApp {
                         .sense(egui::Sense::click_and_drag())
                 )
                 .on_hover_cursor(egui::CursorIcon::Crosshair);
+
+            response.context_menu(|ui| {
+                if ui.button("Save As").clicked() {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("SplatterCanvas", &["splattercanvas"])
+                        .set_file_name("canvas.splattercanvas")
+                        .save_file()
+                    {
+                        let path_str = path.display().to_string();
+                        let save_path = if path_str.ends_with(".splattercanvas") {
+                            path_str
+                        } else {
+                            format!("{}.splattercanvas", path_str)
+                        };
+                        self.savefile_path = save_path;
+                        if let Err(e) = files::save_canvas(self) {
+                            eprintln!("Save As failed: {e}");
+                        }
+                        self.canvas.render_next_frame = true;
+                        ui.close();
+                    }
+                }
+            });
 
             // Brush preview: semi-transparent filled square + outline at cursor
             if self.show_brush_preview {
