@@ -3,12 +3,10 @@ use std::{ collections::VecDeque, path::PathBuf, sync::mpsc, time::Duration };
 use eframe::egui::{ self, Color32, Panel };
 
 use crate::canvas::{ Canvas, CurrentTool, RenderState };
-use crate::files::save_canvas;
 use crate::pixel;
 use crate::undo::Stroke;
 use directories::ProjectDirs;
 use chrono::Local;
-use std::path::Path; // Export format metadata.
 pub(crate) struct ExportInfo {
     pub extensions: &'static [&'static str],
     pub fmt: image::ImageFormat,
@@ -52,6 +50,22 @@ pub(crate) enum DialogResult {
     Picked(PathBuf),
 }
 
+/// Distinguishes an autosave from a manual save in the async save pipeline.
+pub(crate) enum SaveKind {
+    Autosave,
+    ManualSave(PathBuf),
+}
+
+/// Result sent back via channel when an async save completes.
+pub(crate) enum SaveResult {
+    /// Autosave finished (path is logged, nothing to update in app state).
+    Autosave,
+    /// Manual save finished — store the path.
+    ManualSave(PathBuf),
+    /// Save failed with an error message.
+    Failed(String),
+}
+
 impl MyApp {
     pub fn push_stroke(&mut self, mut stroke: Stroke) {
         self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
@@ -65,6 +79,7 @@ impl MyApp {
             self.stroke_stack.push_back(stroke);
         }
         self.redo_index = 0;
+        self.dirty_since_last_autosave = true;
     }
 
     #[inline(always)]
@@ -237,16 +252,12 @@ impl MyApp {
                     match pending {
                         PendingFileAction::Save => {
                             let path_str = path.display().to_string();
-                            self.savefile_path = if path_str.ends_with(".splattercanvas") {
-                                path_str
+                            let savepath = if path_str.ends_with(".splattercanvas") {
+                                path
                             } else {
-                                format!("{}.splattercanvas", path_str)
+                                PathBuf::from(format!("{path_str}.splattercanvas"))
                             };
-                            let savepath = Path::new(&self.savefile_path);
-                            if let Err(e) = files::save_canvas(self, savepath) {
-                                eprintln!("Save failed: {e}");
-                            }
-                            self.canvas.render_next_frame = true;
+                            self.trigger_async_save(SaveKind::ManualSave(savepath));
                         }
                         PendingFileAction::Load => {
                             match files::load_data_from_file(&path) {
@@ -300,6 +311,58 @@ impl MyApp {
             }
         }
     }
+
+    /// Spawn a background thread to serialise + write the canvas to disk.
+    /// The thread clones the current canvas snapshot and processes it off the UI thread.
+    fn trigger_async_save(&mut self, kind: SaveKind) {
+        let canvas = self.canvas.clone();
+        let path = match &kind {
+            SaveKind::Autosave => self
+                .app_local_data_directory
+                .join("autosaves")
+                .join(format!("{}.splattercanvas", Local::now().format("%Y-%m-%d_%H-%M-%S"))),
+            SaveKind::ManualSave(p) => p.clone(),
+        };
+        let tx = self.save_result_tx.clone();
+        std::thread::spawn(move || {
+            let result = match crate::files::save_canvas_to_bytes(&canvas) {
+                Ok(data) => match crate::files::save_bytes_to_file(&data, &path) {
+                    Ok(()) => match kind {
+                        SaveKind::Autosave => SaveResult::Autosave,
+                        SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
+                    },
+                    Err(e) => SaveResult::Failed(format!("Write failed: {e}")),
+                },
+                Err(e) => SaveResult::Failed(format!("Serialisation failed: {e}")),
+            };
+            let _ = tx.send(result);
+        });
+    }
+
+    /// Save to the current `savefile_path` (async). No-op if path is empty.
+    pub(crate) fn save_to_current_path(&mut self) {
+        if !self.savefile_path.is_empty() {
+            self.trigger_async_save(SaveKind::ManualSave(PathBuf::from(&self.savefile_path)));
+        }
+    }
+
+    /// Poll for completed async saves and update app state accordingly.
+    pub(crate) fn poll_save_results(&mut self) {
+        while let Ok(result) = self.save_result_rx.try_recv() {
+            match result {
+                SaveResult::Autosave => {
+                    self.dirty_since_last_autosave = false;
+                }
+                SaveResult::ManualSave(path) => {
+                    self.savefile_path = path.display().to_string();
+                    self.canvas.render_next_frame = true;
+                }
+                SaveResult::Failed(msg) => {
+                    eprintln!("Save failed: {msg}");
+                }
+            }
+        }
+    }
 }
 
 pub struct MyApp {
@@ -327,11 +390,18 @@ pub struct MyApp {
     pub app_local_data_directory: PathBuf,
     pub time_elapsed: std::time::Duration,
     pub times_autosaved: u32,
+
+    /// Set to true on any stroke/edit, cleared after autosave completes.
+    pub dirty_since_last_autosave: bool,
+    /// Channel for async save results.
+    pub save_result_tx: mpsc::Sender<SaveResult>,
+    pub save_result_rx: mpsc::Receiver<SaveResult>,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
         let (dialog_tx, dialog_rx) = mpsc::channel();
+        let (save_result_tx, save_result_rx) = mpsc::channel();
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
 
@@ -369,14 +439,18 @@ impl Default for MyApp {
             app_local_data_directory: data_dir,
             time_elapsed: std::time::Duration::ZERO,
             times_autosaved: 0,
+            dirty_since_last_autosave: false,
+            save_result_tx,
+            save_result_rx,
         }
     }
 }
 
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        // Poll dialog results before anything else (between frames).
+        // Poll dialog results and save results before anything else.
         self.poll_dialog_results();
+        self.poll_save_results();
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(50));
@@ -426,23 +500,12 @@ impl eframe::App for MyApp {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         }
 
-        if self.times_autosaved * Duration::from_mins(2) < self.time_elapsed {
+        // Autosave every 2 minutes, but only if the canvas has been modified.
+        if self.dirty_since_last_autosave
+            && self.times_autosaved * Duration::from_mins(2) < self.time_elapsed
+        {
             self.times_autosaved += 1;
-            save_canvas(
-                self,
-                Path::new(
-                    &self.app_local_data_directory
-                        .join("autosaves")
-                        .join(
-                            Local::now().format("%Y-%m-%d_i%H-%M-%S").to_string() +
-                                ".splattercanvas"
-                        )
-                )
-            );
-            println!(
-                "Autosaved! to {}/autosaves",
-                self.app_local_data_directory.to_str().expect("Couldn't get app local data dir")
-            );
+            self.trigger_async_save(SaveKind::Autosave);
         }
     }
 }

@@ -12,14 +12,10 @@ impl MyApp {
             if ui.button("Save").clicked() {
                 if self.savefile_path.is_empty() {
                     self.queue_file_action(PendingFileAction::Save);
-                    ui.ctx().request_repaint();
                 } else {
-                    let savepath = std::path::Path::new(&self.savefile_path);
-                    if let Err(e) = crate::files::save_canvas(self, savepath) {
-                        eprintln!("Save failed: {e}");
-                    }
+                    self.save_to_current_path();
                 }
-                self.canvas.render_next_frame = true;
+                ui.ctx().request_repaint();
             }
 
             // Load

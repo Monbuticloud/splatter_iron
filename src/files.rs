@@ -1,6 +1,5 @@
 use std::io::{ BufWriter, Write };
 use std::path::Path;
-use eframe::epaint::tessellator::path;
 use zstd;
 
 use eframe::egui::Color32;
@@ -39,9 +38,15 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
     Ok(canvas)
 }
 
-pub fn save_canvas(app: &crate::app::MyApp, path: &Path) -> anyhow::Result<()> {
-    let data = get_save_data(&app.canvas)?;
-    save_data_to_file(&data, Path::new(path))?;
+/// Serialise the canvas to bytes **without writing to disk**.
+/// This is the CPU-heavy part (JSON + zstd) — call it on a background thread.
+pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
+    get_save_data(canvas)
+}
+
+/// Write pre-serialized bytes to a file.  Fast, pure I/O.
+pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
+    save_data_to_file(data, path)?;
     Ok(())
 }
 
