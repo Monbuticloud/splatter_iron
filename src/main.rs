@@ -21,6 +21,7 @@ static INNER_ALLOCATOR: MiMalloc = MiMalloc;
 // live allocated bytes
 static ALLOCATED: AtomicUsize = AtomicUsize::new(0);
 static TOTAL_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
+static PEAK_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
 unsafe impl GlobalAlloc for TrackingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let ptr;
@@ -31,6 +32,7 @@ unsafe impl GlobalAlloc for TrackingAllocator {
         if !ptr.is_null() {
             ALLOCATED.fetch_add(layout.size(), Ordering::Relaxed);
             TOTAL_ALLOCATED.fetch_add(layout.size(), Ordering::Relaxed);
+            PEAK_ALLOCATED.fetch_max(ALLOCATED.load(Ordering::Relaxed), Ordering::Relaxed);
         }
 
         ptr
@@ -56,6 +58,7 @@ unsafe impl GlobalAlloc for TrackingAllocator {
             if new_size > old {
                 ALLOCATED.fetch_add(new_size - old, Ordering::Relaxed);
                 TOTAL_ALLOCATED.fetch_add(new_size - old, Ordering::Relaxed);
+                PEAK_ALLOCATED.fetch_max(ALLOCATED.load(Ordering::Relaxed), Ordering::Relaxed);
             } else {
                 ALLOCATED.fetch_sub(old - new_size, Ordering::Relaxed);
             }
@@ -83,5 +86,6 @@ fn main() -> eframe::Result {
     );
     println!("Total memory usage: {} bytes", TOTAL_ALLOCATED.load(Ordering::Relaxed));
     println!("Ending memory usage: {} bytes", ALLOCATED.load(Ordering::Relaxed));
+    println!("Peak memory usage: {} bytes", PEAK_ALLOCATED.load(Ordering::Relaxed));
     res
 }

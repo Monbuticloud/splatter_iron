@@ -40,25 +40,9 @@ impl MyApp {
 
                 // --- Export As submenu ---
                 ui.menu_button("Export As", |ui| {
-                    let export_formats: &[( &str, &[&str], image::ImageFormat )] = &[
-                        ("AVIF",    &["avif"],                 image::ImageFormat::Avif),
-                        ("PNG",     &["png"],                  image::ImageFormat::Png),
-                        ("JPEG",    &["jpg", "jpeg"],          image::ImageFormat::Jpeg),
-                        ("WebP",    &["webp"],                 image::ImageFormat::WebP),
-                        ("GIF",     &["gif"],                  image::ImageFormat::Gif),
-                        ("TIFF",    &["tiff", "tif"],          image::ImageFormat::Tiff),
-                        ("TGA",     &["tga"],                  image::ImageFormat::Tga),
-                        ("ICO",     &["ico"],                  image::ImageFormat::Ico),
-                        ("PNM",     &["pnm", "pgm", "ppm", "pbm", "pam"], image::ImageFormat::Pnm),
-                        ("QOI",     &["qoi"],                  image::ImageFormat::Qoi),
-                        ("EXR",     &["exr"],                  image::ImageFormat::OpenExr),
-                        ("HDR",     &["hdr"],                  image::ImageFormat::Hdr),
-                        ("Farbfeld",&["ff"],                   image::ImageFormat::Farbfeld),
-                    ];
-
-                    for &(label, extensions, fmt) in export_formats {
+                    for (i, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                         if ui.button(label).clicked() {
-                            self.pending_file_action = Some(PendingFileAction::Export { extensions, fmt });
+                            self.queue_file_action(PendingFileAction::Export(i));
                             ui.ctx().request_repaint();
                             ui.close();
                         }
@@ -70,7 +54,7 @@ impl MyApp {
                 // --- Save As ---
                 if ui.button("Save As").clicked() {
                     // Save As always opens a dialog even if savefile_path is set
-                    self.pending_file_action = Some(PendingFileAction::Save);
+                    self.queue_file_action(PendingFileAction::Save);
                     self.savefile_path.clear(); // force dialog
                     ui.ctx().request_repaint();
                     ui.close();

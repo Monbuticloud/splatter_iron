@@ -11,7 +11,7 @@ impl MyApp {
             // Save
             if ui.button("Save").clicked() {
                 if self.savefile_path.is_empty() {
-                    self.pending_file_action = Some(PendingFileAction::Save);
+                    self.queue_file_action(PendingFileAction::Save);
                     ui.ctx().request_repaint();
                 } else {
                     if let Err(e) = crate::files::save_canvas(self) {
@@ -23,7 +23,7 @@ impl MyApp {
 
             // Load
             if ui.button("Load").clicked() {
-                self.pending_file_action = Some(PendingFileAction::Load);
+                self.queue_file_action(PendingFileAction::Load);
                 ui.ctx().request_repaint();
             }
 
@@ -34,25 +34,9 @@ impl MyApp {
 
             // Export menu with all supported formats
             ui.menu_button("Export", |ui| {
-                let export_formats: &[( &str, &[&str], image::ImageFormat )] = &[
-                    ("AVIF",    &["avif"],                 image::ImageFormat::Avif),
-                    ("PNG",     &["png"],                  image::ImageFormat::Png),
-                    ("JPEG",    &["jpg", "jpeg"],          image::ImageFormat::Jpeg),
-                    ("WebP",    &["webp"],                 image::ImageFormat::WebP),
-                    ("GIF",     &["gif"],                  image::ImageFormat::Gif),
-                    ("TIFF",    &["tiff", "tif"],          image::ImageFormat::Tiff),
-                    ("TGA",     &["tga"],                  image::ImageFormat::Tga),
-                    ("ICO",     &["ico"],                  image::ImageFormat::Ico),
-                    ("PNM",     &["pnm", "pgm", "ppm", "pbm", "pam"], image::ImageFormat::Pnm),
-                    ("QOI",     &["qoi"],                  image::ImageFormat::Qoi),
-                    ("EXR",     &["exr"],                  image::ImageFormat::OpenExr),
-                    ("HDR",     &["hdr"],                  image::ImageFormat::Hdr),
-                    ("Farbfeld",&["ff"],                   image::ImageFormat::Farbfeld),
-                ];
-
-                for &(label, extensions, fmt) in export_formats {
+                for (i, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                     if ui.button(label).clicked() {
-                        self.pending_file_action = Some(PendingFileAction::Export { extensions, fmt });
+                        self.queue_file_action(PendingFileAction::Export(i));
                         ui.ctx().request_repaint();
                         ui.close();
                     }
@@ -61,7 +45,7 @@ impl MyApp {
 
             // Import
             if ui.button("Import").clicked() {
-                self.pending_file_action = Some(PendingFileAction::Import);
+                self.queue_file_action(PendingFileAction::Import);
                 ui.ctx().request_repaint();
             }
 

@@ -1,4 +1,4 @@
-use std::{ collections::VecDeque, time::Duration };
+use std::{ collections::VecDeque, path::PathBuf, sync::mpsc, time::Duration };
 
 use eframe::egui::{ self, Color32, Panel };
 
@@ -6,14 +6,42 @@ use crate::canvas::{ Canvas, CurrentTool, RenderState };
 use crate::pixel;
 use crate::undo::Stroke;
 
-/// A file-dialog action queued for execution at the start of the next frame.
-/// This avoids macOS winit re-entrancy panics by running native modals
-/// *between* frames rather than inside an active event handler.
+// Export format metadata.
+pub(crate) struct ExportInfo {
+    pub extensions: &'static [&'static str],
+    pub fmt: image::ImageFormat,
+}
+
+/// Lookup table for all supported export formats.
+pub(crate) const EXPORT_FORMATS: &[(&str, ExportInfo)] = &[
+    ("AVIF",    ExportInfo { extensions: &["avif"],                 fmt: image::ImageFormat::Avif }),
+    ("PNG",     ExportInfo { extensions: &["png"],                  fmt: image::ImageFormat::Png }),
+    ("JPEG",    ExportInfo { extensions: &["jpg", "jpeg"],          fmt: image::ImageFormat::Jpeg }),
+    ("WebP",    ExportInfo { extensions: &["webp"],                 fmt: image::ImageFormat::WebP }),
+    ("GIF",     ExportInfo { extensions: &["gif"],                  fmt: image::ImageFormat::Gif }),
+    ("TIFF",    ExportInfo { extensions: &["tiff", "tif"],          fmt: image::ImageFormat::Tiff }),
+    ("TGA",     ExportInfo { extensions: &["tga"],                  fmt: image::ImageFormat::Tga }),
+    ("ICO",     ExportInfo { extensions: &["ico"],                  fmt: image::ImageFormat::Ico }),
+    ("PNM",     ExportInfo { extensions: &["pnm", "pgm", "ppm", "pbm", "pam"], fmt: image::ImageFormat::Pnm }),
+    ("QOI",     ExportInfo { extensions: &["qoi"],                  fmt: image::ImageFormat::Qoi }),
+    ("EXR",     ExportInfo { extensions: &["exr"],                  fmt: image::ImageFormat::OpenExr }),
+    ("HDR",     ExportInfo { extensions: &["hdr"],                  fmt: image::ImageFormat::Hdr }),
+    ("Farbfeld",ExportInfo { extensions: &["ff"],                   fmt: image::ImageFormat::Farbfeld }),
+];
+
+/// A file-dialog action queued for execution on a background thread.
+/// The result is received via channel at the start of a future frame.
+#[derive(Clone, Copy)]
 pub(crate) enum PendingFileAction {
     Load,
     Save,
     Import,
-    Export { extensions: &'static [&'static str], fmt: image::ImageFormat },
+    Export(usize), // index into EXPORT_FORMATS
+}
+
+/// Message sent back from the file-dialog thread to the UI thread.
+pub(crate) enum DialogResult {
+    Picked(PathBuf),
 }
 
 impl MyApp {
@@ -42,7 +70,6 @@ impl MyApp {
     }
 
     /// Resize the visited-stamp vec to match `pixel_count`.
-    /// Call after canvas dimensions change (New, Load, Import).
     pub(crate) fn resize_visited(&mut self, pixel_count: usize) {
         if self.visited.len() < pixel_count {
             self.visited = vec![0u32; pixel_count];
@@ -51,7 +78,6 @@ impl MyApp {
     }
 
     /// Replace the canvas and reset associated state.
-    /// Used by Load, New, and Import operations.
     pub(crate) fn replace_canvas(&mut self, canvas: Canvas) {
         self.canvas = canvas;
         self.savefile_path.clear();
@@ -65,7 +91,6 @@ impl MyApp {
     }
 
     /// Render current layers into the shared texture (GPU).
-    /// Call this once per frame, before the panels are drawn.
     fn render_to_texture(&mut self, ui: &egui::Ui) {
         let pixel_count = (self.canvas.width as usize) * (self.canvas.height as usize);
 
@@ -97,99 +122,138 @@ impl MyApp {
         }
     }
 
-    /// Process any deferred file-dialog action at the safe point between frames.
-    pub(crate) fn handle_pending_file_action(&mut self) {
-        let action = match self.pending_file_action.take() {
-            Some(a) => a,
-            None => return,
-        };
-
-        use crate::files;
-        use std::path::Path;
+    /// Queue a file-dialog action and spawn the dialog on a background thread.
+    /// The dialog runs via `dispatch_sync` to the main thread from a background
+    /// thread, which avoids macOS winit re-entrancy panics.
+    pub(crate) fn queue_file_action(&mut self, action: PendingFileAction) {
+        let tx = self.dialog_tx.clone();
 
         match action {
             PendingFileAction::Save => {
-                if self.savefile_path.is_empty() {
+                self.pending_file_action = Some(PendingFileAction::Save);
+                std::thread::spawn(move || {
                     if let Some(path) = rfd::FileDialog::new()
                         .add_filter("SplatterCanvas", &["splattercanvas"])
                         .set_file_name("canvas.splattercanvas")
                         .save_file()
                     {
-                        let path_str = path.display().to_string();
-                        self.savefile_path = if path_str.ends_with(".splattercanvas") {
-                            path_str
-                        } else {
-                            format!("{}.splattercanvas", path_str)
-                        };
+                        let _ = tx.send(DialogResult::Picked(path));
                     }
-                }
-                if !self.savefile_path.is_empty() {
-                    if let Err(e) = files::save_canvas(self) {
-                        eprintln!("Save failed: {e}");
-                    }
-                }
-                self.canvas.render_next_frame = true;
+                });
             }
             PendingFileAction::Load => {
-                if let Some(path) = rfd::FileDialog::new()
-                    .add_filter("SplatterCanvas", &["splattercanvas"])
-                    .pick_file()
-                {
-                    match files::load_data_from_file(&path) {
-                        Ok(data) => {
-                            match files::load_app_from_data(&data) {
-                                Ok(canvas) => {
-                                    let save_path = path.display().to_string();
-                                    self.replace_canvas(canvas);
-                                    self.savefile_path = save_path;
-                                }
-                                Err(e) => eprintln!("Failed to load canvas: {e}"),
-                            }
-                        }
-                        Err(e) => eprintln!("Failed to read file: {e}"),
+                self.pending_file_action = Some(PendingFileAction::Load);
+                std::thread::spawn(move || {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("SplatterCanvas", &["splattercanvas"])
+                        .pick_file()
+                    {
+                        let _ = tx.send(DialogResult::Picked(path));
                     }
-                }
+                });
             }
             PendingFileAction::Import => {
-                if let Some(path) = rfd::FileDialog::new()
-                    .add_filter(
-                        "Images",
-                        &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
-                          "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff"],
-                    )
-                    .pick_file()
-                {
-                    match files::import_image_as_canvas(&path) {
-                        Ok(canvas) => self.replace_canvas(canvas),
-                        Err(e) => eprintln!("Import failed: {e}"),
+                self.pending_file_action = Some(PendingFileAction::Import);
+                std::thread::spawn(move || {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(
+                            "Images",
+                            &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
+                              "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff"],
+                        )
+                        .pick_file()
+                    {
+                        let _ = tx.send(DialogResult::Picked(path));
                     }
-                }
+                });
             }
-            PendingFileAction::Export { extensions, fmt } => {
-                if self.canvas.output_rgba.is_empty() {
-                    return;
-                }
-                let default_ext = extensions[0];
-                let default_name = format!("export.{default_ext}");
-                if let Some(path) = rfd::FileDialog::new()
-                    .add_filter(extensions[0], extensions)
-                    .set_file_name(&default_name)
-                    .save_file()
-                {
-                    let path_str = path.display().to_string();
-                    let path_str = if extensions.iter().any(|ext| path_str.ends_with(ext)) {
-                        path_str
-                    } else {
-                        format!("{path_str}.{default_ext}")
+            PendingFileAction::Export(idx) => {
+                self.pending_file_action = Some(PendingFileAction::Export(idx));
+                let info = &EXPORT_FORMATS[idx].1;
+                let exts: Vec<&str> = info.extensions.to_vec();
+                let default_name = format!("export.{}", info.extensions[0]);
+                std::thread::spawn(move || {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(EXPORT_FORMATS[idx].0, &exts)
+                        .set_file_name(&default_name)
+                        .save_file()
+                    {
+                        let _ = tx.send(DialogResult::Picked(path));
+                    }
+                });
+            }
+        }
+    }
+
+    /// Check for results from background file-dialog threads and process them.
+    /// Called once per frame right before egui layout.
+    pub(crate) fn poll_dialog_results(&mut self) {
+        use crate::files;
+        use std::path::Path;
+
+        while let Ok(result) = self.dialog_rx.try_recv() {
+            match result {
+                DialogResult::Picked(path) => {
+                    let pending = match self.pending_file_action.take() {
+                        Some(a) => a,
+                        None => continue,
                     };
-                    if let Err(e) = files::export_as_image(
-                        &self.canvas.output_rgba,
-                        self.canvas.width,
-                        self.canvas.height,
-                        Path::new(&path_str),
-                        fmt,
-                    ) {
-                        eprintln!("Export failed: {e}");
+                    match pending {
+                        PendingFileAction::Save => {
+                            let path_str = path.display().to_string();
+                            self.savefile_path = if path_str.ends_with(".splattercanvas") {
+                                path_str
+                            } else {
+                                format!("{}.splattercanvas", path_str)
+                            };
+                            if let Err(e) = files::save_canvas(self) {
+                                eprintln!("Save failed: {e}");
+                            }
+                            self.canvas.render_next_frame = true;
+                        }
+                        PendingFileAction::Load => {
+                            match files::load_data_from_file(&path) {
+                                Ok(data) => {
+                                    match files::load_app_from_data(&data) {
+                                        Ok(canvas) => {
+                                            let save_path = path.display().to_string();
+                                            self.replace_canvas(canvas);
+                                            self.savefile_path = save_path;
+                                        }
+                                        Err(e) => eprintln!("Failed to load canvas: {e}"),
+                                    }
+                                }
+                                Err(e) => eprintln!("Failed to read file: {e}"),
+                            }
+                        }
+                        PendingFileAction::Import => {
+                            match files::import_image_as_canvas(&path) {
+                                Ok(canvas) => self.replace_canvas(canvas),
+                                Err(e) => eprintln!("Import failed: {e}"),
+                            }
+                        }
+                        PendingFileAction::Export(idx) => {
+                            if self.canvas.output_rgba.is_empty() {
+                                continue;
+                            }
+                            let info = &EXPORT_FORMATS[idx].1;
+                            let default_ext = info.extensions[0];
+                            let path_str = path.display().to_string();
+                            let path_str = if info.extensions.iter().any(|ext| path_str.ends_with(ext)) {
+                                path_str
+                            } else {
+                                format!("{path_str}.{default_ext}")
+                            };
+                            if let Err(e) = files::export_as_image(
+                                &self.canvas.output_rgba,
+                                self.canvas.width,
+                                self.canvas.height,
+                                Path::new(&path_str),
+                                info.fmt,
+                            ) {
+                                eprintln!("Export failed: {e}");
+                            }
+                        }
                     }
                 }
             }
@@ -216,10 +280,13 @@ pub struct MyApp {
     pub stroke_stack: VecDeque<Stroke>,
     pub redo_index: usize,
     pub pending_file_action: Option<PendingFileAction>,
+    pub dialog_tx: mpsc::Sender<DialogResult>,
+    pub dialog_rx: mpsc::Receiver<DialogResult>,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
+        let (dialog_tx, dialog_rx) = mpsc::channel();
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
         Self {
@@ -241,15 +308,16 @@ impl Default for MyApp {
             visited: vec![0u32; pixel_count],
             visited_stamp: 1,
             pending_file_action: None,
+            dialog_tx,
+            dialog_rx,
         }
     }
 }
 
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
-        // Process any deferred file dialog before anything else
-        // (between frames, safe for native macOS modals).
-        self.handle_pending_file_action();
+        // Poll dialog results before anything else (between frames).
+        self.poll_dialog_results();
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(50));
