@@ -24,7 +24,7 @@ impl MyApp {
         ui.separator();
 
         ui.label("Undo/Redo Strength");
-        ui.add(egui::DragValue::new(&mut self.undo_redo_strength).range(UNDO_REDO_RANGE));
+        ui.add(egui::DragValue::new(&mut self.undo_redo_steps_multiplier).range(UNDO_REDO_RANGE));
 
         ui.label("::Brush Settings::");
         ui.separator();
@@ -80,15 +80,18 @@ impl MyApp {
             if let Some(layer_action) = pending_layer_action {
                 match layer_action {
                     LayerAction::Delete(index) => {
-                        if self.pending_delete_layer == Some(index) && self.canvas.pixels.len() > 1 {
-                            self.pending_delete_layer = None;
+                        if
+                            self.pending_layer_for_deletion == Some(index) &&
+                            self.canvas.pixels.len() > 1
+                        {
+                            self.pending_layer_for_deletion = None;
                             self.canvas.pixels.remove(index);
                             self.current_layer = self.current_layer
                                 .saturating_sub(1)
                                 .min(self.canvas.pixels.len() - 1);
                             self.canvas.render_next_frame = true;
                         } else {
-                            self.pending_delete_layer = Some(index);
+                            self.pending_layer_for_deletion = Some(index);
                         }
                     }
                     LayerAction::MoveUp(index) => {

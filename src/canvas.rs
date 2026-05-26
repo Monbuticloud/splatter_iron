@@ -279,7 +279,7 @@ pub enum CurrentTool {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum RenderState {
-    Warm(Duration),
-    Cold,
-    Frozen,
+    ActiveWake(Duration), // Full rendering
+    IdleThrottled, // Slow repainting, frames still run but repainting is throttled
+    UnfocusedFrozen, // No rendering
 }

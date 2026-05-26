@@ -153,7 +153,7 @@ impl MyApp {
         self.savefile_path.clear();
         self.stroke_stack.clear();
         self.redo_index = 0;
-        self.pending_delete_layer = None;
+        self.pending_layer_for_deletion = None;
         self.previous_tool = None;
         self.previous_cursor_position = None;
         self.canvas.render_next_frame = true;
@@ -401,8 +401,8 @@ pub struct MyApp {
     pub radius: u32,
     pub canvas: Canvas,
     pub render_state: RenderState,
-    pub pending_delete_layer: Option<usize>,
-    pub undo_redo_strength: usize,
+    pub pending_layer_for_deletion: Option<usize>,
+    pub undo_redo_steps_multiplier: usize,
     pub show_brush_preview: bool,
     pub bump_allocator: bumpalo::Bump,
     pub visited: Vec<u32>,
@@ -444,17 +444,17 @@ impl Default for MyApp {
         Self {
             savefile_path: String::new(),
             canvas,
-            render_state: RenderState::Cold,
+            render_state: RenderState::IdleThrottled,
             current_tool: CurrentTool::SquareTool,
             current_color: Color32::from_rgba_premultiplied(255, 255, 255, 255),
             current_layer: 0,
             radius: 100,
-            pending_delete_layer: None,
+            pending_layer_for_deletion: None,
             previous_tool: None,
             previous_cursor_position: None,
             stroke_stack: VecDeque::new(),
             redo_index: 0,
-            undo_redo_strength: 5,
+            undo_redo_steps_multiplier: 5,
             show_brush_preview: true,
             bump_allocator: bumpalo::Bump::with_capacity(BUMP_ALLOCATOR_CAPACITY),
             visited: vec![0u32; pixel_count],
@@ -480,7 +480,7 @@ impl eframe::App for MyApp {
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MS));
-            self.render_state = RenderState::Frozen;
+            self.render_state = RenderState::UnfocusedFrozen;
             return;
         }
         let predicted_delta_time = Duration::from_millis(
@@ -493,16 +493,16 @@ impl eframe::App for MyApp {
         self.time_elapsed += real_delta_time;
 
         match self.render_state {
-            RenderState::Warm(duration) => {
-                self.render_state = RenderState::Warm(
+            RenderState::ActiveWake(duration) => {
+                self.render_state = RenderState::ActiveWake(
                     duration.saturating_sub(predicted_delta_time)
                 );
             }
-            RenderState::Cold => {
+            RenderState::IdleThrottled => {
                 ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULT);
             }
-            RenderState::Frozen => {
-                self.render_state = RenderState::Cold;
+            RenderState::UnfocusedFrozen => {
+                self.render_state = RenderState::IdleThrottled;
                 return;
             }
         }

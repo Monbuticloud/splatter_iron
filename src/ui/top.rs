@@ -59,7 +59,9 @@ impl MyApp {
                     |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift
                 ) || undo_btn.clicked())
             {
-                let count = self.undo_redo_strength.min(self.stroke_stack.len() - self.redo_index);
+                let count = self.undo_redo_steps_multiplier.min(
+                    self.stroke_stack.len() - self.redo_index
+                );
                 for _ in 0..count {
                     let idx = self.stroke_stack.len() - 1 - self.redo_index;
                     undo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
@@ -77,7 +79,7 @@ impl MyApp {
                     ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
                     redo_btn.clicked())
             {
-                let count = self.undo_redo_strength.min(self.redo_index);
+                let count = self.undo_redo_steps_multiplier.min(self.redo_index);
                 for _ in 0..count {
                     let idx = self.stroke_stack.len() - self.redo_index;
                     self.redo_index -= 1;

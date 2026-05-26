@@ -125,8 +125,10 @@ impl MyApp {
             }
 
             if response.hovered() {
-                self.pending_delete_layer = None;
-                self.render_state = RenderState::Warm(Duration::from_millis(WARM_DURATION_MS));
+                self.pending_layer_for_deletion = None;
+                self.render_state = RenderState::ActiveWake(
+                    Duration::from_millis(WARM_DURATION_MS)
+                );
             }
 
             if response.dragged() {
