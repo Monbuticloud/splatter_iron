@@ -297,16 +297,16 @@ impl MyApp {
                                             self.replace_canvas(canvas);
                                             self.savefile_path = save_path;
                                         }
-                                        Err(e) => eprintln!("Failed to load canvas: {e}"),
+                                        Err(e) => self.displayed_error_list.push(format!("Failed to load canvas: {e}")),
                                     }
                                 }
-                                Err(e) => eprintln!("Failed to read file: {e}"),
+                                Err(e) => self.displayed_error_list.push(format!("Failed to read file: {e}")),
                             }
                         }
                         PendingFileAction::Import => {
                             match files::import_image_as_canvas(&path) {
                                 Ok(canvas) => self.replace_canvas(canvas),
-                                Err(e) => eprintln!("Import failed: {e}"),
+                                Err(e) => self.displayed_error_list.push(format!("Import failed: {e}")),
                             }
                         }
                         PendingFileAction::Export(idx) => {
@@ -332,7 +332,7 @@ impl MyApp {
                                     info.fmt
                                 )
                             {
-                                eprintln!("Export failed: {e}");
+                                self.displayed_error_list.push(format!("Export failed: {e}"));
                             }
                         }
                     }
@@ -389,7 +389,7 @@ impl MyApp {
                     self.canvas.render_next_frame = true;
                 }
                 SaveResult::Failed(msg) => {
-                    eprintln!("Save failed: {msg}");
+                    self.displayed_error_list.push(format!("Save failed: {msg}"));
                 }
             }
         }
