@@ -14,7 +14,8 @@ impl MyApp {
                     self.queue_file_action(PendingFileAction::Save);
                     ui.ctx().request_repaint();
                 } else {
-                    if let Err(e) = crate::files::save_canvas(self) {
+                    let savepath = std::path::Path::new(&self.savefile_path);
+                    if let Err(e) = crate::files::save_canvas(self, savepath) {
                         eprintln!("Save failed: {e}");
                     }
                 }

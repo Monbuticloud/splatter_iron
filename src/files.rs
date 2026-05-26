@@ -1,18 +1,20 @@
-use std::io::{BufWriter, Write};
+use std::io::{ BufWriter, Write };
 use std::path::Path;
+use eframe::epaint::tessellator::path;
 use zstd;
 
 use eframe::egui::Color32;
 use image::ImageEncoder;
 
-use crate::canvas::{Canvas, Layer};
-use crate::pixel::{premultiply, unpremultiply};
+use crate::canvas::{ Canvas, Layer };
+use crate::pixel::{ premultiply, unpremultiply };
 
 const COMPRESSION_LEVEL: i32 = 10;
 
 pub fn get_save_data(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     let json = serde_json::to_vec(canvas)?;
-    let n_threads = std::thread::available_parallelism()
+    let n_threads = std::thread
+        ::available_parallelism()
         .map(|n| n.get() as u32)
         .unwrap_or(1);
     let mut encoder = zstd::stream::Encoder::new(Vec::new(), COMPRESSION_LEVEL)?;
@@ -37,9 +39,9 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
     Ok(canvas)
 }
 
-pub fn save_canvas(app: &crate::app::MyApp) -> anyhow::Result<()> {
+pub fn save_canvas(app: &crate::app::MyApp, path: &Path) -> anyhow::Result<()> {
     let data = get_save_data(&app.canvas)?;
-    save_data_to_file(&data, Path::new(&app.savefile_path))?;
+    save_data_to_file(&data, Path::new(path))?;
     Ok(())
 }
 
@@ -53,7 +55,7 @@ pub fn export_as_image(
     width: u32,
     height: u32,
     path: &Path,
-    format: image::ImageFormat,
+    format: image::ImageFormat
 ) -> anyhow::Result<()> {
     let mut img = image::RgbaImage::new(width, height);
     let is_jpeg = format == image::ImageFormat::Jpeg;
@@ -71,12 +73,7 @@ pub fn export_as_image(
                 // fully transparent (a=0,r=0) -> white (255,255,255)
                 // For premultiplied over white: r' = r + (255 - a) (clamped)
                 let inv = (255u8).wrapping_sub(a); // 255 - a
-                (
-                    r.saturating_add(inv),
-                    g.saturating_add(inv),
-                    b.saturating_add(inv),
-                    255u8,
-                )
+                (r.saturating_add(inv), g.saturating_add(inv), b.saturating_add(inv), 255u8)
             } else {
                 let pm = Color32::from_rgba_premultiplied(r, g, b, a);
                 let straight = unpremultiply(pm);
@@ -162,12 +159,7 @@ pub fn export_as_image(
                     float_pixels.len() * std::mem::size_of::<f32>()
                 )
             };
-            encoder.write_image(
-                float_bytes,
-                width,
-                height,
-                image::ExtendedColorType::Rgb32F,
-            )?;
+            encoder.write_image(float_bytes, width, height, image::ExtendedColorType::Rgb32F)?;
         }
         image::ImageFormat::Farbfeld => {
             // Farbfeld requires u16 RGBA (8 bytes/pixel), native endian.

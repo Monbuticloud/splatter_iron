@@ -3,10 +3,12 @@ use std::{ collections::VecDeque, path::PathBuf, sync::mpsc, time::Duration };
 use eframe::egui::{ self, Color32, Panel };
 
 use crate::canvas::{ Canvas, CurrentTool, RenderState };
+use crate::files::save_canvas;
 use crate::pixel;
 use crate::undo::Stroke;
-
-// Export format metadata.
+use directories::ProjectDirs;
+use chrono::Local;
+use std::path::Path; // Export format metadata.
 pub(crate) struct ExportInfo {
     pub extensions: &'static [&'static str],
     pub fmt: image::ImageFormat,
@@ -14,19 +16,25 @@ pub(crate) struct ExportInfo {
 
 /// Lookup table for all supported export formats.
 pub(crate) const EXPORT_FORMATS: &[(&str, ExportInfo)] = &[
-    ("AVIF",    ExportInfo { extensions: &["avif"],                 fmt: image::ImageFormat::Avif }),
-    ("PNG",     ExportInfo { extensions: &["png"],                  fmt: image::ImageFormat::Png }),
-    ("JPEG",    ExportInfo { extensions: &["jpg", "jpeg"],          fmt: image::ImageFormat::Jpeg }),
-    ("WebP",    ExportInfo { extensions: &["webp"],                 fmt: image::ImageFormat::WebP }),
-    ("GIF",     ExportInfo { extensions: &["gif"],                  fmt: image::ImageFormat::Gif }),
-    ("TIFF",    ExportInfo { extensions: &["tiff", "tif"],          fmt: image::ImageFormat::Tiff }),
-    ("TGA",     ExportInfo { extensions: &["tga"],                  fmt: image::ImageFormat::Tga }),
-    ("ICO",     ExportInfo { extensions: &["ico"],                  fmt: image::ImageFormat::Ico }),
-    ("PNM",     ExportInfo { extensions: &["pnm", "pgm", "ppm", "pbm", "pam"], fmt: image::ImageFormat::Pnm }),
-    ("QOI",     ExportInfo { extensions: &["qoi"],                  fmt: image::ImageFormat::Qoi }),
-    ("EXR",     ExportInfo { extensions: &["exr"],                  fmt: image::ImageFormat::OpenExr }),
-    ("HDR",     ExportInfo { extensions: &["hdr"],                  fmt: image::ImageFormat::Hdr }),
-    ("Farbfeld",ExportInfo { extensions: &["ff"],                   fmt: image::ImageFormat::Farbfeld }),
+    ("AVIF", ExportInfo { extensions: &["avif"], fmt: image::ImageFormat::Avif }),
+    ("PNG", ExportInfo { extensions: &["png"], fmt: image::ImageFormat::Png }),
+    ("JPEG", ExportInfo { extensions: &["jpg", "jpeg"], fmt: image::ImageFormat::Jpeg }),
+    ("WebP", ExportInfo { extensions: &["webp"], fmt: image::ImageFormat::WebP }),
+    ("GIF", ExportInfo { extensions: &["gif"], fmt: image::ImageFormat::Gif }),
+    ("TIFF", ExportInfo { extensions: &["tiff", "tif"], fmt: image::ImageFormat::Tiff }),
+    ("TGA", ExportInfo { extensions: &["tga"], fmt: image::ImageFormat::Tga }),
+    ("ICO", ExportInfo { extensions: &["ico"], fmt: image::ImageFormat::Ico }),
+    (
+        "PNM",
+        ExportInfo {
+            extensions: &["pnm", "pgm", "ppm", "pbm", "pam"],
+            fmt: image::ImageFormat::Pnm,
+        },
+    ),
+    ("QOI", ExportInfo { extensions: &["qoi"], fmt: image::ImageFormat::Qoi }),
+    ("EXR", ExportInfo { extensions: &["exr"], fmt: image::ImageFormat::OpenExr }),
+    ("HDR", ExportInfo { extensions: &["hdr"], fmt: image::ImageFormat::Hdr }),
+    ("Farbfeld", ExportInfo { extensions: &["ff"], fmt: image::ImageFormat::Farbfeld }),
 ];
 
 /// A file-dialog action queued for execution on a background thread.
@@ -106,7 +114,7 @@ impl MyApp {
         pixel::blend_layers(&layer_slices, &mut self.canvas.output_rgba);
         let image = egui::ColorImage::from_rgba_premultiplied(
             [self.canvas.width as usize, self.canvas.height as usize],
-            &self.canvas.output_rgba,
+            &self.canvas.output_rgba
         );
 
         match &mut self.canvas.rendered_layers {
@@ -115,8 +123,7 @@ impl MyApp {
             }
             None => {
                 self.canvas.rendered_layers = Some(
-                    ui.ctx()
-                        .load_texture("rendered_layers", image, egui::TextureOptions::LINEAR),
+                    ui.ctx().load_texture("rendered_layers", image, egui::TextureOptions::LINEAR)
                 );
             }
         }
@@ -132,10 +139,12 @@ impl MyApp {
             PendingFileAction::Save => {
                 self.pending_file_action = Some(PendingFileAction::Save);
                 std::thread::spawn(move || {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("SplatterCanvas", &["splattercanvas"])
-                        .set_file_name("canvas.splattercanvas")
-                        .save_file()
+                    if
+                        let Some(path) = rfd::FileDialog
+                            ::new()
+                            .add_filter("SplatterCanvas", &["splattercanvas"])
+                            .set_file_name("canvas.splattercanvas")
+                            .save_file()
                     {
                         let _ = tx.send(DialogResult::Picked(path));
                     }
@@ -144,9 +153,11 @@ impl MyApp {
             PendingFileAction::Load => {
                 self.pending_file_action = Some(PendingFileAction::Load);
                 std::thread::spawn(move || {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("SplatterCanvas", &["splattercanvas"])
-                        .pick_file()
+                    if
+                        let Some(path) = rfd::FileDialog
+                            ::new()
+                            .add_filter("SplatterCanvas", &["splattercanvas"])
+                            .pick_file()
                     {
                         let _ = tx.send(DialogResult::Picked(path));
                     }
@@ -155,13 +166,34 @@ impl MyApp {
             PendingFileAction::Import => {
                 self.pending_file_action = Some(PendingFileAction::Import);
                 std::thread::spawn(move || {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(
-                            "Images",
-                            &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
-                              "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff"],
-                        )
-                        .pick_file()
+                    if
+                        let Some(path) = rfd::FileDialog
+                            ::new()
+                            .add_filter(
+                                "Images",
+                                &[
+                                    "avif",
+                                    "png",
+                                    "jpg",
+                                    "jpeg",
+                                    "webp",
+                                    "gif",
+                                    "tiff",
+                                    "tif",
+                                    "tga",
+                                    "ico",
+                                    "pnm",
+                                    "pgm",
+                                    "ppm",
+                                    "pbm",
+                                    "pam",
+                                    "qoi",
+                                    "exr",
+                                    "hdr",
+                                    "ff",
+                                ]
+                            )
+                            .pick_file()
                     {
                         let _ = tx.send(DialogResult::Picked(path));
                     }
@@ -173,10 +205,12 @@ impl MyApp {
                 let exts: Vec<&str> = info.extensions.to_vec();
                 let default_name = format!("export.{}", info.extensions[0]);
                 std::thread::spawn(move || {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(EXPORT_FORMATS[idx].0, &exts)
-                        .set_file_name(&default_name)
-                        .save_file()
+                    if
+                        let Some(path) = rfd::FileDialog
+                            ::new()
+                            .add_filter(EXPORT_FORMATS[idx].0, &exts)
+                            .set_file_name(&default_name)
+                            .save_file()
                     {
                         let _ = tx.send(DialogResult::Picked(path));
                     }
@@ -196,7 +230,9 @@ impl MyApp {
                 DialogResult::Picked(path) => {
                     let pending = match self.pending_file_action.take() {
                         Some(a) => a,
-                        None => continue,
+                        None => {
+                            continue;
+                        }
                     };
                     match pending {
                         PendingFileAction::Save => {
@@ -206,7 +242,8 @@ impl MyApp {
                             } else {
                                 format!("{}.splattercanvas", path_str)
                             };
-                            if let Err(e) = files::save_canvas(self) {
+                            let savepath = Path::new(&self.savefile_path);
+                            if let Err(e) = files::save_canvas(self, savepath) {
                                 eprintln!("Save failed: {e}");
                             }
                             self.canvas.render_next_frame = true;
@@ -239,18 +276,22 @@ impl MyApp {
                             let info = &EXPORT_FORMATS[idx].1;
                             let default_ext = info.extensions[0];
                             let path_str = path.display().to_string();
-                            let path_str = if info.extensions.iter().any(|ext| path_str.ends_with(ext)) {
+                            let path_str = if
+                                info.extensions.iter().any(|ext| path_str.ends_with(ext))
+                            {
                                 path_str
                             } else {
                                 format!("{path_str}.{default_ext}")
                             };
-                            if let Err(e) = files::export_as_image(
-                                &self.canvas.output_rgba,
-                                self.canvas.width,
-                                self.canvas.height,
-                                Path::new(&path_str),
-                                info.fmt,
-                            ) {
+                            if
+                                let Err(e) = files::export_as_image(
+                                    &self.canvas.output_rgba,
+                                    self.canvas.width,
+                                    self.canvas.height,
+                                    Path::new(&path_str),
+                                    info.fmt
+                                )
+                            {
                                 eprintln!("Export failed: {e}");
                             }
                         }
@@ -282,6 +323,10 @@ pub struct MyApp {
     pub pending_file_action: Option<PendingFileAction>,
     pub dialog_tx: mpsc::Sender<DialogResult>,
     pub dialog_rx: mpsc::Receiver<DialogResult>,
+
+    pub app_local_data_directory: PathBuf,
+    pub time_elapsed: std::time::Duration,
+    pub times_autosaved: u32,
 }
 
 impl Default for MyApp {
@@ -289,6 +334,17 @@ impl Default for MyApp {
         let (dialog_tx, dialog_rx) = mpsc::channel();
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
+
+        let project_dirs = ProjectDirs::from("com", "Monbuticloud", "SplatterIron").expect(
+            "Couldn't resolve app dir"
+        );
+
+        let data_dir = project_dirs.data_dir().to_path_buf();
+        let autosave_dir = data_dir.join("autosaves");
+
+        std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
+        std::fs::create_dir_all(&autosave_dir).expect("Couldn't create autosave dir");
+
         Self {
             savefile_path: String::new(),
             canvas,
@@ -310,6 +366,9 @@ impl Default for MyApp {
             pending_file_action: None,
             dialog_tx,
             dialog_rx,
+            app_local_data_directory: data_dir,
+            time_elapsed: std::time::Duration::ZERO,
+            times_autosaved: 0,
         }
     }
 }
@@ -325,13 +384,18 @@ impl eframe::App for MyApp {
             return;
         }
         let predicted_delta_time = Duration::from_millis(
-            (ui.ctx().input(|i| i.predicted_dt) * 1000.0) as u64,
+            (ui.ctx().input(|i| i.predicted_dt) * 1000.0) as u64
         );
+        let real_delta_time = Duration::from_millis(
+            (ui.ctx().input(|i| i.stable_dt) * 1000.0) as u64
+        );
+
+        self.time_elapsed += real_delta_time;
 
         match self.render_state {
             RenderState::Warm(duration) => {
                 self.render_state = RenderState::Warm(
-                    duration.saturating_sub(predicted_delta_time),
+                    duration.saturating_sub(predicted_delta_time)
                 );
             }
             RenderState::Cold => {
@@ -350,8 +414,7 @@ impl eframe::App for MyApp {
             self.render_to_texture(ui);
         }
 
-        let is_quitting =
-            Panel::top("top").show_inside(ui, |ui| self.show_top_panel(ui)).inner;
+        let is_quitting = Panel::top("top").show_inside(ui, |ui| self.show_top_panel(ui)).inner;
 
         Panel::left("side").show_inside(ui, |ui| self.show_left_panel(ui));
 
@@ -361,6 +424,24 @@ impl eframe::App for MyApp {
 
         if is_quitting {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+
+        if self.times_autosaved * Duration::from_mins(2) < self.time_elapsed {
+            self.times_autosaved += 1;
+            save_canvas(
+                self,
+                Path::new(
+                    &self.app_local_data_directory
+                        .join("autosaves")
+                        .join(
+                            Local::now().format("%Y-%m-%d_%H-%M-%S").to_string() + ".splattercanvas"
+                        )
+                )
+            );
+            println!(
+                "Autosaved! to {}/autosaves",
+                self.app_local_data_directory.to_str().expect("Couldn't get app local data dirHi")
+            );
         }
     }
 }
