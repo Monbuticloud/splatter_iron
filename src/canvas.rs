@@ -47,17 +47,6 @@ impl Default for Canvas {
     }
 }
 
-// /// Composite layers into RGBA byte buffer using SIMD-accelerated blending.
-// /// Replaced by direct pixel::blend_layers call in app.rs.
-// #[inline(always)]
-// pub fn composite_layers_parallel_rgba(layers: &[Layer], output: &mut [u8]) {
-//     if layers.is_empty() {
-//         return;
-//     }
-//     let layer_slices: Vec<&[Color32]> = layers.iter().map(|l| l.pixels.as_slice()).collect();
-//     pixel::blend_layers(&layer_slices, output);
-// }
-
 /// Internal: fill a rectangle without capturing undo data.
 /// `pixels` is the mutable slice for the layer, `width` is canvas width.
 #[inline(always)]
