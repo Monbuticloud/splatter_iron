@@ -434,13 +434,14 @@ impl eframe::App for MyApp {
                     &self.app_local_data_directory
                         .join("autosaves")
                         .join(
-                            Local::now().format("%Y-%m-%d_%H-%M-%S").to_string() + ".splattercanvas"
+                            Local::now().format("%Y-%m-%d_i%H-%M-%S").to_string() +
+                                ".splattercanvas"
                         )
                 )
             );
             println!(
                 "Autosaved! to {}/autosaves",
-                self.app_local_data_directory.to_str().expect("Couldn't get app local data dirHi")
+                self.app_local_data_directory.to_str().expect("Couldn't get app local data dir")
             );
         }
     }
