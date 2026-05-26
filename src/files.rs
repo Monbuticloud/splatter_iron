@@ -6,9 +6,10 @@ use eframe::egui::Color32;
 use image::ImageEncoder;
 
 use crate::canvas::{ Canvas, Layer };
-use crate::pixel::{ premultiply, unpremultiply };
+use crate::pixel::{ premultiply, unpremultiply, F32_COLOR_MAX };
 
 const COMPRESSION_LEVEL: i32 = 10;
+const JPEG_QUALITY: u8 = 95;
 
 pub fn get_save_data(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     let json = serde_json::to_vec(canvas)?;
@@ -107,7 +108,7 @@ pub fn export_as_image(
             encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
         }
         image::ImageFormat::Jpeg => {
-            let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(writer, 95);
+            let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY);
             encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgb8)?;
         }
         image::ImageFormat::WebP => {
@@ -149,9 +150,9 @@ pub fn export_as_image(
             let pixel_count = (width * height) as usize;
             let mut float_pixels = Vec::with_capacity(pixel_count * 3);
             for chunk in raw.chunks_exact(4) {
-                let r = f32::from(chunk[0]) / 255.0;
-                let g = f32::from(chunk[1]) / 255.0;
-                let b = f32::from(chunk[2]) / 255.0;
+                let r = f32::from(chunk[0]) / F32_COLOR_MAX;
+                let g = f32::from(chunk[1]) / F32_COLOR_MAX;
+                let b = f32::from(chunk[2]) / F32_COLOR_MAX;
                 float_pixels.push(r);
                 float_pixels.push(g);
                 float_pixels.push(b);

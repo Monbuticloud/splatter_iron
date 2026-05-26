@@ -6,6 +6,10 @@ use serde::{ Deserialize, Serialize };
 use crate::pixel::premultiply;
 use crate::undo::{ self, Stroke, StrokePixel };
 
+const DEFAULT_WIDTH: u32 = 2000;
+const DEFAULT_HEIGHT: u32 = 1500;
+const DEFAULT_LAYER_PIXELS: u32 = 3 * 1_000_000;
+
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Layer {
     pub pixels: Vec<Color32>,
@@ -29,12 +33,12 @@ pub struct Canvas {
 impl Default for Canvas {
     fn default() -> Self {
         let layers: Vec<Layer> = vec![Layer {
-            pixels: vec![Color32::TRANSPARENT; 3 * 1_000_000],
+            pixels: vec![Color32::TRANSPARENT; DEFAULT_LAYER_PIXELS as usize],
         }];
         Self {
             pixels: layers,
-            height: 1500,
-            width: 2000,
+            height: DEFAULT_HEIGHT,
+            width: DEFAULT_WIDTH,
             output_rgba: Vec::new(),
             rendered_layers: None,
             // placeholder_texture: None,

@@ -3,6 +3,9 @@ use eframe::egui::{ self, Color32 };
 use crate::app::MyApp;
 use crate::canvas::Layer;
 
+const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=1000;
+const BRUSH_RADIUS_RANGE: std::ops::RangeInclusive<u32> = 0..=350;
+
 enum LayerAction {
     Delete(usize),
     MoveUp(usize),
@@ -21,12 +24,12 @@ impl MyApp {
         ui.separator();
 
         ui.label("Undo/Redo Strength");
-        ui.add(egui::DragValue::new(&mut self.undo_redo_strength).range(1..=1000));
+        ui.add(egui::DragValue::new(&mut self.undo_redo_strength).range(UNDO_REDO_RANGE));
 
         ui.label("::Brush Settings::");
         ui.separator();
         ui.label("Brush Radius:");
-        ui.add(egui::DragValue::new(&mut self.radius).range(0..=350));
+        ui.add(egui::DragValue::new(&mut self.radius).range(BRUSH_RADIUS_RANGE));
         ui.checkbox(&mut self.show_brush_preview, "Brush Preview");
 
         ui.separator();

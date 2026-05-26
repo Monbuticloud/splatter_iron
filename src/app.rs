@@ -3,10 +3,57 @@ use std::{ collections::VecDeque, path::PathBuf, sync::mpsc, time::Duration };
 use eframe::egui::{ self, Color32, Panel };
 
 use crate::canvas::{ Canvas, CurrentTool, RenderState };
-use crate::pixel;
+use crate::pixel::{ self, BYTES_PER_PIXEL as RGBA_CHANNELS };
 use crate::undo::Stroke;
 use directories::ProjectDirs;
 use chrono::Local;
+
+// --- App identity constants ---
+pub(crate) const APP_QUALIFIER: &str = "com";
+pub(crate) const APP_ORG: &str = "Monbuticloud";
+pub(crate) const APP_NAME: &str = "SplatterIron";
+
+// --- Canvas & save file constants ---
+const MAX_STROKE_STACK: usize = 1000;
+const CANVAS_EXT: &str = ".splattercanvas";
+const FILE_FILTER_NAME: &str = "SplatterCanvas";
+const DEFAULT_CANVAS_NAME: &str = "canvas.splattercanvas";
+const TEXTURE_NAME: &str = "rendered_layers";
+
+// --- Autosave constants ---
+const AUTOSAVE_DIR: &str = "autosaves";
+const AUTOSAVE_DATE_FMT: &str = "%Y-%m-%d_%H-%M-%S";
+const AUTOSAVE_INTERVAL_MINS: u64 = 2;
+
+// --- Performance constants ---
+const BUMP_ALLOCATOR_CAPACITY: usize = 32 * 1024 * 1024;
+const UNFOCUSED_SLEEP_MS: u64 = 50;
+const SECONDS_TO_MILLIS: f32 = 1000.0;
+const REPAINT_DELAY_MULT: u32 = 5;
+
+// --- Image import extensions ---
+const IMPORT_EXTENSIONS: &[&str] = &[
+    "avif",
+    "png",
+    "jpg",
+    "jpeg",
+    "webp",
+    "gif",
+    "tiff",
+    "tif",
+    "tga",
+    "ico",
+    "pnm",
+    "pgm",
+    "ppm",
+    "pbm",
+    "pam",
+    "qoi",
+    "exr",
+    "hdr",
+    "ff",
+];
+
 pub(crate) struct ExportInfo {
     pub extensions: &'static [&'static str],
     pub fmt: image::ImageFormat,
@@ -69,7 +116,7 @@ pub(crate) enum SaveResult {
 impl MyApp {
     pub fn push_stroke(&mut self, mut stroke: Stroke) {
         self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
-        if self.stroke_stack.len() >= 1000 {
+        if self.stroke_stack.len() >= MAX_STROKE_STACK {
             let mut recycled = self.stroke_stack.pop_front().unwrap();
             recycled.layer_index = stroke.layer_index;
             recycled.width = stroke.width;
@@ -117,8 +164,8 @@ impl MyApp {
     fn render_to_texture(&mut self, ui: &egui::Ui) {
         let pixel_count = (self.canvas.width as usize) * (self.canvas.height as usize);
 
-        if self.canvas.output_rgba.len() != pixel_count * 4 {
-            self.canvas.output_rgba = vec![0; pixel_count * 4];
+        if self.canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
+            self.canvas.output_rgba = vec![0; pixel_count * RGBA_CHANNELS];
         }
         self.canvas.render_next_frame = false;
 
@@ -138,7 +185,7 @@ impl MyApp {
             }
             None => {
                 self.canvas.rendered_layers = Some(
-                    ui.ctx().load_texture("rendered_layers", image, egui::TextureOptions::LINEAR)
+                    ui.ctx().load_texture(TEXTURE_NAME, image, egui::TextureOptions::LINEAR)
                 );
             }
         }
@@ -157,8 +204,8 @@ impl MyApp {
                     if
                         let Some(path) = rfd::FileDialog
                             ::new()
-                            .add_filter("SplatterCanvas", &["splattercanvas"])
-                            .set_file_name("canvas.splattercanvas")
+                            .add_filter(FILE_FILTER_NAME, &[CANVAS_EXT.trim_start_matches('.')])
+                            .set_file_name(DEFAULT_CANVAS_NAME)
                             .save_file()
                     {
                         let _ = tx.send(DialogResult::Picked(path));
@@ -171,7 +218,7 @@ impl MyApp {
                     if
                         let Some(path) = rfd::FileDialog
                             ::new()
-                            .add_filter("SplatterCanvas", &["splattercanvas"])
+                            .add_filter(FILE_FILTER_NAME, &[CANVAS_EXT.trim_start_matches('.')])
                             .pick_file()
                     {
                         let _ = tx.send(DialogResult::Picked(path));
@@ -184,30 +231,7 @@ impl MyApp {
                     if
                         let Some(path) = rfd::FileDialog
                             ::new()
-                            .add_filter(
-                                "Images",
-                                &[
-                                    "avif",
-                                    "png",
-                                    "jpg",
-                                    "jpeg",
-                                    "webp",
-                                    "gif",
-                                    "tiff",
-                                    "tif",
-                                    "tga",
-                                    "ico",
-                                    "pnm",
-                                    "pgm",
-                                    "ppm",
-                                    "pbm",
-                                    "pam",
-                                    "qoi",
-                                    "exr",
-                                    "hdr",
-                                    "ff",
-                                ]
-                            )
+                            .add_filter("Images", IMPORT_EXTENSIONS)
                             .pick_file()
                     {
                         let _ = tx.send(DialogResult::Picked(path));
@@ -252,10 +276,10 @@ impl MyApp {
                     match pending {
                         PendingFileAction::Save => {
                             let path_str = path.display().to_string();
-                            let savepath = if path_str.ends_with(".splattercanvas") {
+                            let savepath = if path_str.ends_with(CANVAS_EXT) {
                                 path
                             } else {
-                                PathBuf::from(format!("{path_str}.splattercanvas"))
+                                PathBuf::from(format!("{path_str}{CANVAS_EXT}"))
                             };
                             self.trigger_async_save(SaveKind::ManualSave(savepath));
                         }
@@ -317,22 +341,24 @@ impl MyApp {
     fn trigger_async_save(&mut self, kind: SaveKind) {
         let canvas = self.canvas.clone();
         let path = match &kind {
-            SaveKind::Autosave => self
-                .app_local_data_directory
-                .join("autosaves")
-                .join(format!("{}.splattercanvas", Local::now().format("%Y-%m-%d_%H-%M-%S"))),
+            SaveKind::Autosave =>
+                self.app_local_data_directory
+                    .join(AUTOSAVE_DIR)
+                    .join(format!("{}.splattercanvas", Local::now().format(AUTOSAVE_DATE_FMT))),
             SaveKind::ManualSave(p) => p.clone(),
         };
         let tx = self.save_result_sender.clone();
         std::thread::spawn(move || {
             let result = match crate::files::save_canvas_to_bytes(&canvas) {
-                Ok(data) => match crate::files::save_bytes_to_file(&data, &path) {
-                    Ok(()) => match kind {
-                        SaveKind::Autosave => SaveResult::Autosave,
-                        SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
-                    },
-                    Err(e) => SaveResult::Failed(format!("Write failed: {e}")),
-                },
+                Ok(data) =>
+                    match crate::files::save_bytes_to_file(&data, &path) {
+                        Ok(()) =>
+                            match kind {
+                                SaveKind::Autosave => SaveResult::Autosave,
+                                SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
+                            }
+                        Err(e) => SaveResult::Failed(format!("Write failed: {e}")),
+                    }
                 Err(e) => SaveResult::Failed(format!("Serialisation failed: {e}")),
             };
             let _ = tx.send(result);
@@ -405,12 +431,12 @@ impl Default for MyApp {
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
 
-        let project_dirs = ProjectDirs::from("com", "Monbuticloud", "SplatterIron").expect(
+        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORG, APP_NAME).expect(
             "Couldn't resolve app dir"
         );
 
         let data_dir = project_dirs.data_dir().to_path_buf();
-        let autosave_dir = data_dir.join("autosaves");
+        let autosave_dir = data_dir.join(AUTOSAVE_DIR);
 
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
         std::fs::create_dir_all(&autosave_dir).expect("Couldn't create autosave dir");
@@ -430,7 +456,7 @@ impl Default for MyApp {
             redo_index: 0,
             undo_redo_strength: 5,
             show_brush_preview: true,
-            bump_allocator: bumpalo::Bump::with_capacity(32 * 1024 * 1024),
+            bump_allocator: bumpalo::Bump::with_capacity(BUMP_ALLOCATOR_CAPACITY),
             visited: vec![0u32; pixel_count],
             visited_stamp: 1,
             pending_file_action: None,
@@ -453,15 +479,15 @@ impl eframe::App for MyApp {
         self.poll_save_results();
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
-            std::thread::sleep(std::time::Duration::from_millis(50));
+            std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MS));
             self.render_state = RenderState::Frozen;
             return;
         }
         let predicted_delta_time = Duration::from_millis(
-            (ui.ctx().input(|i| i.predicted_dt) * 1000.0) as u64
+            (ui.ctx().input(|i| i.predicted_dt) * SECONDS_TO_MILLIS) as u64
         );
         let real_delta_time = Duration::from_millis(
-            (ui.ctx().input(|i| i.stable_dt) * 1000.0) as u64
+            (ui.ctx().input(|i| i.stable_dt) * SECONDS_TO_MILLIS) as u64
         );
 
         self.time_elapsed += real_delta_time;
@@ -473,7 +499,7 @@ impl eframe::App for MyApp {
                 );
             }
             RenderState::Cold => {
-                ui.request_repaint_after(predicted_delta_time * 5);
+                ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULT);
             }
             RenderState::Frozen => {
                 self.render_state = RenderState::Cold;
@@ -500,9 +526,10 @@ impl eframe::App for MyApp {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         }
 
-        // Autosave every 2 minutes, but only if the canvas has been modified.
-        if self.dirty_since_last_autosave
-            && self.times_autosaved * Duration::from_mins(2) < self.time_elapsed
+        // Autosave every AUTOSAVE_INTERVAL_MINS minutes, but only if the canvas has been modified.
+        if
+            self.dirty_since_last_autosave &&
+            self.times_autosaved * Duration::from_mins(AUTOSAVE_INTERVAL_MINS) < self.time_elapsed
         {
             self.times_autosaved += 1;
             self.trigger_async_save(SaveKind::Autosave);

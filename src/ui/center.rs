@@ -6,6 +6,10 @@ use egui::epaint::StrokeKind;
 use crate::app::{ MyApp, PendingFileAction };
 use crate::canvas::{ self, CurrentTool, RenderState };
 
+const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
+const PREVIEW_STROKE_WIDTH: f32 = 1.0;
+const WARM_DURATION_MS: u64 = 550;
+
 impl MyApp {
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
         if self.canvas.rendered_layers.is_some() {
@@ -106,7 +110,7 @@ impl MyApp {
                         self.current_color.r(),
                         self.current_color.g(),
                         self.current_color.b(),
-                        ((self.current_color.a() as f32) * 0.2) as u8
+                        ((self.current_color.a() as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8
                     );
                     ui.painter().rect_filled(preview_rect, 0.0, fill_color);
 
@@ -114,7 +118,7 @@ impl MyApp {
                     ui.painter().rect_stroke(
                         preview_rect,
                         0.0,
-                        egui::Stroke::new(1.0, self.current_color),
+                        egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.current_color),
                         StrokeKind::Middle
                     );
                 }
@@ -122,7 +126,7 @@ impl MyApp {
 
             if response.hovered() {
                 self.pending_delete_layer = None;
-                self.render_state = RenderState::Warm(Duration::from_millis(550));
+                self.render_state = RenderState::Warm(Duration::from_millis(WARM_DURATION_MS));
             }
 
             if response.dragged() {
@@ -233,5 +237,4 @@ impl MyApp {
             }
         }
     }
-
 }

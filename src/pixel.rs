@@ -2,6 +2,12 @@ use eframe::egui::Color32;
 use rayon::prelude::*;
 use wide::u32x4;
 
+pub(crate) const BYTES_PER_PIXEL: usize = 4;
+pub(crate) const F32_COLOR_MAX: f32 = 255.0;
+
+// SIMD constant for the (value * alpha + 128) >> 8 fixed-point blend
+const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
+
 /// Un-premultiply a premultiplied-alpha Color32 back to straight alpha.
 /// Inverse of `premultiply`.
 #[inline(always)]
@@ -11,9 +17,9 @@ pub fn unpremultiply(color: Color32) -> Color32 {
         return color;
     }
     let alpha_u32 = alpha as u32;
-    let r = ((color.r() as u32 * 255) / alpha_u32).min(255) as u8;
-    let g = ((color.g() as u32 * 255) / alpha_u32).min(255) as u8;
-    let b = ((color.b() as u32 * 255) / alpha_u32).min(255) as u8;
+    let r = (((color.r() as u32) * 255) / alpha_u32).min(255) as u8;
+    let g = (((color.g() as u32) * 255) / alpha_u32).min(255) as u8;
+    let b = (((color.b() as u32) * 255) / alpha_u32).min(255) as u8;
     Color32::from_rgba_unmultiplied(r, g, b, alpha)
 }
 
@@ -77,9 +83,6 @@ pub fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
     )
 }
 
-// SIMD constant for the (value * alpha + 128) >> 8 fixed-point blend
-const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
-
 /// Blend multiple premultiplied layers into an RGBA u8 output buffer.
 ///
 /// Layers are composited bottom-to-top (index 0 = bottommost).
@@ -100,14 +103,14 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
     for (i, layer) in layers.iter().enumerate() {
         assert_eq!(layer.len(), pixel_count, "blend_layers: layer {i} length mismatch");
     }
-    assert_eq!(output.len(), pixel_count * 4, "blend_layers: output length mismatch");
+    assert_eq!(output.len(), pixel_count * BYTES_PER_PIXEL, "blend_layers: output length mismatch");
 
     // Fast path: single layer — just copy RGBA bytes directly
     if layers.len() == 1 {
         let source_layer = layers[0];
         for pixel_index in 0..pixel_count {
             let rgba_array = source_layer[pixel_index].to_array(); // [R, G, B, A]
-            let output_index = pixel_index * 4;
+            let output_index = pixel_index * BYTES_PER_PIXEL;
             output[output_index] = rgba_array[0];
             output[output_index + 1] = rgba_array[1];
             output[output_index + 2] = rgba_array[2];
@@ -126,7 +129,7 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
         .par_chunks_mut(16)
         .enumerate()
         .for_each(|(chunk_index, output_chunk)| {
-            let pixel_base = chunk_index * 4;
+            let pixel_base = chunk_index * BYTES_PER_PIXEL;
 
             // Load bottom layer (index 0) pixels into SIMD accumulators
             let bottom_layer = layers[0];
@@ -195,18 +198,10 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
                 let inverse_alpha = u32x4::splat(255) - top_a;
 
                 // Blend: accumulator = top + ((accumulator * inverse_alpha + 128) >> 8)
-                accumulator_r =
-                    top_r +
-                    ((accumulator_r * inverse_alpha + ROUNDING_BIAS_128) >> 8);
-                accumulator_g =
-                    top_g +
-                    ((accumulator_g * inverse_alpha + ROUNDING_BIAS_128) >> 8);
-                accumulator_b =
-                    top_b +
-                    ((accumulator_b * inverse_alpha + ROUNDING_BIAS_128) >> 8);
-                accumulator_a =
-                    top_a +
-                    ((accumulator_a * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+                accumulator_r = top_r + ((accumulator_r * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+                accumulator_g = top_g + ((accumulator_g * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+                accumulator_b = top_b + ((accumulator_b * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+                accumulator_a = top_a + ((accumulator_a * inverse_alpha + ROUNDING_BIAS_128) >> 8);
             }
 
             // Write 4 blended pixels to output buffer as RGBA bytes
@@ -216,7 +211,7 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
             let alpha_array = accumulator_a.to_array();
 
             for pixel_offset in 0..4 {
-                let output_index = pixel_offset * 4;
+                let output_index = pixel_offset * BYTES_PER_PIXEL;
                 output_chunk[output_index] = red_array[pixel_offset] as u8;
                 output_chunk[output_index + 1] = green_array[pixel_offset] as u8;
                 output_chunk[output_index + 2] = blue_array[pixel_offset] as u8;
@@ -225,8 +220,10 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
         });
 
     // --- Scalar remainder for pixels not covered by full SIMD chunks ---
-    let remainder_pixel_start = simd_chunks * 4;
-    for (remainder_index, output_chunk) in remainder_buffer.chunks_mut(4).enumerate() {
+    let remainder_pixel_start = simd_chunks * BYTES_PER_PIXEL;
+    for (remainder_index, output_chunk) in remainder_buffer
+        .chunks_mut(BYTES_PER_PIXEL)
+        .enumerate() {
         let pixel_index = remainder_pixel_start + remainder_index;
         let mut pixel = layers[0][pixel_index];
 

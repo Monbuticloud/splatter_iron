@@ -13,6 +13,8 @@ use directories::ProjectDirs;
 use std::alloc::{ GlobalAlloc, Layout };
 use std::sync::atomic::{ AtomicUsize, Ordering };
 
+use crate::app::{ APP_QUALIFIER, APP_ORG, APP_NAME };
+
 struct TrackingAllocator;
 
 // real allocator underneath
@@ -79,14 +81,14 @@ pub fn allocated_bytes() -> usize {
 // Never mind its just windows that has issues, linux and mac are fine. I'll just add a note about it in the readme (maybe) and leave it as is for now.
 
 fn main() -> eframe::Result {
-    let project_dirs = ProjectDirs::from("com", "Monbuticloud", "SplatterIron").expect(
+    let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORG, APP_NAME).expect(
         "Couldn't resolve app dir"
     );
     let data_dir = project_dirs.data_local_dir().to_path_buf();
     std::fs::create_dir_all(&data_dir).unwrap();
 
     let res = eframe::run_native(
-        "SplatterIron",
+        APP_NAME,
         eframe::NativeOptions::default(),
         Box::new(|_| Ok(Box::new(app::MyApp::default())))
     );
