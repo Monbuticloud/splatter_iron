@@ -1,140 +1,114 @@
-use std::path::Path;
-
 use eframe::egui;
 
-use crate::app::MyApp;
+use crate::app::{ MyApp, PendingFileAction };
 use crate::canvas::Canvas;
-use crate::files;
+use crate::undo::{ undo_stroke, redo_stroke };
 
 impl MyApp {
     pub fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
         let mut is_quitting = false;
         ui.horizontal(|ui| {
-            let save_button = ui.button("Save");
-            if save_button.clicked() {
+            // Save
+            if ui.button("Save").clicked() {
                 if self.savefile_path.is_empty() {
-                    if
-                        let Some(path) = rfd::FileDialog
-                            ::new()
-                            .add_filter("SplatterCanvas", &["splattercanvas"])
-                            .set_file_name("canvas.splattercanvas")
-                            .save_file()
-                    {
-                        let path_str = path.display().to_string();
-                        self.savefile_path = if path_str.ends_with(".splattercanvas") {
-                            path_str
-                        } else {
-                            format!("{}.splattercanvas", path_str)
-                        };
-                    }
-                }
-                if !self.savefile_path.is_empty() {
-                    if let Err(e) = files::save_canvas(self) {
+                    self.pending_file_action = Some(PendingFileAction::Save);
+                    ui.ctx().request_repaint();
+                } else {
+                    if let Err(e) = crate::files::save_canvas(self) {
                         eprintln!("Save failed: {e}");
                     }
                 }
                 self.canvas.render_next_frame = true;
             }
 
-            let load_button = ui.button("Load");
-            if load_button.clicked() {
-                if
-                    let Some(path) = rfd::FileDialog
-                        ::new()
-                        .add_filter("SplatterCanvas", &["splattercanvas"])
-                        .pick_file()
-                {
-                    match files::load_data_from_file(&path) {
-                        Ok(data) => {
-                            match files::load_app_from_data(&data) {
-                                Ok(canvas) => {
-                                    self.canvas = canvas;
-                                    self.savefile_path = path.display().to_string();
-                                    self.stroke_stack.clear();
-                                    self.redo_index = 0;
-                                    self.canvas.render_next_frame = true;
-                                }
-                                Err(e) => {
-                                    eprintln!("Failed to load canvas: {e}");
-                                }
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to read file: {e}");
-                        }
-                    }
-                }
+            // Load
+            if ui.button("Load").clicked() {
+                self.pending_file_action = Some(PendingFileAction::Load);
+                ui.ctx().request_repaint();
             }
 
-            let new_button = ui.button("New");
-            if new_button.clicked() {
-                self.canvas = Canvas::default();
-                self.stroke_stack.clear();
-                self.redo_index = 0;
-                self.savefile_path.clear();
+            // New
+            if ui.button("New").clicked() {
+                self.replace_canvas(Canvas::default());
+            }
+
+            // Export menu with all supported formats
+            ui.menu_button("Export", |ui| {
+                let export_formats: &[( &str, &[&str], image::ImageFormat )] = &[
+                    ("AVIF",    &["avif"],                 image::ImageFormat::Avif),
+                    ("PNG",     &["png"],                  image::ImageFormat::Png),
+                    ("JPEG",    &["jpg", "jpeg"],          image::ImageFormat::Jpeg),
+                    ("WebP",    &["webp"],                 image::ImageFormat::WebP),
+                    ("GIF",     &["gif"],                  image::ImageFormat::Gif),
+                    ("TIFF",    &["tiff", "tif"],          image::ImageFormat::Tiff),
+                    ("TGA",     &["tga"],                  image::ImageFormat::Tga),
+                    ("ICO",     &["ico"],                  image::ImageFormat::Ico),
+                    ("PNM",     &["pnm", "pgm", "ppm", "pbm", "pam"], image::ImageFormat::Pnm),
+                    ("QOI",     &["qoi"],                  image::ImageFormat::Qoi),
+                    ("EXR",     &["exr"],                  image::ImageFormat::OpenExr),
+                    ("HDR",     &["hdr"],                  image::ImageFormat::Hdr),
+                    ("Farbfeld",&["ff"],                   image::ImageFormat::Farbfeld),
+                ];
+
+                for &(label, extensions, fmt) in export_formats {
+                    if ui.button(label).clicked() {
+                        self.pending_file_action = Some(PendingFileAction::Export { extensions, fmt });
+                        ui.ctx().request_repaint();
+                        ui.close();
+                    }
+                }
+            });
+
+            // Import
+            if ui.button("Import").clicked() {
+                self.pending_file_action = Some(PendingFileAction::Import);
+                ui.ctx().request_repaint();
+            }
+
+            ui.separator();
+
+            // Undo / Redo buttons
+            let undo_btn = ui.button("Undo");
+            let redo_btn = ui.button("Redo");
+
+            // Undo: button or keyboard shortcut
+            if
+                self.redo_index < self.stroke_stack.len() &&
+                (ui.input(
+                    |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift
+                ) || undo_btn.clicked())
+            {
+                let count = self.undo_redo_strength.min(self.stroke_stack.len() - self.redo_index);
+                for _ in 0..count {
+                    let idx = self.stroke_stack.len() - 1 - self.redo_index;
+                    undo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
+                    self.redo_index += 1;
+                }
                 self.canvas.render_next_frame = true;
             }
 
-            let export_button = ui.button("Export");
-            if export_button.clicked() {
-                if
-                    let Some(path) = rfd::FileDialog
-                        ::new()
-                        .add_filter("AVIF Image", &["avif"])
-                        .set_file_name("export.avif")
-                        .save_file()
-                {
-                    if !self.canvas.output_rgba.is_empty() {
-                        let path_str = path.display().to_string();
-                        let path_str = if path_str.ends_with(".avif") {
-                            path_str
-                        } else {
-                            format!("{path_str}.avif")
-                        };
-                        if
-                            let Err(e) = files::export_as_image(
-                                &self.canvas.output_rgba,
-                                self.canvas.width,
-                                self.canvas.height,
-                                Path::new(&path_str),
-                                image::ImageFormat::Avif
-                            )
-                        {
-                            eprintln!("Export failed: {e}");
-                        }
-                    }
+            // Redo: button, cmd+shift+Z, or cmd+Y
+            if
+                self.redo_index > 0 &&
+                (ui.input(
+                    |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift
+                ) ||
+                    ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
+                    redo_btn.clicked())
+            {
+                let count = self.undo_redo_strength.min(self.redo_index);
+                for _ in 0..count {
+                    let idx = self.stroke_stack.len() - self.redo_index;
+                    self.redo_index -= 1;
+                    redo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
                 }
+                self.canvas.render_next_frame = true;
             }
 
-            let import_button = ui.button("Import");
-            if import_button.clicked() {
-                if
-                    let Some(path) = rfd::FileDialog
-                        ::new()
-                    .add_filter(
-                        "Images",
-                        &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
-                          "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff"],
-                    )
-                        .pick_file()
-                {
-                    match files::import_image_as_canvas(&path) {
-                        Ok(canvas) => {
-                            self.canvas = canvas;
-                            self.savefile_path.clear();
-                            self.stroke_stack.clear();
-                            self.redo_index = 0;
-                            self.canvas.render_next_frame = true;
-                        }
-                        Err(e) => {
-                            eprintln!("Import failed: {e}");
-                        }
-                    }
-                }
-            }
+            ui.separator();
 
-            let close_button = ui.button("Close");
-            if close_button.clicked() {
+            // Close
+            if ui.button("Close").clicked() {
                 is_quitting = true;
             }
         });

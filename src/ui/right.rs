@@ -41,7 +41,7 @@ impl MyApp {
             self.canvas.pixels.push(Layer {
                 pixels: vec![Color32::TRANSPARENT; (self.canvas.width * self.canvas.height) as usize],
             });
-            // self.canvas.render_next_frame = true;
+            self.canvas.render_next_frame = true;
         }
 
         egui::ScrollArea::vertical().show(ui, |ui| {

@@ -77,10 +77,8 @@ pub fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
     )
 }
 
-// SIMD constants for the (value * alpha + 128) * 257 >> 16 fixed-point blend
+// SIMD constant for the (value * alpha + 128) >> 8 fixed-point blend
 const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
-const DIV_255_FACTOR_257: u32x4 = u32x4::splat(257);
-const SHIFT_16: u32x4 = u32x4::splat(16);
 
 /// Blend multiple premultiplied layers into an RGBA u8 output buffer.
 ///
@@ -196,23 +194,19 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
 
                 let inverse_alpha = u32x4::splat(255) - top_a;
 
-                // Blend: accumulator = top + ((accumulator * inverse_alpha + 128) * 257) >> 16
+                // Blend: accumulator = top + ((accumulator * inverse_alpha + 128) >> 8)
                 accumulator_r =
                     top_r +
-                    (((accumulator_r * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >>
-                        SHIFT_16);
+                    ((accumulator_r * inverse_alpha + ROUNDING_BIAS_128) >> 8);
                 accumulator_g =
                     top_g +
-                    (((accumulator_g * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >>
-                        SHIFT_16);
+                    ((accumulator_g * inverse_alpha + ROUNDING_BIAS_128) >> 8);
                 accumulator_b =
                     top_b +
-                    (((accumulator_b * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >>
-                        SHIFT_16);
+                    ((accumulator_b * inverse_alpha + ROUNDING_BIAS_128) >> 8);
                 accumulator_a =
                     top_a +
-                    (((accumulator_a * inverse_alpha + ROUNDING_BIAS_128) * DIV_255_FACTOR_257) >>
-                        SHIFT_16);
+                    ((accumulator_a * inverse_alpha + ROUNDING_BIAS_128) >> 8);
             }
 
             // Write 4 blended pixels to output buffer as RGBA bytes

@@ -1,22 +1,15 @@
-use std::path::Path;
 use std::time::Duration;
 
 use eframe::egui::{ self, Color32, Rect, Pos2 };
 use egui::epaint::StrokeKind;
-use egui::os::OperatingSystem;
 
-use crate::app::MyApp;
+use crate::app::{ MyApp, PendingFileAction };
 use crate::canvas::{ self, CurrentTool, RenderState };
-use crate::files;
-use crate::undo::{ undo_stroke, redo_stroke };
 
 impl MyApp {
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
         if self.canvas.rendered_layers.is_some() {
             self.handle_canvas_interaction(ui);
-        }
-        if !self.stroke_stack.is_empty() {
-            self.handle_undo_redo_ui(ui);
         }
     }
 
@@ -40,28 +33,9 @@ impl MyApp {
             response.context_menu(|ui| {
                 // --- Import ---
                 if ui.button("Import").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(
-                            "Images",
-                            &["avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
-                              "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff"],
-                        )
-                        .pick_file()
-                    {
-                        match files::import_image_as_canvas(&path) {
-                            Ok(canvas) => {
-                                self.canvas = canvas;
-                                self.savefile_path.clear();
-                                self.stroke_stack.clear();
-                                self.redo_index = 0;
-                                self.canvas.render_next_frame = true;
-                            }
-                            Err(e) => {
-                                eprintln!("Import failed: {e}");
-                            }
-                        }
-                        ui.close();
-                    }
+                    self.pending_file_action = Some(PendingFileAction::Import);
+                    ui.ctx().request_repaint();
+                    ui.close();
                 }
 
                 // --- Export As submenu ---
@@ -84,31 +58,8 @@ impl MyApp {
 
                     for &(label, extensions, fmt) in export_formats {
                         if ui.button(label).clicked() {
-                            let default_ext = extensions[0];
-                            let default_name = format!("export.{default_ext}");
-                            if let Some(path) = rfd::FileDialog::new()
-                                .add_filter(label, extensions)
-                                .set_file_name(&default_name)
-                                .save_file()
-                            {
-                                if !self.canvas.output_rgba.is_empty() {
-                                    let path_str = path.display().to_string();
-                                    let path_str = if path_str.ends_with(default_ext) || extensions.iter().any(|ext| path_str.ends_with(ext)) {
-                                        path_str
-                                    } else {
-                                        format!("{path_str}.{default_ext}")
-                                    };
-                                    if let Err(e) = files::export_as_image(
-                                        &self.canvas.output_rgba,
-                                        self.canvas.width,
-                                        self.canvas.height,
-                                        Path::new(&path_str),
-                                        fmt,
-                                    ) {
-                                        eprintln!("Export failed: {e}");
-                                    }
-                                }
-                            }
+                            self.pending_file_action = Some(PendingFileAction::Export { extensions, fmt });
+                            ui.ctx().request_repaint();
                             ui.close();
                         }
                     }
@@ -118,24 +69,11 @@ impl MyApp {
 
                 // --- Save As ---
                 if ui.button("Save As").clicked() {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter("SplatterCanvas", &["splattercanvas"])
-                        .set_file_name("canvas.splattercanvas")
-                        .save_file()
-                    {
-                        let path_str = path.display().to_string();
-                        let save_path = if path_str.ends_with(".splattercanvas") {
-                            path_str
-                        } else {
-                            format!("{}.splattercanvas", path_str)
-                        };
-                        self.savefile_path = save_path;
-                        if let Err(e) = files::save_canvas(self) {
-                            eprintln!("Save As failed: {e}");
-                        }
-                        self.canvas.render_next_frame = true;
-                        ui.close();
-                    }
+                    // Save As always opens a dialog even if savefile_path is set
+                    self.pending_file_action = Some(PendingFileAction::Save);
+                    self.savefile_path.clear(); // force dialog
+                    ui.ctx().request_repaint();
+                    ui.close();
                 }
             });
 
@@ -312,45 +250,4 @@ impl MyApp {
         }
     }
 
-    fn handle_undo_redo_ui(&mut self, ui: &mut egui::Ui) {
-        // Platform-aware modifier key label
-        let mod_prefix = if ui.ctx().os() == OperatingSystem::Mac { "⌘" } else { "Ctrl+" };
-
-        let undo_btn = ui.button(format!("Undo  {mod_prefix}Z"));
-        let redo_btn = ui.button(format!("Redo  {mod_prefix}Shift+Z"));
-
-        // Undo: cmd+Z or Undo button
-        if
-            self.redo_index < self.stroke_stack.len() &&
-            (ui.input(
-                |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift
-            ) || undo_btn.clicked())
-        {
-            let count = self.undo_redo_strength.min(self.stroke_stack.len() - self.redo_index);
-            for _ in 0..count {
-                let idx = self.stroke_stack.len() - 1 - self.redo_index;
-                undo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
-                self.redo_index += 1;
-            }
-            self.canvas.render_next_frame = true;
-        }
-
-        // Redo: cmd+shift+Z, cmd+Y, or Redo button
-        if
-            self.redo_index > 0 &&
-            (ui.input(
-                |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift
-            ) ||
-                ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
-                redo_btn.clicked())
-        {
-            let count = self.undo_redo_strength.min(self.redo_index);
-            for _ in 0..count {
-                let idx = self.stroke_stack.len() - self.redo_index;
-                self.redo_index -= 1;
-                redo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
-            }
-            self.canvas.render_next_frame = true;
-        }
-    }
 }
