@@ -148,7 +148,7 @@ impl MyApp {
     /// The dialog runs via `dispatch_sync` to the main thread from a background
     /// thread, which avoids macOS winit re-entrancy panics.
     pub(crate) fn queue_file_action(&mut self, action: PendingFileAction) {
-        let tx = self.dialog_tx.clone();
+        let tx = self.dialog_sender.clone();
 
         match action {
             PendingFileAction::Save => {
@@ -240,7 +240,7 @@ impl MyApp {
         use crate::files;
         use std::path::Path;
 
-        while let Ok(result) = self.dialog_rx.try_recv() {
+        while let Ok(result) = self.dialog_receiver.try_recv() {
             match result {
                 DialogResult::Picked(path) => {
                     let pending = match self.pending_file_action.take() {
@@ -323,7 +323,7 @@ impl MyApp {
                 .join(format!("{}.splattercanvas", Local::now().format("%Y-%m-%d_%H-%M-%S"))),
             SaveKind::ManualSave(p) => p.clone(),
         };
-        let tx = self.save_result_tx.clone();
+        let tx = self.save_result_sender.clone();
         std::thread::spawn(move || {
             let result = match crate::files::save_canvas_to_bytes(&canvas) {
                 Ok(data) => match crate::files::save_bytes_to_file(&data, &path) {
@@ -348,7 +348,7 @@ impl MyApp {
 
     /// Poll for completed async saves and update app state accordingly.
     pub(crate) fn poll_save_results(&mut self) {
-        while let Ok(result) = self.save_result_rx.try_recv() {
+        while let Ok(result) = self.save_result_receiver.try_recv() {
             match result {
                 SaveResult::Autosave => {
                     self.dirty_since_last_autosave = false;
@@ -384,8 +384,8 @@ pub struct MyApp {
     pub stroke_stack: VecDeque<Stroke>,
     pub redo_index: usize,
     pub pending_file_action: Option<PendingFileAction>,
-    pub dialog_tx: mpsc::Sender<DialogResult>,
-    pub dialog_rx: mpsc::Receiver<DialogResult>,
+    pub dialog_sender: mpsc::Sender<DialogResult>,
+    pub dialog_receiver: mpsc::Receiver<DialogResult>,
 
     pub app_local_data_directory: PathBuf,
     pub time_elapsed: std::time::Duration,
@@ -394,14 +394,14 @@ pub struct MyApp {
     /// Set to true on any stroke/edit, cleared after autosave completes.
     pub dirty_since_last_autosave: bool,
     /// Channel for async save results.
-    pub save_result_tx: mpsc::Sender<SaveResult>,
-    pub save_result_rx: mpsc::Receiver<SaveResult>,
+    pub save_result_sender: mpsc::Sender<SaveResult>,
+    pub save_result_receiver: mpsc::Receiver<SaveResult>,
 }
 
 impl Default for MyApp {
     fn default() -> Self {
-        let (dialog_tx, dialog_rx) = mpsc::channel();
-        let (save_result_tx, save_result_rx) = mpsc::channel();
+        let (dialog_sender, dialog_receiver) = mpsc::channel();
+        let (save_result_sender, save_result_receiver) = mpsc::channel();
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
 
@@ -434,14 +434,14 @@ impl Default for MyApp {
             visited: vec![0u32; pixel_count],
             visited_stamp: 1,
             pending_file_action: None,
-            dialog_tx,
-            dialog_rx,
+            dialog_sender,
+            dialog_receiver,
             app_local_data_directory: data_dir,
             time_elapsed: std::time::Duration::ZERO,
             times_autosaved: 0,
             dirty_since_last_autosave: false,
-            save_result_tx,
-            save_result_rx,
+            save_result_sender,
+            save_result_receiver,
         }
     }
 }
