@@ -147,25 +147,19 @@ pub fn export_as_image(
         image::ImageFormat::Hdr => {
             // Build Rgb32F image from the straight RGBA buffer.
             // HDR stores linear float RGB (alpha is ignored).
+            // Build u8 buffer directly from f32 values (no unsafe needed).
             let pixel_count = (width * height) as usize;
-            let mut float_pixels = Vec::with_capacity(pixel_count * 3);
+            let mut float_bytes = Vec::with_capacity(pixel_count * 3 * 4);
             for chunk in raw.chunks_exact(4) {
                 let r = f32::from(chunk[0]) / F32_COLOR_MAX;
                 let g = f32::from(chunk[1]) / F32_COLOR_MAX;
                 let b = f32::from(chunk[2]) / F32_COLOR_MAX;
-                float_pixels.push(r);
-                float_pixels.push(g);
-                float_pixels.push(b);
+                float_bytes.extend_from_slice(&r.to_ne_bytes());
+                float_bytes.extend_from_slice(&g.to_ne_bytes());
+                float_bytes.extend_from_slice(&b.to_ne_bytes());
             }
             let encoder = image::codecs::hdr::HdrEncoder::new(writer);
-            // Convert Vec<f32> to &[u8] by transmuting (safe because f32 is 4 bytes)
-            let float_bytes: &[u8] = unsafe {
-                std::slice::from_raw_parts(
-                    float_pixels.as_ptr() as *const u8,
-                    float_pixels.len() * std::mem::size_of::<f32>()
-                )
-            };
-            encoder.write_image(float_bytes, width, height, image::ExtendedColorType::Rgb32F)?;
+            encoder.write_image(&float_bytes, width, height, image::ExtendedColorType::Rgb32F)?;
         }
         image::ImageFormat::Farbfeld => {
             // Farbfeld requires u16 RGBA (8 bytes/pixel), native endian.

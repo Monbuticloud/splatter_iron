@@ -54,6 +54,11 @@ const IMPORT_EXTENSIONS: &[&str] = &[
     "ff",
 ];
 
+enum PendingErrorWindowDismissal {
+    None,
+    Dismiss(usize),
+    All,
+}
 pub(crate) struct ExportInfo {
     pub extensions: &'static [&'static str],
     pub fmt: image::ImageFormat,
@@ -422,6 +427,8 @@ pub struct MyApp {
     /// Channel for async save results.
     pub save_result_sender: mpsc::Sender<SaveResult>,
     pub save_result_receiver: mpsc::Receiver<SaveResult>,
+
+    pub displayed_error_list: Vec<String>,
 }
 
 impl Default for MyApp {
@@ -468,6 +475,7 @@ impl Default for MyApp {
             dirty_since_last_autosave: false,
             save_result_sender,
             save_result_receiver,
+            displayed_error_list: Vec::new(),
         }
     }
 }
@@ -521,6 +529,51 @@ impl eframe::App for MyApp {
         Panel::right("right").show_inside(ui, |ui| self.show_right_panel(ui));
 
         egui::CentralPanel::default().show_inside(ui, |ui| self.show_central_panel(ui));
+
+        if self.displayed_error_list.len() > 0 {
+            let mut open = true; // local copy for the window
+            let mut status = PendingErrorWindowDismissal::None;
+            egui::Window
+                ::new("Error")
+                .collapsible(false) // prevent accidental collapse
+                .resizable(false) // fixed size, feels more like a modal
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0]) // center on screen
+                .open(&mut open)
+                .show(ui, |ui| {
+                    for (index, msg) in self.displayed_error_list.iter().enumerate() {
+                        ui.label("Error:".to_owned() + msg);
+                        ui.horizontal(|ui| {
+                            if ui.button("Dismiss").clicked() {
+                                status = PendingErrorWindowDismissal::Dismiss(index);
+                            }
+                            // Optional: a "Copy" button for debugging
+                            if ui.button("Copy error").clicked() {
+                                ui.ctx().copy_text(msg.clone());
+                            }
+                        });
+                    }
+                    ui.horizontal(|ui| {
+                        if ui.button("Dismiss All").clicked() {
+                            status = PendingErrorWindowDismissal::All;
+                        }
+                    });
+                });
+
+            // If the user closes via the [x] or presses Esc, open becomes false.
+            // We need to sync that back to our error_message.
+            match status {
+                PendingErrorWindowDismissal::None => {}
+                PendingErrorWindowDismissal::Dismiss(index) => {
+                    self.displayed_error_list.remove(index);
+                }
+                PendingErrorWindowDismissal::All => {
+                    self.displayed_error_list.clear();
+                }
+            }
+            if !open {
+                self.displayed_error_list.clear();
+            }
+        }
 
         if is_quitting {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
