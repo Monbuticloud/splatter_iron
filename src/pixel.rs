@@ -17,10 +17,10 @@ pub fn unpremultiply(color: Color32) -> Color32 {
         return color;
     }
     let alpha_u32 = alpha as u32;
-    let r = (((color.r() as u32) * 255) / alpha_u32).min(255) as u8;
-    let g = (((color.g() as u32) * 255) / alpha_u32).min(255) as u8;
-    let b = (((color.b() as u32) * 255) / alpha_u32).min(255) as u8;
-    Color32::from_rgba_unmultiplied(r, g, b, alpha)
+    let red = (((color.r() as u32) * 255) / alpha_u32).min(255) as u8;
+    let green = (((color.g() as u32) * 255) / alpha_u32).min(255) as u8;
+    let blue = (((color.b() as u32) * 255) / alpha_u32).min(255) as u8;
+    Color32::from_rgba_unmultiplied(red, green, blue, alpha)
 }
 
 /// Premultiply a straight-alpha Color32.
