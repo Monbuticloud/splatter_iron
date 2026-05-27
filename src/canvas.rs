@@ -4,7 +4,7 @@ use eframe::egui::{ self, Color32, TextureHandle };
 use serde::{ Deserialize, Serialize };
 
 use crate::pixel::premultiply;
-use crate::undo::{ self, Stroke, StrokePixel };
+use crate::undo::{ Stroke, StrokePixel };
 
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
@@ -78,7 +78,6 @@ pub fn draw_square(
     layer: usize
 ) -> Stroke {
     let color = premultiply(color);
-    let color_u32 = undo::color32_to_u32(color);
 
     let width = canvas.width as usize;
     let height = canvas.height;
@@ -109,11 +108,10 @@ pub fn draw_square(
         let end = row_start + (end_x as usize);
 
         for i in start..end {
-            let color_before = undo::color32_to_u32(pixels[i]);
             stroke_pixels.push(StrokePixel {
                 index: i as u32,
-                color_before,
-                color_after: color_u32,
+                color_before: pixels[i],
+                color_after: color,
             });
         }
     }
@@ -220,7 +218,6 @@ pub fn draw_square_line(
     bump_allocator: &bumpalo::Bump
 ) -> Stroke {
     let color = premultiply(color);
-    let color_u32 = undo::color32_to_u32(color);
     let width = canvas.width as usize;
     let height = canvas.height;
 
@@ -239,14 +236,12 @@ pub fn draw_square_line(
 
     let pixels = &mut canvas.pixels[layer].pixels;
 
-    // Single pass: snapshot before-color and write new color
     let mut stroke_pixels = Vec::with_capacity(positions.len());
     for &idx in &positions {
-        let color_before = undo::color32_to_u32(pixels[idx as usize]);
         stroke_pixels.push(StrokePixel {
             index: idx,
-            color_before,
-            color_after: color_u32,
+            color_before: pixels[idx as usize],
+            color_after: color,
         });
         pixels[idx as usize] = color;
     }
