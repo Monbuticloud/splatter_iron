@@ -51,6 +51,7 @@ fn compress_run_just_above_threshold() {
     assert!(matches!(before, BeforePixels::All(_)));
 }
 
+/// Build a 10×10 fully opaque white canvas for use in tests.
 fn small_white_canvas() -> Canvas {
     Canvas {
         pixels: vec![Layer {
