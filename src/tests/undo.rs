@@ -3,6 +3,7 @@ use eframe::egui::Color32;
 use crate::canvas::{self, Canvas, Layer};
 use crate::undo::{self, BeforePixels, UndoRecord};
 
+/// Short runs below the threshold should return `BeforePixels::Many`.
 #[test]
 fn compress_run_short_returns_many() {
     let pixels = vec![Color32::RED; 4];
