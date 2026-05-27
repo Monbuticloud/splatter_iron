@@ -12,6 +12,7 @@ fn compress_run_short_returns_many() {
     assert!(matches!(before, BeforePixels::Many(_)));
 }
 
+/// Long uniform runs should be stored as `BeforePixels::All`.
 #[test]
 fn compress_run_uniform_long_returns_all() {
     let pixels = vec![Color32::GREEN; 20];
