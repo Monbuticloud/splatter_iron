@@ -30,6 +30,7 @@ pub struct Canvas {
 }
 
 impl Default for Canvas {
+    /// Create a default 2000×1500 canvas with a single transparent layer.
     fn default() -> Self {
         let pixel_count = (DEFAULT_WIDTH * DEFAULT_HEIGHT) as usize;
         let layers: Vec<Layer> = vec![Layer {
