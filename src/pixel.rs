@@ -9,10 +9,10 @@ pub const F32_COLOR_MAX: f32 = 255.0;
 // SIMD constant for the (value * alpha + 128) >> 8 fixed-point blend
 const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
 
-/// Convert a premultiplied-alpha colour to straight alpha.
+/// Convert a premultiplied-alpha color to straight alpha.
 ///
 /// This is the inverse of [`premultiply`]. For fully opaque or fully transparent
-/// pixels the colour is returned unchanged.
+/// pixels the color is returned unchanged.
 ///
 /// # Panics
 ///
@@ -30,14 +30,14 @@ pub fn unpremultiply(color: Color32) -> Color32 {
     Color32::from_rgba_premultiplied(red, green, blue, alpha)
 }
 
-/// Convert a straight-alpha colour to premultiplied alpha.
+/// Convert a straight-alpha color to premultiplied alpha.
 ///
 /// Uses fixed-point arithmetic `(value * alpha + 128) * 257 >> 16` for correct
-/// rounding. Fully opaque colours pass through unchanged; fully transparent
-/// colours become `Color32::TRANSPARENT`.
+/// rounding. Fully opaque colors pass through unchanged; fully transparent
+/// colors become `Color32::TRANSPARENT`.
 ///
 /// **Caller must supply straight (non-premultiplied) RGB.**
-/// Calling this on an already-premultiplied pixel will darken colours again.
+/// Calling this on an already-premultiplied pixel will darken colors again.
 #[inline]
 pub const fn premultiply(color: Color32) -> Color32 {
     let alpha = color.a();
@@ -64,10 +64,10 @@ pub const fn premultiply(color: Color32) -> Color32 {
 /// Alpha-blend a premultiplied source pixel over a premultiplied destination.
 ///
 /// Uses fixed-point arithmetic `(dest_channel * inverse_alpha + 128) >> 8`
-/// for each colour channel. The result is in premultiplied-alpha format.
+/// for each color channel. The result is in premultiplied-alpha format.
 #[inline]
 pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
-    /// Blend a single colour channel: `dest * inverse_alpha` with rounding.
+    /// Blend a single color channel: `dest * inverse_alpha` with rounding.
     #[inline]
     const fn blend_channel(destination_channel: u32, inverse_alpha: u32) -> u32 {
         (destination_channel * inverse_alpha + 128) >> 8
