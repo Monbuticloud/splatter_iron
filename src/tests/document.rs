@@ -29,6 +29,7 @@ fn new_document_has_one_layer() {
     assert!(doc.savefile_path.is_empty());
 }
 
+/// Adding a layer should increase the layer count and request a re-render.
 #[test]
 fn add_layer_increases_count() {
     let mut doc = small_document();
