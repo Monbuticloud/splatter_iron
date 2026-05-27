@@ -30,8 +30,14 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
     Ok(canvas)
 }
 
-/// Serialise the canvas to bytes **without writing to disk**.
-/// This is the CPU-heavy part (JSON + zstd) — call it on a background thread.
+/// Serialise a `Canvas` to zstd-compressed JSON bytes without writing to disk.
+///
+/// Uses multi-threaded zstd compression. This is the CPU-heavy part of saving
+/// and should be called on a background thread.
+///
+/// # Errors
+///
+/// Returns an error if JSON serialisation or zstd compression fails.
 pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     use std::io::Write;
     let json = serde_json::to_vec(canvas)?;
