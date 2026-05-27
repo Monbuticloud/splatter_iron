@@ -50,6 +50,7 @@ pub const IMPORT_EXTENSIONS: &[&str] = &[
     "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff",
 ];
 
+/// File extension list and image format for an export target.
 pub struct ExportInfo {
     pub extensions: &'static [&'static str],
     pub fmt: image::ImageFormat,
@@ -110,9 +111,16 @@ impl Default for UIState {
 }
 
 /// WGPU GPU texture and associated state for partial canvas uploads.
+///
+/// Created once during `MyApp` construction and updated on canvas resize.
+/// The `queue` is used each frame to upload only the dirty sub-region
+/// via `wgpu::Queue::write_texture`.
 pub struct GpuTexture {
+    /// The wgpu texture storing the canvas composite on the GPU.
     pub texture: wgpu::Texture,
+    /// The egui texture ID registered with the egui_wgpu renderer for display.
     pub texture_id: egui::TextureId,
+    /// The wgpu queue used for uploading dirty-rect data to the GPU.
     pub queue: Arc<wgpu::Queue>,
 }
 
@@ -124,6 +132,10 @@ pub struct MyApp {
     pub undo: UndoHistory,
     pub file_io: FileIO,
     pub ui: UIState,
+    /// GPU texture for partial-upload rendering.
+    ///
+    /// `Some` when the wgpu backend is available; `None` falls back to
+    /// the egui-managed texture path (full-buffer `tex.set()`).
     pub gpu_texture: Option<GpuTexture>,
 }
 
