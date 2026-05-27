@@ -12,6 +12,9 @@ mod tool_config;
 mod ui;
 mod undo;
 mod undo_history;
+
+#[cfg(test)]
+mod tests;
 use mimalloc::MiMalloc;
 use directories::ProjectDirs;
 use std::alloc::{ GlobalAlloc, Layout };
