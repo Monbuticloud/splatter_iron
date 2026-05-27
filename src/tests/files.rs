@@ -79,6 +79,7 @@ fn save_load_roundtrip_multi_layer() {
     }
 }
 
+/// Save and load a canvas with transparent and semi-transparent pixels.
 #[test]
 fn save_load_roundtrip_transparent() {
     let canvas = Canvas {
