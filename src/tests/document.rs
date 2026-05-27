@@ -1,6 +1,6 @@
 use eframe::egui::Color32;
 
-use crate::canvas::{Canvas, Layer};
+use crate::canvas::{Canvas, DirtyRect, Layer};
 use crate::document::Document;
 use crate::undo_history::UndoHistory;
 
@@ -156,4 +156,52 @@ fn render_to_texture_allocates_output() {
     // output_rgba is resized in render_to_texture, which needs an egui::Ui
     // This test just validates the initial state
     assert_eq!(pixel_count, 100);
+}
+
+/// `blend_to_output` with no dirty rect blends the full canvas and sets
+/// `render_next_frame` to false, resets `dirty_rect`, and sizes `output_rgba`.
+#[test]
+fn blend_to_output_full_canvas_sets_render_state() {
+    let mut doc = small_document();
+    assert_eq!(doc.canvas.output_rgba.len(), 0);
+    assert!(doc.canvas.dirty_rect.is_none());
+    doc.canvas.render_next_frame = true;
+
+    let result = doc.blend_to_output();
+
+    assert_eq!(result, Some((0, 0, 10, 10)));
+    assert!(!doc.canvas.render_next_frame);
+    assert!(doc.canvas.dirty_rect.is_none());
+    assert_eq!(doc.canvas.output_rgba.len(), 100 * 4);
+}
+
+/// `blend_to_output` with a dirty rect only blends that region and returns
+/// its bounds.
+#[test]
+fn blend_to_output_dirty_rect_returns_bounds() {
+    let mut doc = small_document();
+    doc.canvas.dirty_rect = Some(DirtyRect::new(2, 3, 5, 7));
+    doc.canvas.render_next_frame = true;
+
+    let result = doc.blend_to_output();
+
+    // DirtyRect(2,3,5,7) -> width=4, height=5
+    assert_eq!(result, Some((2, 3, 4, 5)));
+    assert!(!doc.canvas.render_next_frame);
+    assert!(doc.canvas.dirty_rect.is_none());
+}
+
+/// `blend_to_output` with an empty dirty rect returns `None` and clears
+/// render_next_frame.
+#[test]
+fn blend_to_output_empty_dirty_rect_returns_none() {
+    let mut doc = small_document();
+    doc.canvas.dirty_rect = Some(DirtyRect::empty());
+    doc.canvas.render_next_frame = true;
+
+    let result = doc.blend_to_output();
+
+    assert_eq!(result, None);
+    assert!(!doc.canvas.render_next_frame);
+    assert!(doc.canvas.dirty_rect.is_none());
 }
