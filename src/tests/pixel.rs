@@ -10,6 +10,7 @@ fn channels_close(a: Color32, b: Color32, max_diff: u8) -> bool {
         a.a().abs_diff(b.a()) <= max_diff
 }
 
+/// Premultiplying an opaque colour should return it unchanged.
 #[test]
 fn premultiply_opaque_is_identity() {
     let opaque = Color32::from_rgba_premultiplied(200, 100, 50, 255);
