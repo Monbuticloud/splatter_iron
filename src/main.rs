@@ -4,10 +4,14 @@
 
 mod app;
 mod canvas;
+mod document;
+mod file_io;
+mod files;
 mod pixel;
+mod tool_config;
 mod ui;
 mod undo;
-mod files;
+mod undo_history;
 use mimalloc::MiMalloc;
 use directories::ProjectDirs;
 use std::alloc::{ GlobalAlloc, Layout };

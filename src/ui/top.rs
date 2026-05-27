@@ -1,8 +1,8 @@
 use eframe::egui;
 
-use crate::app::{ MyApp, PendingFileAction };
+use crate::app::MyApp;
 use crate::canvas::Canvas;
-use crate::undo::{ undo_apply, redo_apply };
+use crate::file_io::PendingFileAction;
 
 impl MyApp {
     pub fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
@@ -10,30 +10,32 @@ impl MyApp {
         ui.horizontal(|ui| {
             // Save
             if ui.button("Save").clicked() {
-                if self.savefile_path.is_empty() {
-                    self.queue_file_action(PendingFileAction::Save);
+                if self.doc.savefile_path.is_empty() {
+                    self.file_io.queue_file_action(PendingFileAction::Save);
                 } else {
-                    self.save_to_current_path();
+                    self.file_io.save_to_current_path(&self.doc);
                 }
                 ui.ctx().request_repaint();
             }
 
             // Load
             if ui.button("Load").clicked() {
-                self.queue_file_action(PendingFileAction::Load);
+                self.file_io.queue_file_action(PendingFileAction::Load);
                 ui.ctx().request_repaint();
             }
 
             // New
             if ui.button("New").clicked() {
-                self.replace_canvas(Canvas::default());
+                self.doc.replace_canvas(Canvas::default(), &mut self.undo);
+                self.tools.previous_tool = None;
+                self.tools.previous_cursor_position = None;
             }
 
             // Export menu with all supported formats
             ui.menu_button("Export", |ui| {
                 for (i, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                     if ui.button(label).clicked() {
-                        self.queue_file_action(PendingFileAction::Export(i));
+                        self.file_io.queue_file_action(PendingFileAction::Export(i));
                         ui.ctx().request_repaint();
                         ui.close();
                     }
@@ -42,7 +44,7 @@ impl MyApp {
 
             // Import
             if ui.button("Import").clicked() {
-                self.queue_file_action(PendingFileAction::Import);
+                self.file_io.queue_file_action(PendingFileAction::Import);
                 ui.ctx().request_repaint();
             }
 
@@ -54,38 +56,26 @@ impl MyApp {
 
             // Undo: button or keyboard shortcut
             if
-                self.redo_index < self.stroke_stack.len() &&
+                self.undo.can_undo() &&
                 (ui.input(
                     |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift
                 ) || undo_btn.clicked())
             {
-                let count = self.undo_redo_steps_multiplier.min(
-                    self.stroke_stack.len() - self.redo_index
-                );
-                for _ in 0..count {
-                    let idx = self.stroke_stack.len() - 1 - self.redo_index;
-                    undo_apply(&mut self.canvas, &self.stroke_stack[idx]);
-                    self.redo_index += 1;
-                }
-                self.canvas.render_next_frame = true;
+                self.undo.undo_step(&mut self.doc.canvas, self.tools.undo_redo_steps_multiplier);
+                self.doc.canvas.render_next_frame = true;
             }
 
             // Redo: button, cmd+shift+Z, or cmd+Y
             if
-                self.redo_index > 0 &&
+                self.undo.can_redo() &&
                 (ui.input(
                     |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift
                 ) ||
                     ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
                     redo_btn.clicked())
             {
-                let count = self.undo_redo_steps_multiplier.min(self.redo_index);
-                for _ in 0..count {
-                    let idx = self.stroke_stack.len() - self.redo_index;
-                    self.redo_index -= 1;
-                    redo_apply(&mut self.canvas, &self.stroke_stack[idx]);
-                }
-                self.canvas.render_next_frame = true;
+                self.undo.redo_step(&mut self.doc.canvas, self.tools.undo_redo_steps_multiplier);
+                self.doc.canvas.render_next_frame = true;
             }
 
             ui.separator();

@@ -1,4 +1,4 @@
-use std::io::{ BufWriter, Write };
+use std::io::BufWriter;
 use std::path::Path;
 use bytemuck::cast_slice;
 use eframe::egui::Color32;
@@ -9,24 +9,6 @@ use crate::pixel::{ premultiply, unpremultiply, F32_COLOR_MAX };
 
 const COMPRESSION_LEVEL: i32 = 10;
 const JPEG_QUALITY: u8 = 95;
-
-pub fn get_save_data(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
-    let json = serde_json::to_vec(canvas)?;
-    let n_threads = std::thread
-        ::available_parallelism()
-        .map(|n| n.get() as u32)
-        .unwrap_or(1);
-    let mut encoder = zstd::stream::Encoder::new(Vec::new(), COMPRESSION_LEVEL)?;
-    encoder.multithread(n_threads)?;
-    encoder.write_all(&json)?;
-    let compressed = encoder.finish()?;
-    Ok(compressed)
-}
-
-pub fn save_data_to_file(data: &[u8], path: &Path) -> Result<(), std::io::Error> {
-    std::fs::write(path, data)?;
-    Ok(())
-}
 
 pub fn load_data_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
     std::fs::read(path)
@@ -41,12 +23,22 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
 /// Serialise the canvas to bytes **without writing to disk**.
 /// This is the CPU-heavy part (JSON + zstd) — call it on a background thread.
 pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
-    get_save_data(canvas)
+    use std::io::Write;
+    let json = serde_json::to_vec(canvas)?;
+    let n_threads = std::thread
+        ::available_parallelism()
+        .map(|n| n.get() as u32)
+        .unwrap_or(1);
+    let mut encoder = zstd::stream::Encoder::new(Vec::new(), COMPRESSION_LEVEL)?;
+    encoder.multithread(n_threads)?;
+    encoder.write_all(&json)?;
+    let compressed = encoder.finish()?;
+    Ok(compressed)
 }
 
 /// Write pre-serialized bytes to a file.  Fast, pure I/O.
 pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
-    save_data_to_file(data, path)?;
+    std::fs::write(path, data)?;
     Ok(())
 }
 

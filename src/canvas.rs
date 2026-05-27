@@ -4,7 +4,7 @@ use eframe::egui::{ self, Color32, TextureHandle };
 use serde::{ Deserialize, Serialize };
 
 use crate::pixel::premultiply;
-use crate::undo::{ UndoRecord, RunSegment };
+use crate::undo::{ UndoRecord, RunSegment, compress_run };
 
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
@@ -111,9 +111,11 @@ pub fn draw_square(
 
         let mut before = Vec::with_capacity(run_len);
         before.extend_from_slice(&pixels[start..end]);
+        let (before, len) = compress_run(before);
 
         runs.push(RunSegment {
             start: start as u32,
+            len,
             before,
         });
     }
@@ -247,7 +249,8 @@ pub fn draw_square_line(
             pixels[i as usize] = color;
             i += 1;
         }
-        runs.push(RunSegment { start, before });
+        let (rle_before, len) = compress_run(before);
+        runs.push(RunSegment { start, len, before: rle_before });
     }
 
     UndoRecord::Run {

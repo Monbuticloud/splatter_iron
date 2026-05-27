@@ -8,9 +8,33 @@ pub struct StrokePixel {
     pub color_after: Color32,
 }
 
+#[derive(Clone)]
+pub enum BeforePixels {
+    All(Color32),
+    Many(Vec<Color32>),
+}
+
 pub struct RunSegment {
     pub start: u32,
-    pub before: Vec<Color32>,
+    pub len: u32,
+    pub before: BeforePixels,
+}
+
+const RLE_SHORT_RUN_THRESHOLD: u32 = 8;
+
+/// Compress a captured run of pixels: if uniform and long enough,
+/// store as `All(color)` instead of a full `Vec`.
+pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
+    let len = pixels.len() as u32;
+    if len < RLE_SHORT_RUN_THRESHOLD {
+        return (BeforePixels::Many(pixels), len);
+    }
+    let first = pixels[0];
+    if pixels.iter().all(|&p| p == first) {
+        (BeforePixels::All(first), len)
+    } else {
+        (BeforePixels::Many(pixels), len)
+    }
 }
 
 #[allow(dead_code)]
@@ -35,8 +59,13 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
         UndoRecord::Run { layer_index, width: _, color_after: _, runs } => {
             let layer = &mut canvas.pixels[*layer_index];
             for run in runs {
-                let end = (run.start as usize) + run.before.len();
-                layer.pixels[run.start as usize..end].copy_from_slice(&run.before);
+                let end = (run.start as usize) + run.len as usize;
+                match &run.before {
+                    BeforePixels::All(c) => layer.pixels[run.start as usize..end].fill(*c),
+                    BeforePixels::Many(v) => {
+                        layer.pixels[run.start as usize..end].copy_from_slice(v);
+                    }
+                }
             }
         }
         UndoRecord::Pixel { layer_index, width: _, pixels } => {
@@ -54,7 +83,7 @@ pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
         UndoRecord::Run { layer_index, width: _, color_after, runs } => {
             let layer = &mut canvas.pixels[*layer_index];
             for run in runs {
-                let end = (run.start as usize) + run.before.len();
+                let end = (run.start as usize) + run.len as usize;
                 layer.pixels[run.start as usize..end].fill(*color_after);
             }
         }

@@ -3,8 +3,9 @@ use std::time::Duration;
 use eframe::egui::{ self, Color32, Rect, Pos2 };
 use egui::epaint::StrokeKind;
 
-use crate::app::{ MyApp, PendingFileAction };
+use crate::app::MyApp;
 use crate::canvas::{ self, CurrentTool, RenderState };
+use crate::file_io::PendingFileAction;
 
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
@@ -12,13 +13,13 @@ const ACTIVE_DURATION_MS: u64 = 550;
 
 impl MyApp {
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
-        if self.canvas.rendered_layers.is_some() {
+        if self.doc.canvas.rendered_layers.is_some() {
             self.handle_canvas_interaction(ui);
         }
     }
 
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
-        if let Some(tex) = &self.canvas.rendered_layers {
+        if let Some(tex) = &self.doc.canvas.rendered_layers {
             let avail = ui.available_size();
             let tex_size = tex.size_vec2();
 
@@ -37,7 +38,7 @@ impl MyApp {
             response.context_menu(|ui| {
                 // --- Import ---
                 if ui.button("Import").clicked() {
-                    self.pending_file_action = Some(PendingFileAction::Import);
+                    self.file_io.pending_file_action = Some(PendingFileAction::Import);
                     ui.ctx().request_repaint();
                     ui.close();
                 }
@@ -46,7 +47,7 @@ impl MyApp {
                 ui.menu_button("Export As", |ui| {
                     for (i, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                         if ui.button(label).clicked() {
-                            self.queue_file_action(PendingFileAction::Export(i));
+                            self.file_io.queue_file_action(PendingFileAction::Export(i));
                             ui.ctx().request_repaint();
                             ui.close();
                         }
@@ -58,46 +59,46 @@ impl MyApp {
                 // --- Save As ---
                 if ui.button("Save As").clicked() {
                     // Save As always opens a dialog even if savefile_path is set
-                    self.queue_file_action(PendingFileAction::Save);
-                    self.savefile_path.clear(); // force dialog
+                    self.file_io.queue_file_action(PendingFileAction::Save);
+                    self.doc.savefile_path.clear(); // force dialog
                     ui.ctx().request_repaint();
                     ui.close();
                 }
             });
 
             // Brush preview: semi-transparent filled square + outline at cursor
-            if self.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
+            if self.tools.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
                     let local = hover_pos - response.rect.min;
                     let uv = egui::vec2(
                         local.x / response.rect.width(),
                         local.y / response.rect.height()
                     );
 
-                    let half_radius = self.radius >> 1;
-                    let pixel_x = (uv.x * (self.canvas.width as f32)).floor() as u32;
-                    let pixel_y = (uv.y * (self.canvas.height as f32)).floor() as u32;
+                    let half_radius = self.tools.radius >> 1;
+                    let pixel_x = (uv.x * (self.doc.canvas.width as f32)).floor() as u32;
+                    let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
 
                     // Canvas-space bounds of the brush square
                     let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
                     let preview_end_x =
-                        ((pixel_x + half_radius).min(self.canvas.width - 1) as f32) + 1.0;
+                        ((pixel_x + half_radius).min(self.doc.canvas.width - 1) as f32) + 1.0;
                     let preview_start_y = pixel_y.saturating_sub(half_radius) as f32;
                     let preview_end_y =
-                        ((pixel_y + half_radius).min(self.canvas.height - 1) as f32) + 1.0;
+                        ((pixel_y + half_radius).min(self.doc.canvas.height - 1) as f32) + 1.0;
 
                     // Map to screen space using the scale factor
                     let screen_x =
                         response.rect.min.x +
-                        preview_start_x * (draw_size.x / (self.canvas.width as f32));
+                        preview_start_x * (draw_size.x / (self.doc.canvas.width as f32));
                     let screen_y =
                         response.rect.min.y +
-                        preview_start_y * (draw_size.y / (self.canvas.height as f32));
+                        preview_start_y * (draw_size.y / (self.doc.canvas.height as f32));
                     let screen_w =
                         (preview_end_x - preview_start_x) *
-                        (draw_size.x / (self.canvas.width as f32));
+                        (draw_size.x / (self.doc.canvas.width as f32));
                     let screen_h =
                         (preview_end_y - preview_start_y) *
-                        (draw_size.y / (self.canvas.height as f32));
+                        (draw_size.y / (self.doc.canvas.height as f32));
 
                     let preview_rect = Rect::from_min_size(
                         Pos2::new(screen_x, screen_y),
@@ -105,16 +106,20 @@ impl MyApp {
                     );
 
                     // Semi-transparent fill (re-premultiply RGB for the reduced alpha)
-                    let brush_alpha = self.current_color.a();
+                    let brush_alpha = self.tools.current_color.a();
                     let fill_color = if brush_alpha == 0 {
                         Color32::TRANSPARENT
                     } else {
                         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                        let preview_alpha = ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
+                        let preview_alpha =
+                            ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
                         Color32::from_rgba_premultiplied(
-                            ((self.current_color.r() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
-                            ((self.current_color.g() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
-                            ((self.current_color.b() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
+                            ((self.tools.current_color.r() as u32 * preview_alpha as u32)
+                                / brush_alpha as u32) as u8,
+                            ((self.tools.current_color.g() as u32 * preview_alpha as u32)
+                                / brush_alpha as u32) as u8,
+                            ((self.tools.current_color.b() as u32 * preview_alpha as u32)
+                                / brush_alpha as u32) as u8,
                             preview_alpha,
                         )
                     };
@@ -124,14 +129,14 @@ impl MyApp {
                     ui.painter().rect_stroke(
                         preview_rect,
                         0.0,
-                        egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.current_color),
+                        egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tools.current_color),
                         StrokeKind::Middle
                     );
                 }
 
             if response.hovered() {
-                self.pending_layer_for_deletion = None;
-                self.render_state = RenderState::ActiveWake(
+                self.ui.pending_layer_for_deletion = None;
+                self.ui.render_state = RenderState::ActiveWake(
                     Duration::from_millis(ACTIVE_DURATION_MS)
                 );
             }
@@ -144,101 +149,113 @@ impl MyApp {
                         local.y / response.rect.height()
                     );
 
-                    let pixel_x = (uv.x * (self.canvas.width as f32)).floor() as u32;
-                    let pixel_y = (uv.y * (self.canvas.height as f32)).floor() as u32;
+                    let pixel_x = (uv.x * (self.doc.canvas.width as f32)).floor() as u32;
+                    let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
 
-                    match self.current_tool {
+                    match self.tools.current_tool {
                         CurrentTool::Square => {
-                            self.canvas.render_next_frame = true;
+                            self.doc.canvas.render_next_frame = true;
 
-                            if self.previous_cursor_position.is_none() {
-                                let half_radius = self.radius >> 1;
+                            if self.tools.previous_cursor_position.is_none() {
+                                let half_radius = self.tools.radius >> 1;
 
                                 let start_x = pixel_x.saturating_sub(half_radius);
-                                let end_x = (pixel_x + half_radius).min(self.canvas.width - 1);
+                                let end_x = (pixel_x + half_radius)
+                                    .min(self.doc.canvas.width - 1);
 
                                 let start_y = pixel_y.saturating_sub(half_radius);
-                                let end_y = (pixel_y + half_radius).min(self.canvas.height - 1);
+                                let end_y = (pixel_y + half_radius)
+                                    .min(self.doc.canvas.height - 1);
 
                                 let stroke = canvas::draw_square(
                                     start_x,
                                     start_y,
                                     end_x,
                                     end_y,
-                                    &mut self.canvas,
-                                    self.current_color,
-                                    self.current_layer
+                                    &mut self.doc.canvas,
+                                    self.tools.current_color,
+                                    self.doc.current_layer
                                 );
-                                self.push_undo(stroke);
-                            } else if let Some((past_x, past_y)) = self.previous_cursor_position {
-                                let stamp = self.next_stamp();
+                                self.undo.push_undo(stroke);
+                                self.doc.dirty_since_last_autosave = true;
+                            } else if let Some((past_x, past_y)) =
+                                self.tools.previous_cursor_position
+                            {
+                                let stamp = self.undo.next_stamp();
                                 let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
                                     pixel_x,
                                     pixel_y,
-                                    self.radius,
-                                    &mut self.canvas,
-                                    self.current_color,
-                                    self.current_layer,
-                                    &mut self.visited,
+                                    self.tools.radius,
+                                    &mut self.doc.canvas,
+                                    self.tools.current_color,
+                                    self.doc.current_layer,
+                                    &mut self.undo.visited,
                                     stamp,
                                 );
-                                self.push_undo(stroke);
+                                self.undo.push_undo(stroke);
+                                self.doc.dirty_since_last_autosave = true;
                             }
                         }
                         CurrentTool::Circle => {
                             todo!();
                         }
                         CurrentTool::SquareEraser => {
-                            self.canvas.render_next_frame = true;
+                            self.doc.canvas.render_next_frame = true;
 
-                            if self.previous_cursor_position.is_none() {
-                                let half_radius = self.radius >> 1;
+                            if self.tools.previous_cursor_position.is_none() {
+                                let half_radius = self.tools.radius >> 1;
 
                                 let start_x = pixel_x.saturating_sub(half_radius);
-                                let end_x = (pixel_x + half_radius).min(self.canvas.width - 1);
+                                let end_x = (pixel_x + half_radius)
+                                    .min(self.doc.canvas.width - 1);
 
                                 let start_y = pixel_y.saturating_sub(half_radius);
-                                let end_y = (pixel_y + half_radius).min(self.canvas.height - 1);
+                                let end_y = (pixel_y + half_radius)
+                                    .min(self.doc.canvas.height - 1);
 
                                 let stroke = canvas::draw_square(
                                     start_x,
                                     start_y,
                                     end_x,
                                     end_y,
-                                    &mut self.canvas,
+                                    &mut self.doc.canvas,
                                     Color32::TRANSPARENT,
-                                    self.current_layer
+                                    self.doc.current_layer
                                 );
-                                self.push_undo(stroke);
-                            } else if let Some((past_x, past_y)) = self.previous_cursor_position {
-                                let stamp = self.next_stamp();
+                                self.undo.push_undo(stroke);
+                                self.doc.dirty_since_last_autosave = true;
+                            } else if let Some((past_x, past_y)) =
+                                self.tools.previous_cursor_position
+                            {
+                                let stamp = self.undo.next_stamp();
                                 let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
                                     pixel_x,
                                     pixel_y,
-                                    self.radius,
-                                    &mut self.canvas,
+                                    self.tools.radius,
+                                    &mut self.doc.canvas,
                                     Color32::TRANSPARENT,
-                                    self.current_layer,
-                                    &mut self.visited,
+                                    self.doc.current_layer,
+                                    &mut self.undo.visited,
                                     stamp,
                                 );
-                                self.push_undo(stroke);
+                                self.undo.push_undo(stroke);
+                                self.doc.dirty_since_last_autosave = true;
                             }
                         }
                         CurrentTool::CircleEraser => {
                             todo!();
                         }
                     }
-                    self.previous_tool = Some(self.current_tool);
-                    self.previous_cursor_position = Some((pixel_x, pixel_y));
+                    self.tools.previous_tool = Some(self.tools.current_tool);
+                    self.tools.previous_cursor_position = Some((pixel_x, pixel_y));
                 }
             } else {
-                self.previous_tool = None;
-                self.previous_cursor_position = None;
+                self.tools.previous_tool = None;
+                self.tools.previous_cursor_position = None;
             }
         }
     }

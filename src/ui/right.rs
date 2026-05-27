@@ -1,7 +1,6 @@
-use eframe::egui::{ self, Color32 };
+use eframe::egui;
 
 use crate::app::MyApp;
-use crate::canvas::Layer;
 
 const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=1000;
 const BRUSH_RADIUS_RANGE: std::ops::RangeInclusive<u32> = 0..=350;
@@ -19,35 +18,32 @@ impl MyApp {
         ui.separator();
         ui.label("Color Selector");
 
-        ui.color_edit_button_srgba(&mut self.current_color);
+        ui.color_edit_button_srgba(&mut self.tools.current_color);
 
         ui.separator();
 
         ui.label("Undo/Redo Strength");
-        ui.add(egui::DragValue::new(&mut self.undo_redo_steps_multiplier).range(UNDO_REDO_RANGE));
+        ui.add(egui::DragValue::new(&mut self.tools.undo_redo_steps_multiplier).range(UNDO_REDO_RANGE));
 
         ui.label("::Brush Settings::");
         ui.separator();
         ui.label("Brush Radius:");
-        ui.add(egui::DragValue::new(&mut self.radius).range(BRUSH_RADIUS_RANGE));
-        ui.checkbox(&mut self.show_brush_preview, "Brush Preview");
+        ui.add(egui::DragValue::new(&mut self.tools.radius).range(BRUSH_RADIUS_RANGE));
+        ui.checkbox(&mut self.tools.show_brush_preview, "Brush Preview");
 
         ui.separator();
         ui.label("Save Path:");
-        ui.text_edit_singleline(&mut self.savefile_path);
+        ui.text_edit_singleline(&mut self.doc.savefile_path);
 
         ui.separator();
         let add_layer_button = ui.button("Add Layer");
         if add_layer_button.clicked() {
-            self.canvas.pixels.push(Layer {
-                pixels: vec![Color32::TRANSPARENT; (self.canvas.width * self.canvas.height) as usize],
-            });
-            self.canvas.render_next_frame = true;
+            self.doc.add_layer();
         }
 
         egui::ScrollArea::vertical().show(ui, |ui| {
             let mut pending_layer_action = None;
-            for (i, _layer) in self.canvas.pixels.iter().enumerate() {
+            for (i, _layer) in self.doc.canvas.pixels.iter().enumerate() {
                 let _layer_panel = egui::CollapsingHeader
                     ::new(format!("Layer {i}"))
                     .show(ui, |ui| {
@@ -62,7 +58,7 @@ impl MyApp {
                         }
 
                         let move_down_button = ui.button("Move Down");
-                        if move_down_button.clicked() && i < self.canvas.pixels.len() - 1 {
+                        if move_down_button.clicked() && i < self.doc.canvas.pixels.len() - 1 {
                             pending_layer_action = Some(LayerAction::MoveDown(i));
                         }
 
@@ -70,7 +66,7 @@ impl MyApp {
                         if select_button.clicked() {
                             pending_layer_action = Some(LayerAction::Select(i));
                         }
-                        if i == self.current_layer {
+                        if i == self.doc.current_layer {
                             ui.label("Currently Selected");
                         }
                     });
@@ -79,37 +75,29 @@ impl MyApp {
                 match layer_action {
                     LayerAction::Delete(index) => {
                         if
-                            self.pending_layer_for_deletion == Some(index) &&
-                            self.canvas.pixels.len() > 1
+                            self.ui.pending_layer_for_deletion == Some(index) &&
+                            self.doc.canvas.pixels.len() > 1
                         {
-                            self.pending_layer_for_deletion = None;
-                            self.canvas.pixels.remove(index);
-                            self.current_layer = self.current_layer
-                                .saturating_sub(1)
-                                .min(self.canvas.pixels.len() - 1);
-                            self.canvas.render_next_frame = true;
+                            self.ui.pending_layer_for_deletion = None;
+                            self.doc.delete_layer(index);
                         } else {
-                            self.pending_layer_for_deletion = Some(index);
+                            self.ui.pending_layer_for_deletion = Some(index);
                         }
                     }
                     LayerAction::MoveUp(index) => {
                         if index > 0 {
-                            self.pending_layer_for_deletion = None;
-                            self.canvas.pixels.swap(index, index - 1);
-                            self.canvas.render_next_frame = true;
-                            self.current_layer = index - 1;
+                            self.ui.pending_layer_for_deletion = None;
+                            self.doc.move_layer_up(index);
                         }
                     }
                     LayerAction::MoveDown(index) => {
-                        if index < self.canvas.pixels.len() - 1 {
-                            self.pending_layer_for_deletion = None;
-                            self.canvas.pixels.swap(index, index + 1);
-                            self.canvas.render_next_frame = true;
-                            self.current_layer = index + 1;
+                        if index < self.doc.canvas.pixels.len() - 1 {
+                            self.ui.pending_layer_for_deletion = None;
+                            self.doc.move_layer_down(index);
                         }
                     }
                     LayerAction::Select(index) => {
-                        self.current_layer = index;
+                        self.doc.select_layer(index);
                     }
                 }
             }
