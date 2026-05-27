@@ -25,6 +25,9 @@ impl UndoHistory {
         }
     }
 
+    /// Push a new undo record and truncate any redo history.
+    ///
+    /// Enforces `MAX_STROKE_STACK` by popping the oldest entries.
     pub fn push_undo(&mut self, record: UndoRecord) {
         self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
         self.stroke_stack.push_back(record);
