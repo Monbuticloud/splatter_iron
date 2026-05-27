@@ -101,6 +101,7 @@ fn save_load_roundtrip_transparent() {
     assert_eq!(loaded.pixels[0].pixels.len(), 3);
 }
 
+/// Export a checkerboard canvas to PNG and re-import; pixels should match.
 #[test]
 fn export_png_roundtrip() {
     let canvas = checkerboard_4x4();
