@@ -60,6 +60,7 @@ impl UndoHistory {
         self.visited_stamp = 1;
     }
 
+    /// Clear the entire stroke stack and reset the redo index.
     pub fn clear(&mut self) {
         self.stroke_stack.clear();
         self.redo_index = 0;
