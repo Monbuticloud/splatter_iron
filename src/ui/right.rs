@@ -13,6 +13,11 @@ enum LayerAction {
 }
 
 impl MyApp {
+    /// Render the right settings panel with colour picker, brush settings,
+    /// undo/redo strength, save path, and layer management controls.
+    ///
+    /// Layer actions (add, delete, move up/down, select) are processed
+    /// via a `LayerAction` enum to avoid borrowing conflicts.
     pub fn show_right_panel(&mut self, ui: &mut egui::Ui) {
         ui.label("Settings");
         ui.separator();
