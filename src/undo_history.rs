@@ -76,6 +76,10 @@ impl UndoHistory {
         self.redo_index > 0
     }
 
+    /// Apply `steps_multiplier` undo records from the stroke stack.
+    ///
+    /// Each record is applied in reverse order (most recent first),
+    /// and `redo_index` advances accordingly.
     pub fn undo_step(&mut self, canvas: &mut Canvas, steps_multiplier: usize) {
         let count = steps_multiplier.min(self.stroke_stack.len() - self.redo_index);
         for _ in 0..count {
