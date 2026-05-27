@@ -131,6 +131,7 @@ fn draw_square_multi_layer() {
 
 // --- draw_square_line ---
 
+/// A horizontal brush line should colour pixels at both endpoints.
 #[test]
 fn draw_square_line_horizontal() {
     let mut canvas = small_canvas();
