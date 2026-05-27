@@ -85,7 +85,8 @@ pub fn export_as_image(
                 (straight.r(), straight.g(), straight.b(), straight.a())
             };
 
-            img.put_pixel(x, y, image::Rgba([fr, fg, fb, fa]));
+            let rgba = image::Rgba([fr, fg, fb, fa]);
+            img.put_pixel(x, y, rgba);
         }
     }
 

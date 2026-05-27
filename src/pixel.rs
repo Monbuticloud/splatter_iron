@@ -11,7 +11,7 @@ const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
 
 /// Un-premultiply a premultiplied-alpha Color32 back to straight alpha.
 /// Inverse of `premultiply`.
-#[inline(always)]
+#[inline]
 pub fn unpremultiply(color: Color32) -> Color32 {
     let alpha = color.a();
     if alpha == 0 || alpha == 255 {
@@ -28,7 +28,7 @@ pub fn unpremultiply(color: Color32) -> Color32 {
 ///
 /// **Caller must supply straight (non-premultiplied) RGB.**
 /// Calling this on an already-premultiplied pixel will darken colors again.
-#[inline(always)]
+#[inline]
 pub const fn premultiply(color: Color32) -> Color32 {
     let alpha = color.a();
 
@@ -53,28 +53,25 @@ pub const fn premultiply(color: Color32) -> Color32 {
 
 /// Alpha-blend premultiplied source over premultiplied destination.
 /// Result is premultiplied.
-#[inline(always)]
-pub fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
-    // Extract source channels
+#[inline]
+pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
+    // Blend one channel: dest * inverse_alpha, rounded
+    #[inline]
+    const fn blend_channel(destination_channel: u32, inverse_alpha: u32) -> u32 {
+        (destination_channel * inverse_alpha + 128) >> 8
+    }
+
     let source_red = source.r() as u32;
     let source_green = source.g() as u32;
     let source_blue = source.b() as u32;
     let source_alpha = source.a() as u32;
 
-    // Extract destination channels
     let dest_red = destination.r() as u32;
     let dest_green = destination.g() as u32;
     let dest_blue = destination.b() as u32;
     let dest_alpha = destination.a() as u32;
 
-    // Inverse alpha: how much of destination shows through
     let inverse_alpha = 255 - source_alpha;
-
-    // Blend one channel: dest * inverse_alpha, rounded
-    #[inline(always)]
-    const fn blend_channel(destination_channel: u32, inverse_alpha: u32) -> u32 {
-        (destination_channel * inverse_alpha + 128) >> 8
-    }
 
     Color32::from_rgba_premultiplied(
         (source_red + blend_channel(dest_red, inverse_alpha)) as u8,
@@ -87,7 +84,7 @@ pub fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
 /// Blend multiple premultiplied layers into an RGBA u8 output buffer.
 ///
 /// Layers are composited bottom-to-top (index 0 = bottommost).
-/// Uses SIMD (wide::u32x4) + rayon parallelism to process 4 pixels per task.
+/// Uses SIMD (`wide::u32x4`) + rayon parallelism to process 4 pixels per task.
 /// No heap allocation, no clones — only stack-local SIMD vectors.
 ///
 /// # Panics

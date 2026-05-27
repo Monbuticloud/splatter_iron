@@ -28,7 +28,6 @@ const AUTOSAVE_INTERVAL_MINS: u64 = 2;
 // --- Performance constants ---
 const BUMP_ALLOCATOR_CAPACITY: usize = 32 * 1024 * 1024;
 const UNFOCUSED_SLEEP_MS: u64 = 50;
-const SECONDS_TO_MILLIS: f32 = 1000.0;
 const REPAINT_DELAY_MULT: u32 = 5;
 
 // --- Image import extensions ---
@@ -124,7 +123,7 @@ impl MyApp {
         self.dirty_since_last_autosave = true;
     }
 
-    #[inline(always)]
+    #[inline]
     pub(crate) fn next_stamp(&mut self) -> u32 {
         self.visited_stamp = self.visited_stamp.wrapping_add(1);
         if self.visited_stamp == 0 {
@@ -330,7 +329,7 @@ impl MyApp {
 
     /// Spawn a background thread to serialise + write the canvas to disk.
     /// The thread clones the current canvas snapshot and processes it off the UI thread.
-    fn trigger_async_save(&mut self, kind: SaveKind) {
+    fn trigger_async_save(&self, kind: SaveKind) {
         let canvas = self.canvas.clone();
         let path = match &kind {
             SaveKind::Autosave =>
@@ -358,7 +357,7 @@ impl MyApp {
     }
 
     /// Save to the current `savefile_path` (async). No-op if path is empty.
-    pub(crate) fn save_to_current_path(&mut self) {
+    pub(crate) fn save_to_current_path(&self) {
         if !self.savefile_path.is_empty() {
             self.trigger_async_save(SaveKind::ManualSave(PathBuf::from(&self.savefile_path)));
         }
@@ -481,11 +480,11 @@ impl eframe::App for MyApp {
             self.render_state = RenderState::UnfocusedFrozen;
             return;
         }
-        let predicted_delta_time = Duration::from_millis(
-            (ui.ctx().input(|i| i.predicted_dt) * SECONDS_TO_MILLIS) as u64
+        let predicted_delta_time = Duration::from_secs_f32(
+            ui.ctx().input(|i| i.predicted_dt).max(0.0)
         );
-        let real_delta_time = Duration::from_millis(
-            (ui.ctx().input(|i| i.stable_dt) * SECONDS_TO_MILLIS) as u64
+        let real_delta_time = Duration::from_secs_f32(
+            ui.ctx().input(|i| i.stable_dt).max(0.0)
         );
 
         self.time_elapsed += real_delta_time;
@@ -566,7 +565,7 @@ impl eframe::App for MyApp {
         // Autosave every AUTOSAVE_INTERVAL_MINS minutes, but only if the canvas has been modified.
         if
             self.dirty_since_last_autosave &&
-            self.time_elapsed - self.last_autosave_time >= Duration::from_mins(AUTOSAVE_INTERVAL_MINS)
+            self.time_elapsed.saturating_sub(self.last_autosave_time) >= Duration::from_mins(AUTOSAVE_INTERVAL_MINS)
         {
             self.last_autosave_time = self.time_elapsed;
             self.times_autosaved += 1;

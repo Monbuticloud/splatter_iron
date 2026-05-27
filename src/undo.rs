@@ -13,7 +13,7 @@ pub struct Stroke {
     pub pixels: Vec<StrokePixel>,
 }
 
-#[inline(always)]
+#[inline]
 pub fn undo_stroke(canvas: &mut crate::canvas::Canvas, stroke: &Stroke) {
     let layer = &mut canvas.pixels[stroke.layer_index];
     for pixel in &stroke.pixels {
@@ -21,7 +21,7 @@ pub fn undo_stroke(canvas: &mut crate::canvas::Canvas, stroke: &Stroke) {
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn redo_stroke(canvas: &mut crate::canvas::Canvas, stroke: &Stroke) {
     let layer = &mut canvas.pixels[stroke.layer_index];
     for pixel in &stroke.pixels {

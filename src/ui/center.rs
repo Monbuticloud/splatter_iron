@@ -109,6 +109,7 @@ impl MyApp {
                     let fill_color = if brush_alpha == 0 {
                         Color32::TRANSPARENT
                     } else {
+                        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                         let preview_alpha = ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
                         Color32::from_rgba_premultiplied(
                             ((self.current_color.r() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,

@@ -49,7 +49,7 @@ impl Default for Canvas {
 
 /// Internal: fill a rectangle without capturing undo data.
 /// `pixels` is the mutable slice for the layer, `width` is canvas width.
-#[inline(always)]
+#[inline]
 fn fill_square_impl(
     pixels: &mut [Color32],
     width: usize,
@@ -67,7 +67,7 @@ fn fill_square_impl(
     }
 }
 
-#[inline(always)]
+#[inline]
 pub fn draw_square(
     start_x: u32,
     start_y: u32,
@@ -126,9 +126,9 @@ pub fn draw_square(
     }
 }
 
-/// Collect all unique pixel indices touched by a brush line from (start_x, start_y) to (end_x, end_y).
+/// Collect all unique pixel indices touched by a brush line from `(start_x, start_y)` to `(end_x, end_y)`.
 /// Uses Bresenham line algorithm + visited-stamp dedup (no sort).
-#[inline(always)]
+#[inline]
 fn collect_line_positions<'a>(
     start_x: u32,
     start_y: u32,
@@ -203,7 +203,7 @@ fn collect_line_positions<'a>(
     positions
 }
 
-#[inline(always)]
+#[inline]
 pub fn draw_square_line(
     start_x: u32,
     start_y: u32,
