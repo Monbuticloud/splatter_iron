@@ -27,6 +27,10 @@ impl Document {
         }
     }
 
+    /// Replace the current canvas with a new one and reset document state.
+    ///
+    /// Clears the save path, marks the canvas as not dirty, and resets
+    /// the undo history (including resizing the visited buffer).
     pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory) {
         self.canvas = canvas;
         self.savefile_path.clear();
