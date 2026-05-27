@@ -86,7 +86,6 @@ pub fn export_as_image(
                 (straight.r(), straight.g(), straight.b(), straight.a())
             };
 
-            #[allow(clippy::tuple_array_conversions)]
             img.put_pixel(x, y, image::Rgba([fr, fg, fb, fa]));
         }
     }
