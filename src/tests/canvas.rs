@@ -151,6 +151,7 @@ fn draw_square_line_vertical() {
     assert_eq!(canvas.pixels[0].pixels[8 * 10 + 5], red(), "end");
 }
 
+/// A diagonal brush line should colour pixels at both endpoints.
 #[test]
 fn draw_square_line_diagonal() {
     let mut canvas = small_canvas();
