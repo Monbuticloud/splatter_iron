@@ -1,3 +1,4 @@
+pub mod bucket_fill;
 pub mod canvas;
 pub mod circle_brush;
 pub mod document;
