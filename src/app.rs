@@ -424,6 +424,8 @@ pub struct MyApp {
 
     /// Set to true on any stroke/edit, cleared after autosave completes.
     pub dirty_since_last_autosave: bool,
+    /// Wall-clock time of the last autosave.
+    pub last_autosave_time: std::time::Duration,
     /// Channel for async save results.
     pub save_result_sender: mpsc::Sender<SaveResult>,
     pub save_result_receiver: mpsc::Receiver<SaveResult>,
@@ -473,6 +475,7 @@ impl Default for MyApp {
             time_elapsed: std::time::Duration::ZERO,
             times_autosaved: 0,
             dirty_since_last_autosave: false,
+            last_autosave_time: std::time::Duration::ZERO,
             save_result_sender,
             save_result_receiver,
             displayed_error_list: Vec::new(),
@@ -582,8 +585,9 @@ impl eframe::App for MyApp {
         // Autosave every AUTOSAVE_INTERVAL_MINS minutes, but only if the canvas has been modified.
         if
             self.dirty_since_last_autosave &&
-            self.times_autosaved * Duration::from_mins(AUTOSAVE_INTERVAL_MINS) < self.time_elapsed
+            self.time_elapsed - self.last_autosave_time >= Duration::from_mins(AUTOSAVE_INTERVAL_MINS)
         {
+            self.last_autosave_time = self.time_elapsed;
             self.times_autosaved += 1;
             self.trigger_async_save(SaveKind::Autosave);
         }
