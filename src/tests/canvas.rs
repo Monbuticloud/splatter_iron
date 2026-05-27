@@ -17,7 +17,7 @@ fn small_canvas() -> Canvas {
     }
 }
 
-/// Shortcut for a fully opaque red colour in premultiplied format.
+/// Shortcut for a fully opaque red color in premultiplied format.
 fn red() -> Color32 {
     Color32::from_rgba_premultiplied(255, 0, 0, 255)
 }
@@ -131,7 +131,7 @@ fn draw_square_multi_layer() {
 
 // --- draw_square_line ---
 
-/// A horizontal brush line should colour pixels at both endpoints.
+/// A horizontal brush line should color pixels at both endpoints.
 #[test]
 fn draw_square_line_horizontal() {
     let mut canvas = small_canvas();
@@ -141,7 +141,7 @@ fn draw_square_line_horizontal() {
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 8], red(), "end");
 }
 
-/// A vertical brush line should colour pixels at both endpoints.
+/// A vertical brush line should color pixels at both endpoints.
 #[test]
 fn draw_square_line_vertical() {
     let mut canvas = small_canvas();
@@ -151,7 +151,7 @@ fn draw_square_line_vertical() {
     assert_eq!(canvas.pixels[0].pixels[8 * 10 + 5], red(), "end");
 }
 
-/// A diagonal brush line should colour pixels at both endpoints.
+/// A diagonal brush line should color pixels at both endpoints.
 #[test]
 fn draw_square_line_diagonal() {
     let mut canvas = small_canvas();
