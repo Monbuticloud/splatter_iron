@@ -38,6 +38,7 @@ fn add_layer_increases_count() {
     assert!(doc.canvas.render_next_frame);
 }
 
+/// A newly added layer should match the canvas dimensions.
 #[test]
 fn add_layer_has_correct_size() {
     let mut doc = small_document();
