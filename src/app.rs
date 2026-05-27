@@ -1,6 +1,8 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use eframe::egui::{ self, Panel };
+use eframe::egui_wgpu::wgpu;
 use directories::ProjectDirs;
 
 use crate::canvas::{ Canvas, RenderState };
@@ -107,19 +109,31 @@ impl Default for UIState {
     }
 }
 
-/// Top-level application state owned by eframe: document, tools, undo history, file IO, and UI state.
+/// WGPU GPU texture and associated state for partial canvas uploads.
+pub struct GpuTexture {
+    pub texture: wgpu::Texture,
+    pub texture_id: egui::TextureId,
+    pub device: Arc<wgpu::Device>,
+    pub queue: Arc<wgpu::Queue>,
+}
+
+/// Top-level application state owned by eframe: document, tools, undo history,
+/// file IO, UI state, and optional wgpu GPU texture.
 pub struct MyApp {
     pub doc: Document,
     pub tools: ToolConfig,
     pub undo: UndoHistory,
     pub file_io: FileIO,
     pub ui: UIState,
+    pub gpu_texture: Option<GpuTexture>,
 }
 
-impl Default for MyApp {
-    /// Create a default `MyApp` with a default canvas, tool config, undo history,
-    /// file IO channels, and UI state. Ensures autosave directories exist.
-    fn default() -> Self {
+impl MyApp {
+    /// Create a new `MyApp`, initializing the wgpu GPU texture for partial uploads.
+    ///
+    /// Falls back to the egui-managed texture path (full-buffer `tex.set()`)
+    /// when wgpu render state is unavailable (e.g. Glow backend).
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         use std::sync::mpsc;
         let (dialog_sender, dialog_receiver) = mpsc::channel();
         let (save_result_sender, save_result_receiver) = mpsc::channel();
@@ -133,6 +147,35 @@ impl Default for MyApp {
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
         std::fs::create_dir_all(&data_dir.join("autosaves")).expect("Couldn't create autosave dir");
 
+        let gpu_texture = cc.wgpu_render_state.as_ref().map(|rs| {
+            let w = canvas.width;
+            let h = canvas.height;
+            let size = wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 };
+            let texture = rs.device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("splatter_iron_canvas"),
+                size,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            });
+            let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let mut renderer = rs.renderer.write().unwrap();
+            let texture_id = renderer.register_native_texture(
+                &rs.device,
+                &view,
+                wgpu::FilterMode::Linear,
+            );
+            GpuTexture {
+                texture,
+                texture_id,
+                device: rs.device.clone(),
+                queue: rs.queue.clone(),
+            }
+        });
+
         Self {
             doc: Document::new(canvas),
             tools: ToolConfig::default(),
@@ -145,6 +188,7 @@ impl Default for MyApp {
                 data_dir,
             ),
             ui: UIState::default(),
+            gpu_texture,
         }
     }
 }
@@ -157,7 +201,7 @@ impl eframe::App for MyApp {
     /// and triggers autosave on a 2-minute interval.
     ///
     /// When the viewport is unfocused, sleeps to reduce CPU usage.
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         // Poll dialog results and save results before anything else.
         self.file_io.poll_dialog_results(&mut self.doc, &mut self.undo, &mut self.ui);
         self.file_io.poll_save_results(&mut self.doc, &mut self.ui);

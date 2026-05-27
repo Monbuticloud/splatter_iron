@@ -111,7 +111,7 @@ fn main() -> eframe::Result {
     let res = eframe::run_native(
         APP_NAME,
         eframe::NativeOptions::default(),
-        Box::new(|_| Ok(Box::new(app::MyApp::default())))
+        Box::new(|cc| Ok(Box::new(app::MyApp::new(cc))))
     );
     println!("Total memory usage: {} bytes", TOTAL_ALLOCATED.load(Ordering::Relaxed));
     println!("Ending memory usage: {} bytes", ALLOCATED.load(Ordering::Relaxed));
