@@ -132,6 +132,7 @@ fn next_stamp_increments() {
     assert_eq!(s2, s1.wrapping_add(1));
 }
 
+/// When the stamp wraps past `u32::MAX`, it should reset to 1.
 #[test]
 fn stamp_wrapping_overflow_resets() {
     // Force stamp near wrapping point by setting visited_stamp directly
