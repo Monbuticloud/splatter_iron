@@ -13,6 +13,9 @@ pub struct ToolConfig {
 }
 
 impl Default for ToolConfig {
+    /// Create a default tool configuration with the Square tool selected,
+    /// white colour, radius 100, brush preview enabled, and undo/redo step
+    /// multiplier of 5.
     fn default() -> Self {
         Self {
             current_tool: CurrentTool::Square,
