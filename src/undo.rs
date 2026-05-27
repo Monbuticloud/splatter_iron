@@ -13,9 +13,11 @@ pub struct RunSegment {
     pub before: Vec<Color32>,
 }
 
+#[allow(dead_code)]
 pub enum UndoRecord {
     Run {
         layer_index: usize,
+        #[allow(dead_code)]
         width: u32,
         color_after: Color32,
         runs: Vec<RunSegment>,
