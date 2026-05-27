@@ -74,6 +74,7 @@ impl Document {
         }
     }
 
+    /// Append a new transparent layer to the canvas.
     pub fn add_layer(&mut self) {
         self.canvas.pixels.push(Layer {
             pixels: vec![Color32::TRANSPARENT; (self.canvas.width * self.canvas.height) as usize],
