@@ -4,7 +4,7 @@ use eframe::egui::{ self, Color32, TextureHandle };
 use serde::{ Deserialize, Serialize };
 
 use crate::pixel::premultiply;
-use crate::undo::{ Stroke, StrokePixel };
+use crate::undo::{ UndoRecord, RunSegment };
 
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
@@ -76,7 +76,7 @@ pub fn draw_square(
     canvas: &mut Canvas,
     color: egui::Color32,
     layer: usize
-) -> Stroke {
+) -> UndoRecord {
     let color = premultiply(color);
 
     let width = canvas.width as usize;
@@ -90,46 +90,50 @@ pub fn draw_square(
 
     // Early out
     if start_x >= end_x || start_y >= end_y {
-        return Stroke {
+        return UndoRecord::Run {
             layer_index: layer,
             width: canvas.width,
-            pixels: Vec::new(),
+            color_after: color,
+            runs: Vec::new(),
         };
     }
 
     let pixels = &mut canvas.pixels[layer].pixels;
 
-    // Capture before colors and fill in one pass
-    let mut stroke_pixels = Vec::with_capacity(((end_y - start_y) * (end_x - start_x)) as usize);
+    // Capture runs (one per row) and fill in one pass
+    let mut runs = Vec::with_capacity((end_y - start_y) as usize);
 
     for y in start_y..end_y {
         let row_start = (y as usize) * width;
         let start = row_start + (start_x as usize);
         let end = row_start + (end_x as usize);
+        let run_len = end - start;
 
-        for (offset, pixel) in pixels[start..end].iter().copied().enumerate() {
-            stroke_pixels.push(StrokePixel {
-                index: (start + offset) as u32,
-                color_before: pixel,
-                color_after: color,
-            });
-        }
+        let mut before = Vec::with_capacity(run_len);
+        before.extend_from_slice(&pixels[start..end]);
+
+        runs.push(RunSegment {
+            start: start as u32,
+            before,
+        });
     }
 
     // Fill the rectangle (efficient contiguous write)
     fill_square_impl(pixels, width, start_x, end_x, start_y, end_y, color);
 
-    Stroke {
+    UndoRecord::Run {
         layer_index: layer,
         width: canvas.width,
-        pixels: stroke_pixels,
+        color_after: color,
+        runs,
     }
 }
 
-/// Collect all unique pixel indices touched by a brush line from `(start_x, start_y)` to `(end_x, end_y)`.
-/// Uses Bresenham line algorithm + visited-stamp dedup (no sort).
+/// Stamp all unique pixel indices touched by a brush line from `(start_x, start_y)` to `(end_x, end_y)`.
+/// Uses Bresenham line algorithm + visited-stamp dedup.
+/// After this, scanning `visited` for `stamp` yields sorted unique positions.
 #[inline]
-fn collect_line_positions<'a>(
+fn stamp_line_positions(
     start_x: u32,
     start_y: u32,
     end_x: u32,
@@ -137,12 +141,10 @@ fn collect_line_positions<'a>(
     brush_radius: u32,
     width: usize,
     height: u32,
-    visited: &'a mut [u32],
+    visited: &mut [u32],
     stamp: u32,
-    bump: &'a bumpalo::Bump
-) -> bumpalo::collections::Vec<'a, u32> {
+) {
     let half_radius = brush_radius >> 1;
-    let mut positions = bumpalo::collections::Vec::new_in(bump);
 
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
@@ -179,10 +181,7 @@ fn collect_line_positions<'a>(
             let row_start = (y as usize) * width;
             for x in brush_start_x..brush_end_x {
                 let idx = (row_start + (x as usize)) as u32;
-                if visited[idx as usize] != stamp {
-                    visited[idx as usize] = stamp;
-                    positions.push(idx);
-                }
+                visited[idx as usize] = stamp;
             }
         }
 
@@ -199,8 +198,6 @@ fn collect_line_positions<'a>(
             current_y += step_y;
         }
     }
-
-    positions
 }
 
 #[inline]
@@ -215,13 +212,13 @@ pub fn draw_square_line(
     layer: usize,
     visited: &mut [u32],
     stamp: u32,
-    bump_allocator: &bumpalo::Bump
-) -> Stroke {
+) -> UndoRecord {
     let color = premultiply(color);
     let width = canvas.width as usize;
     let height = canvas.height;
+    let pixel_count = (width as u32) * height;
 
-    let positions = collect_line_positions(
+    stamp_line_positions(
         start_x,
         start_y,
         end_x,
@@ -231,25 +228,33 @@ pub fn draw_square_line(
         height,
         visited,
         stamp,
-        bump_allocator
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
 
-    let mut stroke_pixels = Vec::with_capacity(positions.len());
-    for &idx in &positions {
-        stroke_pixels.push(StrokePixel {
-            index: idx,
-            color_before: pixels[idx as usize],
-            color_after: color,
-        });
-        pixels[idx as usize] = color;
+    // Scan visited to build runs in sorted order
+    let mut runs: Vec<RunSegment> = Vec::new();
+    let mut i = 0u32;
+    while i < pixel_count {
+        if visited[i as usize] != stamp {
+            i += 1;
+            continue;
+        }
+        let start = i;
+        let mut before = Vec::new();
+        while i < pixel_count && visited[i as usize] == stamp {
+            before.push(pixels[i as usize]);
+            pixels[i as usize] = color;
+            i += 1;
+        }
+        runs.push(RunSegment { start, before });
     }
 
-    Stroke {
+    UndoRecord::Run {
         layer_index: layer,
         width: canvas.width,
-        pixels: stroke_pixels,
+        color_after: color,
+        runs,
     }
 }
 
