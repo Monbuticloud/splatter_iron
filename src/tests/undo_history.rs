@@ -68,6 +68,7 @@ fn redo_step_reapplies() {
     assert!(!hist.can_redo());
 }
 
+/// Pushing a new record should clear any redo history.
 #[test]
 fn push_undo_truncates_redo_stack() {
     let mut hist = UndoHistory::new(100);
