@@ -47,6 +47,7 @@ fn add_layer_has_correct_size() {
     assert_eq!(doc.canvas.pixels[1].pixels.len(), expected);
 }
 
+/// Deleting a layer should remove the correct index from the layer list.
 #[test]
 fn delete_layer_removes_correct_index() {
     let mut doc = small_document();
