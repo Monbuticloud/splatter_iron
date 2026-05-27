@@ -225,7 +225,8 @@ impl MyApp {
 
                             if self.tools.previous_cursor_position.is_none() {
                                 if self.tools.alpha_overlay {
-                                    self.tools.drag_stamp = self.undo.next_stamp();
+                                    self.undo.advance_drag_stamp();
+                                    let stamp = self.undo.next_stamp();
                                     let stroke = canvas::draw_square_line(
                                         pixel_x,
                                         pixel_y,
@@ -236,8 +237,10 @@ impl MyApp {
                                         self.tools.current_color,
                                         self.doc.current_layer,
                                         &mut self.undo.visited,
-                                        self.tools.drag_stamp,
+                                        stamp,
                                         true,
+                                        &mut self.undo.drag_processed,
+                                        self.undo.drag_stamp_val,
                                     );
                                     self.undo.push_undo(stroke);
                                     self.doc.dirty_since_last_autosave = true;
@@ -268,11 +271,7 @@ impl MyApp {
                             } else if let Some((past_x, past_y)) =
                                 self.tools.previous_cursor_position
                             {
-                                let stamp = if self.tools.alpha_overlay {
-                                    self.tools.drag_stamp
-                                } else {
-                                    self.undo.next_stamp()
-                                };
+                                let stamp = self.undo.next_stamp();
                                 let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
@@ -285,6 +284,8 @@ impl MyApp {
                                     &mut self.undo.visited,
                                     stamp,
                                     self.tools.alpha_overlay,
+                                    &mut self.undo.drag_processed,
+                                    self.undo.drag_stamp_val,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -295,7 +296,8 @@ impl MyApp {
 
                             if self.tools.previous_cursor_position.is_none() {
                                 if self.tools.alpha_overlay {
-                                    self.tools.drag_stamp = self.undo.next_stamp();
+                                    self.undo.advance_drag_stamp();
+                                    let stamp = self.undo.next_stamp();
                                     let stroke = canvas::draw_circle_line(
                                         pixel_x,
                                         pixel_y,
@@ -306,8 +308,10 @@ impl MyApp {
                                         self.tools.current_color,
                                         self.doc.current_layer,
                                         &mut self.undo.visited,
-                                        self.tools.drag_stamp,
+                                        stamp,
                                         true,
+                                        &mut self.undo.drag_processed,
+                                        self.undo.drag_stamp_val,
                                     );
                                     self.undo.push_undo(stroke);
                                     self.doc.dirty_since_last_autosave = true;
@@ -327,11 +331,7 @@ impl MyApp {
                             } else if let Some((past_x, past_y)) =
                                 self.tools.previous_cursor_position
                             {
-                                let stamp = if self.tools.alpha_overlay {
-                                    self.tools.drag_stamp
-                                } else {
-                                    self.undo.next_stamp()
-                                };
+                                let stamp = self.undo.next_stamp();
                                 let stroke = canvas::draw_circle_line(
                                     past_x,
                                     past_y,
@@ -344,6 +344,8 @@ impl MyApp {
                                     &mut self.undo.visited,
                                     stamp,
                                     self.tools.alpha_overlay,
+                                    &mut self.undo.drag_processed,
+                                    self.undo.drag_stamp_val,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -391,6 +393,8 @@ impl MyApp {
                                     &mut self.undo.visited,
                                     stamp,
                                     false,
+                                    &mut self.undo.drag_processed,
+                                    self.undo.drag_stamp_val,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -427,6 +431,8 @@ impl MyApp {
                                     &mut self.undo.visited,
                                     stamp,
                                     false,
+                                    &mut self.undo.drag_processed,
+                                    self.undo.drag_stamp_val,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;

@@ -105,7 +105,8 @@ fn draw_circle_multi_layer() {
 fn draw_circle_line_horizontal() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
-    circle_brush::draw_circle_line(1, 5, 8, 5, 0, &mut canvas, red(), 0, &mut visited, 1, false);
+    let mut dp = Vec::new();
+    circle_brush::draw_circle_line(1, 5, 8, 5, 0, &mut canvas, red(), 0, &mut visited, 1, false, &mut dp, 0);
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 1], red(), "start");
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 8], red(), "end");
 }
@@ -115,7 +116,8 @@ fn draw_circle_line_horizontal() {
 fn draw_circle_line_vertical() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
-    circle_brush::draw_circle_line(5, 1, 5, 8, 0, &mut canvas, red(), 0, &mut visited, 1, false);
+    let mut dp = Vec::new();
+    circle_brush::draw_circle_line(5, 1, 5, 8, 0, &mut canvas, red(), 0, &mut visited, 1, false, &mut dp, 0);
     assert_eq!(canvas.pixels[0].pixels[1 * 10 + 5], red(), "start");
     assert_eq!(canvas.pixels[0].pixels[8 * 10 + 5], red(), "end");
 }
@@ -125,7 +127,8 @@ fn draw_circle_line_vertical() {
 fn draw_circle_line_diagonal() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
-    circle_brush::draw_circle_line(1, 1, 8, 8, 0, &mut canvas, red(), 0, &mut visited, 1, false);
+    let mut dp = Vec::new();
+    circle_brush::draw_circle_line(1, 1, 8, 8, 0, &mut canvas, red(), 0, &mut visited, 1, false, &mut dp, 0);
     assert_eq!(canvas.pixels[0].pixels[1 * 10 + 1], red(), "start");
     assert_eq!(canvas.pixels[0].pixels[8 * 10 + 8], red(), "end");
 }
@@ -135,7 +138,8 @@ fn draw_circle_line_diagonal() {
 fn draw_circle_line_different_stamps_dont_interfere() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
-    circle_brush::draw_circle_line(1, 1, 3, 1, 0, &mut canvas, red(), 0, &mut visited, 1, false);
+    let mut dp = Vec::new();
+    circle_brush::draw_circle_line(1, 1, 3, 1, 0, &mut canvas, red(), 0, &mut visited, 1, false, &mut dp, 0);
     circle_brush::draw_circle_line(
         6,
         6,
@@ -148,6 +152,8 @@ fn draw_circle_line_different_stamps_dont_interfere() {
         &mut visited,
         2,
         false,
+        &mut dp,
+        0,
     );
     assert_eq!(canvas.pixels[0].pixels[1 * 10 + 1], red(), "stamp 1");
     assert_eq!(canvas.pixels[0].pixels[6 * 10 + 6], blue(), "stamp 2");
@@ -158,7 +164,8 @@ fn draw_circle_line_different_stamps_dont_interfere() {
 fn draw_circle_line_brush_radius() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
-    circle_brush::draw_circle_line(5, 5, 5, 5, 3, &mut canvas, red(), 0, &mut visited, 1, false);
+    let mut dp = Vec::new();
+    circle_brush::draw_circle_line(5, 5, 5, 5, 3, &mut canvas, red(), 0, &mut visited, 1, false, &mut dp, 0);
     // Center and nearby should be colored
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 5], red(), "center");
     assert_eq!(canvas.pixels[0].pixels[4 * 10 + 5], red(), "above center");
@@ -170,6 +177,7 @@ fn draw_circle_line_brush_radius() {
 fn draw_circle_line_clamps_to_canvas() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
-    circle_brush::draw_circle_line(0, 0, 0, 0, 5, &mut canvas, red(), 0, &mut visited, 1, false);
+    let mut dp = Vec::new();
+    circle_brush::draw_circle_line(0, 0, 0, 0, 5, &mut canvas, red(), 0, &mut visited, 1, false, &mut dp, 0);
     assert_eq!(canvas.pixels[0].pixels[0], red(), "corner colored");
 }

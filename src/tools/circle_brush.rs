@@ -315,6 +315,8 @@ pub fn draw_circle_line(
     visited: &mut [u32],
     stamp: u32,
     alpha_overlay: bool,
+    drag_processed: &mut [u32],
+    drag_stamp_val: u32,
 ) -> UndoRecord {
     let color = premultiply(color);
     let width = canvas.width as usize;
@@ -346,11 +348,18 @@ pub fn draw_circle_line(
                 x += 1;
                 continue;
             }
+            if alpha_overlay && drag_processed[idx] == drag_stamp_val {
+                x += 1;
+                continue;
+            }
             let run_start = idx as u32;
             let mut before = Vec::new();
             while x <= dirty_rect.max_x {
                 let idx2 = row_start + x as usize;
                 if visited[idx2] != stamp {
+                    break;
+                }
+                if alpha_overlay && drag_processed[idx2] == drag_stamp_val {
                     break;
                 }
                 before.push(pixels[idx2]);
@@ -359,6 +368,9 @@ pub fn draw_circle_line(
                 } else {
                     color
                 };
+                if alpha_overlay {
+                    drag_processed[idx2] = drag_stamp_val;
+                }
                 x += 1;
             }
             let (rle_before, len) = compress_run(before);

@@ -12,6 +12,8 @@ pub struct UndoHistory {
     pub redo_index: usize,
     pub visited: Vec<u32>,
     pub visited_stamp: u32,
+    pub drag_processed: Vec<u32>,
+    pub drag_stamp_val: u32,
 }
 
 impl UndoHistory {
@@ -24,6 +26,8 @@ impl UndoHistory {
             redo_index: 0,
             visited: vec![0u32; pixel_count],
             visited_stamp: 1,
+            drag_processed: vec![0u32; pixel_count],
+            drag_stamp_val: 1,
         }
     }
 
@@ -59,7 +63,23 @@ impl UndoHistory {
         if self.visited.len() < pixel_count {
             self.visited = vec![0u32; pixel_count];
         }
+        if self.drag_processed.len() < pixel_count {
+            self.drag_processed = vec![0u32; pixel_count];
+        }
         self.visited_stamp = 1;
+        self.drag_stamp_val = 1;
+    }
+
+    /// Advance and return the drag-scoped processed stamp.
+    ///
+    /// Resets the `drag_processed` buffer when the stamp wraps past `u32::MAX`.
+    #[inline]
+    pub fn advance_drag_stamp(&mut self) {
+        self.drag_stamp_val = self.drag_stamp_val.wrapping_add(1);
+        if self.drag_stamp_val == 0 {
+            self.drag_processed.fill(0);
+            self.drag_stamp_val = 1;
+        }
     }
 
     /// Clear the entire stroke stack and reset the redo index.

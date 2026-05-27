@@ -10,7 +10,6 @@ pub struct ToolConfig {
     pub alpha_overlay: bool,
     pub previous_tool: Option<CurrentTool>,
     pub previous_cursor_position: Option<(u32, u32)>,
-    pub drag_stamp: u32,
     pub show_brush_preview: bool,
     pub undo_redo_steps_multiplier: usize,
 }
@@ -27,7 +26,6 @@ impl Default for ToolConfig {
             alpha_overlay: false,
             previous_tool: None,
             previous_cursor_position: None,
-            drag_stamp: 0,
             show_brush_preview: true,
             undo_redo_steps_multiplier: 1,
         }
