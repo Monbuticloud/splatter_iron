@@ -58,6 +58,7 @@
 
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
 - Subject ≤50 chars; body explains "why" when the commit message alone is insufficient.
+- **Granular commits**: Commit often — one commit per individual fix or per individual function. Avoid large catch-all commits.
 
 ### Code Standards
 
@@ -71,5 +72,6 @@
 
 - Before editing a file, read surrounding context to match conventions.
 - Before committing, always run `cargo test && cargo clippy`.
+- During planning mode, use the `question` tool frequently to gather preferences and clarify intent before implementing.
 - If adding a new module, create a corresponding test module and register it in `src/tests/mod.rs`.
 - Never suppress clippy lints without an inline justification comment.
