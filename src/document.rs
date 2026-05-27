@@ -6,6 +6,7 @@ use crate::undo_history::UndoHistory;
 
 const TEXTURE_NAME: &str = "rendered_layers";
 
+/// Wraps a canvas with its save path, current layer, and dirty-tracking state.
 pub struct Document {
     pub canvas: Canvas,
     pub savefile_path: String,
