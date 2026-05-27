@@ -9,8 +9,14 @@ pub const F32_COLOR_MAX: f32 = 255.0;
 // SIMD constant for the (value * alpha + 128) >> 8 fixed-point blend
 const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
 
-/// Un-premultiply a premultiplied-alpha Color32 back to straight alpha.
-/// Inverse of `premultiply`.
+/// Convert a premultiplied-alpha colour to straight alpha.
+///
+/// This is the inverse of [`premultiply`]. For fully opaque or fully transparent
+/// pixels the colour is returned unchanged.
+///
+/// # Panics
+///
+/// Panics if alpha is 0 (division by zero) — caller should guard against this.
 #[inline]
 pub fn unpremultiply(color: Color32) -> Color32 {
     let alpha = color.a();
