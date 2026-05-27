@@ -104,6 +104,7 @@ fn alpha_blend_semi_transparent_over_opaque() {
     assert!(result.g() > 0);
 }
 
+/// Blending a single layer should copy its premultiplied RGBA bytes directly.
 #[test]
 fn blend_layers_single_layer_copy() {
     let pixel_count = 12;
