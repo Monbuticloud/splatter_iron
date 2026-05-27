@@ -166,7 +166,7 @@ fn stamp_line_positions(
     visited: &mut [u32],
     stamp: u32,
 ) {
-    let half_radius = brush_radius >> 1;
+    let half_radius = brush_radius;
 
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;

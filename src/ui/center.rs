@@ -84,11 +84,10 @@ impl MyApp {
                         local.y / response.rect.height()
                     );
 
-                    let half_radius = self.tools.radius >> 1;
+                    let half_radius = self.tools.radius;
                     let pixel_x = (uv.x * (self.doc.canvas.width as f32)).floor() as u32;
                     let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
 
-                    // Canvas-space bounds of the brush square
                     let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
                     let preview_end_x =
                         ((pixel_x + half_radius).min(self.doc.canvas.width - 1) as f32) + 1.0;
@@ -167,7 +166,7 @@ impl MyApp {
                             self.doc.canvas.render_next_frame = true;
 
                             if self.tools.previous_cursor_position.is_none() {
-                                let half_radius = self.tools.radius >> 1;
+                                let half_radius = self.tools.radius;
 
                                 let start_x = pixel_x.saturating_sub(half_radius);
                                 let end_x = (pixel_x + half_radius)
@@ -215,7 +214,7 @@ impl MyApp {
                             self.doc.canvas.render_next_frame = true;
 
                             if self.tools.previous_cursor_position.is_none() {
-                                let half_radius = self.tools.radius >> 1;
+                                let half_radius = self.tools.radius;
 
                                 let start_x = pixel_x.saturating_sub(half_radius);
                                 let end_x = (pixel_x + half_radius)
