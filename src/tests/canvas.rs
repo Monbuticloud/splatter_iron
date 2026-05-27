@@ -209,6 +209,7 @@ fn draw_square_line_brush_radius() {
     );
 }
 
+/// Drawing at the canvas edge with a large brush should not panic.
 #[test]
 fn draw_square_line_clamps_to_canvas() {
     let mut canvas = small_canvas();
