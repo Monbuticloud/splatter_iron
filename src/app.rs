@@ -68,6 +68,9 @@ pub struct UIState {
     pub last_autosave_time: Duration,
     pub displayed_error_list: Vec<String>,
     pub pending_layer_for_deletion: Option<usize>,
+    pub show_new_canvas_dialog: bool,
+    pub new_canvas_width: u32,
+    pub new_canvas_height: u32,
 }
 
 impl Default for UIState {
@@ -81,6 +84,9 @@ impl Default for UIState {
             last_autosave_time: Duration::ZERO,
             displayed_error_list: Vec::new(),
             pending_layer_for_deletion: None,
+            show_new_canvas_dialog: false,
+            new_canvas_width: 2000,
+            new_canvas_height: 1500,
         }
     }
 }
@@ -218,6 +224,65 @@ impl eframe::App for MyApp {
             }
             if !open {
                 self.ui.displayed_error_list.clear();
+            }
+        }
+
+        // --- New Canvas dialog ---
+        if self.ui.show_new_canvas_dialog {
+            let mut open = true;
+            egui::Window::new("New Canvas")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .open(&mut open)
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        if ui.button("XS\n800×600").clicked() {
+                            self.ui.new_canvas_width = 800;
+                            self.ui.new_canvas_height = 600;
+                        }
+                        if ui.button("S\n1280×960").clicked() {
+                            self.ui.new_canvas_width = 1280;
+                            self.ui.new_canvas_height = 960;
+                        }
+                        if ui.button("M\n2000×1500").clicked() {
+                            self.ui.new_canvas_width = 2000;
+                            self.ui.new_canvas_height = 1500;
+                        }
+                        if ui.button("L\n2560×1920").clicked() {
+                            self.ui.new_canvas_width = 2560;
+                            self.ui.new_canvas_height = 1920;
+                        }
+                        if ui.button("XL\n3200×2400").clicked() {
+                            self.ui.new_canvas_width = 3200;
+                            self.ui.new_canvas_height = 2400;
+                        }
+                    });
+                    ui.separator();
+                    ui.label("Custom:");
+                    ui.add(
+                        egui::Slider::new(&mut self.ui.new_canvas_width, 4..=25_000)
+                            .text("Width"),
+                    );
+                    ui.add(
+                        egui::Slider::new(&mut self.ui.new_canvas_height, 4..=25_000)
+                            .text("Height"),
+                    );
+                    ui.horizontal(|ui| {
+                        if ui.button("Create").clicked() {
+                            let canvas = Canvas::new(self.ui.new_canvas_width, self.ui.new_canvas_height);
+                            self.doc.replace_canvas(canvas, &mut self.undo);
+                            self.tools.previous_tool = None;
+                            self.tools.previous_cursor_position = None;
+                            self.ui.show_new_canvas_dialog = false;
+                        }
+                        if ui.button("Cancel").clicked() {
+                            self.ui.show_new_canvas_dialog = false;
+                        }
+                    });
+                });
+            if !open {
+                self.ui.show_new_canvas_dialog = false;
             }
         }
 

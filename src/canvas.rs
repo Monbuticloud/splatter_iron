@@ -609,6 +609,27 @@ pub fn draw_circle_line(
     }
 }
 
+impl Canvas {
+    /// Create a new canvas with the given dimensions and a single transparent layer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `width * height` overflows `usize` (extremely unlikely in practice).
+    pub fn new(width: u32, height: u32) -> Self {
+        let pixel_count = (width as usize).checked_mul(height as usize).expect(
+            "Canvas dimensions overflow usize"
+        );
+        Self {
+            pixels: vec![Layer { pixels: vec![Color32::TRANSPARENT; pixel_count] }],
+            width,
+            height,
+            output_rgba: Vec::new(),
+            rendered_layers: None,
+            render_next_frame: true,
+        }
+    }
+}
+
 /// The drawing tool currently selected in the UI.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CurrentTool {

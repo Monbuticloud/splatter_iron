@@ -1,7 +1,6 @@
 use eframe::egui;
 
 use crate::app::MyApp;
-use crate::canvas::Canvas;
 use crate::file_io::PendingFileAction;
 
 impl MyApp {
@@ -30,9 +29,7 @@ impl MyApp {
 
             // New
             if ui.button("New").clicked() {
-                self.doc.replace_canvas(Canvas::default(), &mut self.undo);
-                self.tools.previous_tool = None;
-                self.tools.previous_cursor_position = None;
+                self.ui.show_new_canvas_dialog = true;
             }
 
             // Export menu with all supported formats
