@@ -105,6 +105,7 @@ fn undo_redo_full_roundtrip() {
     assert_eq!(canvas.pixels[0].pixels[0], original);
 }
 
+/// `draw_square` should produce an `UndoRecord::Run` variant.
 #[test]
 fn undo_record_is_runs_variant() {
     let mut canvas = small_white_canvas();
