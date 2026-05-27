@@ -71,6 +71,7 @@ fn delete_last_layer_removes_it() {
     assert_eq!(doc.current_layer, 0);
 }
 
+/// Deleting the current layer should adjust `current_layer` downward.
 #[test]
 fn delete_layer_adjusts_current_layer_down() {
     let mut doc = small_document();
