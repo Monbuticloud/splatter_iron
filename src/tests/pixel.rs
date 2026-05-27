@@ -70,6 +70,7 @@ fn premultiply_zero_alpha() {
     assert_eq!(pixel::premultiply(c), Color32::TRANSPARENT);
 }
 
+/// Unpremultiplying `TRANSPARENT` should return `TRANSPARENT` unchanged.
 #[test]
 fn unpremultiply_zero_alpha_stays_transparent() {
     assert_eq!(pixel::unpremultiply(Color32::TRANSPARENT), Color32::TRANSPARENT);
