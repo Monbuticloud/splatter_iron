@@ -81,6 +81,7 @@ fn undo_apply_restores_before_pixels() {
     assert_eq!(canvas.pixels[0].pixels[0], original, "undo restored pixel");
 }
 
+/// `redo_apply` should reapply the stroke colour.
 #[test]
 fn redo_apply_reapplies_color() {
     let mut canvas = small_white_canvas();
