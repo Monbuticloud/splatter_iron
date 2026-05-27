@@ -25,6 +25,7 @@ fn checkerboard_4x4() -> Canvas {
     }
 }
 
+/// Save and load a checkerboard canvas; all pixels should be identical.
 #[test]
 fn save_load_roundtrip_identical_pixels() {
     let original = checkerboard_4x4();
