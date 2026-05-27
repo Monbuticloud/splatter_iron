@@ -37,7 +37,7 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
 ///
 /// # Errors
 ///
-/// Returns an error if JSON serialisation or zstd compression fails.
+/// Returns an error if JSON serialization or zstd compression fails.
 pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     use std::io::Write;
     let json = serde_json::to_vec(canvas)?;
