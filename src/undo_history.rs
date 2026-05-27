@@ -66,6 +66,7 @@ impl UndoHistory {
         self.redo_index = 0;
     }
 
+    /// Returns `true` if there are strokes that can be undone.
     pub fn can_undo(&self) -> bool {
         self.redo_index < self.stroke_stack.len()
     }
