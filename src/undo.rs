@@ -2,6 +2,7 @@ use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 
+/// A single pixel change with its before and after colors (for the `Pixel` undo variant).
 pub struct StrokePixel {
     pub index: u32,
     pub color_before: Color32,
