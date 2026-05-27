@@ -107,6 +107,10 @@ impl Document {
     }
 
     /// Swap the layer at `index` with the one below it (`index + 1`).
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index >= pixels.len() - 1` because there is no layer below.
     pub fn move_layer_down(&mut self, index: usize) {
         self.canvas.pixels.swap(index, index + 1);
         self.current_layer = index + 1;
