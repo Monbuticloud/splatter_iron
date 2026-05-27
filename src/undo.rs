@@ -9,6 +9,8 @@ pub struct StrokePixel {
     pub color_after: Color32,
 }
 
+/// Compressed storage for a run of before-pixels: either all the same color
+/// (`All`) or a full `Vec` of distinct colors (`Many`).
 #[derive(Clone)]
 pub enum BeforePixels {
     All(Color32),
