@@ -30,7 +30,7 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
     Ok(canvas)
 }
 
-/// Serialise a `Canvas` to zstd-compressed JSON bytes without writing to disk.
+/// Serialize a `Canvas` to zstd-compressed JSON bytes without writing to disk.
 ///
 /// Uses multi-threaded zstd compression. This is the CPU-heavy part of saving
 /// and should be called on a background thread.
