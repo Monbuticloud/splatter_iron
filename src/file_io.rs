@@ -145,8 +145,11 @@ impl FileIO {
         }
     }
 
-    /// Check for results from background file-dialog threads and process them.
-    /// Called once per frame right before egui layout.
+    /// Poll for completed file dialog results and process them.
+    ///
+    /// Called once per frame before egui layout. Handles load, import,
+    /// save, and export actions by reading/writing files and updating
+    /// document state or the error list accordingly.
     pub fn poll_dialog_results(
         &mut self,
         doc: &mut Document,
