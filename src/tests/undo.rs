@@ -65,7 +65,7 @@ fn small_white_canvas() -> Canvas {
     }
 }
 
-/// Shortcut for a fully opaque red colour in premultiplied format.
+/// Shortcut for a fully opaque red color in premultiplied format.
 fn red() -> Color32 {
     Color32::from_rgba_premultiplied(255, 0, 0, 255)
 }
@@ -81,7 +81,7 @@ fn undo_apply_restores_before_pixels() {
     assert_eq!(canvas.pixels[0].pixels[0], original, "undo restored pixel");
 }
 
-/// `redo_apply` should reapply the stroke colour.
+/// `redo_apply` should reapply the stroke color.
 #[test]
 fn redo_apply_reapplies_color() {
     let mut canvas = small_white_canvas();
