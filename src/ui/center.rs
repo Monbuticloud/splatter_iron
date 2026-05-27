@@ -14,10 +14,10 @@ const ACTIVE_DURATION_MS: u64 = 550;
 impl MyApp {
     /// Render the central canvas panel.
     ///
-    /// Only renders if a texture handle exists. Delegates interaction
-    /// handling to `handle_canvas_interaction`.
+    /// Only renders if a texture exists (wgpu or fallback). Delegates
+    /// interaction handling to `handle_canvas_interaction`.
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
-        if self.doc.canvas.rendered_layers.is_some() {
+        if self.gpu_texture.is_some() || self.doc.canvas.rendered_layers.is_some() {
             self.handle_canvas_interaction(ui);
         }
     }
@@ -28,21 +28,29 @@ impl MyApp {
     /// and drawing strokes with the current tool on drag.
     /// Updates the undo history and marks the document as dirty.
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
-        if let Some(tex) = &self.doc.canvas.rendered_layers {
-            let avail = ui.available_size();
-            let tex_size = tex.size_vec2();
+        let (tex_id, canvas_size) = if let Some(gpu) = &self.gpu_texture {
+            (gpu.texture_id, egui::vec2(
+                self.doc.canvas.width as f32,
+                self.doc.canvas.height as f32,
+            ))
+        } else if let Some(tex) = &self.doc.canvas.rendered_layers {
+            (tex.id(), tex.size_vec2())
+        } else {
+            return;
+        };
 
-            let scale = (avail.x / tex_size.x).min(avail.y / tex_size.y);
-            let draw_size = tex_size * scale;
+        let avail = ui.available_size();
+        let scale = (avail.x / canvas_size.x).min(avail.y / canvas_size.y);
+        let draw_size = canvas_size * scale;
 
-            let response = ui
-                .add(
-                    egui::Image
-                        ::new(tex)
-                        .fit_to_exact_size(draw_size)
-                        .sense(egui::Sense::click_and_drag())
-                )
-                .on_hover_cursor(egui::CursorIcon::Crosshair);
+        let response = ui
+            .add(
+                egui::Image
+                    ::new(tex_id)
+                    .fit_to_exact_size(draw_size)
+                    .sense(egui::Sense::click_and_drag())
+            )
+            .on_hover_cursor(egui::CursorIcon::Crosshair);
 
             response.context_menu(|ui| {
                 // --- Import ---
@@ -350,6 +358,5 @@ impl MyApp {
                 self.tools.previous_tool = None;
                 self.tools.previous_cursor_position = None;
             }
-        }
     }
 }
