@@ -41,6 +41,7 @@ fn push_undo_makes_undo_available() {
     assert!(!hist.can_redo());
 }
 
+/// Undoing should restore original pixels and make redo available.
 #[test]
 fn undo_step_applies_and_tracks_redo() {
     let mut hist = UndoHistory::new(100);
