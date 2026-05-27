@@ -76,7 +76,7 @@ fn red() -> Color32 {
 fn undo_apply_restores_before_pixels() {
     let mut canvas = small_white_canvas();
     let original = canvas.pixels[0].pixels[0];
-    let record = canvas::draw_square(0, 0, 5, 5, &mut canvas, red(), 0);
+    let record = canvas::draw_square(0, 0, 5, 5, &mut canvas, red(), 0, false);
     assert_eq!(canvas.pixels[0].pixels[0], red(), "square changed pixel");
     undo::undo_apply(&mut canvas, &record);
     assert_eq!(canvas.pixels[0].pixels[0], original, "undo restored pixel");
@@ -86,7 +86,7 @@ fn undo_apply_restores_before_pixels() {
 #[test]
 fn redo_apply_reapplies_color() {
     let mut canvas = small_white_canvas();
-    let record = canvas::draw_square(0, 0, 5, 5, &mut canvas, red(), 0);
+    let record = canvas::draw_square(0, 0, 5, 5, &mut canvas, red(), 0, false);
     undo::undo_apply(&mut canvas, &record);
     undo::redo_apply(&mut canvas, &record);
     assert_eq!(canvas.pixels[0].pixels[0], red());
@@ -97,7 +97,7 @@ fn redo_apply_reapplies_color() {
 fn undo_redo_full_roundtrip() {
     let mut canvas = small_white_canvas();
     let original = canvas.pixels[0].pixels[0];
-    let record = canvas::draw_square(0, 0, 5, 5, &mut canvas, red(), 0);
+    let record = canvas::draw_square(0, 0, 5, 5, &mut canvas, red(), 0, false);
     undo::undo_apply(&mut canvas, &record);
     assert_eq!(canvas.pixels[0].pixels[0], original);
     undo::redo_apply(&mut canvas, &record);
@@ -110,7 +110,7 @@ fn undo_redo_full_roundtrip() {
 #[test]
 fn undo_record_is_runs_variant() {
     let mut canvas = small_white_canvas();
-    let record = canvas::draw_square(2, 2, 7, 7, &mut canvas, red(), 0);
+    let record = canvas::draw_square(2, 2, 7, 7, &mut canvas, red(), 0, false);
     assert!(matches!(record, UndoRecord::Run { .. }));
 }
 
@@ -118,7 +118,7 @@ fn undo_record_is_runs_variant() {
 #[test]
 fn empty_square_produces_empty_runs() {
     let mut canvas = small_white_canvas();
-    let record = canvas::draw_square(5, 5, 5, 5, &mut canvas, red(), 0);
+    let record = canvas::draw_square(5, 5, 5, 5, &mut canvas, red(), 0, false);
     if let UndoRecord::Run { runs, .. } = &record {
         assert!(runs.is_empty(), "zero-area rect should produce no runs");
     } else {
@@ -130,9 +130,9 @@ fn empty_square_produces_empty_runs() {
 #[test]
 fn multiple_undos_stack() {
     let mut canvas = small_white_canvas();
-    let r1 = canvas::draw_square(0, 0, 3, 3, &mut canvas, red(), 0);
+    let r1 = canvas::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
     let blue = Color32::from_rgba_premultiplied(0, 0, 255, 255);
-    let r2 = canvas::draw_square(3, 3, 6, 6, &mut canvas, blue, 0);
+    let r2 = canvas::draw_square(3, 3, 6, 6, &mut canvas, blue, 0, false);
 
     // Undo second stroke
     undo::undo_apply(&mut canvas, &r2);

@@ -1,6 +1,7 @@
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
+use crate::pixel::alpha_blend;
 
 /// A single pixel change with its before and after colors (for the `Pixel` undo variant).
 pub struct StrokePixel {
@@ -56,6 +57,7 @@ pub enum UndoRecord {
         width: u32,
         color_after: Color32,
         runs: Vec<RunSegment>,
+        is_alpha_overlay: bool,
     },
     Pixel {
         layer_index: usize,
@@ -71,7 +73,7 @@ pub enum UndoRecord {
 #[inline]
 pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     match record {
-        UndoRecord::Run { layer_index, width: _, color_after: _, runs } => {
+        UndoRecord::Run { layer_index, width: _, color_after: _, runs, is_alpha_overlay: _ } => {
             let layer = &mut canvas.pixels[*layer_index];
             for run in runs {
                 let end = (run.start as usize) + run.len as usize;
@@ -99,11 +101,20 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
 #[inline]
 pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     match record {
-        UndoRecord::Run { layer_index, width: _, color_after, runs } => {
+        UndoRecord::Run { layer_index, width: _, color_after, runs, is_alpha_overlay } => {
             let layer = &mut canvas.pixels[*layer_index];
-            for run in runs {
-                let end = (run.start as usize) + run.len as usize;
-                layer.pixels[run.start as usize..end].fill(*color_after);
+            if *is_alpha_overlay {
+                for run in runs {
+                    let end = (run.start as usize) + run.len as usize;
+                    for pixel in layer.pixels[run.start as usize..end].iter_mut() {
+                        *pixel = alpha_blend(*pixel, *color_after);
+                    }
+                }
+            } else {
+                for run in runs {
+                    let end = (run.start as usize) + run.len as usize;
+                    layer.pixels[run.start as usize..end].fill(*color_after);
+                }
             }
         }
         UndoRecord::Pixel { layer_index, width: _, pixels } => {

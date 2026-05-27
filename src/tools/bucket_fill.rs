@@ -23,6 +23,7 @@ pub fn draw_bucket_fill(
     canvas: &mut Canvas,
     color: Color32,
     layer: usize,
+    alpha_overlay: bool,
 ) -> UndoRecord {
     let color = premultiply(color);
     let width = canvas.width as usize;
@@ -40,6 +41,7 @@ pub fn draw_bucket_fill(
             width: canvas.width,
             color_after: color,
             runs: Vec::new(),
+            is_alpha_overlay: alpha_overlay,
         };
     }
 
@@ -78,7 +80,13 @@ pub fn draw_bucket_fill(
             before,
         });
 
-        pixels[span_start..span_end].fill(color);
+        if alpha_overlay {
+            for p in pixels[span_start..span_end].iter_mut() {
+                *p = crate::pixel::alpha_blend(*p, color);
+            }
+        } else {
+            pixels[span_start..span_end].fill(color);
+        }
 
         if left < min_x { min_x = left; }
         if right > max_x { max_x = right; }
@@ -134,5 +142,6 @@ pub fn draw_bucket_fill(
         width: canvas.width,
         color_after: color,
         runs,
+        is_alpha_overlay: alpha_overlay,
     }
 }

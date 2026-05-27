@@ -35,6 +35,7 @@ impl MyApp {
         ui.label("Brush Radius:");
         ui.add(egui::DragValue::new(&mut self.tools.radius).range(BRUSH_RADIUS_RANGE));
         ui.checkbox(&mut self.tools.show_brush_preview, "Brush Preview");
+        ui.checkbox(&mut self.tools.alpha_overlay, "Alpha Overlay");
 
         ui.separator();
         ui.label("Save Path:");

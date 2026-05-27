@@ -27,10 +27,15 @@ fn fill_circle_impl(
     color: Color32,
     canvas_width: u32,
     canvas_height: u32,
+    alpha_overlay: bool,
 ) {
     if radius == 0 {
         let idx = (center_y as usize) * width + center_x as usize;
-        pixels[idx] = color;
+        if alpha_overlay {
+            pixels[idx] = crate::pixel::alpha_blend(pixels[idx], color);
+        } else {
+            pixels[idx] = color;
+        }
         return;
     }
 
@@ -45,10 +50,20 @@ fn fill_circle_impl(
             continue;
         }
 
+        let apply = |span: &mut [Color32]| {
+            if alpha_overlay {
+                for p in span.iter_mut() {
+                    *p = crate::pixel::alpha_blend(*p, color);
+                }
+            } else {
+                span.fill(color);
+            }
+        };
+
         // Top half row
         if let Some(y) = center_y.checked_sub(dy) {
             let row_start = (y as usize) * width;
-            pixels[row_start + span_start as usize..=row_start + span_end as usize].fill(color);
+            apply(&mut pixels[row_start + span_start as usize..=row_start + span_end as usize]);
         }
 
         // Bottom half (skip centre-row duplicate)
@@ -56,7 +71,7 @@ fn fill_circle_impl(
             let y = center_y + dy;
             if y < canvas_height {
                 let row_start = (y as usize) * width;
-                pixels[row_start + span_start as usize..=row_start + span_end as usize].fill(color);
+                apply(&mut pixels[row_start + span_start as usize..=row_start + span_end as usize]);
             }
         }
     }
@@ -79,6 +94,7 @@ pub fn draw_circle(
     canvas: &mut Canvas,
     color: egui::Color32,
     layer: usize,
+    alpha_overlay: bool,
 ) -> UndoRecord {
     let color = premultiply(color);
 
@@ -95,6 +111,7 @@ pub fn draw_circle(
             width: canvas.width,
             color_after: color,
             runs: Vec::new(),
+            is_alpha_overlay: alpha_overlay,
         };
     }
 
@@ -148,7 +165,7 @@ pub fn draw_circle(
     }
 
     // Fill the circle
-    fill_circle_impl(pixels, width, center_x, center_y, radius, color, canvas.width, height);
+    fill_circle_impl(pixels, width, center_x, center_y, radius, color, canvas.width, height, alpha_overlay);
 
     let cx_min = center_x.saturating_sub(radius);
     let cy_min = center_y.saturating_sub(radius);
@@ -165,6 +182,7 @@ pub fn draw_circle(
         width: canvas.width,
         color_after: color,
         runs,
+        is_alpha_overlay: alpha_overlay,
     }
 }
 
@@ -296,6 +314,7 @@ pub fn draw_circle_line(
     layer: usize,
     visited: &mut [u32],
     stamp: u32,
+    alpha_overlay: bool,
 ) -> UndoRecord {
     let color = premultiply(color);
     let width = canvas.width as usize;
@@ -335,7 +354,11 @@ pub fn draw_circle_line(
                     break;
                 }
                 before.push(pixels[idx2]);
-                pixels[idx2] = color;
+                pixels[idx2] = if alpha_overlay {
+                    crate::pixel::alpha_blend(pixels[idx2], color)
+                } else {
+                    color
+                };
                 x += 1;
             }
             let (rle_before, len) = compress_run(before);
@@ -353,5 +376,6 @@ pub fn draw_circle_line(
         width: canvas.width,
         color_after: color,
         runs,
+        is_alpha_overlay: alpha_overlay,
     }
 }

@@ -201,6 +201,7 @@ impl MyApp {
                         &mut self.doc.canvas,
                         self.tools.current_color,
                         self.doc.current_layer,
+                        self.tools.alpha_overlay,
                     );
                     self.undo.push_undo(stroke);
                     self.doc.dirty_since_last_autosave = true;
@@ -233,15 +234,16 @@ impl MyApp {
                                 let end_y = (pixel_y + half_radius)
                                     .min(self.doc.canvas.height - 1);
 
-                                let stroke = canvas::draw_square(
-                                    start_x,
-                                    start_y,
-                                    end_x,
-                                    end_y,
-                                    &mut self.doc.canvas,
-                                    self.tools.current_color,
-                                    self.doc.current_layer
-                                );
+                        let stroke = canvas::draw_square(
+                            start_x,
+                            start_y,
+                            end_x,
+                            end_y,
+                            &mut self.doc.canvas,
+                            self.tools.current_color,
+                            self.doc.current_layer,
+                            self.tools.alpha_overlay,
+                        );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
                             } else if let Some((past_x, past_y)) =
@@ -259,6 +261,7 @@ impl MyApp {
                                     self.doc.current_layer,
                                     &mut self.undo.visited,
                                     stamp,
+                                    self.tools.alpha_overlay,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -275,6 +278,7 @@ impl MyApp {
                                     &mut self.doc.canvas,
                                     self.tools.current_color,
                                     self.doc.current_layer,
+                                    self.tools.alpha_overlay,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -293,6 +297,7 @@ impl MyApp {
                                     self.doc.current_layer,
                                     &mut self.undo.visited,
                                     stamp,
+                                    self.tools.alpha_overlay,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -312,15 +317,16 @@ impl MyApp {
                                 let end_y = (pixel_y + half_radius)
                                     .min(self.doc.canvas.height - 1);
 
-                                let stroke = canvas::draw_square(
-                                    start_x,
-                                    start_y,
-                                    end_x,
-                                    end_y,
-                                    &mut self.doc.canvas,
-                                    Color32::TRANSPARENT,
-                                    self.doc.current_layer
-                                );
+                        let stroke = canvas::draw_square(
+                            start_x,
+                            start_y,
+                            end_x,
+                            end_y,
+                            &mut self.doc.canvas,
+                            Color32::TRANSPARENT,
+                            self.doc.current_layer,
+                            false,
+                        );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
                             } else if let Some((past_x, past_y)) =
@@ -338,6 +344,7 @@ impl MyApp {
                                     self.doc.current_layer,
                                     &mut self.undo.visited,
                                     stamp,
+                                    false,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -354,6 +361,7 @@ impl MyApp {
                                     &mut self.doc.canvas,
                                     Color32::TRANSPARENT,
                                     self.doc.current_layer,
+                                    false,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -372,6 +380,7 @@ impl MyApp {
                                     self.doc.current_layer,
                                     &mut self.undo.visited,
                                     stamp,
+                                    false,
                                 );
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
@@ -385,6 +394,7 @@ impl MyApp {
                                 &mut self.doc.canvas,
                                 self.tools.current_color,
                                 self.doc.current_layer,
+                                self.tools.alpha_overlay,
                             );
                             self.undo.push_undo(stroke);
                             self.doc.dirty_since_last_autosave = true;

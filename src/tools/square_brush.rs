@@ -18,12 +18,24 @@ fn fill_square_impl(
     start_y: u32,
     end_y: u32,
     color: Color32,
+    alpha_overlay: bool,
 ) {
-    for y in start_y..end_y {
-        let row_start = (y as usize) * width;
-        let start = row_start + (start_x as usize);
-        let end = row_start + (end_x as usize);
-        pixels[start..end].fill(color);
+    if alpha_overlay {
+        for y in start_y..end_y {
+            let row_start = (y as usize) * width;
+            let start = row_start + (start_x as usize);
+            let end = row_start + (end_x as usize);
+            for pixel in pixels[start..end].iter_mut() {
+                *pixel = crate::pixel::alpha_blend(*pixel, color);
+            }
+        }
+    } else {
+        for y in start_y..end_y {
+            let row_start = (y as usize) * width;
+            let start = row_start + (start_x as usize);
+            let end = row_start + (end_x as usize);
+            pixels[start..end].fill(color);
+        }
     }
 }
 
@@ -125,6 +137,7 @@ pub fn draw_square(
     canvas: &mut Canvas,
     color: egui::Color32,
     layer: usize,
+    alpha_overlay: bool,
 ) -> UndoRecord {
     let color = premultiply(color);
 
@@ -144,6 +157,7 @@ pub fn draw_square(
             width: canvas.width,
             color_after: color,
             runs: Vec::new(),
+            is_alpha_overlay: alpha_overlay,
         };
     }
 
@@ -170,7 +184,7 @@ pub fn draw_square(
     }
 
     // Fill the rectangle (efficient contiguous write)
-    fill_square_impl(pixels, width, start_x, end_x, start_y, end_y, color);
+    fill_square_impl(pixels, width, start_x, end_x, start_y, end_y, color, alpha_overlay);
 
     let rect = DirtyRect::new(start_x, start_y, end_x - 1, end_y - 1);
     canvas.dirty_rect = match canvas.dirty_rect {
@@ -183,6 +197,7 @@ pub fn draw_square(
         width: canvas.width,
         color_after: color,
         runs,
+        is_alpha_overlay: alpha_overlay,
     }
 }
 
@@ -207,6 +222,7 @@ pub fn draw_square_line(
     layer: usize,
     visited: &mut [u32],
     stamp: u32,
+    alpha_overlay: bool,
 ) -> UndoRecord {
     let color = premultiply(color);
     let width = canvas.width as usize;
@@ -246,7 +262,11 @@ pub fn draw_square_line(
                     break;
                 }
                 before.push(pixels[idx2]);
-                pixels[idx2] = color;
+                pixels[idx2] = if alpha_overlay {
+                    crate::pixel::alpha_blend(pixels[idx2], color)
+                } else {
+                    color
+                };
                 x += 1;
             }
             let (rle_before, len) = compress_run(before);
@@ -264,5 +284,6 @@ pub fn draw_square_line(
         width: canvas.width,
         color_after: color,
         runs,
+        is_alpha_overlay: alpha_overlay,
     }
 }
