@@ -91,6 +91,15 @@ pub fn allocated_bytes() -> usize {
 // Unstable MiMalloc features can cause build issues, so we'll stick to the default allocator for now.
 // Never mind its just windows that has issues, linux and mac are fine. I'll just add a note about it in the readme (maybe) and leave it as is for now.
 
+/// Application entry point.
+///
+/// Initialises the local data directory, creates the autosave directory,
+/// and runs the eframe GUI event loop. Prints memory usage statistics on exit.
+///
+/// # Errors
+///
+/// Returns an error if the data directory cannot be resolved or created,
+/// or if the eframe window cannot be opened.
 fn main() -> eframe::Result {
     let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORG, APP_NAME).expect(
         "Couldn't resolve app dir"
