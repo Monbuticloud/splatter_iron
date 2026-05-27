@@ -224,32 +224,55 @@ impl MyApp {
                             self.doc.canvas.render_next_frame = true;
 
                             if self.tools.previous_cursor_position.is_none() {
-                                let half_radius = self.tools.radius;
+                                if self.tools.alpha_overlay {
+                                    self.tools.drag_stamp = self.undo.next_stamp();
+                                    let stroke = canvas::draw_square_line(
+                                        pixel_x,
+                                        pixel_y,
+                                        pixel_x,
+                                        pixel_y,
+                                        self.tools.radius,
+                                        &mut self.doc.canvas,
+                                        self.tools.current_color,
+                                        self.doc.current_layer,
+                                        &mut self.undo.visited,
+                                        self.tools.drag_stamp,
+                                        true,
+                                    );
+                                    self.undo.push_undo(stroke);
+                                    self.doc.dirty_since_last_autosave = true;
+                                } else {
+                                    let half_radius = self.tools.radius;
 
-                                let start_x = pixel_x.saturating_sub(half_radius);
-                                let end_x = (pixel_x + half_radius)
-                                    .min(self.doc.canvas.width - 1);
+                                    let start_x = pixel_x.saturating_sub(half_radius);
+                                    let end_x = (pixel_x + half_radius)
+                                        .min(self.doc.canvas.width - 1);
 
-                                let start_y = pixel_y.saturating_sub(half_radius);
-                                let end_y = (pixel_y + half_radius)
-                                    .min(self.doc.canvas.height - 1);
+                                    let start_y = pixel_y.saturating_sub(half_radius);
+                                    let end_y = (pixel_y + half_radius)
+                                        .min(self.doc.canvas.height - 1);
 
-                        let stroke = canvas::draw_square(
-                            start_x,
-                            start_y,
-                            end_x,
-                            end_y,
-                            &mut self.doc.canvas,
-                            self.tools.current_color,
-                            self.doc.current_layer,
-                            self.tools.alpha_overlay,
-                        );
-                                self.undo.push_undo(stroke);
-                                self.doc.dirty_since_last_autosave = true;
+                                    let stroke = canvas::draw_square(
+                                        start_x,
+                                        start_y,
+                                        end_x,
+                                        end_y,
+                                        &mut self.doc.canvas,
+                                        self.tools.current_color,
+                                        self.doc.current_layer,
+                                        false,
+                                    );
+                                    self.undo.push_undo(stroke);
+                                    self.doc.dirty_since_last_autosave = true;
+                                }
                             } else if let Some((past_x, past_y)) =
                                 self.tools.previous_cursor_position
                             {
-                                let stamp = self.undo.next_stamp();
+                                let stamp = if self.tools.alpha_overlay {
+                                    self.tools.drag_stamp
+                                } else {
+                                    self.undo.next_stamp()
+                                };
                                 let stroke = canvas::draw_square_line(
                                     past_x,
                                     past_y,
@@ -271,21 +294,44 @@ impl MyApp {
                             self.doc.canvas.render_next_frame = true;
 
                             if self.tools.previous_cursor_position.is_none() {
-                                let stroke = canvas::draw_circle(
-                                    pixel_x,
-                                    pixel_y,
-                                    self.tools.radius,
-                                    &mut self.doc.canvas,
-                                    self.tools.current_color,
-                                    self.doc.current_layer,
-                                    self.tools.alpha_overlay,
-                                );
-                                self.undo.push_undo(stroke);
-                                self.doc.dirty_since_last_autosave = true;
+                                if self.tools.alpha_overlay {
+                                    self.tools.drag_stamp = self.undo.next_stamp();
+                                    let stroke = canvas::draw_circle_line(
+                                        pixel_x,
+                                        pixel_y,
+                                        pixel_x,
+                                        pixel_y,
+                                        self.tools.radius,
+                                        &mut self.doc.canvas,
+                                        self.tools.current_color,
+                                        self.doc.current_layer,
+                                        &mut self.undo.visited,
+                                        self.tools.drag_stamp,
+                                        true,
+                                    );
+                                    self.undo.push_undo(stroke);
+                                    self.doc.dirty_since_last_autosave = true;
+                                } else {
+                                    let stroke = canvas::draw_circle(
+                                        pixel_x,
+                                        pixel_y,
+                                        self.tools.radius,
+                                        &mut self.doc.canvas,
+                                        self.tools.current_color,
+                                        self.doc.current_layer,
+                                        false,
+                                    );
+                                    self.undo.push_undo(stroke);
+                                    self.doc.dirty_since_last_autosave = true;
+                                }
                             } else if let Some((past_x, past_y)) =
                                 self.tools.previous_cursor_position
                             {
-                                let stamp = self.undo.next_stamp();
+                                let stamp = if self.tools.alpha_overlay {
+                                    self.tools.drag_stamp
+                                } else {
+                                    self.undo.next_stamp()
+                                };
                                 let stroke = canvas::draw_circle_line(
                                     past_x,
                                     past_y,
