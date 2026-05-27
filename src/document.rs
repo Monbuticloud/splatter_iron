@@ -94,6 +94,7 @@ impl Document {
         self.canvas.render_next_frame = true;
     }
 
+    /// Swap the layer at `index` with the one above it (`index - 1`).
     pub fn move_layer_up(&mut self, index: usize) {
         self.canvas.pixels.swap(index, index - 1);
         self.current_layer = index - 1;
