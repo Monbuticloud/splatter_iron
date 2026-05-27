@@ -35,6 +35,7 @@ fn premultiply_non_opaque_approximation() {
     assert_eq!(premul.a(), 128);
 }
 
+/// Unpremultiply should recover the straight alpha values.
 #[test]
 fn unpremultiply_produces_straight_alpha() {
     let premul = Color32::from_rgba_premultiplied(64, 32, 16, 128);
