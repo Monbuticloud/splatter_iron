@@ -96,6 +96,7 @@ impl MyApp {
                     }
                     LayerAction::MoveUp(index) => {
                         if index > 0 {
+                            self.pending_layer_for_deletion = None;
                             self.canvas.pixels.swap(index, index - 1);
                             self.canvas.render_next_frame = true;
                             self.current_layer = index - 1;
@@ -103,6 +104,7 @@ impl MyApp {
                     }
                     LayerAction::MoveDown(index) => {
                         if index < self.canvas.pixels.len() - 1 {
+                            self.pending_layer_for_deletion = None;
                             self.canvas.pixels.swap(index, index + 1);
                             self.canvas.render_next_frame = true;
                             self.current_layer = index + 1;
