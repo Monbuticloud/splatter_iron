@@ -169,7 +169,7 @@ impl MyApp {
                                     self.current_color,
                                     self.current_layer
                                 );
-                                self.push_stroke(stroke);
+                                self.push_undo(stroke);
                             } else if let Some((past_x, past_y)) = self.previous_cursor_position {
                                 let stamp = self.next_stamp();
                                 let stroke = canvas::draw_square_line(
@@ -183,9 +183,8 @@ impl MyApp {
                                     self.current_layer,
                                     &mut self.visited,
                                     stamp,
-                                    &self.bump_allocator
                                 );
-                                self.push_stroke(stroke);
+                                self.push_undo(stroke);
                             }
                         }
                         CurrentTool::Circle => {
@@ -212,7 +211,7 @@ impl MyApp {
                                     Color32::TRANSPARENT,
                                     self.current_layer
                                 );
-                                self.push_stroke(stroke);
+                                self.push_undo(stroke);
                             } else if let Some((past_x, past_y)) = self.previous_cursor_position {
                                 let stamp = self.next_stamp();
                                 let stroke = canvas::draw_square_line(
@@ -226,9 +225,8 @@ impl MyApp {
                                     self.current_layer,
                                     &mut self.visited,
                                     stamp,
-                                    &self.bump_allocator
                                 );
-                                self.push_stroke(stroke);
+                                self.push_undo(stroke);
                             }
                         }
                         CurrentTool::CircleEraser => {
