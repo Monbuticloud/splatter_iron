@@ -26,6 +26,7 @@ impl MyApp {
     ///
     /// Handles brush preview rendering, context menu (Import/Export As/Save As),
     /// and drawing strokes with the current tool (Square/SquareEraser) on drag.
+    /// Circle and CircleEraser tools are not yet implemented (`todo!()`).
     /// Updates the undo history and marks the document as dirty.
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
         if let Some(tex) = &self.doc.canvas.rendered_layers {
