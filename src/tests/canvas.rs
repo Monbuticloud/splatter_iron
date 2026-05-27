@@ -230,6 +230,7 @@ fn default_canvas_size() {
     assert_eq!(canvas.height, 1500);
 }
 
+/// The default canvas should have one fully transparent layer.
 #[test]
 fn default_canvas_has_one_transparent_layer() {
     let canvas = Canvas::default();
