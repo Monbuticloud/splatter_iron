@@ -39,3 +39,37 @@
 - No CI, no Makefile/justfile, no test harness
 - Dev profile: `overflow-checks = true`, `incremental = true`, `codegen-units = 512`, `opt-level = 1`
 - Release: `lto = "fat"`, `strip = true`, `panic = "abort"`
+
+## Project Philosophy
+
+### Core Values
+
+| Value | How codebase reflects it |
+|---|---|
+| **Performance first** | SIMD (`wide::u32x4`) + rayon parallel blend, `MiMalloc` with `TrackingAllocator`, release `lto="fat"`, `opt-level=3`, zstdmt compression |
+| **Correctness over convenience** | `unwrap_used` = `warn`, `overflow-checks = true`, exhaustive `match` on `CurrentTool`/`RenderState`, no `unwrap()`/`expect()` without justification |
+| **UX polish** | Brush preview with alpha overlay, `RenderState` (ActiveWake/IdleThrottled/UnfocusedFrozen), 2-min autosave, 13 export formats |
+| **Cross-platform** | `egui`/`eframe` UI, `rfd` native dialogs, `directories` for paths, Zig `compiler_rt` in `lib/` for cross-compilation |
+| **Deterministic builds** | Nightly pinned via `rustup override`, `build-std = ["std"]`, `Cargo.lock` committed |
+| **Accessibility** | `egui` accessible by default (OS theme, keyboard nav, screen reader), thoughtful contrast in tool icons |
+| **Layering & composability** | `Document` owns layer stack, `UndoHistory` per-pixel visited-stamp dedup, `blend_layers()` premultiplied-alpha compositing |
+
+### Git Standards
+
+- **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
+- Subject ≤50 chars; body explains "why" when the commit message alone is insufficient.
+
+### Code Standards
+
+- **Clippy**: `all` + `pedantic` + `nursery` + `unwrap_used` → `warn`. Zero `#[allow(clippy::…)]` without an inline comment explaining why. Current codebase has exactly one exception (`cast_possible_truncation` + `cast_sign_loss` in `src/ui/center.rs` brush preview alpha).
+- **Unsafe**: Only in `TrackingAllocator` (`main.rs`) — the sole justified use. All other `unsafe` prohibited; use safe abstractions (`wide::u32x4` for SIMD, `bytemuck` for casting).
+- **Docs**: Every `pub` item gets a docstring. Document `# Panics` for invariant-violation panics and `# Errors` for `Result` returns.
+- **Tests**: Every `src/*.rs` module has a corresponding `src/tests/*.rs` module. New modules must add test coverage. Pre-commit gate: `cargo test && cargo clippy`.
+- **Error handling**: Panic on invariant violations (logic bugs) with documented `# Panics`. `Result` for recoverable errors (IO, deserialization, dialogs) with documented `# Errors`.
+
+### Agent Expectations
+
+- Before editing a file, read surrounding context to match conventions.
+- Before committing, always run `cargo test && cargo clippy`.
+- If adding a new module, create a corresponding test module and register it in `src/tests/mod.rs`.
+- Never suppress clippy lints without an inline justification comment.
