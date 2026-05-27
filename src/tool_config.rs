@@ -2,6 +2,7 @@ use eframe::egui::Color32;
 
 use crate::canvas::CurrentTool;
 
+/// Current tool selection, colour, brush radius, and UI interaction state.
 pub struct ToolConfig {
     pub current_tool: CurrentTool,
     pub current_color: Color32,
