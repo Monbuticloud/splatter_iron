@@ -89,6 +89,10 @@ impl UndoHistory {
         }
     }
 
+    /// Re-apply `steps_multiplier` previously undone records from the stack.
+    ///
+    /// Each record is reapplied in order (oldest undone first),
+    /// and `redo_index` decreases accordingly.
     pub fn redo_step(&mut self, canvas: &mut Canvas, steps_multiplier: usize) {
         let count = steps_multiplier.min(self.redo_index);
         for _ in 0..count {
