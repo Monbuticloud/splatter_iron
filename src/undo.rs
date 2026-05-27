@@ -56,6 +56,10 @@ pub enum UndoRecord {
     },
 }
 
+/// Restore canvas state that was changed by a stroke, using its undo record.
+///
+/// For the `Run` variant, restores the saved before-pixels in each run segment.
+/// For the `Pixel` variant, writes back each pixel's `color_before`.
 #[inline]
 pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     match record {
