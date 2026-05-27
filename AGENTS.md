@@ -58,7 +58,8 @@
 
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
 - Subject ≤50 chars; body explains "why" when the commit message alone is insufficient.
-- **Granular commits**: Commit often — one commit per individual fix or per individual function. Avoid large catch-all commits.
+- **🔬 Ultra-granular commits**: One function → one commit. One docstring → one commit. One test → one commit. Another test → another commit. No commit shall contain more than one logical change. **There is no such thing as too many commits.** A commit that fixes a function and adds its docstring in the same snapshot is *too big* — split it. If you hesitate whether to commit, commit. Err on the side of granularity always.
+- **Self-imposed rule**: If a commit message contains "and", "also", or "fixup", the commit is too large. Split it.
 
 ### Code Standards
 
