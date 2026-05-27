@@ -1,4 +1,5 @@
 use eframe::egui::{ self, Color32 };
+use eframe::egui_wgpu::wgpu;
 
 use crate::canvas::{ Canvas, Layer };
 use crate::pixel::{ self, BYTES_PER_PIXEL as RGBA_CHANNELS };
@@ -41,15 +42,11 @@ impl Document {
         self.canvas.render_next_frame = true;
     }
 
-    /// Blend all layers into `output_rgba` and upload the result to a GPU texture.
+    /// Blend all layers into `output_rgba` (only the dirty region if known).
     ///
-    /// If a `dirty_rect` is set on the canvas, only that region is re-blended;
-    /// otherwise the full canvas is blended. Always uploads the full texture to
-    /// the GPU (egui's API does not support partial texture updates).
-    ///
-    /// Allocates `output_rgba` if its size does not match. Creates or updates the
-    /// `rendered_layers` texture handle for display in the egui UI.
-    pub fn render_to_texture(&mut self, ui: &egui::Ui) {
+    /// Returns `Some((x, y, width, height))` of the blended region,
+    /// or `None` if nothing was blended (empty dirty rect).
+    pub fn blend_to_output(&mut self) -> Option<(u32, u32, u32, u32)> {
         let pixel_count = (self.canvas.width as usize) * (self.canvas.height as usize);
 
         if self.canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
@@ -62,7 +59,7 @@ impl Document {
             .map(|l| l.pixels.as_slice())
             .collect();
 
-        if let Some(rect) = &self.canvas.dirty_rect {
+        let result = if let Some(rect) = &self.canvas.dirty_rect {
             if !rect.is_empty() {
                 pixel::blend_region(
                     &layer_slices,
@@ -73,11 +70,59 @@ impl Document {
                     rect.max_x,
                     rect.max_y,
                 );
+                Some((rect.min_x, rect.min_y, rect.width(), rect.height()))
+            } else {
+                None
             }
         } else {
             pixel::blend_layers(&layer_slices, &mut self.canvas.output_rgba);
-        }
+            Some((0, 0, self.canvas.width, self.canvas.height))
+        };
         self.canvas.dirty_rect = None;
+
+        result
+    }
+
+    /// Upload the blended `output_rgba` (or a sub-region) to a wgpu GPU texture.
+    ///
+    /// Only the pixels within `dirty` are uploaded; `None` uploads the full canvas.
+    pub fn upload_to_gpu(
+        &self,
+        queue: &wgpu::Queue,
+        texture: &wgpu::Texture,
+        dirty: &Option<(u32, u32, u32, u32)>,
+    ) {
+        let cw = self.canvas.width;
+        let ch = self.canvas.height;
+        let (x, y, w, h) = dirty.unwrap_or((0, 0, cw, ch));
+
+        if w == 0 || h == 0 {
+            return;
+        }
+
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d { x, y, z: 0 },
+                aspect: wgpu::TextureAspect::All,
+            },
+            &self.canvas.output_rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: (y as usize * cw as usize + x as usize) as u64 * 4,
+                bytes_per_row: Some(cw * 4),
+                rows_per_image: None,
+            },
+            wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+        );
+    }
+
+    /// Blend all layers into `output_rgba` and upload the result via egui's texture API.
+    ///
+    /// Always uploads the full texture (egui's API does not support partial updates).
+    /// This is the fallback path for the Glow backend.
+    pub fn render_to_texture(&mut self, ui: &egui::Ui) {
+        self.blend_to_output();
 
         let image = egui::ColorImage::from_rgba_premultiplied(
             [self.canvas.width as usize, self.canvas.height as usize],
