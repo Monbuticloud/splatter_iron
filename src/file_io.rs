@@ -76,9 +76,11 @@ impl FileIO {
         }
     }
 
-    /// Queue a file-dialog action and spawn the dialog on a background thread.
-    /// The dialog runs via `dispatch_sync` to the main thread from a background
-    /// thread, which avoids macOS winit re-entrancy panics.
+    /// Queue a file dialog action and spawn it on a background thread.
+    ///
+    /// The dialog is dispatched to the main thread via `rfd` to avoid macOS
+    /// winit re-entrancy panics. Supports Save, Load, Import, and Export
+    /// actions with appropriate file filters and default names.
     pub fn queue_file_action(&mut self, action: PendingFileAction) {
         let tx = self.dialog_sender.clone();
 
