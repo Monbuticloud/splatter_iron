@@ -275,7 +275,10 @@ impl FileIO {
         }
     }
 
-    /// Poll for completed async saves and update app state accordingly.
+    /// Poll for completed async save results and update state accordingly.
+    ///
+    /// Marks the document as clean after autosave, sets the save path
+    /// after manual save, and pushes errors to `ui.displayed_error_list`.
     pub fn poll_save_results(&self, doc: &mut Document, ui: &mut UIState) {
         while let Ok(result) = self.save_result_receiver.try_recv() {
             match result {
