@@ -57,6 +57,7 @@ unsafe impl GlobalAlloc for TrackingAllocator {
         ALLOCATED.fetch_sub(layout.size(), Ordering::Relaxed);
     }
 
+    /// Reallocate memory and update tracking counters.
     unsafe fn realloc(&self, ptr: *mut u8, old_layout: Layout, new_size: usize) -> *mut u8 {
         let new_ptr;
         unsafe {
