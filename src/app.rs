@@ -94,6 +94,8 @@ pub struct MyApp {
 }
 
 impl Default for MyApp {
+    /// Create a default `MyApp` with a default canvas, tool config, undo history,
+    /// file IO channels, and UI state. Ensures autosave directories exist.
     fn default() -> Self {
         use std::sync::mpsc;
         let (dialog_sender, dialog_receiver) = mpsc::channel();
