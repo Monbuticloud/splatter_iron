@@ -56,6 +56,7 @@ fn premultiply_unpremultiply_roundtrip_close() {
     assert!(channels_close(premul, back, 1), "premul={premul:?} back={back:?}");
 }
 
+/// Unpremultiplying an opaque colour should return it unchanged.
 #[test]
 fn unpremultiply_opaque_is_identity() {
     let opaque = Color32::from_rgba_unmultiplied(200, 100, 50, 255);
