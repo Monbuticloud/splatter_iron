@@ -237,7 +237,7 @@ impl FileIO {
         }
     }
 
-    /// Spawn a background thread to serialise and write the canvas to disk.
+    /// Spawn a background thread to serialize and write the canvas to disk.
     ///
     /// The thread clones the current canvas to avoid blocking the UI.
     /// For autosaves, the file name is a timestamp under `AUTOSAVE_DIR`.
