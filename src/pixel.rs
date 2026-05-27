@@ -61,8 +61,10 @@ pub const fn premultiply(color: Color32) -> Color32 {
     Color32::from_rgba_premultiplied(red, green, blue, alpha)
 }
 
-/// Alpha-blend premultiplied source over premultiplied destination.
-/// Result is premultiplied.
+/// Alpha-blend a premultiplied source pixel over a premultiplied destination.
+///
+/// Uses fixed-point arithmetic `(dest_channel * inverse_alpha + 128) >> 8`
+/// for each colour channel. The result is in premultiplied-alpha format.
 #[inline]
 pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
     // Blend one channel: dest * inverse_alpha, rounded
