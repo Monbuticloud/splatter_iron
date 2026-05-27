@@ -37,6 +37,10 @@ impl UndoHistory {
         self.redo_index = 0;
     }
 
+    /// Returns the next unique stamp value for brush-line deduplication.
+    ///
+    /// Automatically wraps around and resets the visited buffer when
+    /// the stamp overflows past `u32::MAX`.
     pub fn next_stamp(&mut self) -> u32 {
         self.visited_stamp = self.visited_stamp.wrapping_add(1);
         if self.visited_stamp == 0 {
