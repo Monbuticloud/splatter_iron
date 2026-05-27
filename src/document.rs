@@ -108,6 +108,7 @@ impl Document {
         self.canvas.render_next_frame = true;
     }
 
+    /// Set the current (active) layer index.
     pub fn select_layer(&mut self, index: usize) {
         self.current_layer = index;
     }
