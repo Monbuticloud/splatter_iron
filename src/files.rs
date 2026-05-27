@@ -19,11 +19,11 @@ pub fn load_data_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
     std::fs::read(path)
 }
 
-/// Deserialise a `Canvas` from zstd-compressed JSON bytes.
+/// Deserialize a `Canvas` from zstd-compressed JSON bytes.
 ///
 /// # Errors
 ///
-/// Returns an error if zstd decompression or JSON deserialisation fails.
+/// Returns an error if zstd decompression or JSON deserialization fails.
 pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
     let decompressed = zstd::decode_all(data)?;
     let canvas = serde_json::from_slice(&decompressed)?;
