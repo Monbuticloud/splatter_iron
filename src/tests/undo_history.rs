@@ -22,6 +22,7 @@ fn red() -> Color32 {
     Color32::from_rgba_premultiplied(255, 0, 0, 255)
 }
 
+/// A new undo history should have no undo or redo available.
 #[test]
 fn new_history_has_no_undo_no_redo() {
     let hist = UndoHistory::new(100);
