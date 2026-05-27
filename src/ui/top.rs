@@ -8,7 +8,7 @@ impl MyApp {
     /// Render the top toolbar with Save, Load, New, Export, Import,
     /// Undo/Redo buttons, and Close.
     ///
-    /// Returns `true` if Close was pressed, signalling the app to quit.
+    /// Returns `true` if Close was pressed, signaling the app to quit.
     pub fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
         let mut is_quitting = false;
         ui.horizontal(|ui| {
