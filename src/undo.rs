@@ -25,7 +25,7 @@ const RLE_SHORT_RUN_THRESHOLD: u32 = 8;
 /// Compress a contiguous run of pixel data for efficient undo storage.
 ///
 /// If the run is longer than 8 pixels and all pixels are identical, stores
-/// a single colour (`BeforePixels::All`) instead of the full vector.
+/// a single color (`BeforePixels::All`) instead of the full vector.
 /// Short or non-uniform runs store the full `Vec<Color32>`.
 pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
     let len = pixels.len() as u32;
