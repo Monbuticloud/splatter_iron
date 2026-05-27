@@ -52,9 +52,9 @@ pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     Ok(compressed)
 }
 
-/// Write pre-serialised bytes to a file.
+/// Write pre-serialized bytes to a file.
 ///
-/// This is a pure I/O operation — serialisation should be done beforehand
+/// This is a pure I/O operation — serialization should be done beforehand
 /// with [`save_canvas_to_bytes`].
 ///
 /// # Errors
