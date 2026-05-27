@@ -71,6 +71,8 @@ pub struct UIState {
 }
 
 impl Default for UIState {
+    /// Create a default `UIState` with idle throttled rendering,
+    /// zero elapsed time, no autosaves, and no pending layer deletion.
     fn default() -> Self {
         Self {
             render_state: RenderState::IdleThrottled,
