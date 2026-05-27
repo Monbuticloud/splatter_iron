@@ -32,6 +32,7 @@ static ALLOCATED: AtomicUsize = AtomicUsize::new(0);
 static TOTAL_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
 static PEAK_ALLOCATED: AtomicUsize = AtomicUsize::new(0);
 unsafe impl GlobalAlloc for TrackingAllocator {
+    /// Allocate memory and track the live byte count.
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let ptr;
         unsafe {
