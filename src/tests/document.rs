@@ -83,6 +83,7 @@ fn delete_layer_adjusts_current_layer_down() {
     assert_eq!(doc.current_layer, 1);
 }
 
+/// Moving a layer up should swap it with the layer above.
 #[test]
 fn move_layer_up_swaps() {
     let mut doc = small_document();
