@@ -105,13 +105,19 @@ impl MyApp {
                         egui::vec2(screen_w, screen_h)
                     );
 
-                    // Semi-transparent fill
-                    let fill_color = Color32::from_rgba_premultiplied(
-                        self.current_color.r(),
-                        self.current_color.g(),
-                        self.current_color.b(),
-                        ((self.current_color.a() as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8
-                    );
+                    // Semi-transparent fill (re-premultiply RGB for the reduced alpha)
+                    let brush_alpha = self.current_color.a();
+                    let fill_color = if brush_alpha == 0 {
+                        Color32::TRANSPARENT
+                    } else {
+                        let preview_alpha = ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
+                        Color32::from_rgba_premultiplied(
+                            ((self.current_color.r() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
+                            ((self.current_color.g() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
+                            ((self.current_color.b() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
+                            preview_alpha,
+                        )
+                    };
                     ui.painter().rect_filled(preview_rect, 0.0, fill_color);
 
                     // Outline
