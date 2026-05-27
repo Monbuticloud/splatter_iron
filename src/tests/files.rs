@@ -3,6 +3,7 @@ use eframe::egui::Color32;
 use crate::canvas::{Canvas, Layer};
 use crate::files;
 
+/// Build a 4×4 checkerboard canvas with alternating white/black opaque pixels.
 fn checkerboard_4x4() -> Canvas {
     let mut pixels = Vec::with_capacity(16);
     for y in 0..4u8 {
