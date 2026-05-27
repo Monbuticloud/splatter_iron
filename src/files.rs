@@ -65,11 +65,18 @@ pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Export the flattened premultiplied RGBA buffer to an image file.
+/// Export a flattened premultiplied RGBA buffer to an image file.
 ///
-/// `premultiplied_rgba` is the already-blended premultiplied RGBA u8 buffer
-/// (e.g. from `Canvas::output_rgba`). For JPEG the image is blended against
-/// white; for other formats the alpha channel is preserved.
+/// `premultiplied_rgba` is the already-blended premultiplied buffer
+/// (e.g. from `Canvas::output_rgba`). For JPEG the alpha channel is blended
+/// against a white background; for other formats straight alpha is preserved.
+///
+/// Supports 17 formats: AVIF, PNG, JPEG, WebP, GIF, TIFF, TGA, ICO, PNM,
+/// QOI, OpenEXR, HDR, and Farbfeld.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be created or the image encoder fails.
 pub fn export_as_image(
     premultiplied_rgba: &[u8],
     width: u32,
