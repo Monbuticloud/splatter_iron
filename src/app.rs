@@ -26,7 +26,6 @@ const AUTOSAVE_DATE_FMT: &str = "%Y-%m-%d_%H-%M-%S";
 const AUTOSAVE_INTERVAL_MINS: u64 = 2;
 
 // --- Performance constants ---
-const BUMP_ALLOCATOR_CAPACITY: usize = 32 * 1024 * 1024;
 const UNFOCUSED_SLEEP_MS: u64 = 50;
 const REPAINT_DELAY_MULT: u32 = 5;
 
@@ -395,7 +394,6 @@ pub struct MyApp {
     pub pending_layer_for_deletion: Option<usize>,
     pub undo_redo_steps_multiplier: usize,
     pub show_brush_preview: bool,
-    pub bump_allocator: bumpalo::Bump,
     pub visited: Vec<u32>,
     pub visited_stamp: u32,
     pub stroke_stack: VecDeque<UndoRecord>,
@@ -451,7 +449,6 @@ impl Default for MyApp {
             redo_index: 0,
             undo_redo_steps_multiplier: 5,
             show_brush_preview: true,
-            bump_allocator: bumpalo::Bump::with_capacity(BUMP_ALLOCATOR_CAPACITY),
             visited: vec![0u32; pixel_count],
             visited_stamp: 1,
             pending_file_action: None,
@@ -503,8 +500,6 @@ impl eframe::App for MyApp {
                 return;
             }
         }
-
-        self.bump_allocator.reset();
 
         // Render layers to texture if needed
         if self.canvas.render_next_frame || self.canvas.rendered_layers.is_none() {

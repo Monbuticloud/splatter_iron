@@ -24,7 +24,6 @@ wide = "1.4.0"
 mimalloc = { version = "0.1.51", features = ["local_dynamic_tls"] }
 # target = "2.1.0"
 bytemuck = "1.25"
-bumpalo = { version = "3.20.3", features = ["collections"] }
 image = { version = "0.25.10", features = [
     "avif",
     "png",
