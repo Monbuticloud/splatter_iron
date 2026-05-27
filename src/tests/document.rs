@@ -106,6 +106,7 @@ fn move_layer_down_swaps() {
     assert_eq!(doc.current_layer, 1);
 }
 
+/// Selecting a layer should update `current_layer`.
 #[test]
 fn select_layer_updates_current() {
     let mut doc = small_document();
