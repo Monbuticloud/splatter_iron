@@ -23,6 +23,7 @@ fn premultiply_transparent_is_unchanged() {
     assert_eq!(pixel::premultiply(Color32::TRANSPARENT), Color32::TRANSPARENT);
 }
 
+/// After premultiply, each RGB channel should be ≤ the original straight value.
 #[test]
 fn premultiply_non_opaque_approximation() {
     let straight = Color32::from_rgba_unmultiplied(128, 64, 32, 128);
