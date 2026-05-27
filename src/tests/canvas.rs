@@ -97,6 +97,7 @@ fn draw_square_inverted_coordinates() {
     );
 }
 
+/// Drawing on different layers should independently modify each layer.
 #[test]
 fn draw_square_multi_layer() {
     let mut canvas = Canvas {
