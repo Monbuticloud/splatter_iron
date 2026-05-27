@@ -30,10 +30,14 @@ pub fn unpremultiply(color: Color32) -> Color32 {
     Color32::from_rgba_premultiplied(red, green, blue, alpha)
 }
 
-/// Premultiply a straight-alpha Color32.
+/// Convert a straight-alpha colour to premultiplied alpha.
+///
+/// Uses fixed-point arithmetic `(value * alpha + 128) * 257 >> 16` for correct
+/// rounding. Fully opaque colours pass through unchanged; fully transparent
+/// colours become `Color32::TRANSPARENT`.
 ///
 /// **Caller must supply straight (non-premultiplied) RGB.**
-/// Calling this on an already-premultiplied pixel will darken colors again.
+/// Calling this on an already-premultiplied pixel will darken colours again.
 #[inline]
 pub const fn premultiply(color: Color32) -> Color32 {
     let alpha = color.a();
