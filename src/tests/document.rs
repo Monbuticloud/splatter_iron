@@ -94,6 +94,7 @@ fn move_layer_up_swaps() {
     assert_eq!(doc.current_layer, 0);
 }
 
+/// Moving a layer down should swap it with the layer below.
 #[test]
 fn move_layer_down_swaps() {
     let mut doc = small_document();
