@@ -91,6 +91,7 @@ fn redo_apply_reapplies_color() {
     assert_eq!(canvas.pixels[0].pixels[0], red());
 }
 
+/// A full undo → redo → undo roundtrip should restore the original state.
 #[test]
 fn undo_redo_full_roundtrip() {
     let mut canvas = small_white_canvas();
