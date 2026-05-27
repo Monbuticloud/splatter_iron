@@ -127,6 +127,13 @@ impl Default for MyApp {
 }
 
 impl eframe::App for MyApp {
+    /// Called every frame by eframe.
+    ///
+    /// Polls file dialog and save results, renders the canvas texture,
+    /// draws top/left/right/center panels, shows error windows,
+    /// and triggers autosave on a 2-minute interval.
+    ///
+    /// When the viewport is unfocused, sleeps to reduce CPU usage.
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         // Poll dialog results and save results before anything else.
         self.file_io.poll_dialog_results(&mut self.doc, &mut self.undo, &mut self.ui);
