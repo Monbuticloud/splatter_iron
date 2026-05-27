@@ -54,6 +54,10 @@ pub struct FileIO {
 }
 
 impl FileIO {
+    /// Create a new `FileIO` with channel pairs and an app data directory path.
+    ///
+    /// `dialog_sender`/`dialog_receiver` are used for file dialog results.
+    /// `save_result_sender`/`save_result_receiver` are used for async save outcomes.
     pub fn new(
         dialog_sender: mpsc::Sender<DialogResult>,
         dialog_receiver: mpsc::Receiver<DialogResult>,
