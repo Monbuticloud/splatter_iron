@@ -9,6 +9,7 @@ use crate::undo::{ UndoRecord, RunSegment, compress_run };
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
 
+/// A single layer of pixels in the canvas.
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Layer {
     pub pixels: Vec<Color32>,
