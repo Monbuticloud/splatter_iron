@@ -3,6 +3,7 @@ use std::time::Duration;
 use eframe::egui::{ Color32, TextureHandle };
 use serde::{ Deserialize, Serialize };
 
+pub use crate::tools::bucket_fill::draw_bucket_fill;
 pub use crate::tools::circle_brush::{ draw_circle, draw_circle_line };
 pub use crate::tools::square_brush::{ draw_square, draw_square_line };
 
@@ -140,6 +141,7 @@ pub enum CurrentTool {
     Circle,
     SquareEraser,
     CircleEraser,
+    BucketFill,
 }
 
 /// Desired rendering cadence: active wake for fast repaints,

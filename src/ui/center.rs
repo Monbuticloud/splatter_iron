@@ -25,7 +25,7 @@ impl MyApp {
     /// Process mouse interaction on the canvas texture.
     ///
     /// Handles brush preview rendering, context menu (Import/Export As/Save As),
-    /// and drawing strokes with the current tool on drag.
+    /// drawing strokes with the current tool on drag, and bucket fill on click.
     /// Updates the undo history and marks the document as dirty.
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
         let (tex_id, canvas_pixel_size) = if let Some(gpu) = &self.gpu_texture {
@@ -84,7 +84,8 @@ impl MyApp {
             });
 
             // Brush preview: outline at cursor (circle outline for circle tools,
-            // semi-transparent filled rect + outline for square tools)
+            // semi-transparent filled rect + outline for square tools).
+            // Bucket Fill has no preview (fills connected regions, not fixed shape).
             if self.tools.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
                     let local = hover_pos - response.rect.min;
                     let uv = egui::vec2(
@@ -113,7 +114,7 @@ impl MyApp {
                                 egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tools.current_color),
                             );
                         }
-                        _ => {
+                        CurrentTool::Square | CurrentTool::SquareEraser => {
                             let half_radius = self.tools.radius;
 
                             let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
@@ -170,6 +171,7 @@ impl MyApp {
                                 StrokeKind::Middle
                             );
                         }
+                        CurrentTool::BucketFill => {}
                     }
                 }
 
@@ -178,6 +180,31 @@ impl MyApp {
                 self.ui.render_state = RenderState::ActiveWake(
                     Duration::from_millis(ACTIVE_DURATION_MS)
                 );
+            }
+
+            // Bucket fill fires on single click too (not just drag)
+            if response.clicked() && self.tools.current_tool == CurrentTool::BucketFill {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    let local = pos - response.rect.min;
+                    let uv = egui::vec2(
+                        local.x / response.rect.width(),
+                        local.y / response.rect.height()
+                    );
+
+                    let pixel_x = (uv.x * (self.doc.canvas.width as f32)).floor() as u32;
+                    let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
+
+                    self.doc.canvas.render_next_frame = true;
+                    let stroke = canvas::draw_bucket_fill(
+                        pixel_x,
+                        pixel_y,
+                        &mut self.doc.canvas,
+                        self.tools.current_color,
+                        self.doc.current_layer,
+                    );
+                    self.undo.push_undo(stroke);
+                    self.doc.dirty_since_last_autosave = true;
+                }
             }
 
             if response.dragged() {
@@ -349,6 +376,18 @@ impl MyApp {
                                 self.undo.push_undo(stroke);
                                 self.doc.dirty_since_last_autosave = true;
                             }
+                        }
+                        CurrentTool::BucketFill => {
+                            self.doc.canvas.render_next_frame = true;
+                            let stroke = canvas::draw_bucket_fill(
+                                pixel_x,
+                                pixel_y,
+                                &mut self.doc.canvas,
+                                self.tools.current_color,
+                                self.doc.current_layer,
+                            );
+                            self.undo.push_undo(stroke);
+                            self.doc.dirty_since_last_autosave = true;
                         }
                     }
                     self.tools.previous_tool = Some(self.tools.current_tool);

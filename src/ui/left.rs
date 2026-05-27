@@ -11,7 +11,8 @@ impl MyApp {
     /// Render the left tool panel with selectable tool buttons.
     ///
     /// Temporarily overrides the selection color to purple so the active tool
-    /// stands out visually. Shows Square, Circle, Square Eraser, and Circle Eraser.
+    /// stands out visually. Shows Square, Circle, Square Eraser, Circle Eraser,
+    /// and Bucket Fill.
     pub fn show_left_panel(&mut self, ui: &mut egui::Ui) {
         // Temporarily override selection color to purple for tool buttons.
         // Using ui.selectable_value() gives us built-in highlight + click handling
@@ -23,6 +24,7 @@ impl MyApp {
         ui.selectable_value(&mut self.tools.current_tool, CurrentTool::Circle, "Circle Tool");
         ui.selectable_value(&mut self.tools.current_tool, CurrentTool::SquareEraser, "Square Eraser");
         ui.selectable_value(&mut self.tools.current_tool, CurrentTool::CircleEraser, "Circle Eraser");
+        ui.selectable_value(&mut self.tools.current_tool, CurrentTool::BucketFill, "Bucket Fill");
 
         // Restore original selection color
         ui.visuals_mut().selection.bg_fill = old_selection_color;
