@@ -194,10 +194,16 @@ pub fn export_as_image(
     Ok(())
 }
 
-/// Import an image file as a single-layer Canvas.
+/// Decode an image file into a single-layer Canvas.
 ///
-/// Decodes any supported image format into premultiplied RGBA pixels
-/// and returns a new Canvas with one layer at image resolution.
+/// Supports any format that the `image` crate can decode. The resulting
+/// canvas has one layer with premultiplied-alpha RGBA pixels at the
+/// image's native resolution.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be read or the image format is
+/// not recognised by the `image` crate.
 pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
     let dyn_img = image::open(path)?;
     let rgba = dyn_img.to_rgba8();
