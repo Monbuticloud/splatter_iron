@@ -92,6 +92,7 @@ fn alpha_blend_transparent_over_dest_is_close() {
     assert!(channels_close(dest, result, 1), "dest={dest:?} result={result:?}");
 }
 
+/// Blending a semi-transparent source over an opaque dest should produce an opaque result.
 #[test]
 fn alpha_blend_semi_transparent_over_opaque() {
     let dest = Color32::from_rgba_premultiplied(0, 255, 0, 255);
