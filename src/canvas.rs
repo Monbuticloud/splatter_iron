@@ -289,6 +289,7 @@ pub fn draw_square_line(
     }
 }
 
+/// The drawing tool currently selected in the UI.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CurrentTool {
     Square,
