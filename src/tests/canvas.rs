@@ -162,6 +162,7 @@ fn draw_square_line_diagonal() {
     assert_eq!(canvas.pixels[0].pixels[8 * 10 + 8], red(), "end");
 }
 
+/// Different stamp values should produce independent brush lines.
 #[test]
 fn draw_square_line_different_stamps_dont_interfere() {
     let mut canvas = small_canvas();
