@@ -93,7 +93,7 @@ pub fn allocated_bytes() -> usize {
 
 /// Application entry point.
 ///
-/// Initialises the local data directory, creates the autosave directory,
+/// Initializes the local data directory, creates the autosave directory,
 /// and runs the eframe GUI event loop. Prints memory usage statistics on exit.
 ///
 /// # Errors
