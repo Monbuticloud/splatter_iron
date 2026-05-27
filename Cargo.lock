@@ -3537,6 +3537,7 @@ dependencies = [
  "rfd",
  "serde",
  "serde_json",
+ "tempfile",
  "wide",
  "zstd",
 ]
