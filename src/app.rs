@@ -85,6 +85,7 @@ impl Default for UIState {
     }
 }
 
+/// Top-level application state owned by eframe: document, tools, undo history, file IO, and UI state.
 pub struct MyApp {
     pub doc: Document,
     pub tools: ToolConfig,
