@@ -33,6 +33,7 @@ fn compress_run_mixed_long_returns_many() {
     assert!(matches!(before, BeforePixels::Many(_)));
 }
 
+/// A run at exactly the threshold length should still be `Many`.
 #[test]
 fn compress_run_threshold_boundary() {
     // RLE_SHORT_RUN_THRESHOLD = 8
