@@ -32,10 +32,22 @@ fn premultiply_non_opaque_approximation() {
 }
 
 #[test]
-fn premultiply_unpremultiply_preserves_alpha() {
+fn unpremultiply_produces_straight_alpha() {
     let premul = Color32::from_rgba_premultiplied(64, 32, 16, 128);
-    let back = pixel::unpremultiply(premul);
-    assert_eq!(back.a(), 128);
+    let straight = pixel::unpremultiply(premul);
+    // straight.r() = 64 * 255 / 128 = 127
+    assert_eq!(straight.r(), 127);
+    assert_eq!(straight.g(), 63);
+    assert_eq!(straight.b(), 31);
+    assert_eq!(straight.a(), 128);
+}
+
+#[test]
+fn premultiply_unpremultiply_roundtrip_close() {
+    let premul = Color32::from_rgba_premultiplied(64, 32, 16, 128);
+    let back = pixel::premultiply(pixel::unpremultiply(premul));
+    // Fixed-point (±1 per channel)
+    assert!(channels_close(premul, back, 1), "premul={premul:?} back={back:?}");
 }
 
 #[test]
