@@ -67,7 +67,7 @@ pub const fn premultiply(color: Color32) -> Color32 {
 /// for each colour channel. The result is in premultiplied-alpha format.
 #[inline]
 pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
-    // Blend one channel: dest * inverse_alpha, rounded
+    /// Blend a single colour channel: `dest * inverse_alpha` with rounding.
     #[inline]
     const fn blend_channel(destination_channel: u32, inverse_alpha: u32) -> u32 {
         (destination_channel * inverse_alpha + 128) >> 8
