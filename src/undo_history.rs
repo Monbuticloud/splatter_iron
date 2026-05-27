@@ -5,6 +5,8 @@ use crate::undo::{ undo_apply, redo_apply, UndoRecord };
 
 const MAX_STROKE_STACK: usize = 1000;
 
+/// Manages the undo/redo history stack with a visited-stamp buffer for
+/// brush-stroke deduplication.
 pub struct UndoHistory {
     pub stroke_stack: VecDeque<UndoRecord>,
     pub redo_index: usize,
