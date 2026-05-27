@@ -55,6 +55,7 @@ fn undo_step_applies_and_tracks_redo() {
     assert!(hist.can_redo());
 }
 
+/// Redoing should reapply the undone stroke.
 #[test]
 fn redo_step_reapplies() {
     let mut hist = UndoHistory::new(100);
