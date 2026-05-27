@@ -123,6 +123,7 @@ fn clear_resets_history() {
     assert!(!hist.can_redo());
 }
 
+/// Consecutive stamps should increase by 1.
 #[test]
 fn next_stamp_increments() {
     let mut hist = UndoHistory::new(100);
