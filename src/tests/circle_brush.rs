@@ -13,6 +13,7 @@ fn small_canvas() -> Canvas {
         width: 10,
         output_rgba: Vec::new(),
         rendered_layers: None,
+        dirty_rect: None,
         render_next_frame: false,
     }
 }
@@ -84,6 +85,7 @@ fn draw_circle_multi_layer() {
         width: 10,
         output_rgba: Vec::new(),
         rendered_layers: None,
+        dirty_rect: None,
         render_next_frame: false,
     };
     circle_brush::draw_circle(2, 2, 1, &mut canvas, red(), 0);

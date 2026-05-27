@@ -1,6 +1,6 @@
 use eframe::egui::{self, Color32};
 
-use crate::canvas::Canvas;
+use crate::canvas::{ Canvas, DirtyRect };
 use crate::pixel::premultiply;
 use crate::undo::{ compress_run, RunSegment, UndoRecord };
 
@@ -150,6 +150,16 @@ pub fn draw_circle(
     // Fill the circle
     fill_circle_impl(pixels, width, center_x, center_y, radius, color, canvas.width, height);
 
+    let cx_min = center_x.saturating_sub(radius);
+    let cy_min = center_y.saturating_sub(radius);
+    let cx_max = (center_x + radius).min(canvas.width - 1);
+    let cy_max = (center_y + radius).min(canvas.height - 1);
+    let rect = DirtyRect::new(cx_min, cy_min, cx_max, cy_max);
+    canvas.dirty_rect = match canvas.dirty_rect {
+        Some(r) => Some(r.union(&rect)),
+        None => Some(rect),
+    };
+
     UndoRecord::Run {
         layer_index: layer,
         width: canvas.width,
@@ -165,7 +175,8 @@ pub fn draw_circle(
 /// The caller can later scan `visited` for values matching `stamp` to get
 /// deduplicated, sorted positions.
 ///
-/// Clamps brush bounds to canvas dimensions.
+/// Clamps brush bounds to canvas dimensions. Tracks the bounding box of
+/// stamped pixels via `dirty_rect`.
 #[inline]
 fn stamp_circle_positions(
     start_x: u32,
@@ -177,6 +188,7 @@ fn stamp_circle_positions(
     height: u32,
     visited: &mut [u32],
     stamp: u32,
+    dirty_rect: &mut DirtyRect,
 ) {
     if geo_radius == 0 {
         let mut cx = start_x as i32;
@@ -190,7 +202,10 @@ fn stamp_circle_positions(
         let mut err = dx + dy;
         loop {
             if cx >= 0 && (cx as u32) < width as u32 && cy >= 0 && (cy as u32) < height {
-                visited[(cy as usize) * width + cx as usize] = stamp;
+                let x = cx as u32;
+                let y = cy as u32;
+                visited[(y as usize) * width + x as usize] = stamp;
+                dirty_rect.extend(x, y);
             }
             if cx == tx && cy == ty {
                 break;
@@ -222,7 +237,15 @@ fn stamp_circle_positions(
     let r_sq = (geo_radius as u64) * (geo_radius as u64);
 
     loop {
-        for dy in -(geo_radius as i32)..=(geo_radius as i32) {
+        let g = geo_radius as i32;
+        let cy_min = (current_y - g).max(0) as u32;
+        let cy_max = (current_y + g).min(height as i32 - 1).max(0) as u32;
+        let cx_min = (current_x - g).max(0) as u32;
+        let cx_max = (current_x + g).min(width as i32 - 1).max(0) as u32;
+        dirty_rect.extend(cx_min, cy_min);
+        dirty_rect.extend(cx_max, cy_max);
+
+        for dy in -g..=g {
             let y = current_y + dy;
             if y < 0 || y >= height as i32 {
                 continue;
@@ -277,8 +300,8 @@ pub fn draw_circle_line(
     let color = premultiply(color);
     let width = canvas.width as usize;
     let height = canvas.height;
-    let pixel_count = (width as u32) * height;
 
+    let mut dirty_rect = DirtyRect::empty();
     stamp_circle_positions(
         start_x,
         start_y,
@@ -289,27 +312,41 @@ pub fn draw_circle_line(
         height,
         visited,
         stamp,
+        &mut dirty_rect,
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
 
     let mut runs: Vec<RunSegment> = Vec::new();
-    let mut i = 0u32;
-    while i < pixel_count {
-        if visited[i as usize] != stamp {
-            i += 1;
-            continue;
+    for y in dirty_rect.min_y..=dirty_rect.max_y {
+        let row_start = (y as usize) * width;
+        let mut x = dirty_rect.min_x;
+        while x <= dirty_rect.max_x {
+            let idx = row_start + x as usize;
+            if visited[idx] != stamp {
+                x += 1;
+                continue;
+            }
+            let run_start = idx as u32;
+            let mut before = Vec::new();
+            while x <= dirty_rect.max_x {
+                let idx2 = row_start + x as usize;
+                if visited[idx2] != stamp {
+                    break;
+                }
+                before.push(pixels[idx2]);
+                pixels[idx2] = color;
+                x += 1;
+            }
+            let (rle_before, len) = compress_run(before);
+            runs.push(RunSegment { start: run_start, len, before: rle_before });
         }
-        let start = i;
-        let mut before = Vec::new();
-        while i < pixel_count && visited[i as usize] == stamp {
-            before.push(pixels[i as usize]);
-            pixels[i as usize] = color;
-            i += 1;
-        }
-        let (rle_before, len) = compress_run(before);
-        runs.push(RunSegment { start, len, before: rle_before });
     }
+
+    canvas.dirty_rect = match canvas.dirty_rect {
+        Some(r) => Some(r.union(&dirty_rect)),
+        None => Some(dirty_rect),
+    };
 
     UndoRecord::Run {
         layer_index: layer,

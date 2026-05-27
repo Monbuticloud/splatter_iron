@@ -222,6 +222,7 @@ pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
         width: width_u32,
         output_rgba: Vec::new(),
         rendered_layers: None,
+        dirty_rect: None,
         render_next_frame: true,
     })
 }

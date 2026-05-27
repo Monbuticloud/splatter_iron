@@ -1,6 +1,6 @@
 use eframe::egui::{self, Color32};
 
-use crate::canvas::Canvas;
+use crate::canvas::{ Canvas, DirtyRect };
 use crate::pixel::premultiply;
 use crate::undo::{ compress_run, RunSegment, UndoRecord };
 
@@ -33,7 +33,8 @@ fn fill_square_impl(
 /// pixel within the brush radius (a square brush). The caller can later scan
 /// `visited` for values matching `stamp` to get deduplicated, sorted positions.
 ///
-/// Clamps brush bounds to canvas dimensions.
+/// Clamps brush bounds to canvas dimensions. Tracks the bounding box of
+/// stamped pixels via `dirty_rect`.
 #[inline]
 fn stamp_line_positions(
     start_x: u32,
@@ -45,6 +46,7 @@ fn stamp_line_positions(
     height: u32,
     visited: &mut [u32],
     stamp: u32,
+    dirty_rect: &mut DirtyRect,
 ) {
     let half_radius = brush_radius;
 
@@ -78,6 +80,9 @@ fn stamp_line_positions(
             .saturating_add(1)
             .max(0)
             .min(height as i32) as u32;
+
+        dirty_rect.extend(brush_start_x, brush_start_y);
+        dirty_rect.extend(brush_end_x - 1, brush_end_y - 1);
 
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
@@ -167,6 +172,12 @@ pub fn draw_square(
     // Fill the rectangle (efficient contiguous write)
     fill_square_impl(pixels, width, start_x, end_x, start_y, end_y, color);
 
+    let rect = DirtyRect::new(start_x, start_y, end_x - 1, end_y - 1);
+    canvas.dirty_rect = match canvas.dirty_rect {
+        Some(r) => Some(r.union(&rect)),
+        None => Some(rect),
+    };
+
     UndoRecord::Run {
         layer_index: layer,
         width: canvas.width,
@@ -200,8 +211,8 @@ pub fn draw_square_line(
     let color = premultiply(color);
     let width = canvas.width as usize;
     let height = canvas.height;
-    let pixel_count = (width as u32) * height;
 
+    let mut dirty_rect = DirtyRect::empty();
     stamp_line_positions(
         start_x,
         start_y,
@@ -212,28 +223,41 @@ pub fn draw_square_line(
         height,
         visited,
         stamp,
+        &mut dirty_rect,
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
 
-    // Scan visited to build runs in sorted order
     let mut runs: Vec<RunSegment> = Vec::new();
-    let mut i = 0u32;
-    while i < pixel_count {
-        if visited[i as usize] != stamp {
-            i += 1;
-            continue;
+    for y in dirty_rect.min_y..=dirty_rect.max_y {
+        let row_start = (y as usize) * width;
+        let mut x = dirty_rect.min_x;
+        while x <= dirty_rect.max_x {
+            let idx = row_start + x as usize;
+            if visited[idx] != stamp {
+                x += 1;
+                continue;
+            }
+            let run_start = idx as u32;
+            let mut before = Vec::new();
+            while x <= dirty_rect.max_x {
+                let idx2 = row_start + x as usize;
+                if visited[idx2] != stamp {
+                    break;
+                }
+                before.push(pixels[idx2]);
+                pixels[idx2] = color;
+                x += 1;
+            }
+            let (rle_before, len) = compress_run(before);
+            runs.push(RunSegment { start: run_start, len, before: rle_before });
         }
-        let start = i;
-        let mut before = Vec::new();
-        while i < pixel_count && visited[i as usize] == stamp {
-            before.push(pixels[i as usize]);
-            pixels[i as usize] = color;
-            i += 1;
-        }
-        let (rle_before, len) = compress_run(before);
-        runs.push(RunSegment { start, len, before: rle_before });
     }
+
+    canvas.dirty_rect = match canvas.dirty_rect {
+        Some(r) => Some(r.union(&dirty_rect)),
+        None => Some(dirty_rect),
+    };
 
     UndoRecord::Run {
         layer_index: layer,

@@ -89,6 +89,170 @@ pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
     )
 }
 
+/// Minimum SIMD chunk count before rayon parallelism kicks in.
+const PARALLEL_BLEND_THRESHOLD: usize = 64;
+
+/// SIMD blend of 4 pixels (one 16-byte chunk).
+#[inline]
+fn blend_simd_chunk(
+    output_chunk: &mut [u8],
+    layers: &[&[Color32]],
+    pixel_base: usize,
+) {
+    let bottom_layer = layers[0];
+    let bottom_pixel_0 = bottom_layer[pixel_base].to_array();
+    let bottom_pixel_1 = bottom_layer[pixel_base + 1].to_array();
+    let bottom_pixel_2 = bottom_layer[pixel_base + 2].to_array();
+    let bottom_pixel_3 = bottom_layer[pixel_base + 3].to_array();
+
+    let mut accumulator_r = u32x4::new([
+        bottom_pixel_0[0] as u32,
+        bottom_pixel_1[0] as u32,
+        bottom_pixel_2[0] as u32,
+        bottom_pixel_3[0] as u32,
+    ]);
+    let mut accumulator_g = u32x4::new([
+        bottom_pixel_0[1] as u32,
+        bottom_pixel_1[1] as u32,
+        bottom_pixel_2[1] as u32,
+        bottom_pixel_3[1] as u32,
+    ]);
+    let mut accumulator_b = u32x4::new([
+        bottom_pixel_0[2] as u32,
+        bottom_pixel_1[2] as u32,
+        bottom_pixel_2[2] as u32,
+        bottom_pixel_3[2] as u32,
+    ]);
+    let mut accumulator_a = u32x4::new([
+        bottom_pixel_0[3] as u32,
+        bottom_pixel_1[3] as u32,
+        bottom_pixel_2[3] as u32,
+        bottom_pixel_3[3] as u32,
+    ]);
+
+    for &layer_slice in &layers[1..] {
+        let top_pixel_0 = layer_slice[pixel_base].to_array();
+        let top_pixel_1 = layer_slice[pixel_base + 1].to_array();
+        let top_pixel_2 = layer_slice[pixel_base + 2].to_array();
+        let top_pixel_3 = layer_slice[pixel_base + 3].to_array();
+
+        let top_r = u32x4::new([
+            top_pixel_0[0] as u32,
+            top_pixel_1[0] as u32,
+            top_pixel_2[0] as u32,
+            top_pixel_3[0] as u32,
+        ]);
+        let top_g = u32x4::new([
+            top_pixel_0[1] as u32,
+            top_pixel_1[1] as u32,
+            top_pixel_2[1] as u32,
+            top_pixel_3[1] as u32,
+        ]);
+        let top_b = u32x4::new([
+            top_pixel_0[2] as u32,
+            top_pixel_1[2] as u32,
+            top_pixel_2[2] as u32,
+            top_pixel_3[2] as u32,
+        ]);
+        let top_a = u32x4::new([
+            top_pixel_0[3] as u32,
+            top_pixel_1[3] as u32,
+            top_pixel_2[3] as u32,
+            top_pixel_3[3] as u32,
+        ]);
+
+        let inverse_alpha = u32x4::splat(255) - top_a;
+
+        accumulator_r = top_r + ((accumulator_r * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+        accumulator_g = top_g + ((accumulator_g * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+        accumulator_b = top_b + ((accumulator_b * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+        accumulator_a = top_a + ((accumulator_a * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+    }
+
+    let red_array = accumulator_r.to_array();
+    let green_array = accumulator_g.to_array();
+    let blue_array = accumulator_b.to_array();
+    let alpha_array = accumulator_a.to_array();
+
+    for pixel_offset in 0..4 {
+        let output_index = pixel_offset * BYTES_PER_PIXEL;
+        output_chunk[output_index] = red_array[pixel_offset] as u8;
+        output_chunk[output_index + 1] = green_array[pixel_offset] as u8;
+        output_chunk[output_index + 2] = blue_array[pixel_offset] as u8;
+        output_chunk[output_index + 3] = alpha_array[pixel_offset] as u8;
+    }
+}
+
+/// Blend a contiguous range of pixels across multiple layers.
+///
+/// Handles 4-pixel SIMD alignment, with optional rayon parallelism
+/// when `parallel` is true and there are enough chunks.
+#[inline]
+fn blend_pixel_range(
+    layers: &[&[Color32]],
+    output: &mut [u8],
+    pixel_start: usize,
+    pixel_count: usize,
+    parallel: bool,
+) {
+    let pixel_end = pixel_start + pixel_count;
+
+    // Fast path: single layer — memcpy RGBA bytes
+    if layers.len() == 1 {
+        let src: &[u8] = cast_slice(&layers[0][pixel_start..pixel_end]);
+        let dst = &mut output[pixel_start * BYTES_PER_PIXEL..pixel_end * BYTES_PER_PIXEL];
+        dst.copy_from_slice(src);
+        return;
+    }
+
+    // Scalar head: pixels before the first 4-aligned boundary
+    let aligned_start = (pixel_start + 3) & !3;
+    let head_end = aligned_start.min(pixel_end);
+    for i in pixel_start..head_end {
+        let mut pixel = layers[0][i];
+        for &layer_slice in &layers[1..] {
+            pixel = alpha_blend(pixel, layer_slice[i]);
+        }
+        let rgba = pixel.to_array();
+        let byte_i = i * BYTES_PER_PIXEL;
+        output[byte_i..byte_i + BYTES_PER_PIXEL].copy_from_slice(&rgba);
+    }
+
+    // SIMD-aligned body
+    let aligned_end = pixel_end & !3;
+    if aligned_start < aligned_end {
+        let simd_pixel_count = aligned_end - aligned_start;
+        let simd_chunks = simd_pixel_count / 4;
+        let byte_start = aligned_start * BYTES_PER_PIXEL;
+        let aligned_output = &mut output[byte_start..byte_start + simd_pixel_count * BYTES_PER_PIXEL];
+
+        if parallel && simd_chunks > PARALLEL_BLEND_THRESHOLD {
+            aligned_output
+                .par_chunks_mut(16)
+                .enumerate()
+                .for_each(|(chunk_index, chunk)| {
+                    blend_simd_chunk(chunk, layers, aligned_start + chunk_index * 4);
+                });
+        } else {
+            for (chunk_index, chunk) in aligned_output.chunks_mut(16).enumerate() {
+                blend_simd_chunk(chunk, layers, aligned_start + chunk_index * 4);
+            }
+        }
+    }
+
+    // Scalar tail
+    let tail_start = aligned_end.max(pixel_start);
+    for i in tail_start..pixel_end {
+        let mut pixel = layers[0][i];
+        for &layer_slice in &layers[1..] {
+            pixel = alpha_blend(pixel, layer_slice[i]);
+        }
+        let rgba = pixel.to_array();
+        let byte_i = i * BYTES_PER_PIXEL;
+        output[byte_i..byte_i + BYTES_PER_PIXEL].copy_from_slice(&rgba);
+    }
+}
+
 /// Composite multiple premultiplied layers into an RGBA byte buffer.
 ///
 /// Layers are blended bottom-to-top (index 0 = bottommost).
@@ -102,7 +266,6 @@ pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
 /// - If `output.len() != layers[0].len() * 4`.
 #[inline]
 pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
-    // Validate inputs
     assert!(!layers.is_empty(), "blend_layers: at least one layer required");
 
     let pixel_count = layers[0].len();
@@ -112,130 +275,36 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
     }
     assert_eq!(output.len(), pixel_count * BYTES_PER_PIXEL, "blend_layers: output length mismatch");
 
-    // Fast path: single layer — memcpy RGBA bytes directly
-    if layers.len() == 1 {
-        let src_bytes: &[u8] = cast_slice(layers[0]);
-        output[..src_bytes.len()].copy_from_slice(src_bytes);
+    blend_pixel_range(layers, output, 0, pixel_count, true);
+}
+
+/// Blend only the pixels within a dirty rectangle.
+///
+/// Processes the region row-by-row, calling `blend_pixel_range` for each row
+/// segment. Sequential iteration is used since dirty rects from brush strokes
+/// are typically small enough that parallel overhead would dominate.
+///
+/// # Panics
+///
+/// Panics if any layer has fewer pixels than required by the region bounds,
+/// or if `output` is too small for the required byte range.
+#[inline]
+pub fn blend_region(
+    layers: &[&[Color32]],
+    output: &mut [u8],
+    canvas_width: u32,
+    min_x: u32,
+    min_y: u32,
+    max_x: u32,
+    max_y: u32,
+) {
+    if layers.is_empty() {
         return;
     }
-
-    // Split output into aligned 4-pixel SIMD chunks and scalar remainder
-    let simd_chunks = pixel_count >> 2; // pixel_count / 4
-    let aligned_byte_count = simd_chunks * 16; // 16 bytes per 4-pixel chunk
-    let (aligned_buffer, remainder_buffer) = output.split_at_mut(aligned_byte_count);
-
-    // --- Parallel SIMD for full 4-pixel chunks ---
-    aligned_buffer
-        .par_chunks_mut(16)
-        .enumerate()
-        .for_each(|(chunk_index, output_chunk)| {
-            let pixel_base = chunk_index * BYTES_PER_PIXEL;
-
-            // Load bottom layer (index 0) pixels into SIMD accumulators
-            let bottom_layer = layers[0];
-            let bottom_pixel_0 = bottom_layer[pixel_base].to_array();
-            let bottom_pixel_1 = bottom_layer[pixel_base + 1].to_array();
-            let bottom_pixel_2 = bottom_layer[pixel_base + 2].to_array();
-            let bottom_pixel_3 = bottom_layer[pixel_base + 3].to_array();
-
-            let mut accumulator_r = u32x4::new([
-                bottom_pixel_0[0] as u32,
-                bottom_pixel_1[0] as u32,
-                bottom_pixel_2[0] as u32,
-                bottom_pixel_3[0] as u32,
-            ]);
-            let mut accumulator_g = u32x4::new([
-                bottom_pixel_0[1] as u32,
-                bottom_pixel_1[1] as u32,
-                bottom_pixel_2[1] as u32,
-                bottom_pixel_3[1] as u32,
-            ]);
-            let mut accumulator_b = u32x4::new([
-                bottom_pixel_0[2] as u32,
-                bottom_pixel_1[2] as u32,
-                bottom_pixel_2[2] as u32,
-                bottom_pixel_3[2] as u32,
-            ]);
-            let mut accumulator_a = u32x4::new([
-                bottom_pixel_0[3] as u32,
-                bottom_pixel_1[3] as u32,
-                bottom_pixel_2[3] as u32,
-                bottom_pixel_3[3] as u32,
-            ]);
-
-            // Blend remaining layers (1..) on top of accumulators
-            for &layer_slice in &layers[1..] {
-                let top_pixel_0 = layer_slice[pixel_base].to_array();
-                let top_pixel_1 = layer_slice[pixel_base + 1].to_array();
-                let top_pixel_2 = layer_slice[pixel_base + 2].to_array();
-                let top_pixel_3 = layer_slice[pixel_base + 3].to_array();
-
-                let top_r = u32x4::new([
-                    top_pixel_0[0] as u32,
-                    top_pixel_1[0] as u32,
-                    top_pixel_2[0] as u32,
-                    top_pixel_3[0] as u32,
-                ]);
-                let top_g = u32x4::new([
-                    top_pixel_0[1] as u32,
-                    top_pixel_1[1] as u32,
-                    top_pixel_2[1] as u32,
-                    top_pixel_3[1] as u32,
-                ]);
-                let top_b = u32x4::new([
-                    top_pixel_0[2] as u32,
-                    top_pixel_1[2] as u32,
-                    top_pixel_2[2] as u32,
-                    top_pixel_3[2] as u32,
-                ]);
-                let top_a = u32x4::new([
-                    top_pixel_0[3] as u32,
-                    top_pixel_1[3] as u32,
-                    top_pixel_2[3] as u32,
-                    top_pixel_3[3] as u32,
-                ]);
-
-                let inverse_alpha = u32x4::splat(255) - top_a;
-
-                // Blend: accumulator = top + ((accumulator * inverse_alpha + 128) >> 8)
-                accumulator_r = top_r + ((accumulator_r * inverse_alpha + ROUNDING_BIAS_128) >> 8);
-                accumulator_g = top_g + ((accumulator_g * inverse_alpha + ROUNDING_BIAS_128) >> 8);
-                accumulator_b = top_b + ((accumulator_b * inverse_alpha + ROUNDING_BIAS_128) >> 8);
-                accumulator_a = top_a + ((accumulator_a * inverse_alpha + ROUNDING_BIAS_128) >> 8);
-            }
-
-            // Write 4 blended pixels to output buffer as RGBA bytes
-            let red_array = accumulator_r.to_array();
-            let green_array = accumulator_g.to_array();
-            let blue_array = accumulator_b.to_array();
-            let alpha_array = accumulator_a.to_array();
-
-            for pixel_offset in 0..4 {
-                let output_index = pixel_offset * BYTES_PER_PIXEL;
-                output_chunk[output_index] = red_array[pixel_offset] as u8;
-                output_chunk[output_index + 1] = green_array[pixel_offset] as u8;
-                output_chunk[output_index + 2] = blue_array[pixel_offset] as u8;
-                output_chunk[output_index + 3] = alpha_array[pixel_offset] as u8;
-            }
-        });
-
-    // --- Scalar remainder for pixels not covered by full SIMD chunks ---
-    let remainder_pixel_start = simd_chunks * BYTES_PER_PIXEL;
-    for (remainder_index, output_chunk) in remainder_buffer
-        .chunks_mut(BYTES_PER_PIXEL)
-        .enumerate() {
-        let pixel_index = remainder_pixel_start + remainder_index;
-        let mut pixel = layers[0][pixel_index];
-
-        // Blend remaining layers onto this pixel using scalar alpha_blend
-        for &layer_slice in &layers[1..] {
-            pixel = alpha_blend(pixel, layer_slice[pixel_index]);
-        }
-
-        let rgba_array = pixel.to_array();
-        output_chunk[0] = rgba_array[0];
-        output_chunk[1] = rgba_array[1];
-        output_chunk[2] = rgba_array[2];
-        output_chunk[3] = rgba_array[3];
+    let width = canvas_width as usize;
+    for y in min_y..=max_y {
+        let pixel_start = (y as usize) * width + min_x as usize;
+        let pixel_count = (max_x - min_x + 1) as usize;
+        blend_pixel_range(layers, output, pixel_start, pixel_count, false);
     }
 }

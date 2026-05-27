@@ -13,6 +13,7 @@ fn small_canvas() -> Canvas {
         width: 10,
         output_rgba: Vec::new(),
         rendered_layers: None,
+        dirty_rect: None,
         render_next_frame: false,
     }
 }
@@ -109,6 +110,7 @@ fn draw_square_multi_layer() {
         width: 10,
         output_rgba: Vec::new(),
         rendered_layers: None,
+        dirty_rect: None,
         render_next_frame: false,
     };
     square_brush::draw_square(0, 0, 5, 5, &mut canvas, red(), 0);

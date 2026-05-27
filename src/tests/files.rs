@@ -21,6 +21,7 @@ fn checkerboard_4x4() -> Canvas {
         width: 4,
         output_rgba: Vec::new(),
         rendered_layers: None,
+        dirty_rect: None,
         render_next_frame: false,
     }
 }
@@ -56,6 +57,7 @@ fn save_load_roundtrip_multi_layer() {
         width: 3,
         output_rgba: Vec::new(),
         rendered_layers: None,
+        dirty_rect: None,
         render_next_frame: false,
     };
     let data = files::save_canvas_to_bytes(&canvas).expect("save");
@@ -94,6 +96,7 @@ fn save_load_roundtrip_transparent() {
         width: 3,
         output_rgba: Vec::new(),
         rendered_layers: None,
+        dirty_rect: None,
         render_next_frame: false,
     };
     let data = files::save_canvas_to_bytes(&canvas).expect("save");

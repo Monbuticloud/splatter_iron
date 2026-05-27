@@ -43,6 +43,10 @@ impl Document {
 
     /// Blend all layers into `output_rgba` and upload the result to a GPU texture.
     ///
+    /// If a `dirty_rect` is set on the canvas, only that region is re-blended;
+    /// otherwise the full canvas is blended. Always uploads the full texture to
+    /// the GPU (egui's API does not support partial texture updates).
+    ///
     /// Allocates `output_rgba` if its size does not match. Creates or updates the
     /// `rendered_layers` texture handle for display in the egui UI.
     pub fn render_to_texture(&mut self, ui: &egui::Ui) {
@@ -57,7 +61,24 @@ impl Document {
             .iter()
             .map(|l| l.pixels.as_slice())
             .collect();
-        pixel::blend_layers(&layer_slices, &mut self.canvas.output_rgba);
+
+        if let Some(rect) = &self.canvas.dirty_rect {
+            if !rect.is_empty() {
+                pixel::blend_region(
+                    &layer_slices,
+                    &mut self.canvas.output_rgba,
+                    self.canvas.width,
+                    rect.min_x,
+                    rect.min_y,
+                    rect.max_x,
+                    rect.max_y,
+                );
+            }
+        } else {
+            pixel::blend_layers(&layer_slices, &mut self.canvas.output_rgba);
+        }
+        self.canvas.dirty_rect = None;
+
         let image = egui::ColorImage::from_rgba_premultiplied(
             [self.canvas.width as usize, self.canvas.height as usize],
             &self.canvas.output_rgba
