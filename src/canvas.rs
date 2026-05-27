@@ -223,7 +223,7 @@ fn stamp_line_positions(
 /// Draw a brush line between two points and return an undo record.
 ///
 /// Uses `stamp_line_positions` to find all touched pixels, then applies the
-/// colour and captures before-data for undo. The `visited` buffer and `stamp`
+/// color and captures before-data for undo. The `visited` buffer and `stamp`
 /// value must be managed by the caller to avoid re-processing old stamps.
 ///
 /// # Panics
