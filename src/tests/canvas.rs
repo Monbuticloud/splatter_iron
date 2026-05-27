@@ -191,6 +191,7 @@ fn draw_square_line_different_stamps_dont_interfere() {
     );
 }
 
+/// Brush radius should affect the area covered around the cursor.
 #[test]
 fn draw_square_line_brush_radius() {
     let mut canvas = small_canvas();
