@@ -1,3 +1,4 @@
+use bytemuck::cast_slice;
 use eframe::egui::Color32;
 use rayon::prelude::*;
 use wide::u32x4;
@@ -105,17 +106,10 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
     }
     assert_eq!(output.len(), pixel_count * BYTES_PER_PIXEL, "blend_layers: output length mismatch");
 
-    // Fast path: single layer — just copy RGBA bytes directly
+    // Fast path: single layer — memcpy RGBA bytes directly
     if layers.len() == 1 {
-        let source_layer = layers[0];
-        for pixel_index in 0..pixel_count {
-            let rgba_array = source_layer[pixel_index].to_array(); // [R, G, B, A]
-            let output_index = pixel_index * BYTES_PER_PIXEL;
-            output[output_index] = rgba_array[0];
-            output[output_index + 1] = rgba_array[1];
-            output[output_index + 2] = rgba_array[2];
-            output[output_index + 3] = rgba_array[3];
-        }
+        let src_bytes: &[u8] = cast_slice(layers[0]);
+        output[..src_bytes.len()].copy_from_slice(src_bytes);
         return;
     }
 
