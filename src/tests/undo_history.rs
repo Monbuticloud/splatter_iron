@@ -3,6 +3,7 @@ use eframe::egui::Color32;
 use crate::canvas::{self, Canvas, Layer};
 use crate::undo_history::UndoHistory;
 
+/// Build a 10×10 transparent canvas for use in tests.
 fn small_canvas() -> Canvas {
     Canvas {
         pixels: vec![Layer {
