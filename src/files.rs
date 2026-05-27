@@ -2,6 +2,7 @@ use std::io::{ BufWriter, Write };
 use std::path::Path;
 use zstd;
 
+use bytemuck::cast_slice;
 use eframe::egui::Color32;
 use image::ImageEncoder;
 
@@ -172,13 +173,7 @@ pub fn export_as_image(
                 rgba16.push(u16::from(chunk[2]));
                 rgba16.push(u16::from(chunk[3]));
             }
-            // Use the native-endian encode() method; it converts to BE internally.
-            let rgba16_bytes: &[u8] = unsafe {
-                std::slice::from_raw_parts(
-                    rgba16.as_ptr() as *const u8,
-                    rgba16.len() * std::mem::size_of::<u16>()
-                )
-            };
+            let rgba16_bytes: &[u8] = cast_slice(&rgba16);
             let encoder = image::codecs::farbfeld::FarbfeldEncoder::new(writer);
             encoder.write_image(rgba16_bytes, width, height, image::ExtendedColorType::Rgba16)?;
         }
