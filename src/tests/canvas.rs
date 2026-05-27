@@ -24,6 +24,7 @@ fn red() -> Color32 {
 
 // --- draw_square ---
 
+/// `draw_square` should fill the specified rectangular region.
 #[test]
 fn draw_square_fills_region() {
     let mut canvas = small_canvas();
