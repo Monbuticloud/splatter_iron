@@ -236,7 +236,14 @@ impl eframe::App for MyApp {
         }
 
         // Render layers to texture if needed
-        if self.doc.canvas.render_next_frame || self.doc.canvas.rendered_layers.is_none() {
+        if self.gpu_texture.is_some() {
+            if self.doc.canvas.render_next_frame {
+                let dirty = self.doc.blend_to_output();
+                if let Some(ref gpu) = self.gpu_texture {
+                    self.doc.upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
+                }
+            }
+        } else if self.doc.canvas.render_next_frame || self.doc.canvas.rendered_layers.is_none() {
             self.doc.render_to_texture(ui);
         }
 
