@@ -143,6 +143,7 @@ fn export_jpeg_creates_file() {
     assert!(metadata.len() > 0, "JPEG file should have content");
 }
 
+/// Export a semi-transparent PNG and verify it re-imports correctly.
 #[test]
 fn export_png_semi_transparent() {
     let mut rgba = Vec::with_capacity(4 * 4);
