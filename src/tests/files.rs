@@ -169,6 +169,7 @@ fn invalid_data_returns_error() {
     assert!(result.is_err());
 }
 
+/// Loading empty data should return an error.
 #[test]
 fn empty_data_returns_error() {
     let result = files::load_app_from_data(&[]);
