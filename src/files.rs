@@ -52,7 +52,14 @@ pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     Ok(compressed)
 }
 
-/// Write pre-serialized bytes to a file.  Fast, pure I/O.
+/// Write pre-serialised bytes to a file.
+///
+/// This is a pure I/O operation — serialisation should be done beforehand
+/// with [`save_canvas_to_bytes`].
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be written.
 pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
     std::fs::write(path, data)?;
     Ok(())
