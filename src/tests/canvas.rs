@@ -222,6 +222,7 @@ fn draw_square_line_clamps_to_canvas() {
 
 // --- Canvas defaults ---
 
+/// The default canvas should be 2000×1500.
 #[test]
 fn default_canvas_size() {
     let canvas = Canvas::default();
