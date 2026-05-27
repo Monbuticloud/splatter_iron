@@ -113,7 +113,6 @@ impl Default for UIState {
 pub struct GpuTexture {
     pub texture: wgpu::Texture,
     pub texture_id: egui::TextureId,
-    pub device: Arc<wgpu::Device>,
     pub queue: Arc<wgpu::Queue>,
 }
 
@@ -162,7 +161,7 @@ impl MyApp {
                 view_formats: &[],
             });
             let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let mut renderer = rs.renderer.write().unwrap();
+            let mut renderer = rs.renderer.write();
             let texture_id = renderer.register_native_texture(
                 &rs.device,
                 &view,
@@ -171,8 +170,7 @@ impl MyApp {
             GpuTexture {
                 texture,
                 texture_id,
-                device: rs.device.clone(),
-                queue: rs.queue.clone(),
+                queue: Arc::new(rs.queue.clone()),
             }
         });
 
@@ -213,7 +211,7 @@ impl MyApp {
             view_formats: &[],
         });
         let view = gpu.texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut renderer = rs.renderer.write().unwrap();
+        let mut renderer = rs.renderer.write();
         renderer.update_egui_texture_from_wgpu_texture(
             &rs.device,
             &view,

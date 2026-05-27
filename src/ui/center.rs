@@ -28,7 +28,7 @@ impl MyApp {
     /// and drawing strokes with the current tool on drag.
     /// Updates the undo history and marks the document as dirty.
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
-        let (tex_id, canvas_size) = if let Some(gpu) = &self.gpu_texture {
+        let (tex_id, canvas_pixel_size) = if let Some(gpu) = &self.gpu_texture {
             (gpu.texture_id, egui::vec2(
                 self.doc.canvas.width as f32,
                 self.doc.canvas.height as f32,
@@ -40,13 +40,13 @@ impl MyApp {
         };
 
         let avail = ui.available_size();
-        let scale = (avail.x / canvas_size.x).min(avail.y / canvas_size.y);
-        let draw_size = canvas_size * scale;
+        let scale = (avail.x / canvas_pixel_size.x).min(avail.y / canvas_pixel_size.y);
+        let draw_size = canvas_pixel_size * scale;
 
         let response = ui
             .add(
                 egui::Image
-                    ::new(tex_id)
+                    ::new((tex_id, canvas_pixel_size))
                     .fit_to_exact_size(draw_size)
                     .sense(egui::Sense::click_and_drag())
             )
