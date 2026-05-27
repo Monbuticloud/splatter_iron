@@ -203,7 +203,7 @@ pub fn export_as_image(
 /// # Errors
 ///
 /// Returns an error if the file cannot be read or the image format is
-/// not recognised by the `image` crate.
+/// not recognized by the `image` crate.
 pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
     let dyn_img = image::open(path)?;
     let rgba = dyn_img.to_rgba8();
