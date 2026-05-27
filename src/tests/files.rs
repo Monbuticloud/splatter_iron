@@ -123,6 +123,21 @@ fn export_png_roundtrip() {
 }
 
 #[test]
+fn export_jpeg_creates_file() {
+    let mut rgba = Vec::with_capacity(4 * 4);
+    for _ in 0..4 {
+        rgba.extend_from_slice(&[255, 128, 64, 255]);
+    }
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.jpg");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Jpeg)
+        .expect("export JPEG");
+    assert!(path.exists());
+    let metadata = std::fs::metadata(&path).expect("metadata");
+    assert!(metadata.len() > 0, "JPEG file should have content");
+}
+
+#[test]
 fn export_png_semi_transparent() {
     let mut rgba = Vec::with_capacity(4 * 4);
     rgba.extend_from_slice(&[255, 255, 255, 255]);
@@ -138,8 +153,6 @@ fn export_png_semi_transparent() {
     assert_eq!(imported.height, 2);
     assert_eq!(imported.pixels.len(), 1);
 }
-
-
 
 #[test]
 fn invalid_data_returns_error() {

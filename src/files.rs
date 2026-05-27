@@ -93,6 +93,15 @@ pub fn export_as_image(
         return Ok(());
     }
 
+    // JPEG requires RGB8 (3 bytes/pixel). Alpha was already blended
+    // against white in the loop above, so strip the alpha channel.
+    if format == image::ImageFormat::Jpeg {
+        let rgb: Vec<u8> = img.pixels().flat_map(|p| [p[0], p[1], p[2]]).collect();
+        image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY)
+            .write_image(&rgb, width, height, image::ExtendedColorType::Rgb8)?;
+        return Ok(());
+    }
+
     // Consume img into raw byte buffer for all other formats.
     let raw = img.into_raw();
 
@@ -108,7 +117,7 @@ pub fn export_as_image(
     match format {
         image::ImageFormat::Avif => export_via!(image::codecs::avif::AvifEncoder::new(writer))?,
         image::ImageFormat::Png => export_via!(image::codecs::png::PngEncoder::new(writer))?,
-        image::ImageFormat::Jpeg => export_via!(image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY), image::ExtendedColorType::Rgb8)?,
+
         image::ImageFormat::WebP => export_via!(image::codecs::webp::WebPEncoder::new_lossless(writer))?,
         image::ImageFormat::Tiff => export_via!(image::codecs::tiff::TiffEncoder::new(writer))?,
         image::ImageFormat::Tga => export_via!(image::codecs::tga::TgaEncoder::new(writer))?,
