@@ -94,9 +94,16 @@ pub fn export_as_image(
     let file = std::fs::File::create(path)?;
     let writer = BufWriter::new(file);
 
-    // For formats that need float conversion (EXR, HDR), build a separate buffer.
-    // `img` is moved into the GIF branch; for others we clone raw before moving.
-    let raw = img.clone().into_raw();
+    // GIF needs the `RgbaImage` directly, not raw bytes — handle it first.
+    if format == image::ImageFormat::Gif {
+        let frame = image::Frame::new(img);
+        let mut encoder = image::codecs::gif::GifEncoder::new(writer);
+        encoder.encode_frame(frame)?;
+        return Ok(());
+    }
+
+    // Consume img into raw byte buffer for all other formats.
+    let raw = img.into_raw();
 
     match format {
         image::ImageFormat::Avif => {
@@ -114,11 +121,6 @@ pub fn export_as_image(
         image::ImageFormat::WebP => {
             let encoder = image::codecs::webp::WebPEncoder::new_lossless(writer);
             encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::Gif => {
-            let frame = image::Frame::new(img);
-            let mut encoder = image::codecs::gif::GifEncoder::new(writer);
-            encoder.encode_frame(frame)?;
         }
         image::ImageFormat::Tiff => {
             let encoder = image::codecs::tiff::TiffEncoder::new(writer);
