@@ -191,6 +191,36 @@ impl MyApp {
             gpu_texture,
         }
     }
+
+    /// Recreate the wgpu GPU texture after a canvas resize.
+    ///
+    /// Uses `update_egui_texture_from_wgpu_texture` to keep the same
+    /// `egui::TextureId`, avoiding stale entries in the renderer's map.
+    pub fn recreate_gpu_texture(&mut self, frame: &mut eframe::Frame) {
+        let Some(rs) = frame.wgpu_render_state() else { return };
+        let Some(gpu) = &mut self.gpu_texture else { return };
+        let w = self.doc.canvas.width;
+        let h = self.doc.canvas.height;
+        let size = wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 };
+        gpu.texture = rs.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("splatter_iron_canvas"),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let view = gpu.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let mut renderer = rs.renderer.write().unwrap();
+        renderer.update_egui_texture_from_wgpu_texture(
+            &rs.device,
+            &view,
+            wgpu::FilterMode::Linear,
+            gpu.texture_id,
+        );
+    }
 }
 
 impl eframe::App for MyApp {
@@ -232,6 +262,14 @@ impl eframe::App for MyApp {
             RenderState::UnfocusedFrozen => {
                 self.ui.render_state = RenderState::IdleThrottled;
                 return;
+            }
+        }
+
+        // Recreate GPU texture if canvas dimensions have changed
+        if let Some(gpu) = &self.gpu_texture {
+            let s = gpu.texture.size();
+            if s.width != self.doc.canvas.width || s.height != self.doc.canvas.height {
+                self.recreate_gpu_texture(frame);
             }
         }
 
