@@ -105,47 +105,26 @@ pub fn export_as_image(
     // Consume img into raw byte buffer for all other formats.
     let raw = img.into_raw();
 
+    macro_rules! export_via {
+        ($encoder:expr) => {
+            $encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)
+        };
+        ($encoder:expr, $color:expr) => {
+            $encoder.write_image(&raw, width, height, $color)
+        };
+    }
+
     match format {
-        image::ImageFormat::Avif => {
-            let encoder = image::codecs::avif::AvifEncoder::new(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::Png => {
-            let encoder = image::codecs::png::PngEncoder::new(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::Jpeg => {
-            let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgb8)?;
-        }
-        image::ImageFormat::WebP => {
-            let encoder = image::codecs::webp::WebPEncoder::new_lossless(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::Tiff => {
-            let encoder = image::codecs::tiff::TiffEncoder::new(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::Tga => {
-            let encoder = image::codecs::tga::TgaEncoder::new(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::Ico => {
-            let encoder = image::codecs::ico::IcoEncoder::new(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::Pnm => {
-            let encoder = image::codecs::pnm::PnmEncoder::new(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::Qoi => {
-            let encoder = image::codecs::qoi::QoiEncoder::new(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
-        image::ImageFormat::OpenExr => {
-            let encoder = image::codecs::openexr::OpenExrEncoder::new(writer);
-            encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)?;
-        }
+        image::ImageFormat::Avif => export_via!(image::codecs::avif::AvifEncoder::new(writer))?,
+        image::ImageFormat::Png => export_via!(image::codecs::png::PngEncoder::new(writer))?,
+        image::ImageFormat::Jpeg => export_via!(image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY), image::ExtendedColorType::Rgb8)?,
+        image::ImageFormat::WebP => export_via!(image::codecs::webp::WebPEncoder::new_lossless(writer))?,
+        image::ImageFormat::Tiff => export_via!(image::codecs::tiff::TiffEncoder::new(writer))?,
+        image::ImageFormat::Tga => export_via!(image::codecs::tga::TgaEncoder::new(writer))?,
+        image::ImageFormat::Ico => export_via!(image::codecs::ico::IcoEncoder::new(writer))?,
+        image::ImageFormat::Pnm => export_via!(image::codecs::pnm::PnmEncoder::new(writer))?,
+        image::ImageFormat::Qoi => export_via!(image::codecs::qoi::QoiEncoder::new(writer))?,
+        image::ImageFormat::OpenExr => export_via!(image::codecs::openexr::OpenExrEncoder::new(writer))?,
         image::ImageFormat::Hdr => {
             // Build Rgb32F image from the straight RGBA buffer.
             // HDR stores linear float RGB (alpha is ignored).
