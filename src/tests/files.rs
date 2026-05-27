@@ -127,6 +127,7 @@ fn export_png_roundtrip() {
     }
 }
 
+/// Export a JPEG file and verify it exists and has content.
 #[test]
 fn export_jpeg_creates_file() {
     let mut rgba = Vec::with_capacity(4 * 4);
