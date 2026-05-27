@@ -4,7 +4,7 @@ use eframe::egui::{ self, Color32, Panel };
 
 use crate::canvas::{ Canvas, CurrentTool, RenderState };
 use crate::pixel::{ self, BYTES_PER_PIXEL as RGBA_CHANNELS };
-use crate::undo::Stroke;
+use crate::undo::UndoRecord;
 use directories::ProjectDirs;
 use chrono::Local;
 
@@ -113,9 +113,9 @@ pub enum SaveResult {
 }
 
 impl MyApp {
-    pub fn push_stroke(&mut self, stroke: Stroke) {
+    pub fn push_undo(&mut self, record: UndoRecord) {
         self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
-        self.stroke_stack.push_back(stroke);
+        self.stroke_stack.push_back(record);
         while self.stroke_stack.len() > MAX_STROKE_STACK {
             self.stroke_stack.pop_front();
         }
@@ -398,7 +398,7 @@ pub struct MyApp {
     pub bump_allocator: bumpalo::Bump,
     pub visited: Vec<u32>,
     pub visited_stamp: u32,
-    pub stroke_stack: VecDeque<Stroke>,
+    pub stroke_stack: VecDeque<UndoRecord>,
     pub redo_index: usize,
     pub pending_file_action: Option<PendingFileAction>,
     pub dialog_sender: mpsc::Sender<DialogResult>,
