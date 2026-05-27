@@ -22,6 +22,11 @@ impl MyApp {
         }
     }
 
+    /// Process mouse interaction on the canvas texture.
+    ///
+    /// Handles brush preview rendering, context menu (Import/Export As/Save As),
+    /// and drawing strokes with the current tool (Square/SquareEraser) on drag.
+    /// Updates the undo history and marks the document as dirty.
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
         if let Some(tex) = &self.doc.canvas.rendered_layers {
             let avail = ui.available_size();
