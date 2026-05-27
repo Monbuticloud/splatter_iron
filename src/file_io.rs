@@ -44,6 +44,10 @@ pub enum SaveResult {
     Failed(String),
 }
 
+/// Manages async file dialogs and save operations via background threads.
+///
+/// Holds channel pairs for receiving dialog results and save outcomes,
+/// plus the app's local data directory path for autosaves.
 pub struct FileIO {
     pub pending_file_action: Option<PendingFileAction>,
     pub dialog_sender: mpsc::Sender<DialogResult>,
