@@ -10,8 +10,8 @@ const SELECTED_TOOL_COLOR: egui::Color32 = egui::Color32::from_rgb(128, 0, 128);
 impl MyApp {
     /// Render the left tool panel with selectable tool buttons.
     ///
-    /// Temporarily overrides the selection color to purple for visual
-    /// distinction. Shows Square, Circle, Square Eraser, and Circle Eraser.
+    /// Temporarily overrides the selection color to purple so the active tool
+    /// stands out visually. Shows Square, Circle, Square Eraser, and Circle Eraser.
     pub fn show_left_panel(&mut self, ui: &mut egui::Ui) {
         // Temporarily override selection color to purple for tool buttons.
         // Using ui.selectable_value() gives us built-in highlight + click handling
