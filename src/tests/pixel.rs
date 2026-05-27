@@ -2,11 +2,12 @@ use eframe::egui::Color32;
 
 use crate::pixel;
 
+/// Check that every channel of `a` and `b` differs by at most `max_diff`.
 fn channels_close(a: Color32, b: Color32, max_diff: u8) -> bool {
-    a.r().abs_diff(b.r()) <= max_diff
-        && a.g().abs_diff(b.g()) <= max_diff
-        && a.b().abs_diff(b.b()) <= max_diff
-        && a.a().abs_diff(b.a()) <= max_diff
+    a.r().abs_diff(b.r()) <= max_diff &&
+        a.g().abs_diff(b.g()) <= max_diff &&
+        a.b().abs_diff(b.b()) <= max_diff &&
+        a.a().abs_diff(b.a()) <= max_diff
 }
 
 #[test]
