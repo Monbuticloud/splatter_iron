@@ -266,7 +266,9 @@ impl FileIO {
         });
     }
 
-    /// Save to the current `savefile_path` (async). No-op if path is empty.
+    /// Save to the current `savefile_path` asynchronously.
+    ///
+    /// No-op if `savefile_path` is empty.
     pub fn save_to_current_path(&self, doc: &Document) {
         if !doc.savefile_path.is_empty() {
             self.trigger_async_save(doc, SaveKind::ManualSave(PathBuf::from(&doc.savefile_path)));
