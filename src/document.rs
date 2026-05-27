@@ -82,6 +82,10 @@ impl Document {
         self.canvas.render_next_frame = true;
     }
 
+    /// Remove the layer at `index` and adjust `current_layer` if needed.
+    ///
+    /// `current_layer` is clamped to `[0, layers.len() - 1]` after removal.
+    /// Does NOT guard against deleting the last layer — the UI layer handles that.
     pub fn delete_layer(&mut self, index: usize) {
         self.canvas.pixels.remove(index);
         self.current_layer = self.current_layer
