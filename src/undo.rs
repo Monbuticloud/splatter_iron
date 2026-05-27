@@ -40,6 +40,10 @@ pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
     }
 }
 
+/// A record of a single drawing stroke, used for undo/redo.
+///
+/// `Run` stores runs of contiguous pixels, compressed for efficiency.
+/// `Pixel` stores individual pixel changes (legacy variant).
 #[allow(dead_code)]
 pub enum UndoRecord {
     Run {
