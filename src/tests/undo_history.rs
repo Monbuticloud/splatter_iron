@@ -17,7 +17,7 @@ fn small_canvas() -> Canvas {
     }
 }
 
-/// Shortcut for a fully opaque red colour in premultiplied format.
+/// Shortcut for a fully opaque red color in premultiplied format.
 fn red() -> Color32 {
     Color32::from_rgba_premultiplied(255, 0, 0, 255)
 }
