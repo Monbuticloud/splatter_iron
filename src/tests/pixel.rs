@@ -83,6 +83,7 @@ fn alpha_blend_opaque_over_transparent() {
     assert_eq!(pixel::alpha_blend(Color32::TRANSPARENT, src), src);
 }
 
+/// Blending transparent source over destination should leave dest within ±1.
 #[test]
 fn alpha_blend_transparent_over_dest_is_close() {
     let dest = Color32::from_rgba_premultiplied(100, 150, 200, 255);
