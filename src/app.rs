@@ -54,11 +54,6 @@ const IMPORT_EXTENSIONS: &[&str] = &[
     "ff",
 ];
 
-enum PendingErrorWindowDismissal {
-    None,
-    Dismiss(usize),
-    All,
-}
 pub(crate) struct ExportInfo {
     pub extensions: &'static [&'static str],
     pub fmt: image::ImageFormat,
@@ -533,23 +528,22 @@ impl eframe::App for MyApp {
 
         egui::CentralPanel::default().show_inside(ui, |ui| self.show_central_panel(ui));
 
-        if self.displayed_error_list.len() > 0 {
-            let mut open = true; // local copy for the window
-            let mut status = PendingErrorWindowDismissal::None;
+        if !self.displayed_error_list.is_empty() {
+            let mut open = true;
+            let mut to_dismiss: Vec<usize> = Vec::new();
             egui::Window
                 ::new("Error")
-                .collapsible(false) // prevent accidental collapse
-                .resizable(false) // fixed size, feels more like a modal
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0]) // center on screen
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .open(&mut open)
                 .show(ui, |ui| {
                     for (index, msg) in self.displayed_error_list.iter().enumerate() {
-                        ui.label("Error:".to_owned() + msg);
+                        ui.label(format!("Error: {msg}"));
                         ui.horizontal(|ui| {
                             if ui.button("Dismiss").clicked() {
-                                status = PendingErrorWindowDismissal::Dismiss(index);
+                                to_dismiss.push(index);
                             }
-                            // Optional: a "Copy" button for debugging
                             if ui.button("Copy error").clicked() {
                                 ui.ctx().copy_text(msg.clone());
                             }
@@ -557,21 +551,16 @@ impl eframe::App for MyApp {
                     }
                     ui.horizontal(|ui| {
                         if ui.button("Dismiss All").clicked() {
-                            status = PendingErrorWindowDismissal::All;
+                            to_dismiss.extend(0..self.displayed_error_list.len());
                         }
                     });
                 });
 
-            // If the user closes via the [x] or presses Esc, open becomes false.
-            // We need to sync that back to our error_message.
-            match status {
-                PendingErrorWindowDismissal::None => {}
-                PendingErrorWindowDismissal::Dismiss(index) => {
-                    self.displayed_error_list.remove(index);
-                }
-                PendingErrorWindowDismissal::All => {
-                    self.displayed_error_list.clear();
-                }
+            // Remove in descending order so earlier removals don't shift later indices.
+            to_dismiss.sort_unstable_by(|a, b| b.cmp(a));
+            to_dismiss.dedup();
+            for i in to_dismiss {
+                self.displayed_error_list.remove(i);
             }
             if !open {
                 self.displayed_error_list.clear();
