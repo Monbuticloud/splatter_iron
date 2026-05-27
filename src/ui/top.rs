@@ -2,7 +2,7 @@ use eframe::egui;
 
 use crate::app::{ MyApp, PendingFileAction };
 use crate::canvas::Canvas;
-use crate::undo::{ undo_stroke, redo_stroke };
+use crate::undo::{ undo_apply, redo_apply };
 
 impl MyApp {
     pub fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
@@ -64,7 +64,7 @@ impl MyApp {
                 );
                 for _ in 0..count {
                     let idx = self.stroke_stack.len() - 1 - self.redo_index;
-                    undo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
+                    undo_apply(&mut self.canvas, &self.stroke_stack[idx]);
                     self.redo_index += 1;
                 }
                 self.canvas.render_next_frame = true;
@@ -83,7 +83,7 @@ impl MyApp {
                 for _ in 0..count {
                     let idx = self.stroke_stack.len() - self.redo_index;
                     self.redo_index -= 1;
-                    redo_stroke(&mut self.canvas, &self.stroke_stack[idx]);
+                    redo_apply(&mut self.canvas, &self.stroke_stack[idx]);
                 }
                 self.canvas.render_next_frame = true;
             }
