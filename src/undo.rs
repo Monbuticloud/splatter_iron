@@ -84,6 +84,10 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     }
 }
 
+/// Reapply a previously undone stroke from its undo record.
+///
+/// For the `Run` variant, fills the segment range with `color_after`.
+/// For the `Pixel` variant, writes back each pixel's `color_after`.
 #[inline]
 pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     match record {
