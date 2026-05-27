@@ -19,6 +19,22 @@ pub const CANVAS_EXT: &str = ".splattercanvas";
 pub const FILE_FILTER_NAME: &str = "SplatterCanvas";
 pub const DEFAULT_CANVAS_NAME: &str = "canvas.splattercanvas";
 
+/// Maximum canvas dimension (8192 = 2¹³). This is the de-facto max 2D texture
+/// size guaranteed across GPU backends in wgpu/WebGPU, and avoids
+/// platform-specific allocation issues on older hardware. Going beyond this
+/// would risk `OUT_OF_MEMORY` on integrated GPUs and driver crashes on DX11
+/// / OpenGL ES 3.0 devices that cap at 8192.
+const MAX_CANVAS_DIMENSION: u32 = 8192;
+
+/// Preset canvas sizes shown in the "New Canvas" dialog.
+const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
+    ("XS", 800, 600),
+    ("S", 1280, 960),
+    ("M", 2000, 1500),
+    ("L", 2560, 1920),
+    ("XL", 3200, 2400),
+];
+
 // --- Performance constants ---
 const UNFOCUSED_SLEEP_MS: u64 = 50;
 const REPAINT_DELAY_MULT: u32 = 5;
@@ -237,35 +253,21 @@ impl eframe::App for MyApp {
                 .open(&mut open)
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        if ui.button("XS\n800×600").clicked() {
-                            self.ui.new_canvas_width = 800;
-                            self.ui.new_canvas_height = 600;
-                        }
-                        if ui.button("S\n1280×960").clicked() {
-                            self.ui.new_canvas_width = 1280;
-                            self.ui.new_canvas_height = 960;
-                        }
-                        if ui.button("M\n2000×1500").clicked() {
-                            self.ui.new_canvas_width = 2000;
-                            self.ui.new_canvas_height = 1500;
-                        }
-                        if ui.button("L\n2560×1920").clicked() {
-                            self.ui.new_canvas_width = 2560;
-                            self.ui.new_canvas_height = 1920;
-                        }
-                        if ui.button("XL\n3200×2400").clicked() {
-                            self.ui.new_canvas_width = 3200;
-                            self.ui.new_canvas_height = 2400;
+                        for &(label, w, h) in NEW_CANVAS_PRESETS {
+                            if ui.button(format!("{label}\n{w}×{h}")).clicked() {
+                                self.ui.new_canvas_width = w;
+                                self.ui.new_canvas_height = h;
+                            }
                         }
                     });
                     ui.separator();
                     ui.label("Custom:");
                     ui.add(
-                        egui::Slider::new(&mut self.ui.new_canvas_width, 4..=25_000)
+                        egui::Slider::new(&mut self.ui.new_canvas_width, 4..=MAX_CANVAS_DIMENSION)
                             .text("Width"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut self.ui.new_canvas_height, 4..=25_000)
+                        egui::Slider::new(&mut self.ui.new_canvas_height, 4..=MAX_CANVAS_DIMENSION)
                             .text("Height"),
                     );
                     ui.horizontal(|ui| {
