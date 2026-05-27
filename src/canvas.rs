@@ -77,6 +77,10 @@ fn fill_square_impl(
 /// Coordinates are clamped to canvas bounds. If `start_x >= end_x` or
 /// `start_y >= end_y` the call is a no-op and returns an empty undo record.
 /// Captures before-pixel data for every touched position to support undo.
+///
+/// # Panics
+///
+/// Panics if `layer >= canvas.pixels.len()`.
 #[inline]
 pub fn draw_square(
     start_x: u32,
