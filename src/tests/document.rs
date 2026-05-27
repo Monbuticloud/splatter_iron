@@ -19,6 +19,7 @@ fn small_document() -> Document {
     Document::new(canvas)
 }
 
+/// A new document should have one layer, current_layer 0, no save path.
 #[test]
 fn new_document_has_one_layer() {
     let doc = small_document();
