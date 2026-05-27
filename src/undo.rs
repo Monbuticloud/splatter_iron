@@ -17,6 +17,7 @@ pub enum BeforePixels {
     Many(Vec<Color32>),
 }
 
+/// A contiguous range of pixels in an undo `Run` record.
 pub struct RunSegment {
     pub start: u32,
     pub len: u32,
