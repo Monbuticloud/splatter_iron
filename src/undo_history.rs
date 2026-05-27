@@ -71,6 +71,7 @@ impl UndoHistory {
         self.redo_index < self.stroke_stack.len()
     }
 
+    /// Returns `true` if there are strokes that can be redone.
     pub fn can_redo(&self) -> bool {
         self.redo_index > 0
     }
