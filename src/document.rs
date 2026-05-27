@@ -17,7 +17,7 @@ pub struct Document {
 impl Document {
     /// Create a new `Document` wrapping the given canvas.
     ///
-    /// Initialises with an empty save path, current layer 0,
+    /// Initializes with an empty save path, current layer 0,
     /// and `dirty_since_last_autosave = false`.
     pub fn new(canvas: Canvas) -> Self {
         Self {
