@@ -66,8 +66,7 @@ impl MyApp {
             });
 
             // Brush preview: semi-transparent filled square + outline at cursor
-            if self.show_brush_preview {
-                if let Some(hover_pos) = response.hover_pos() {
+            if self.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
                     let local = hover_pos - response.rect.min;
                     let uv = egui::vec2(
                         local.x / response.rect.width(),
@@ -128,7 +127,6 @@ impl MyApp {
                         StrokeKind::Middle
                     );
                 }
-            }
 
             if response.hovered() {
                 self.pending_layer_for_deletion = None;
@@ -149,7 +147,7 @@ impl MyApp {
                     let pixel_y = (uv.y * (self.canvas.height as f32)).floor() as u32;
 
                     match self.current_tool {
-                        CurrentTool::SquareTool => {
+                        CurrentTool::Square => {
                             self.canvas.render_next_frame = true;
 
                             if self.previous_cursor_position.is_none() {
@@ -189,10 +187,10 @@ impl MyApp {
                                 self.push_stroke(stroke);
                             }
                         }
-                        CurrentTool::CircleTool => {
+                        CurrentTool::Circle => {
                             todo!();
                         }
-                        CurrentTool::SquareEraserTool => {
+                        CurrentTool::SquareEraser => {
                             self.canvas.render_next_frame = true;
 
                             if self.previous_cursor_position.is_none() {
@@ -232,7 +230,7 @@ impl MyApp {
                                 self.push_stroke(stroke);
                             }
                         }
-                        CurrentTool::CircleEraserTool => {
+                        CurrentTool::CircleEraser => {
                             todo!();
                         }
                     }

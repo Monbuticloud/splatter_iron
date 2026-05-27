@@ -107,10 +107,10 @@ pub fn draw_square(
         let start = row_start + (start_x as usize);
         let end = row_start + (end_x as usize);
 
-        for i in start..end {
+        for (offset, pixel) in pixels[start..end].iter().copied().enumerate() {
             stroke_pixels.push(StrokePixel {
-                index: i as u32,
-                color_before: pixels[i],
+                index: (start + offset) as u32,
+                color_before: pixel,
                 color_after: color,
             });
         }
@@ -255,10 +255,10 @@ pub fn draw_square_line(
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CurrentTool {
-    SquareTool,
-    CircleTool,
-    SquareEraserTool,
-    CircleEraserTool,
+    Square,
+    Circle,
+    SquareEraser,
+    CircleEraser,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

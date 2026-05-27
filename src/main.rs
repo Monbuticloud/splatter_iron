@@ -85,7 +85,7 @@ fn main() -> eframe::Result {
         "Couldn't resolve app dir"
     );
     let data_dir = project_dirs.data_local_dir().to_path_buf();
-    std::fs::create_dir_all(&data_dir).unwrap();
+    std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
 
     let res = eframe::run_native(
         APP_NAME,

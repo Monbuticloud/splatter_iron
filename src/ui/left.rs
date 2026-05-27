@@ -15,10 +15,10 @@ impl MyApp {
         let old_selection_color = ui.visuals().selection.bg_fill;
         ui.visuals_mut().selection.bg_fill = SELECTED_TOOL_COLOR;
 
-        ui.selectable_value(&mut self.current_tool, CurrentTool::SquareTool, "Square Tool");
-        ui.selectable_value(&mut self.current_tool, CurrentTool::CircleTool, "Circle Tool");
-        ui.selectable_value(&mut self.current_tool, CurrentTool::SquareEraserTool, "Square Eraser");
-        ui.selectable_value(&mut self.current_tool, CurrentTool::CircleEraserTool, "Circle Eraser");
+        ui.selectable_value(&mut self.current_tool, CurrentTool::Square, "Square Tool");
+        ui.selectable_value(&mut self.current_tool, CurrentTool::Circle, "Circle Tool");
+        ui.selectable_value(&mut self.current_tool, CurrentTool::SquareEraser, "Square Eraser");
+        ui.selectable_value(&mut self.current_tool, CurrentTool::CircleEraser, "Circle Eraser");
 
         // Restore original selection color
         ui.visuals_mut().selection.bg_fill = old_selection_color;

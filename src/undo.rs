@@ -8,6 +8,7 @@ pub struct StrokePixel {
 
 pub struct Stroke {
     pub layer_index: usize,
+    #[allow(dead_code)]
     pub width: u32,
     pub pixels: Vec<StrokePixel>,
 }

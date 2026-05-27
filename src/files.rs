@@ -1,7 +1,5 @@
 use std::io::{ BufWriter, Write };
 use std::path::Path;
-use zstd;
-
 use bytemuck::cast_slice;
 use eframe::egui::Color32;
 use image::ImageEncoder;

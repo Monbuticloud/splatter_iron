@@ -37,8 +37,6 @@ impl MyApp {
         ui.text_edit_singleline(&mut self.savefile_path);
 
         ui.separator();
-        let _current_layer_text = format!("Current Layer: {}", self.current_layer);
-
         let add_layer_button = ui.button("Add Layer");
         if add_layer_button.clicked() {
             self.canvas.pixels.push(Layer {
@@ -51,7 +49,7 @@ impl MyApp {
             let mut pending_layer_action = None;
             for (i, _layer) in self.canvas.pixels.iter().enumerate() {
                 let _layer_panel = egui::CollapsingHeader
-                    ::new(format!("Layer {}", i))
+                    ::new(format!("Layer {i}"))
                     .show(ui, |ui| {
                         let delete_button = ui.button("Delete");
                         if delete_button.clicked() {

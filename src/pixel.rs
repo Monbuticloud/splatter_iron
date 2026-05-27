@@ -3,8 +3,8 @@ use eframe::egui::Color32;
 use rayon::prelude::*;
 use wide::u32x4;
 
-pub(crate) const BYTES_PER_PIXEL: usize = 4;
-pub(crate) const F32_COLOR_MAX: f32 = 255.0;
+pub const BYTES_PER_PIXEL: usize = 4;
+pub const F32_COLOR_MAX: f32 = 255.0;
 
 // SIMD constant for the (value * alpha + 128) >> 8 fixed-point blend
 const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
@@ -29,7 +29,7 @@ pub fn unpremultiply(color: Color32) -> Color32 {
 /// **Caller must supply straight (non-premultiplied) RGB.**
 /// Calling this on an already-premultiplied pixel will darken colors again.
 #[inline(always)]
-pub fn premultiply(color: Color32) -> Color32 {
+pub const fn premultiply(color: Color32) -> Color32 {
     let alpha = color.a();
 
     // Fully opaque — no change needed
@@ -72,7 +72,7 @@ pub fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
 
     // Blend one channel: dest * inverse_alpha, rounded
     #[inline(always)]
-    fn blend_channel(destination_channel: u32, inverse_alpha: u32) -> u32 {
+    const fn blend_channel(destination_channel: u32, inverse_alpha: u32) -> u32 {
         (destination_channel * inverse_alpha + 128) >> 8
     }
 
@@ -127,7 +127,7 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
 
             // Load bottom layer (index 0) pixels into SIMD accumulators
             let bottom_layer = layers[0];
-            let bottom_pixel_0 = bottom_layer[pixel_base + 0].to_array();
+            let bottom_pixel_0 = bottom_layer[pixel_base].to_array();
             let bottom_pixel_1 = bottom_layer[pixel_base + 1].to_array();
             let bottom_pixel_2 = bottom_layer[pixel_base + 2].to_array();
             let bottom_pixel_3 = bottom_layer[pixel_base + 3].to_array();
@@ -159,7 +159,7 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
 
             // Blend remaining layers (1..) on top of accumulators
             for &layer_slice in &layers[1..] {
-                let top_pixel_0 = layer_slice[pixel_base + 0].to_array();
+                let top_pixel_0 = layer_slice[pixel_base].to_array();
                 let top_pixel_1 = layer_slice[pixel_base + 1].to_array();
                 let top_pixel_2 = layer_slice[pixel_base + 2].to_array();
                 let top_pixel_3 = layer_slice[pixel_base + 3].to_array();

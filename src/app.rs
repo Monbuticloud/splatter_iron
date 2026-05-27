@@ -9,9 +9,9 @@ use directories::ProjectDirs;
 use chrono::Local;
 
 // --- App identity constants ---
-pub(crate) const APP_QUALIFIER: &str = "com";
-pub(crate) const APP_ORG: &str = "Monbuticloud";
-pub(crate) const APP_NAME: &str = "SplatterIron";
+pub const APP_QUALIFIER: &str = "com";
+pub const APP_ORG: &str = "Monbuticloud";
+pub const APP_NAME: &str = "SplatterIron";
 
 // --- Canvas & save file constants ---
 const MAX_STROKE_STACK: usize = 1000;
@@ -54,13 +54,13 @@ const IMPORT_EXTENSIONS: &[&str] = &[
     "ff",
 ];
 
-pub(crate) struct ExportInfo {
+pub struct ExportInfo {
     pub extensions: &'static [&'static str],
     pub fmt: image::ImageFormat,
 }
 
 /// Lookup table for all supported export formats.
-pub(crate) const EXPORT_FORMATS: &[(&str, ExportInfo)] = &[
+pub const EXPORT_FORMATS: &[(&str, ExportInfo)] = &[
     ("AVIF", ExportInfo { extensions: &["avif"], fmt: image::ImageFormat::Avif }),
     ("PNG", ExportInfo { extensions: &["png"], fmt: image::ImageFormat::Png }),
     ("JPEG", ExportInfo { extensions: &["jpg", "jpeg"], fmt: image::ImageFormat::Jpeg }),
@@ -85,7 +85,7 @@ pub(crate) const EXPORT_FORMATS: &[(&str, ExportInfo)] = &[
 /// A file-dialog action queued for execution on a background thread.
 /// The result is received via channel at the start of a future frame.
 #[derive(Clone, Copy)]
-pub(crate) enum PendingFileAction {
+pub enum PendingFileAction {
     Load,
     Save,
     Import,
@@ -93,18 +93,18 @@ pub(crate) enum PendingFileAction {
 }
 
 /// Message sent back from the file-dialog thread to the UI thread.
-pub(crate) enum DialogResult {
+pub enum DialogResult {
     Picked(PathBuf),
 }
 
 /// Distinguishes an autosave from a manual save in the async save pipeline.
-pub(crate) enum SaveKind {
+pub enum SaveKind {
     Autosave,
     ManualSave(PathBuf),
 }
 
 /// Result sent back via channel when an async save completes.
-pub(crate) enum SaveResult {
+pub enum SaveResult {
     /// Autosave finished (path is logged, nothing to update in app state).
     Autosave,
     /// Manual save finished — store the path.
@@ -262,11 +262,8 @@ impl MyApp {
         while let Ok(result) = self.dialog_receiver.try_recv() {
             match result {
                 DialogResult::Picked(path) => {
-                    let pending = match self.pending_file_action.take() {
-                        Some(a) => a,
-                        None => {
-                            continue;
-                        }
+                    let Some(pending) = self.pending_file_action.take() else {
+                        continue;
                     };
                     match pending {
                         PendingFileAction::Save => {
@@ -444,7 +441,7 @@ impl Default for MyApp {
             savefile_path: String::new(),
             canvas,
             render_state: RenderState::IdleThrottled,
-            current_tool: CurrentTool::SquareTool,
+            current_tool: CurrentTool::Square,
             current_color: Color32::from_rgba_premultiplied(255, 255, 255, 255),
             current_layer: 0,
             radius: 100,
