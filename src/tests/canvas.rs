@@ -41,6 +41,7 @@ fn draw_square_fills_region() {
     );
 }
 
+/// Pixels outside the square region should remain transparent.
 #[test]
 fn draw_square_leaves_outside_unchanged() {
     let mut canvas = small_canvas();
