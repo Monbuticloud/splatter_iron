@@ -143,6 +143,7 @@ fn replace_canvas_resets_state() {
     assert!(!undo.can_undo());
 }
 
+/// Verify that the output_rgba buffer starts empty and the pixel count is correct.
 #[test]
 fn render_to_texture_allocates_output() {
     let mut doc = small_document();
