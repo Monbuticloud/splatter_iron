@@ -8,7 +8,7 @@ use crate::canvas::{ self, CurrentTool, RenderState };
 
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
-const WARM_DURATION_MS: u64 = 550;
+const ACTIVE_DURATION_MS: u64 = 550;
 
 impl MyApp {
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
@@ -127,7 +127,7 @@ impl MyApp {
             if response.hovered() {
                 self.pending_layer_for_deletion = None;
                 self.render_state = RenderState::ActiveWake(
-                    Duration::from_millis(WARM_DURATION_MS)
+                    Duration::from_millis(ACTIVE_DURATION_MS)
                 );
             }
 
