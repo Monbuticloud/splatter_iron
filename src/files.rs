@@ -10,6 +10,11 @@ use crate::pixel::{ premultiply, unpremultiply, F32_COLOR_MAX };
 const COMPRESSION_LEVEL: i32 = 10;
 const JPEG_QUALITY: u8 = 95;
 
+/// Read the raw bytes of a file from disk.
+///
+/// # Errors
+///
+/// Returns `std::io::Error` if the file cannot be read (e.g. not found, permission denied).
 pub fn load_data_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
     std::fs::read(path)
 }
