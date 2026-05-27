@@ -25,8 +25,7 @@ impl MyApp {
     /// Process mouse interaction on the canvas texture.
     ///
     /// Handles brush preview rendering, context menu (Import/Export As/Save As),
-    /// and drawing strokes with the current tool (Square/SquareEraser) on drag.
-    /// Circle and CircleEraser tools are not yet implemented (`todo!()`).
+    /// and drawing strokes with the current tool on drag.
     /// Updates the undo history and marks the document as dirty.
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
         if let Some(tex) = &self.doc.canvas.rendered_layers {
@@ -76,7 +75,8 @@ impl MyApp {
                 }
             });
 
-            // Brush preview: semi-transparent filled square + outline at cursor
+            // Brush preview: outline at cursor (circle outline for circle tools,
+            // semi-transparent filled rect + outline for square tools)
             if self.tools.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
                     let local = hover_pos - response.rect.min;
                     let uv = egui::vec2(
@@ -84,63 +84,85 @@ impl MyApp {
                         local.y / response.rect.height()
                     );
 
-                    let half_radius = self.tools.radius;
                     let pixel_x = (uv.x * (self.doc.canvas.width as f32)).floor() as u32;
                     let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
 
-                    let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
-                    let preview_end_x =
-                        ((pixel_x + half_radius).min(self.doc.canvas.width - 1) as f32) + 1.0;
-                    let preview_start_y = pixel_y.saturating_sub(half_radius) as f32;
-                    let preview_end_y =
-                        ((pixel_y + half_radius).min(self.doc.canvas.height - 1) as f32) + 1.0;
+                    match self.tools.current_tool {
+                        CurrentTool::Circle | CurrentTool::CircleEraser => {
+                            let center_screen_x =
+                                response.rect.min.x +
+                                (pixel_x as f32) * (draw_size.x / (self.doc.canvas.width as f32));
+                            let center_screen_y =
+                                response.rect.min.y +
+                                (pixel_y as f32) * (draw_size.y / (self.doc.canvas.height as f32));
+                            let screen_radius =
+                                (self.tools.radius as f32) *
+                                (draw_size.x / (self.doc.canvas.width as f32));
 
-                    // Map to screen space using the scale factor
-                    let screen_x =
-                        response.rect.min.x +
-                        preview_start_x * (draw_size.x / (self.doc.canvas.width as f32));
-                    let screen_y =
-                        response.rect.min.y +
-                        preview_start_y * (draw_size.y / (self.doc.canvas.height as f32));
-                    let screen_w =
-                        (preview_end_x - preview_start_x) *
-                        (draw_size.x / (self.doc.canvas.width as f32));
-                    let screen_h =
-                        (preview_end_y - preview_start_y) *
-                        (draw_size.y / (self.doc.canvas.height as f32));
+                            ui.painter().circle_stroke(
+                                Pos2::new(center_screen_x, center_screen_y),
+                                screen_radius,
+                                egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tools.current_color),
+                            );
+                        }
+                        _ => {
+                            let half_radius = self.tools.radius;
 
-                    let preview_rect = Rect::from_min_size(
-                        Pos2::new(screen_x, screen_y),
-                        egui::vec2(screen_w, screen_h)
-                    );
+                            let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
+                            let preview_end_x =
+                                ((pixel_x + half_radius).min(self.doc.canvas.width - 1) as f32) + 1.0;
+                            let preview_start_y = pixel_y.saturating_sub(half_radius) as f32;
+                            let preview_end_y =
+                                ((pixel_y + half_radius).min(self.doc.canvas.height - 1) as f32) + 1.0;
 
-                    // Semi-transparent fill (re-premultiply RGB for the reduced alpha)
-                    let brush_alpha = self.tools.current_color.a();
-                    let fill_color = if brush_alpha == 0 {
-                        Color32::TRANSPARENT
-                    } else {
-                        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                        let preview_alpha =
-                            ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
-                        Color32::from_rgba_premultiplied(
-                            ((self.tools.current_color.r() as u32 * preview_alpha as u32)
-                                / brush_alpha as u32) as u8,
-                            ((self.tools.current_color.g() as u32 * preview_alpha as u32)
-                                / brush_alpha as u32) as u8,
-                            ((self.tools.current_color.b() as u32 * preview_alpha as u32)
-                                / brush_alpha as u32) as u8,
-                            preview_alpha,
-                        )
-                    };
-                    ui.painter().rect_filled(preview_rect, 0.0, fill_color);
+                            // Map to screen space using the scale factor
+                            let screen_x =
+                                response.rect.min.x +
+                                preview_start_x * (draw_size.x / (self.doc.canvas.width as f32));
+                            let screen_y =
+                                response.rect.min.y +
+                                preview_start_y * (draw_size.y / (self.doc.canvas.height as f32));
+                            let screen_w =
+                                (preview_end_x - preview_start_x) *
+                                (draw_size.x / (self.doc.canvas.width as f32));
+                            let screen_h =
+                                (preview_end_y - preview_start_y) *
+                                (draw_size.y / (self.doc.canvas.height as f32));
 
-                    // Outline
-                    ui.painter().rect_stroke(
-                        preview_rect,
-                        0.0,
-                        egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tools.current_color),
-                        StrokeKind::Middle
-                    );
+                            let preview_rect = Rect::from_min_size(
+                                Pos2::new(screen_x, screen_y),
+                                egui::vec2(screen_w, screen_h)
+                            );
+
+                            // Semi-transparent fill (re-premultiply RGB for the reduced alpha)
+                            let brush_alpha = self.tools.current_color.a();
+                            let fill_color = if brush_alpha == 0 {
+                                Color32::TRANSPARENT
+                            } else {
+                                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                                let preview_alpha =
+                                    ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
+                                Color32::from_rgba_premultiplied(
+                                    ((self.tools.current_color.r() as u32 * preview_alpha as u32)
+                                        / brush_alpha as u32) as u8,
+                                    ((self.tools.current_color.g() as u32 * preview_alpha as u32)
+                                        / brush_alpha as u32) as u8,
+                                    ((self.tools.current_color.b() as u32 * preview_alpha as u32)
+                                        / brush_alpha as u32) as u8,
+                                    preview_alpha,
+                                )
+                            };
+                            ui.painter().rect_filled(preview_rect, 0.0, fill_color);
+
+                            // Outline
+                            ui.painter().rect_stroke(
+                                preview_rect,
+                                0.0,
+                                egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tools.current_color),
+                                StrokeKind::Middle
+                            );
+                        }
+                    }
                 }
 
             if response.hovered() {
@@ -208,7 +230,38 @@ impl MyApp {
                             }
                         }
                         CurrentTool::Circle => {
-                            todo!();
+                            self.doc.canvas.render_next_frame = true;
+
+                            if self.tools.previous_cursor_position.is_none() {
+                                let stroke = canvas::draw_circle(
+                                    pixel_x,
+                                    pixel_y,
+                                    self.tools.radius,
+                                    &mut self.doc.canvas,
+                                    self.tools.current_color,
+                                    self.doc.current_layer,
+                                );
+                                self.undo.push_undo(stroke);
+                                self.doc.dirty_since_last_autosave = true;
+                            } else if let Some((past_x, past_y)) =
+                                self.tools.previous_cursor_position
+                            {
+                                let stamp = self.undo.next_stamp();
+                                let stroke = canvas::draw_circle_line(
+                                    past_x,
+                                    past_y,
+                                    pixel_x,
+                                    pixel_y,
+                                    self.tools.radius,
+                                    &mut self.doc.canvas,
+                                    self.tools.current_color,
+                                    self.doc.current_layer,
+                                    &mut self.undo.visited,
+                                    stamp,
+                                );
+                                self.undo.push_undo(stroke);
+                                self.doc.dirty_since_last_autosave = true;
+                            }
                         }
                         CurrentTool::SquareEraser => {
                             self.doc.canvas.render_next_frame = true;
@@ -256,7 +309,38 @@ impl MyApp {
                             }
                         }
                         CurrentTool::CircleEraser => {
-                            todo!();
+                            self.doc.canvas.render_next_frame = true;
+
+                            if self.tools.previous_cursor_position.is_none() {
+                                let stroke = canvas::draw_circle(
+                                    pixel_x,
+                                    pixel_y,
+                                    self.tools.radius,
+                                    &mut self.doc.canvas,
+                                    Color32::TRANSPARENT,
+                                    self.doc.current_layer,
+                                );
+                                self.undo.push_undo(stroke);
+                                self.doc.dirty_since_last_autosave = true;
+                            } else if let Some((past_x, past_y)) =
+                                self.tools.previous_cursor_position
+                            {
+                                let stamp = self.undo.next_stamp();
+                                let stroke = canvas::draw_circle_line(
+                                    past_x,
+                                    past_y,
+                                    pixel_x,
+                                    pixel_y,
+                                    self.tools.radius,
+                                    &mut self.doc.canvas,
+                                    Color32::TRANSPARENT,
+                                    self.doc.current_layer,
+                                    &mut self.undo.visited,
+                                    stamp,
+                                );
+                                self.undo.push_undo(stroke);
+                                self.doc.dirty_since_last_autosave = true;
+                            }
                         }
                     }
                     self.tools.previous_tool = Some(self.tools.current_tool);
