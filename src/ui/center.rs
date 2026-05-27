@@ -12,6 +12,10 @@ const PREVIEW_STROKE_WIDTH: f32 = 1.0;
 const ACTIVE_DURATION_MS: u64 = 550;
 
 impl MyApp {
+    /// Render the central canvas panel.
+    ///
+    /// Only renders if a texture handle exists. Delegates interaction
+    /// handling to `handle_canvas_interaction`.
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
         if self.doc.canvas.rendered_layers.is_some() {
             self.handle_canvas_interaction(ui);
