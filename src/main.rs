@@ -48,6 +48,7 @@ unsafe impl GlobalAlloc for TrackingAllocator {
         ptr
     }
 
+    /// Deallocate memory and update the live byte count.
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         unsafe {
             INNER_ALLOCATOR.dealloc(ptr, layout);
