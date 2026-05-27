@@ -13,6 +13,9 @@ pub struct UndoHistory {
 }
 
 impl UndoHistory {
+    /// Create an empty undo history with a visited-stamp buffer of `pixel_count` zeros.
+    ///
+    /// `visited_stamp` starts at 1 so that 0 can serve as the "unvisited" sentinel.
     pub fn new(pixel_count: usize) -> Self {
         Self {
             stroke_stack: VecDeque::new(),
