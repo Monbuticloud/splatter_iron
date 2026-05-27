@@ -71,8 +71,8 @@ pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
 /// (e.g. from `Canvas::output_rgba`). For JPEG the alpha channel is blended
 /// against a white background; for other formats straight alpha is preserved.
 ///
-/// Supports 17 formats: AVIF, PNG, JPEG, WebP, GIF, TIFF, TGA, ICO, PNM,
-/// QOI, OpenEXR, HDR, and Farbfeld.
+/// Supports 17 formats: `AVIF`, `PNG`, `JPEG`, `WebP`, `GIF`, `TIFF`, `TGA`, `ICO`, `PNM`,
+/// `QOI`, `OpenEXR`, `HDR`, and `Farbfeld`.
 ///
 /// # Errors
 ///
