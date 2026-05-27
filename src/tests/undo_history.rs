@@ -110,6 +110,7 @@ fn undo_redo_multi_step() {
     assert_eq!(canvas.pixels[0].pixels[0], red(), "first stroke back");
 }
 
+/// Clearing history should remove all undo/redo.
 #[test]
 fn clear_resets_history() {
     let mut hist = UndoHistory::new(100);
