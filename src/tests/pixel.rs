@@ -63,6 +63,7 @@ fn unpremultiply_opaque_is_identity() {
     assert_eq!(pixel::unpremultiply(opaque), opaque);
 }
 
+/// Premultiplying a zero-alpha colour should produce `TRANSPARENT`.
 #[test]
 fn premultiply_zero_alpha() {
     let c = Color32::from_rgba_unmultiplied(200, 100, 50, 0);
