@@ -84,6 +84,7 @@ fn draw_square_zero_area_is_noop() {
     );
 }
 
+/// Inverted coordinates (start > end) should produce an empty rect.
 #[test]
 fn draw_square_inverted_coordinates() {
     let mut canvas = small_canvas();
