@@ -93,16 +93,17 @@ pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
     )
 }
 
-/// Blend multiple premultiplied layers into an RGBA u8 output buffer.
+/// Composite multiple premultiplied layers into an RGBA byte buffer.
 ///
-/// Layers are composited bottom-to-top (index 0 = bottommost).
-/// Uses SIMD (`wide::u32x4`) + rayon parallelism to process 4 pixels per task.
-/// No heap allocation, no clones — only stack-local SIMD vectors.
+/// Layers are blended bottom-to-top (index 0 = bottommost).
+/// Uses SIMD (`wide::u32x4`) via rayon for parallel processing of 4-pixel chunks;
+/// remaining pixels are handled with scalar `alpha_blend`.
 ///
 /// # Panics
-/// - If `layers` is empty
-/// - If any layer has a different length from `layers[0]`
-/// - If `output.len() != layers[0].len() * 4`
+///
+/// - If `layers` is empty.
+/// - If any layer has a different length from `layers[0]`.
+/// - If `output.len() != layers[0].len() * 4`.
 #[inline]
 pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
     // Validate inputs
