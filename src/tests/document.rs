@@ -59,6 +59,7 @@ fn delete_layer_removes_correct_index() {
     // The remaining layers should be index 0 and 2 from the original set
 }
 
+/// Deleting the only layer should leave the document with 0 layers.
 #[test]
 fn delete_last_layer_removes_it() {
     let mut doc = small_document();
