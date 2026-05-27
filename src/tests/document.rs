@@ -4,6 +4,7 @@ use crate::canvas::{Canvas, Layer};
 use crate::document::Document;
 use crate::undo_history::UndoHistory;
 
+/// Build a 10×10 single-layer document for use in tests.
 fn small_document() -> Document {
     let canvas = Canvas {
         pixels: vec![Layer {
