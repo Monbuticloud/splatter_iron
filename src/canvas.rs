@@ -15,7 +15,8 @@ pub struct Layer {
     pub pixels: Vec<Color32>,
 }
 
-/// The core canvas data: a list of layers, dimensions, and GPU texture state.
+/// The core canvas data: a list of layers, dimensions, output RGBA buffer,
+/// GPU texture state, and a flag to request re-rendering.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Canvas {
     pub pixels: Vec<Layer>,
