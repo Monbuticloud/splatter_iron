@@ -22,8 +22,11 @@ pub struct RunSegment {
 
 const RLE_SHORT_RUN_THRESHOLD: u32 = 8;
 
-/// Compress a captured run of pixels: if uniform and long enough,
-/// store as `All(color)` instead of a full `Vec`.
+/// Compress a contiguous run of pixel data for efficient undo storage.
+///
+/// If the run is longer than 8 pixels and all pixels are identical, stores
+/// a single colour (`BeforePixels::All`) instead of the full vector.
+/// Short or non-uniform runs store the full `Vec<Color32>`.
 pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
     let len = pixels.len() as u32;
     if len < RLE_SHORT_RUN_THRESHOLD {
