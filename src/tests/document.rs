@@ -115,6 +115,7 @@ fn select_layer_updates_current() {
     assert_eq!(doc.current_layer, 1);
 }
 
+/// Replacing the canvas should reset save path, dirty flag, and undo history.
 #[test]
 fn replace_canvas_resets_state() {
     let mut doc = small_document();
