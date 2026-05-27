@@ -10,14 +10,14 @@ fn channels_close(a: Color32, b: Color32, max_diff: u8) -> bool {
         a.a().abs_diff(b.a()) <= max_diff
 }
 
-/// Premultiplying an opaque colour should return it unchanged.
+/// Premultiplying an opaque color should return it unchanged.
 #[test]
 fn premultiply_opaque_is_identity() {
     let opaque = Color32::from_rgba_premultiplied(200, 100, 50, 255);
     assert_eq!(pixel::premultiply(opaque), opaque);
 }
 
-/// Premultiplying a fully transparent colour should return `TRANSPARENT`.
+/// Premultiplying a fully transparent color should return `TRANSPARENT`.
 #[test]
 fn premultiply_transparent_is_unchanged() {
     assert_eq!(pixel::premultiply(Color32::TRANSPARENT), Color32::TRANSPARENT);
@@ -56,14 +56,14 @@ fn premultiply_unpremultiply_roundtrip_close() {
     assert!(channels_close(premul, back, 1), "premul={premul:?} back={back:?}");
 }
 
-/// Unpremultiplying an opaque colour should return it unchanged.
+/// Unpremultiplying an opaque color should return it unchanged.
 #[test]
 fn unpremultiply_opaque_is_identity() {
     let opaque = Color32::from_rgba_unmultiplied(200, 100, 50, 255);
     assert_eq!(pixel::unpremultiply(opaque), opaque);
 }
 
-/// Premultiplying a zero-alpha colour should produce `TRANSPARENT`.
+/// Premultiplying a zero-alpha color should produce `TRANSPARENT`.
 #[test]
 fn premultiply_zero_alpha() {
     let c = Color32::from_rgba_unmultiplied(200, 100, 50, 0);
