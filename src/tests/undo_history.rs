@@ -30,6 +30,7 @@ fn new_history_has_no_undo_no_redo() {
     assert!(!hist.can_redo());
 }
 
+/// Pushing a record should enable undo but not redo.
 #[test]
 fn push_undo_makes_undo_available() {
     let mut hist = UndoHistory::new(100);
