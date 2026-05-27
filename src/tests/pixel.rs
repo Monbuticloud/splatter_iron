@@ -76,6 +76,7 @@ fn unpremultiply_zero_alpha_stays_transparent() {
     assert_eq!(pixel::unpremultiply(Color32::TRANSPARENT), Color32::TRANSPARENT);
 }
 
+/// Blending an opaque source over transparent should yield the source.
 #[test]
 fn alpha_blend_opaque_over_transparent() {
     let src = Color32::from_rgba_premultiplied(255, 0, 0, 255);
