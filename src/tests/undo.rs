@@ -125,6 +125,7 @@ fn empty_square_produces_empty_runs() {
     }
 }
 
+/// Multiple undo/redo operations should compose correctly.
 #[test]
 fn multiple_undos_stack() {
     let mut canvas = small_white_canvas();
