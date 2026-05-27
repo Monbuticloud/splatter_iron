@@ -50,6 +50,9 @@ impl UndoHistory {
         self.visited_stamp
     }
 
+    /// Grow the visited buffer to accommodate a new canvas size if needed.
+    ///
+    /// Resets visited_stamp to 1 after resizing.
     pub fn resize_visited(&mut self, pixel_count: usize) {
         if self.visited.len() < pixel_count {
             self.visited = vec![0u32; pixel_count];
