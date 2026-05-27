@@ -22,6 +22,7 @@ fn compress_run_uniform_long_returns_all() {
     assert_eq!(c, Color32::GREEN);
 }
 
+/// Long non-uniform runs should be stored as `BeforePixels::Many`.
 #[test]
 fn compress_run_mixed_long_returns_many() {
     let pixels: Vec<Color32> = (0..20)
