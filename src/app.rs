@@ -122,7 +122,7 @@ impl MyApp {
     pub fn push_stroke(&mut self, mut stroke: Stroke) {
         self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
         if self.stroke_stack.len() >= MAX_STROKE_STACK {
-            let mut recycled = self.stroke_stack.pop_front().unwrap();
+            let mut recycled = self.stroke_stack.pop_front().expect("stroke_stack: MAX_STROKE_STACK guard ensures non-empty");
             recycled.layer_index = stroke.layer_index;
             recycled.width = stroke.width;
             std::mem::swap(&mut recycled.pixels, &mut stroke.pixels);
