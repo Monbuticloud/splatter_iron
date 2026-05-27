@@ -146,7 +146,7 @@ impl MyApp {
                         CurrentTool::SquareTool => {
                             self.canvas.render_next_frame = true;
 
-                            if self.previous_tool != Some(CurrentTool::SquareTool) {
+                            if self.previous_cursor_position.is_none() {
                                 let half_radius = self.radius >> 1;
 
                                 let start_x = pixel_x.saturating_sub(half_radius);
@@ -189,7 +189,7 @@ impl MyApp {
                         CurrentTool::SquareEraserTool => {
                             self.canvas.render_next_frame = true;
 
-                            if self.previous_tool != Some(CurrentTool::SquareEraserTool) {
+                            if self.previous_cursor_position.is_none() {
                                 let half_radius = self.radius >> 1;
 
                                 let start_x = pixel_x.saturating_sub(half_radius);
