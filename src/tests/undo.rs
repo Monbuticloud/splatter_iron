@@ -42,6 +42,7 @@ fn compress_run_threshold_boundary() {
     assert_eq!(len, 8, "len 8 should be short → Many");
 }
 
+/// A uniform run just above the threshold should be stored as `All`.
 #[test]
 fn compress_run_just_above_threshold() {
     let uniform = vec![Color32::RED; 9];
