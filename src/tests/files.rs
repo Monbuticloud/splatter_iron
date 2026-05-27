@@ -161,6 +161,7 @@ fn export_png_semi_transparent() {
     assert_eq!(imported.pixels.len(), 1);
 }
 
+/// Loading non-zstd data should return an error.
 #[test]
 fn invalid_data_returns_error() {
     let bad = b"this is not zstd-compressed json";
