@@ -48,8 +48,11 @@ impl Default for Canvas {
     }
 }
 
-/// Internal: fill a rectangle without capturing undo data.
-/// `pixels` is the mutable slice for the layer, `width` is canvas width.
+/// Fill a rectangular region of a pixel slice without capturing undo data.
+///
+/// # Panics
+///
+/// Panics if `pixels` is not large enough to cover the rectangle at the given width.
 #[inline]
 fn fill_square_impl(
     pixels: &mut [Color32],
