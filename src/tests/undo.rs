@@ -70,6 +70,7 @@ fn red() -> Color32 {
     Color32::from_rgba_premultiplied(255, 0, 0, 255)
 }
 
+/// `undo_apply` should restore the pixels that were present before the stroke.
 #[test]
 fn undo_apply_restores_before_pixels() {
     let mut canvas = small_white_canvas();
