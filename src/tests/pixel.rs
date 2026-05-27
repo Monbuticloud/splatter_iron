@@ -47,6 +47,7 @@ fn unpremultiply_produces_straight_alpha() {
     assert_eq!(straight.a(), 128);
 }
 
+/// Round-tripping `premultiply(unpremultiply(c))` should stay within ±1 per channel.
 #[test]
 fn premultiply_unpremultiply_roundtrip_close() {
     let premul = Color32::from_rgba_premultiplied(64, 32, 16, 128);
