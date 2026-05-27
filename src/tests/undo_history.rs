@@ -83,6 +83,7 @@ fn push_undo_truncates_redo_stack() {
     assert!(!hist.can_redo(), "new stroke should clear redo");
 }
 
+/// Undoing and redoing multiple steps at once should work correctly.
 #[test]
 fn undo_redo_multi_step() {
     let mut hist = UndoHistory::new(100);
