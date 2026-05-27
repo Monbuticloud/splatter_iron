@@ -40,6 +40,10 @@ impl Document {
         self.canvas.render_next_frame = true;
     }
 
+    /// Blend all layers into `output_rgba` and upload the result to a GPU texture.
+    ///
+    /// Allocates `output_rgba` if its size does not match. Creates or updates the
+    /// `rendered_layers` texture handle for display in the egui UI.
     pub fn render_to_texture(&mut self, ui: &egui::Ui) {
         let pixel_count = (self.canvas.width as usize) * (self.canvas.height as usize);
 
