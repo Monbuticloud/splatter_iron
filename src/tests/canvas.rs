@@ -58,6 +58,7 @@ fn draw_square_leaves_outside_unchanged() {
     );
 }
 
+/// Coordinates exceeding canvas bounds should be clamped.
 #[test]
 fn draw_square_clamps_to_canvas_bounds() {
     let mut canvas = small_canvas();
