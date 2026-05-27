@@ -8,7 +8,6 @@ use crate::undo::{ self, Stroke, StrokePixel };
 
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
-const DEFAULT_LAYER_PIXELS: u32 = 3 * 1_000_000;
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Layer {
@@ -32,8 +31,9 @@ pub struct Canvas {
 
 impl Default for Canvas {
     fn default() -> Self {
+        let pixel_count = (DEFAULT_WIDTH * DEFAULT_HEIGHT) as usize;
         let layers: Vec<Layer> = vec![Layer {
-            pixels: vec![Color32::TRANSPARENT; DEFAULT_LAYER_PIXELS as usize],
+            pixels: vec![Color32::TRANSPARENT; pixel_count],
         }];
         Self {
             pixels: layers,
