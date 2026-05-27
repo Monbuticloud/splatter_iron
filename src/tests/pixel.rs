@@ -17,6 +17,7 @@ fn premultiply_opaque_is_identity() {
     assert_eq!(pixel::premultiply(opaque), opaque);
 }
 
+/// Premultiplying a fully transparent colour should return `TRANSPARENT`.
 #[test]
 fn premultiply_transparent_is_unchanged() {
     assert_eq!(pixel::premultiply(Color32::TRANSPARENT), Color32::TRANSPARENT);
