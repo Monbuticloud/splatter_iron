@@ -298,6 +298,8 @@ pub enum CurrentTool {
     CircleEraser,
 }
 
+/// Desired rendering cadence: active wake for fast repaints,
+/// idle throttled for slow repaints, or frozen when viewport is unfocused.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum RenderState {
     ActiveWake(Duration), // Full rendering
