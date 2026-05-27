@@ -11,12 +11,8 @@ const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
 
 /// Convert a premultiplied-alpha color to straight alpha.
 ///
-/// This is the inverse of [`premultiply`]. For fully opaque or fully transparent
-/// pixels the color is returned unchanged.
-///
-/// # Panics
-///
-/// Panics if alpha is 0 (division by zero) — caller should guard against this.
+/// This is the inverse of [`premultiply`]. Fully opaque or fully transparent
+/// pixels are returned unchanged (alpha == 0 never causes division by zero).
 #[inline]
 pub fn unpremultiply(color: Color32) -> Color32 {
     let alpha = color.a();
