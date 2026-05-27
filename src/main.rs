@@ -83,6 +83,7 @@ unsafe impl GlobalAlloc for TrackingAllocator {
 #[global_allocator]
 static GLOBAL: TrackingAllocator = TrackingAllocator;
 
+/// Return the number of bytes currently allocated through the tracking allocator.
 pub fn allocated_bytes() -> usize {
     ALLOCATED.load(Ordering::Relaxed)
 }
