@@ -140,9 +140,13 @@ pub fn draw_square(
     }
 }
 
-/// Stamp all unique pixel indices touched by a brush line from `(start_x, start_y)` to `(end_x, end_y)`.
-/// Uses Bresenham line algorithm + visited-stamp dedup.
-/// After this, scanning `visited` for `stamp` yields sorted unique positions.
+/// Mark all pixel indices covered by a brush stroke line in the `visited` buffer.
+///
+/// Uses the Bresenham line algorithm to step along the line and stamps every
+/// pixel within the brush radius (a square brush). The caller can later scan
+/// `visited` for values matching `stamp` to get deduplicated, sorted positions.
+///
+/// Clamps brush bounds to canvas dimensions.
 #[inline]
 fn stamp_line_positions(
     start_x: u32,
