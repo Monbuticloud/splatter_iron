@@ -120,6 +120,7 @@ fn blend_layers_single_layer_copy() {
     }
 }
 
+/// With two opaque layers, the top layer should fully occlude the bottom.
 #[test]
 fn blend_layers_two_layers_opaque() {
     let pixel_count = 12;
