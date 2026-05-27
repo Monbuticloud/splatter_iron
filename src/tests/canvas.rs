@@ -72,6 +72,7 @@ fn draw_square_clamps_to_canvas_bounds() {
     );
 }
 
+/// A zero-area square should not modify any pixels.
 #[test]
 fn draw_square_zero_area_is_noop() {
     let mut canvas = small_canvas();
