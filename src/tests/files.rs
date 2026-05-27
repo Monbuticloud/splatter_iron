@@ -44,6 +44,7 @@ fn save_load_roundtrip_identical_pixels() {
     }
 }
 
+/// Save and load a 2-layer canvas; both layers should survive the roundtrip.
 #[test]
 fn save_load_roundtrip_multi_layer() {
     let mut canvas = Canvas {
