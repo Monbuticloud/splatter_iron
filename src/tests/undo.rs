@@ -113,6 +113,7 @@ fn undo_record_is_runs_variant() {
     assert!(matches!(record, UndoRecord::Run { .. }));
 }
 
+/// A zero-area square should produce an undo record with no runs.
 #[test]
 fn empty_square_produces_empty_runs() {
     let mut canvas = small_white_canvas();
