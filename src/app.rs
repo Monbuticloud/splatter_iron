@@ -90,14 +90,23 @@ pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
 
 /// UI-level state that doesn't belong to any domain module.
 pub struct UIState {
+    /// Current rendering cadence (active, throttled, or frozen).
     pub render_state: RenderState,
+    /// Total time elapsed since app start.
     pub time_elapsed: Duration,
+    /// Number of autosaves performed this session.
     pub times_autosaved: u32,
+    /// Wall-clock time when the last autosave completed.
     pub last_autosave_time: Duration,
+    /// Error messages displayed in the error overlay.
     pub displayed_error_list: Vec<String>,
+    /// Layer index pending deletion confirmation, if any.
     pub pending_layer_for_deletion: Option<usize>,
+    /// Whether the "New Canvas" dialog is currently open.
     pub show_new_canvas_dialog: bool,
+    /// Width input for the new canvas dialog (in pixels).
     pub new_canvas_width: u32,
+    /// Height input for the new canvas dialog (in pixels).
     pub new_canvas_height: u32,
 }
 
@@ -136,10 +145,15 @@ pub struct GpuTexture {
 /// Top-level application state owned by eframe: document, tools, undo history,
 /// file IO, UI state, and optional wgpu GPU texture.
 pub struct MyApp {
+    /// The edited canvas document (layers, dimensions, save path).
     pub document: Document,
+    /// Active tool configuration (tool, color, radius, alpha overlay).
     pub tool_configuration: ToolConfiguration,
+    /// Undo/redo history stack with visited-stamp deduplication.
     pub undo: UndoHistory,
+    /// Async file dialog and save operation manager.
     pub file_io: FileIO,
+    /// UI render state, autosave tracking, and dialog flags.
     pub ui: UIState,
     /// GPU texture for partial-upload rendering.
     ///
