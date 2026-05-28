@@ -8,10 +8,19 @@ use crate::app::MyApp;
 const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=1000;
 const BRUSH_RADIUS_RANGE: std::ops::RangeInclusive<u32> = 0..=350;
 
+/// Internal message enum for deferring layer UI actions.
+///
+/// Used to collect layer operations (delete, move up/down, select) during
+/// egui widget iteration and apply them afterwards, avoiding borrowing
+/// conflicts with the `Document` layer stack.
 enum LayerAction {
+    /// Delete the layer at the given index.
     Delete(usize),
+    /// Move the layer at the given index up one position.
     MoveUp(usize),
+    /// Move the layer at the given index down one position.
     MoveDown(usize),
+    /// Select the layer at the given index as the current layer.
     Select(usize),
 }
 
