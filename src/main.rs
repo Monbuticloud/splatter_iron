@@ -11,6 +11,7 @@ mod document;
 mod file_io;
 mod files;
 mod pixel;
+mod stamp_library;
 mod tool_configuration;
 mod tools;
 mod ui;
