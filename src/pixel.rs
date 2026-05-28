@@ -1,3 +1,8 @@
+//! Premultiplied-alpha pixel blending with SIMD (`wide::u32x4`) and
+//! rayon parallelism.  Provides `blend_layers` (full canvas) and
+//! `blend_region` (dirty-rect) compositing, plus `premultiply`,
+//! `unpremultiply`, and `alpha_blend` primitives.
+
 use bytemuck::cast_slice;
 use eframe::egui::Color32;
 use rayon::prelude::*;
