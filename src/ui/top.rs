@@ -19,6 +19,37 @@ impl MyApp {
     /// * `ui` — The egui UI handle.
     pub fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
         let mut is_quitting = false;
+
+        // Keyboard shortcuts (checked every frame regardless of button hover).
+        if ui.input(|i| i.key_pressed(egui::Key::N) && i.modifiers.command && !i.modifiers.shift) {
+            self.ui.show_new_canvas_dialog = true;
+        }
+        if ui.input(|i| i.key_pressed(egui::Key::O) && i.modifiers.command && !i.modifiers.shift) {
+            self.file_io.queue_file_action(PendingFileAction::Load);
+            ui.ctx().request_repaint();
+        }
+        if ui.input(|i| i.key_pressed(egui::Key::S) && i.modifiers.command && !i.modifiers.shift) {
+            if self.document.savefile_path.is_empty() {
+                self.file_io.queue_file_action(PendingFileAction::Save);
+            } else {
+                self.file_io.save_to_current_path(&self.document);
+            }
+            ui.ctx().request_repaint();
+        }
+        if ui.input(|i| i.key_pressed(egui::Key::S) && i.modifiers.command && i.modifiers.shift) {
+            self.file_io.queue_file_action(PendingFileAction::Save);
+            ui.ctx().request_repaint();
+        }
+        if ui.input(|i| i.key_pressed(egui::Key::I) && i.modifiers.command && !i.modifiers.shift) {
+            self.file_io.queue_file_action(PendingFileAction::Import);
+            ui.ctx().request_repaint();
+        }
+        if ui.input(|i| i.key_pressed(egui::Key::E) && i.modifiers.command && !i.modifiers.shift) {
+            // Default export: PNG (index 1).
+            self.file_io.queue_file_action(PendingFileAction::Export(1));
+            ui.ctx().request_repaint();
+        }
+
         ui.horizontal(|ui| {
             // Save
             if ui.button("Save").clicked() {
