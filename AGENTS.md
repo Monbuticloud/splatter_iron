@@ -18,23 +18,23 @@
 
 ## Source Layout
 
-| File | Role |
-|------|------|
-| `src/main.rs` | Entry point, `TrackingAllocator` (MiMalloc), `eframe::run_native`, `allocated_bytes()` |
-| `src/app.rs` | `MyApp` (wires `Document` + `ToolConfig` + `UndoHistory` + `FileIO` + `UIState`), app identity constants, `ExportInfo`, `EXPORT_FORMATS` (13 formats), `UIState` (render state / autosave tracking), async autosave loop (2min interval) |
-| `src/document.rs` | `Document` — wraps `Canvas` + save path + current layer; `render_to_texture()`, `add_layer()` / `delete_layer()` / `move_layer_up/down()` / `select_layer()`, `replace_canvas()` |
-| `src/canvas.rs` | `Canvas`, `Layer`, `draw_square()`, `draw_square_line()`, `draw_circle()`, `draw_circle_line()`, `CurrentTool` enum (`Square` / `Circle` / `SquareEraser` / `CircleEraser`), `RenderState` enum (`ActiveWake` / `IdleThrottled` / `UnfocusedFrozen`) |
-| `src/pixel.rs` | SIMD (`wide::u32x4`) + rayon parallel blend, premultiplied-alpha, `blend_layers()`, `unpremultiply()` |
-| `src/files.rs` | `save_canvas()`, `load_canvas()`, `compress_canvas()`, `decompress_canvas()`, `save_compressed()`, `export_as_image()` — zstd-compressed JSON → `.splattercanvas` |
-| `src/file_io.rs` | `FileIO` (async file dialogs via mpsc channels), `PendingFileAction`, `SaveKind`, `SaveResult`, autosave to `{data_dir}/autosaves/` |
-| `src/undo.rs` | `UndoRecord`, `StrokePixel`, `RunSegment`, `BeforePixels` — per-pixel stroke apply / undo / redo application |
-| `src/undo_history.rs` | `UndoHistory` — undo/redo stack with visited-stamp dedup (`MAX_STROKE_STACK = 1000`), `push_undo()` / `undo_step()` / `redo_step()` / `next_stamp()` |
-| `src/tool_config.rs` | `ToolConfig` — `current_tool`, `current_color`, `radius`, `show_brush_preview`, `undo_redo_steps_multiplier` |
-| `src/ui/` | 4 panels: `top` (file menu), `left` (tools), `right` (color / layers), `center` (canvas) |
-| `src/tools/` | `bucket_fill` (scanline flood-fill), `circle_brush` (midpoint-circle span fill), `square_brush` (rectangular fill) — all return `UndoRecord`, used by `Document`/`Canvas` |
-| `src/tests/` | 9 test modules: `pixel`, `undo`, `undo_history`, `canvas`, `document`, `files`, `bucket_fill`, `circle_brush`, `square_brush` |
-| `docs/src/` | Mirrors `src/` structure; one `.md` per `.rs` file for post-implementation documentation |
-| `docs/architecture/` | Numbered ADRs for deliberate architecture decisions |
+| File                  | Role                                                                                                                                                                                                                                                 |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main.rs`         | Entry point, `TrackingAllocator` (MiMalloc), `eframe::run_native`, `allocated_bytes()`                                                                                                                                                               |
+| `src/app.rs`          | `MyApp` (wires `Document` + `ToolConfig` + `UndoHistory` + `FileIO` + `UIState`), app identity constants, `ExportInfo`, `EXPORT_FORMATS` (13 formats), `UIState` (render state / autosave tracking), async autosave loop (2min interval)             |
+| `src/document.rs`     | `Document` — wraps `Canvas` + save path + current layer; `render_to_texture()`, `add_layer()` / `delete_layer()` / `move_layer_up/down()` / `select_layer()`, `replace_canvas()`                                                                     |
+| `src/canvas.rs`       | `Canvas`, `Layer`, `draw_square()`, `draw_square_line()`, `draw_circle()`, `draw_circle_line()`, `CurrentTool` enum (`Square` / `Circle` / `SquareEraser` / `CircleEraser`), `RenderState` enum (`ActiveWake` / `IdleThrottled` / `UnfocusedFrozen`) |
+| `src/pixel.rs`        | SIMD (`wide::u32x4`) + rayon parallel blend, premultiplied-alpha, `blend_layers()`, `unpremultiply()`                                                                                                                                                |
+| `src/files.rs`        | `save_canvas()`, `load_canvas()`, `compress_canvas()`, `decompress_canvas()`, `save_compressed()`, `export_as_image()` — zstd-compressed JSON → `.splattercanvas`                                                                                    |
+| `src/file_io.rs`      | `FileIO` (async file dialogs via mpsc channels), `PendingFileAction`, `SaveKind`, `SaveResult`, autosave to `{data_dir}/autosaves/`                                                                                                                  |
+| `src/undo.rs`         | `UndoRecord`, `StrokePixel`, `RunSegment`, `BeforePixels` — per-pixel stroke apply / undo / redo application                                                                                                                                         |
+| `src/undo_history.rs` | `UndoHistory` — undo/redo stack with visited-stamp dedup (`MAX_STROKE_STACK = 1000`), `push_undo()` / `undo_step()` / `redo_step()` / `next_stamp()`                                                                                                 |
+| `src/tool_config.rs`  | `ToolConfig` — `current_tool`, `current_color`, `radius`, `show_brush_preview`, `undo_redo_steps_multiplier`                                                                                                                                         |
+| `src/ui/`             | 4 panels: `top` (file menu), `left` (tools), `right` (color / layers), `center` (canvas)                                                                                                                                                             |
+| `src/tools/`          | `bucket_fill` (scanline flood-fill), `circle_brush` (midpoint-circle span fill), `square_brush` (rectangular fill) — all return `UndoRecord`, used by `Document`/`Canvas`                                                                            |
+| `src/tests/`          | 9 test modules: `pixel`, `undo`, `undo_history`, `canvas`, `document`, `files`, `bucket_fill`, `circle_brush`, `square_brush`                                                                                                                        |
+| `docs/src/`           | Mirrors `src/` structure; one `.md` per `.rs` file for post-implementation documentation                                                                                                                                                             |
+| `docs/architecture/`  | Numbered ADRs for deliberate architecture decisions                                                                                                                                                                                                  |
 
 ## Notable
 
@@ -49,32 +49,32 @@
 
 ### Core Values
 
-| Value | How codebase reflects it |
-|---|---|
-| **Performance first** | SIMD (`wide::u32x4`) + rayon parallel blend, `MiMalloc` with `TrackingAllocator`, release `lto="fat"`, `opt-level=3`, zstdmt compression |
+| Value                            | How codebase reflects it                                                                                                                            |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Performance first**            | SIMD (`wide::u32x4`) + rayon parallel blend, `MiMalloc` with `TrackingAllocator`, release `lto="fat"`, `opt-level=3`, zstdmt compression            |
 | **Correctness over convenience** | `unwrap_used` = `warn`, `overflow-checks = true`, exhaustive `match` on `CurrentTool`/`RenderState`, no `unwrap()`/`expect()` without justification |
-| **UX polish** | Brush preview with alpha overlay, `RenderState` (ActiveWake/IdleThrottled/UnfocusedFrozen), 2-min autosave, 13 export formats |
-| **Cross-platform** | `egui`/`eframe` UI, `rfd` native dialogs, `directories` for paths, Zig `compiler_rt` in `lib/` for cross-compilation |
-| **Deterministic builds** | Nightly pinned via `rustup override`, `build-std = ["std"]`, `Cargo.lock` committed |
-| **Accessibility** | `egui` accessible by default (OS theme, keyboard nav, screen reader), thoughtful contrast in tool icons |
-| **Layering & composability** | `Document` owns layer stack, `UndoHistory` per-pixel visited-stamp dedup, `blend_layers()` premultiplied-alpha compositing |
+| **UX polish**                    | Brush preview with alpha overlay, `RenderState` (ActiveWake/IdleThrottled/UnfocusedFrozen), 2-min autosave, 13 export formats                       |
+| **Cross-platform**               | `egui`/`eframe` UI, `rfd` native dialogs, `directories` for paths, Zig `compiler_rt` in `lib/` for cross-compilation                                |
+| **Deterministic builds**         | Nightly pinned via `rustup override`, `build-std = ["std"]`, `Cargo.lock` committed                                                                 |
+| **Accessibility**                | `egui` accessible by default (OS theme, keyboard nav, screen reader), thoughtful contrast in tool icons                                             |
+| **Layering & composability**     | `Document` owns layer stack, `UndoHistory` per-pixel visited-stamp dedup, `blend_layers()` premultiplied-alpha compositing                          |
 
 ### Git Standards
 
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
 - **🔬 Atomic commits — zero tolerance for batches**: One function → one commit. One docstring → one commit. One test → one commit. A struct definition and its `impl` block are separate commits. Adding a function and its docstring in the same snapshot is strictly forbidden — split them. A commit that touches more than one of these categories is a violation:
-    - function / method body
-    - docstring (inline or `docs/src/`)
-    - test function
-    - struct / enum / trait definition
-    - use / import statement
-    - config file (Cargo.toml, clippy.toml, etc.)
-    - any other logical unit that stands alone
+  - function / method body
+  - docstring (inline or `docs/src/`)
+  - test function
+  - struct / enum / trait definition
+  - use / import statement
+  - config file (Cargo.toml, clippy.toml, etc.)
+  - any other logical unit that stands alone
 - **Self-imposed rule**: If a commit message contains any of the words `and`, `also`, or `fixup` (case‑insensitive, whole word), the commit is too large. Split it.
 - **Pre‑commit self‑audit (mandatory)**: Before every `git commit`, you MUST:
-    1. Read the full commit message and verify it contains none of the forbidden words.
-    2. Run `git diff --cached --stat` and mentally confirm all changes belong to exactly one category from the list above.
-    3. If either check fails, abort the commit and split the changes.
+  1. Read the full commit message and verify it contains none of the forbidden words.
+  2. Run `git diff --cached --stat` and mentally confirm all changes belong to exactly one category from the list above.
+  3. If either check fails, abort the commit and split the changes.
 - **Always commit**: Commit after every logical micro‑unit, regardless of whether the user asked. Do not wait. There is no change too small to commit.
 - **Token economy does not apply to commits** — you are explicitly forbidden from batching commits to save tokens. Granularity is more important than verbosity.
 
