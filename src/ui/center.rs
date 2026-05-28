@@ -4,8 +4,13 @@ use eframe::egui::{ self, Color32, Rect, Pos2 };
 use egui::epaint::StrokeKind;
 
 use crate::app::MyApp;
-use crate::canvas::{ self, CurrentTool, RenderState };
+use crate::canvas::{ CurrentTool, RenderState };
 use crate::file_io::PendingFileAction;
+use crate::tools::{
+    bucket_fill::draw_bucket_fill,
+    circle_brush::{ draw_circle, draw_circle_line },
+    square_brush::{ draw_square, draw_square_line },
+};
 
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
@@ -195,7 +200,7 @@ impl MyApp {
                     let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
 
                     self.doc.canvas.render_next_frame = true;
-                    let stroke = canvas::draw_bucket_fill(
+                    let stroke = draw_bucket_fill(
                         pixel_x,
                         pixel_y,
                         &mut self.doc.canvas,
@@ -227,7 +232,7 @@ impl MyApp {
                                 if self.tools.alpha_overlay {
                                     self.undo.advance_drag_stamp();
                                     let stamp = self.undo.next_stamp();
-                                    let stroke = canvas::draw_square_line(
+                                    let stroke = draw_square_line(
                                         pixel_x,
                                         pixel_y,
                                         pixel_x,
@@ -255,7 +260,7 @@ impl MyApp {
                                     let end_y = (pixel_y + half_radius)
                                         .min(self.doc.canvas.height - 1);
 
-                                    let stroke = canvas::draw_square(
+                                    let stroke = draw_square(
                                         start_x,
                                         start_y,
                                         end_x,
@@ -272,7 +277,7 @@ impl MyApp {
                                 self.tools.previous_cursor_position
                             {
                                 let stamp = self.undo.next_stamp();
-                                let stroke = canvas::draw_square_line(
+                                let stroke = draw_square_line(
                                     past_x,
                                     past_y,
                                     pixel_x,
@@ -298,7 +303,7 @@ impl MyApp {
                                 if self.tools.alpha_overlay {
                                     self.undo.advance_drag_stamp();
                                     let stamp = self.undo.next_stamp();
-                                    let stroke = canvas::draw_circle_line(
+                                    let stroke = draw_circle_line(
                                         pixel_x,
                                         pixel_y,
                                         pixel_x,
@@ -316,7 +321,7 @@ impl MyApp {
                                     self.undo.push_undo(stroke);
                                     self.doc.dirty_since_last_autosave = true;
                                 } else {
-                                    let stroke = canvas::draw_circle(
+                                    let stroke = draw_circle(
                                         pixel_x,
                                         pixel_y,
                                         self.tools.radius,
@@ -332,7 +337,7 @@ impl MyApp {
                                 self.tools.previous_cursor_position
                             {
                                 let stamp = self.undo.next_stamp();
-                                let stroke = canvas::draw_circle_line(
+                                let stroke = draw_circle_line(
                                     past_x,
                                     past_y,
                                     pixel_x,
@@ -365,7 +370,7 @@ impl MyApp {
                                 let end_y = (pixel_y + half_radius)
                                     .min(self.doc.canvas.height - 1);
 
-                        let stroke = canvas::draw_square(
+                        let stroke = draw_square(
                             start_x,
                             start_y,
                             end_x,
@@ -381,7 +386,7 @@ impl MyApp {
                                 self.tools.previous_cursor_position
                             {
                                 let stamp = self.undo.next_stamp();
-                                let stroke = canvas::draw_square_line(
+                                let stroke = draw_square_line(
                                     past_x,
                                     past_y,
                                     pixel_x,
@@ -404,7 +409,7 @@ impl MyApp {
                             self.doc.canvas.render_next_frame = true;
 
                             if self.tools.previous_cursor_position.is_none() {
-                                let stroke = canvas::draw_circle(
+                                let stroke = draw_circle(
                                     pixel_x,
                                     pixel_y,
                                     self.tools.radius,
@@ -419,7 +424,7 @@ impl MyApp {
                                 self.tools.previous_cursor_position
                             {
                                 let stamp = self.undo.next_stamp();
-                                let stroke = canvas::draw_circle_line(
+                                let stroke = draw_circle_line(
                                     past_x,
                                     past_y,
                                     pixel_x,
@@ -440,7 +445,7 @@ impl MyApp {
                         }
                         CurrentTool::BucketFill => {
                             self.doc.canvas.render_next_frame = true;
-                            let stroke = canvas::draw_bucket_fill(
+                            let stroke = draw_bucket_fill(
                                 pixel_x,
                                 pixel_y,
                                 &mut self.doc.canvas,

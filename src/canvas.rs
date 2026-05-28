@@ -3,10 +3,6 @@ use std::time::Duration;
 use eframe::egui::{ Color32, TextureHandle };
 use serde::{ Deserialize, Serialize };
 
-pub use crate::tools::bucket_fill::draw_bucket_fill;
-pub use crate::tools::circle_brush::{ draw_circle, draw_circle_line };
-pub use crate::tools::square_brush::{ draw_square, draw_square_line };
-
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
 
