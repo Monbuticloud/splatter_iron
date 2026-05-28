@@ -78,6 +78,14 @@
 - **Always commit**: Commit after every logical micro‑unit, regardless of whether the user asked. Do not wait. There is no change too small to commit.
 - **Token economy does not apply to commits** — you are explicitly forbidden from batching commits to save tokens. Granularity is more important than verbosity.
 
+### Commit Checklist (run before every commit)
+
+- [ ] The commit message does not contain `and`, `also`, or `fixup`.
+- [ ] The staged diff touches only **one** of: function body, docstring, test, struct/enum/trait definition, import, config, or other single logical unit.
+- [ ] I have run `cargo test && cargo clippy` (if Rust files are staged).
+- [ ] I have not bundled "a function + its docstring" or "a struct + its `impl`" into one commit.
+- [ ] The commit message uses a conventional prefix (`feat:`, `fix:`, etc.).
+
 ### Code Standards
 
 - **Clippy**: `all` + `pedantic` + `nursery` + `unwrap_used` → `warn`. Zero `#[allow(clippy::…)]` without an inline comment explaining why. Current codebase has exactly one exception (`cast_possible_truncation` + `cast_sign_loss` in `src/ui/center.rs` brush preview alpha).
