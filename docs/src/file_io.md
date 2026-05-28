@@ -83,3 +83,21 @@ Constructor that stores the two channel pairs and the app data directory. Initia
 - `app_local_data_directory` — Base path under which the `autosaves/` subdirectory is created.
 
 **Returns:** A fully initialized `FileIO` with no pending action. The channels are typically created by the caller (e.g. `app.rs`) via `mpsc::channel()` before passing them into `new`.
+
+### `FileIO::queue_file_action`
+
+```rust
+pub fn queue_file_action(&mut self, action: PendingFileAction)
+```
+
+Queues a file dialog action and spawns it on a background thread. Dispatched via `rfd` to avoid macOS winit re-entrancy panics. The method stores the action in `pending_file_action` and spawns a thread that opens the appropriate native dialog. When the user picks a file (or cancels), the result is sent back via `dialog_sender`.
+
+**Parameters:**
+- `action` — The dialog action to perform. Each variant opens a different dialog:
+  - `Load` — Open dialog, `.splattercanvas` filter, calls `rfd::FileDialog::pick_file()`.
+  - `Save` — Save dialog, `.splattercanvas` filter, default name `canvas.splattercanvas`, calls `save_file()`.
+  - `Import` — Open dialog, image extensions filter (`IMPORT_EXTENSIONS`), calls `pick_file()`.
+  - `Export(index)` — Save dialog, export format filter from `EXPORT_FORMATS[index]`, default name `export.{ext}`, calls `save_file()`.
+
+If the user cancels the dialog, no result is sent and `pending_file_action` remains set (consumed only when a `DialogResult` arrives).
+
