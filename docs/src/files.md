@@ -191,3 +191,42 @@ Returns an error if:
 - The chosen image encoder fails.
 - `format` is not one of the 13 supported variants (the `_` arm bails with
   `"Unsupported export format"`).
+
+---
+
+## `import_image_as_canvas(path)`
+
+Decodes an image file into a single-layer `Canvas`. Supports any raster format
+that the `image` crate can decode (PNG, JPEG, WebP, GIF, BMP, TIFF, etc.).
+
+The resulting canvas has one layer containing premultiplied-alpha RGBA pixels at
+the image's native resolution. `render_next_frame` is set to `true` so the
+compositor produces the initial blend.
+
+### Signature
+
+```rust
+pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas>
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `path` | `&Path` | Path to the image file to import |
+
+### Pipeline
+
+1. `image::open(path)` decodes the file into a `DynamicImage`.
+2. `to_rgba8()` converts to a flat RGBA buffer (even for grayscale/CMYK
+   sources).
+3. Each pixel is converted from straight RGBA to premultiplied-alpha via
+   `premultiply()`.
+4. A single-layer `Canvas` is constructed with the premultiplied pixel data.
+
+### Errors
+
+Returns an error if:
+- The file cannot be read.
+- The image format is not recognised by the `image` crate.
+- The file is corrupted or truncated.
