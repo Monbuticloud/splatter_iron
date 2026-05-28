@@ -5,7 +5,7 @@ use chrono::Local;
 
 use crate::app::{
     CANVAS_EXT, EXPORT_FORMATS, FILE_FILTER_NAME, DEFAULT_CANVAS_NAME,
-    IMPORT_EXTENSIONS, UIState,
+    IMPORT_EXTENSIONS,
 };
 use crate::document::Document;
 use crate::undo_history::UndoHistory;
@@ -158,7 +158,7 @@ impl FileIO {
         &mut self,
         doc: &mut Document,
         undo: &mut UndoHistory,
-        ui: &mut UIState
+        error_list: &mut Vec<String>,
     ) {
         while let Ok(result) = self.dialog_receiver.try_recv() {
             match result {
@@ -185,12 +185,12 @@ impl FileIO {
                                             doc.replace_canvas(canvas, undo);
                                             doc.savefile_path = save_path;
                                         }
-                                        Err(e) => ui.displayed_error_list.push(
+                                        Err(e) => error_list.push(
                                             format!("Failed to load canvas: {e}")
                                         ),
                                     }
                                 }
-                                Err(e) => ui.displayed_error_list.push(
+                                Err(e) => error_list.push(
                                     format!("Failed to read file: {e}")
                                 ),
                             }
@@ -198,7 +198,7 @@ impl FileIO {
                         PendingFileAction::Import => {
                             match crate::files::import_image_as_canvas(&path) {
                                 Ok(canvas) => doc.replace_canvas(canvas, undo),
-                                Err(e) => ui.displayed_error_list.push(
+                                Err(e) => error_list.push(
                                     format!("Import failed: {e}")
                                 ),
                             }
@@ -226,7 +226,7 @@ impl FileIO {
                                     info.fmt
                                 )
                             {
-                                ui.displayed_error_list.push(
+                                error_list.push(
                                     format!("Export failed: {e}")
                                 );
                             }
@@ -282,8 +282,8 @@ impl FileIO {
     /// Poll for completed async save results and update state accordingly.
     ///
     /// Marks the document as clean after autosave, sets the save path
-    /// after manual save, and pushes errors to `ui.displayed_error_list`.
-    pub fn poll_save_results(&self, doc: &mut Document, ui: &mut UIState) {
+    /// after manual save, and pushes errors to the error list.
+    pub fn poll_save_results(&self, doc: &mut Document, error_list: &mut Vec<String>) {
         while let Ok(result) = self.save_result_receiver.try_recv() {
             match result {
                 SaveResult::Autosave => {
@@ -294,7 +294,7 @@ impl FileIO {
                     doc.canvas.render_next_frame = true;
                 }
                 SaveResult::Failed(msg) => {
-                    ui.displayed_error_list.push(format!("Save failed: {msg}"));
+                    error_list.push(format!("Save failed: {msg}"));
                 }
             }
         }

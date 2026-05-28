@@ -243,8 +243,8 @@ impl eframe::App for MyApp {
     /// When the viewport is unfocused, sleeps to reduce CPU usage.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         // Poll dialog results and save results before anything else.
-        self.file_io.poll_dialog_results(&mut self.doc, &mut self.undo, &mut self.ui);
-        self.file_io.poll_save_results(&mut self.doc, &mut self.ui);
+        self.file_io.poll_dialog_results(&mut self.doc, &mut self.undo, &mut self.ui.displayed_error_list);
+        self.file_io.poll_save_results(&mut self.doc, &mut self.ui.displayed_error_list);
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MS));
