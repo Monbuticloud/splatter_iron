@@ -1,3 +1,7 @@
+//! Undo-record types ([`UndoRecord`], [`RunSegment`], [`BeforePixels`])
+//! and their application to the canvas ([`undo_apply`], [`redo_apply`]).
+//! Run-length compression (`compress_run`) reduces storage for uniform spans.
+
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
