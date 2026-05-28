@@ -163,3 +163,23 @@ fn bucket_fill_returns_undo() {
         _ => panic!("expected UndoRecord::Run"),
     }
 }
+
+// --------------------------------------------------
+//  Regression: semi-transparent premultiplied color
+// --------------------------------------------------
+
+/// Semi-transparent premultiplied fill must be stored as-is (not double-premultiplied).
+#[test]
+fn bucket_fill_preserves_premultiplied_semi_transparent() {
+    let mut canvas = small_canvas();
+    let semi = Color32::from_rgba_premultiplied(128, 64, 32, 128);
+    // Fill entire canvas with semi-transparent color
+    bucket_fill::draw_bucket_fill(0, 0, &mut canvas, semi, 0, false);
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        semi,
+        "pixel should store exact premultiplied color"
+    );
+    assert_eq!(canvas.pixels[0].pixels[0].r(), 128, "r must not be darkend");
+    assert_eq!(canvas.pixels[0].pixels[9 * 10 + 9], semi, "far corner also preserved");
+}

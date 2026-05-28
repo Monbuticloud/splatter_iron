@@ -198,3 +198,47 @@ fn blend_region_empty_layers_no_panic() {
     pixel::blend_region(&[], &mut output, 4, 0, 0, 3, 3);
     // Should not panic, output unchanged
 }
+
+// --------------------------------------------------
+//  Regression: double-premultiply guard
+// --------------------------------------------------
+
+/// Calling `premultiply` on an already-premultiplied color darkens it further.
+///
+/// This documents the semantics: `premultiply` assumes straight-alpha input.
+/// Passing a premultiplied `Color32` (as returned by egui's color picker) into
+/// `premultiply` is a bug — the color becomes ~50% darker at 50% alpha.
+#[test]
+fn premultiply_of_premultiplied_darkens_again() {
+    // Simulate a 50% transparent red from the color picker (already premultiplied).
+    let already_premul = Color32::from_rgba_premultiplied(128, 0, 0, 128);
+    // Buggy double-premultiply.
+    let double_premul = pixel::premultiply(already_premul);
+    assert_eq!(already_premul.r(), 128, "correct premul: r=128");
+    assert_eq!(double_premul.r(), 64, "double-premul darkens to r=64");
+    assert_eq!(double_premul.g(), 0);
+    assert_eq!(double_premul.b(), 0);
+    assert_eq!(double_premul.a(), 128);
+}
+
+/// `premultiply` on an already-premultiplied `Color32` darkens it further.
+///
+/// `Color32` always stores premultiplied bytes internally (per egui's docs),
+/// so `Color32::from_rgba_unmultiplied` converts straight→premultiplied at
+/// construction. Calling `premultiply` on the result is a double application
+/// of alpha scaling — the same bug pattern as the original brush code.
+#[test]
+fn premultiply_on_premul_storage_darkens() {
+    // From straight alpha: egui stores as premultiplied internally.
+    let color = Color32::from_rgba_unmultiplied(255, 0, 0, 128);
+    // Color32 stores the premultiplied result, so .r() returns 128*128/255 ≈ 64.
+    let stored_r = color.r();
+    // Calling premultiply on the already-premultiplied storage darkens it.
+    let doubled = pixel::premultiply(color);
+    assert!(
+        doubled.r() < stored_r,
+        "premultiply on premultiplied Color32 darkens: {} -> {}",
+        stored_r,
+        doubled.r()
+    );
+}

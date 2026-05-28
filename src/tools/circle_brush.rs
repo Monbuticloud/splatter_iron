@@ -1,7 +1,6 @@
 use eframe::egui::{self, Color32};
 
 use crate::canvas::{ Canvas, DirtyRect };
-use crate::pixel::premultiply;
 use crate::undo::{ compress_run, RunSegment, UndoRecord };
 
 /// Fill a circular region without capturing undo data.
@@ -96,8 +95,6 @@ pub fn draw_circle(
     layer: usize,
     alpha_overlay: bool,
 ) -> UndoRecord {
-    let color = premultiply(color);
-
     let width = canvas.width as usize;
     let height = canvas.height;
 
@@ -318,7 +315,6 @@ pub fn draw_circle_line(
     drag_processed: &mut [u32],
     drag_stamp_val: u32,
 ) -> UndoRecord {
-    let color = premultiply(color);
     let width = canvas.width as usize;
     let height = canvas.height;
 

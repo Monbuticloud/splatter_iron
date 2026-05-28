@@ -181,3 +181,35 @@ fn draw_circle_line_clamps_to_canvas() {
     circle_brush::draw_circle_line(0, 0, 0, 0, 5, &mut canvas, red(), 0, &mut visited, 1, false, &mut dp, 0);
     assert_eq!(canvas.pixels[0].pixels[0], red(), "corner colored");
 }
+
+// --------------------------------------------------
+//  Regression: semi-transparent premultiplied color
+// --------------------------------------------------
+
+/// Semi-transparent premultiplied circle must be stored as-is (not double-premultiplied).
+#[test]
+fn draw_circle_preserves_premultiplied_semi_transparent() {
+    let mut canvas = small_canvas();
+    let semi = Color32::from_rgba_premultiplied(128, 64, 32, 128);
+    circle_brush::draw_circle(5, 5, 1, &mut canvas, semi, 0, false);
+    assert_eq!(
+        canvas.pixels[0].pixels[5 * 10 + 5],
+        semi,
+        "center pixel should store exact premultiplied color"
+    );
+    assert_eq!(canvas.pixels[0].pixels[5 * 10 + 5].r(), 128, "r must not be darkend");
+}
+
+/// Semi-transparent premultiplied circle line must be stored as-is.
+#[test]
+fn draw_circle_line_preserves_premultiplied_semi_transparent() {
+    let mut canvas = small_canvas();
+    let mut visited = vec![0u32; 100];
+    let mut dp = Vec::new();
+    let semi = Color32::from_rgba_premultiplied(128, 64, 32, 128);
+    circle_brush::draw_circle_line(
+        2, 5, 7, 5, 0, &mut canvas, semi, 0, &mut visited, 1, false, &mut dp, 0,
+    );
+    assert_eq!(canvas.pixels[0].pixels[5 * 10 + 2], semi);
+    assert_eq!(canvas.pixels[0].pixels[5 * 10 + 2].r(), 128);
+}

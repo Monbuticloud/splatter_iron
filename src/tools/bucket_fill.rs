@@ -1,7 +1,6 @@
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, DirtyRect };
-use crate::pixel::premultiply;
 use crate::undo::{ compress_run, RunSegment, UndoRecord };
 
 /// Fill a contiguous region of matching color starting from the seed point.
@@ -25,7 +24,6 @@ pub fn draw_bucket_fill(
     layer: usize,
     alpha_overlay: bool,
 ) -> UndoRecord {
-    let color = premultiply(color);
     let width = canvas.width as usize;
     let height = canvas.height;
 
