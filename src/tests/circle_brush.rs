@@ -1,3 +1,9 @@
+//! Tests for midpoint-circle span fill (`circle_brush::draw_circle`)
+//! and interpolated stamp-line (`circle_brush::draw_circle_line`).
+//!
+//! Verifies correct pixel coverage, alpha overlay, and
+//! drag-stamp deduplication across connected strokes.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, Layer };
