@@ -99,3 +99,30 @@ When `visited_stamp` wraps past `u32::MAX` back to 0, the visited buffer is zero
 ### Returns
 
 A `u32` stamp value guaranteed to differ from all previous stamps (modulo overflow). Callers use this to initialize `visited_stamp` before emitting a stroke's pixels.
+
+## `impl UndoHistory::resize_visited(pixel_count)`
+
+Grows the visited-stamp and drag-processed buffers to accommodate a new canvas size. Called when the canvas dimensions change (e.g., canvas resize, new document) to ensure the undo system's internal buffers match the pixel array length.
+
+### Grow-only policy
+
+Buffers are only resized if the requested `pixel_count` exceeds the current buffer length. Shrinking is not performed — if the canvas shrinks, the extra entries at the end of the buffer are simply unused. This avoids unnecessary deallocation-reallocation cycles when the user resizes back and forth.
+
+### Post-resize state
+
+| Field | After `resize_visited` |
+|-------|------------------------|
+| `visited` | New `vec![0u32; pixel_count]` if grown; unchanged otherwise |
+| `drag_processed` | New `vec![0u32; pixel_count]` if grown; unchanged otherwise |
+| `visited_stamp` | Reset to `1` unconditionally |
+| `drag_stamp_value` | Reset to `1` unconditionally |
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `pixel_count` | `usize` | Required number of entries in the visited buffers |
+
+### Why unconditional stamp reset
+
+Even when buffers don't need growing (canvas shrank), the stamp is reset to 1. This is a correctness measure: stall stamps from the prior canvas are invalid for the new pixel geometry, and reusing them could cause false deduplication at overlapping index ranges.
