@@ -23,3 +23,17 @@ the platform data directory, and launches the eframe GUI event loop.
 
 The function returns `eframe::Result`, which propagates any error from window
 creation (missing display server, unsupported OpenGL version, etc.).
+
+## `static GLOBAL: MiMalloc`
+
+`MiMalloc` is the global allocator for the entire process, installed via
+`#[global_allocator]`. It replaces the system allocator with Microsoft's
+[mimalloc](https://github.com/microsoft/mimalloc), a compact general-purpose
+allocator that provides predictable low-latency allocations and good
+multi-threaded scaling.
+
+SplatterIron allocates and frees canvas pixel buffers (up to millions of
+`Color32` values) on every brush stroke and during undo/redo, so allocator
+performance directly impacts frame latency. MiMalloc was chosen over the
+system allocator for its measured throughput advantage in this allocation
+pattern.
