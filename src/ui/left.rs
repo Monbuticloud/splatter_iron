@@ -7,7 +7,7 @@ use eframe::egui;
 use crate::app::MyApp;
 use crate::canvas::CurrentTool;
 use crate::file_io::PendingFileAction;
-use crate::stamp_library::StampSampling;
+use crate::stamp_library::{ StampSampling, StampTintMode };
 
 /// Selection highlight color for active tool buttons.
 const SELECTED_TOOL_COLOR: egui::Color32 = egui::Color32::from_rgb(128, 0, 128);
@@ -127,13 +127,13 @@ impl MyApp {
                 ui.label("Tint mode:");
                 ui.horizontal(|ui| {
                     ui.selectable_value(
-                        &mut self.tool_configuration.stamp_tinted,
-                        false,
+                        &mut self.tool_configuration.stamp_tint_mode,
+                        StampTintMode::Original,
                         "Original",
                     );
                     ui.selectable_value(
-                        &mut self.tool_configuration.stamp_tinted,
-                        true,
+                        &mut self.tool_configuration.stamp_tint_mode,
+                        StampTintMode::Tinted,
                         "Tinted",
                     );
                 });

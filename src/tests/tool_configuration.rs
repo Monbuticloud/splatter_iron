@@ -6,6 +6,7 @@
 use eframe::egui::Color32;
 
 use crate::canvas::CurrentTool;
+use crate::stamp_library::StampTintMode;
 use crate::tool_configuration::ToolConfiguration;
 
 /// The default tool configuration should use the Square tool, white color,
@@ -35,6 +36,9 @@ fn default_optional_fields_are_none() {
         config.previous_cursor_position.is_none(),
         "no cursor position"
     );
-    assert!(config.stamp_image.is_none(), "no stamp image");
-    assert!(!config.stamp_tinted, "stamp tinted defaults to false");
+    assert_eq!(
+        config.stamp_tint_mode,
+        StampTintMode::Original,
+        "stamp tint mode defaults to Original"
+    );
 }

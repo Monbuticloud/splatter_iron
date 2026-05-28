@@ -450,7 +450,7 @@ impl MyApp {
                         &entry.pixels, entry.width, entry.height,
                         self.tool_configuration.radius, &mut self.document.canvas,
                         color, self.document.current_layer,
-                        alpha_overlay, self.tool_configuration.stamp_tinted,
+                        alpha_overlay, self.tool_configuration.stamp_tint_mode == crate::stamp_library::StampTintMode::Tinted,
                         self.tool_configuration.stamp_sampling,
                         &mut self.undo.drag_processed,
                         self.undo.drag_stamp_value,
