@@ -111,3 +111,29 @@ avoiding a hardware division or a 257-multiply.
 don't align to the 4-pixel SIMD boundary in `blend_pixel_range`. It is also
 the primitive used by `blend_region`'s row-by-row processing (which runs
 sequentially since dirty rects are typically small).
+
+## `fn blend_layers()`
+
+```rust
+pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8])
+```
+
+Composite multiple premultiplied layers into a single RGBA byte buffer.
+Layers are blended bottom-to-top: index 0 is the bottommost layer, and the
+last index is composited on top.
+
+This is the primary compositing entry point used for full-canvas rendering
+(e.g. after an undo/redo, after loading a file, or when the `RenderState`
+is `ActiveWake`).
+
+**Performance:** The function delegates to `blend_pixel_range` with
+`parallel = true`. When there are 64 or more 4-pixel SIMD chunks (i.e. 256
+or more pixels), the blend is parallelised via rayon across the SIMD-aligned
+body. Scalar head/tail pixels (those before/after the 4-aligned boundary)
+and the single-layer fast path (`memcpy`) run on the calling thread.
+
+**Panics:**
+- If `layers` is empty.
+- (debug builds only) If any layer has a different pixel count from
+  `layers[0]`.
+- If `output.len() != layers[0].len() * 4`.
