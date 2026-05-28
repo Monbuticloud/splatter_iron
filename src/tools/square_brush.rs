@@ -1,3 +1,7 @@
+//! Rectangular fill brush: [`draw_square`] for single stamps and
+//! [`draw_square_line`] for Bresenham-interpolated strokes with
+//! visited-stamp deduplication.
+
 use eframe::egui::{self, Color32};
 
 use crate::canvas::{ Canvas, DirtyRect };
