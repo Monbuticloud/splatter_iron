@@ -10,8 +10,8 @@ keywords = ["paint", "drawing", "graphics", "performance", "egui"]
 [dependencies]
 directories = "6.0.0"
 anyhow = "1.0.102"
-ecolor = { version = "0.34.2", features = ["serde", "bytemuck"] }
-eframe = { version = "0.34.2", features = ["serde"] }
+ecolor = { version = "0.34.3", features = ["serde", "bytemuck"] }
+eframe = { version = "0.34.3", features = ["serde"] }
 serde = { version = "1.0.228", features = ["derive"] }
 # tokio = { version = "1.52.3", features = ["rt-multi-thread", "fs"] }
 rayon = "1.5.3"
