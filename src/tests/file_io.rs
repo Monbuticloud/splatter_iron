@@ -1,3 +1,8 @@
+//! Tests for `FileIO` — async file-dialog glue, save/load orchestration.
+//!
+//! Exercises the mpsc-channel plumbing that connects UI events to
+//! background file dialogs without hanging the frame loop.
+
 use std::path::PathBuf;
 use std::sync::mpsc;
 
