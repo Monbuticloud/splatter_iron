@@ -89,3 +89,31 @@ Returns an error if:
 - The thread count is set to `available_parallelism()`, falling back to 1 if
   the system cannot report the number of hardware threads.
 - The encoder uses zstdmt for multi-threaded compression.
+
+---
+
+## `save_bytes_to_file(data, path)`
+
+Writes pre-serialised bytes to a file. A pure I/O operation with no
+computation. Designed to be called on the main thread (or any thread) after
+`save_canvas_to_bytes` has completed compression on a background thread.
+
+### Signature
+
+```rust
+pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()>
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `data` | `&[u8]` | Pre-serialised bytes (e.g. from `save_canvas_to_bytes`) |
+| `path` | `&Path` | Destination file path |
+
+### Errors
+
+Returns an error if:
+- The parent directory does not exist.
+- The calling process lacks write permission.
+- An I/O error occurs during the write (disk full, etc.).
