@@ -145,6 +145,20 @@ The width is computed as `max_x - min_x + 1` when non-empty, which yields the in
 
 The column count of the bounding box, or `0` for an empty rect.
 
+## `DirtyRect::height`
+
+```rust
+pub const fn height(&self) -> u32
+```
+
+Returns the number of rows in the dirty rectangle, or `0` if the rect is empty.
+
+The height is computed as `max_y - min_y + 1` when non-empty, yielding the inclusive count of pixel rows. An empty rect returns `0` without arithmetic on sentinel bounds.
+
+### Returns
+
+The row count of the bounding box, or `0` for an empty rect.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
