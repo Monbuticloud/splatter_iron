@@ -60,6 +60,30 @@ for pixel in stroke_pixels {
 }
 ```
 
+## `DirtyRect::extend`
+
+```rust
+pub fn extend(&mut self, x: u32, y: u32)
+```
+
+Expands the dirty rectangle to include the pixel at `(x, y)`. If the rect is currently empty (inverted bounds), the first `extend` call sets all four bounds to `(x, y)`, producing a single-pixel rect. Every subsequent call expands the bounding box outward as needed.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `x` | `u32` | Column index of the affected pixel |
+| `y` | `u32` | Row index of the affected pixel |
+
+### Performance
+
+Runs in O(1) — a constant number of `min`/`max` comparisons. This is called once per modified pixel during brush stroke application and undo/redo, making its efficiency critical.
+
+### Invariants
+
+- After any number of `extend` calls, the rect is either still empty (if never called) or `min_x <= max_x && min_y <= max_y`.
+- A pixel within the rect after `extend(x, y)` is guaranteed to be included in the final uploaded texture region, so no visual artifacts from partial updates.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
