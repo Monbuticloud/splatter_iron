@@ -23,3 +23,16 @@ pipeline to compute byte-level offsets from pixel indices, most notably in
 
 The value 4 corresponds to the `Color32` representation in egui, which stores
 packed RGBA as `[u8; 4]`.
+
+## `F32_COLOR_MAX`
+
+```rust
+pub const F32_COLOR_MAX: f32 = 255.0;
+```
+
+The maximum `u8` colour channel value, expressed as `f32`, used when
+normalising byte-level channels into floating-point computations. This
+constant documents the implicit conversion factor between the `[0, 255]`
+`u8` domain and the `[0.0, 1.0]` `f32` domain used in colour-space
+conversions or when interfacing with APIs that accept floating-point
+colour components.
