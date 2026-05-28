@@ -60,6 +60,7 @@
 - Subject ≤50 chars; body explains "why" when the commit message alone is insufficient.
 - **🔬 Ultra-granular commits**: One function → one commit. One docstring → one commit. One test → one commit. Another test → another commit. No commit shall contain more than one logical change. **There is no such thing as too many commits.** A commit that fixes a function and adds its docstring in the same snapshot is *too big* — split it. If you hesitate whether to commit, commit. Err on the side of granularity always.
 - **Self-imposed rule**: If a commit message contains "and", "also", or "fixup", the commit is too large. Split it.
+- **Always commit**: Commit after every logical change, regardless of whether the user asked. Each function, each docstring, each test gets its own commit. **There is no threshold below which a change is "too small to commit."**
 
 ### Code Standards
 
