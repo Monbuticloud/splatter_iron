@@ -31,3 +31,24 @@ The `alpha_overlay` flag affects how the brush interacts with existing pixels:
 - **Alpha overlay** (`alpha_overlay: true`): The brush color is blended over the existing pixel using premultiplied-alpha compositing. This allows the brushed color to be semi-transparent, letting the underlying image show through.
 
 The distinction matters for undo/redo: opaque strokes can be reapplied with a bulk `fill()`, while alpha-overlay strokes require per-pixel blending, which is handled in `redo_apply`.
+
+## `impl Default for ToolConfiguration`
+
+Provides sensible defaults for the initial application state. Rust's `#[derive(Default)]` is not used because several fields require specific values that differ from typical type defaults (e.g., `Color32` defaults to transparent black, but the initial brush color should be opaque white).
+
+### Default values
+
+| Field | Default | Rationale |
+|-------|---------|-----------|
+| `current_tool` | `CurrentTool::Square` | Square is the simplest and most intuitive default tool for a raster paint application |
+| `current_color` | `Color32::from_rgba_premultiplied(255, 255, 255, 255)` | Opaque white — a neutral starting color that shows clearly against any canvas background |
+| `radius` | `100` | 100 pixels gives a brush large enough to be immediately usable and visible at typical canvas zoom levels |
+| `alpha_overlay` | `false` | Opaque painting is the expected default; users opt into alpha blending consciously |
+| `previous_tool` | `None` | No previous tool exists on startup |
+| `previous_cursor_position` | `None` | No cursor history exists on startup |
+| `show_brush_preview` | `true` | Brush preview provides essential visual feedback on brush position and size |
+| `undo_redo_steps_multiplier` | `1` | One step per scroll tick provides fine-grained control. Users can scroll multiple ticks to undo/redo several steps, with each tick corresponding to exactly one stroke |
+
+### Why manual `Default` instead of derive
+
+The `Color32` type's default is transparent black (`rgba(0, 0, 0, 0)`), which would make the first brush stroke invisible. The `radius` of 0 (default for `u32`) would create a zero-size brush that effectively does nothing. A manual `Default` implementation ensures the application starts in a usable state.
