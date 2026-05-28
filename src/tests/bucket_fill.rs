@@ -1,3 +1,8 @@
+//! Tests for scanline flood-fill (`bucket_fill::draw_bucket_fill`).
+//!
+//! Covers filling from single-pixel and multi-pixel seeds, edge-of-canvas
+//! seeds, fully-saturated canvases, and alpha-overlay mode.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, Layer };
