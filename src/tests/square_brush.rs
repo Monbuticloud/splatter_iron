@@ -1,3 +1,9 @@
+//! Tests for rectangular fill (`square_brush::draw_square`) and
+//! interpolated stamp-line (`square_brush::draw_square_line`).
+//!
+//! Covers exact pixel coverage, alpha-overlay strokes, and
+//! drag-stamp deduplication for connected rectangular brush strokes.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, Layer };
