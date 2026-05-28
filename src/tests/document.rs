@@ -210,3 +210,71 @@ fn blend_to_output_empty_dirty_rect_returns_none() {
     assert!(!document.canvas.render_next_frame);
     assert!(document.canvas.dirty_rect.is_none());
 }
+
+/// Deleting a layer above `current_layer` should leave `current_layer` unchanged.
+#[test]
+fn delete_layer_preserves_current_when_above() {
+    let mut document = small_document();
+    document.add_layer();
+    document.add_layer();
+    document.current_layer = 0;
+    // Delete layer at index 2 (above current_layer 0)
+    document.delete_layer(2);
+    assert_eq!(document.current_layer, 0, "unchanged when deleting above");
+    assert_eq!(document.canvas.pixels.len(), 2);
+}
+
+/// Deleting a layer below `current_layer` should decrement `current_layer`.
+#[test]
+fn delete_layer_decrements_current_when_below() {
+    let mut document = small_document();
+    document.add_layer();
+    document.add_layer();
+    document.current_layer = 2;
+    // Delete layer at index 0 (below current_layer 2)
+    document.delete_layer(0);
+    assert_eq!(
+        document.current_layer, 1,
+        "decremented when deleting below"
+    );
+    assert_eq!(document.canvas.pixels.len(), 2);
+}
+
+/// `add_layer` should set `render_next_frame` to true.
+#[test]
+fn add_layer_sets_render_next_frame() {
+    let mut document = small_document();
+    document.canvas.render_next_frame = false;
+    document.add_layer();
+    assert!(document.canvas.render_next_frame, "add_layer triggers re-render");
+}
+
+/// `delete_layer` should set `render_next_frame` to true.
+#[test]
+fn delete_layer_sets_render_next_frame() {
+    let mut document = small_document();
+    document.canvas.render_next_frame = false;
+    document.add_layer();
+    document.delete_layer(1);
+    assert!(document.canvas.render_next_frame, "delete_layer triggers re-render");
+}
+
+/// `move_layer_up` should set `render_next_frame` to true.
+#[test]
+fn move_layer_up_sets_render_next_frame() {
+    let mut document = small_document();
+    document.add_layer();
+    document.canvas.render_next_frame = false;
+    document.move_layer_up(1);
+    assert!(document.canvas.render_next_frame, "move_layer_up triggers re-render");
+}
+
+/// `move_layer_down` should set `render_next_frame` to true.
+#[test]
+fn move_layer_down_sets_render_next_frame() {
+    let mut document = small_document();
+    document.add_layer();
+    document.canvas.render_next_frame = false;
+    document.move_layer_down(0);
+    assert!(document.canvas.render_next_frame, "move_layer_down triggers re-render");
+}
