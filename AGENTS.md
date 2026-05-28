@@ -12,7 +12,9 @@
 
 - Clippy in `Cargo.toml`: `all`, `pedantic`, `nursery`, `unwrap_used` → `warn`.
 - Rust lints: `unused`, `dead_code`, `unused_imports`, `unused_variables` → `warn`.
-- Check: `cargo clippy`. No `rustfmt.toml` or `clippy.toml` — toolchain defaults used.
+- Check: `cargo clippy`.
+- `clippy.toml`: `msrv = "1.85.0"`, `too-many-arguments-threshold = 9`, custom `disallowed-names`.
+- `rustfmt.toml`: `edition = "2024"`, `max_width = 100`, `imports_granularity = "Item"`, `group_imports = "StdExternalCrate"`.
 
 ## Source Layout
 
