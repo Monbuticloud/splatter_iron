@@ -84,3 +84,30 @@ fn canvas_dirty_rect_default_none() {
     let canvas = Canvas::default();
     assert!(canvas.dirty_rect.is_none());
 }
+
+// --- Canvas::new ---
+
+/// `Canvas::new(width, height)` should set dimensions and create one transparent layer.
+#[test]
+fn canvas_new_sets_dimensions() {
+    let canvas = Canvas::new(42, 24);
+    assert_eq!(canvas.width, 42);
+    assert_eq!(canvas.height, 24);
+    assert_eq!(canvas.pixels.len(), 1);
+    assert_eq!(canvas.pixels[0].pixels.len(), 42 * 24);
+    assert_eq!(canvas.pixels[0].pixels[0], Color32::TRANSPARENT);
+}
+
+/// The default canvas should have `render_next_frame` set to `true`.
+#[test]
+fn default_render_next_frame_is_true() {
+    let canvas = Canvas::default();
+    assert!(canvas.render_next_frame);
+}
+
+/// `Canvas::new` should also set `render_next_frame` to `true`.
+#[test]
+fn canvas_new_render_next_frame_is_true() {
+    let canvas = Canvas::new(10, 10);
+    assert!(canvas.render_next_frame);
+}
