@@ -265,6 +265,36 @@ match tool_config.current_tool {
 
 Eraser variants reuse the same brush primitives as their fill counterparts but write `Color32::TRANSPARENT` as the stroke color.
 
+## `enum RenderState`
+
+```rust
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum RenderState { ... }
+```
+
+Controls the egui repaint cadence to balance responsiveness against power consumption. The render state machine has three levels, each reducing GPU work further when the user is not actively drawing.
+
+### Variants
+
+| Variant | Repaint behaviour | Use case |
+|---------|-------------------|----------|
+| `ActiveWake(Duration)` | Request repaint every frame (via `ctx.request_repaint_after(dur)`). The `Duration` parameter controls the throttle — typically set to `Duration::ZERO` for immediate repaint during active brush strokes. | User is dragging a brush, erasing, or flood-filling. Every frame matters for low-latency cursor feedback. |
+| `IdleThrottled` | No continuous repaint requests. egui will still repaint on input events (mouse move, key press), but no periodic wake-up. | User has stopped drawing but the viewport is focused. Throttling saves battery/CPU without sacrificing responsiveness to the next interaction. |
+| `UnfocusedFrozen` | All GPU work suspended. The viewport (egui window) is not focused. No repaint requests are issued regardless of input. | Viewport lost focus. Zero GPU work until the user refocuses the window. |
+
+### State transitions
+
+The state machine transitions are managed by the [`app`] module's frame handler, which inspects the current tool activity and viewport focus each frame:
+
+```text
+ActiveWake ──(no activity for N frames)──▶ IdleThrottled
+IdleThrottled ──(mouse down / key press)──▶ ActiveWake
+IdleThrottled ──(viewport unfocused)──────▶ UnfocusedFrozen
+UnfocusedFrozen ──(viewport refocused)────▶ IdleThrottled
+```
+
+The `ActiveWake` variant's `Duration` parameter is set from [`ToolConfig::undo_redo_steps_multiplier`] — during fast drawing the throttle duration may be increased slightly to batch repaints and reduce texture upload contention.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
