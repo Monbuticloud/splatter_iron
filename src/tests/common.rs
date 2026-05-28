@@ -1,3 +1,8 @@
+//! Shared test helpers: small canvases, premultiplied-color shorthands.
+//!
+//! Used by all other test modules to reduce boilerplate when constructing
+//! predictable input state.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, Layer };
