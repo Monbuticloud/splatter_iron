@@ -1,3 +1,9 @@
+//! Tests for pixel-blending primitives: `premultiply`, `unpremultiply`,
+//! `alpha_blend`, `blend_layers`, and `blend_region`.
+//!
+//! Confirms correct premultiplied-alpha math, SIMD-accelerated layer
+//! compositing, and partial-region blending.
+
 use eframe::egui::Color32;
 
 use crate::pixel;
