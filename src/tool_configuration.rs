@@ -1,3 +1,6 @@
+//! Current tool, color, brush radius, alpha-overlay toggle, undo/redo step
+//! multiplier, and transient UI interaction state (cursor position, drag).
+
 use eframe::egui::Color32;
 
 use crate::canvas::CurrentTool;
