@@ -78,3 +78,35 @@ pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory)
 - `undo.resize_visited(...)` reallocates the visited buffer to `width × height`
   of the new canvas.
 - `self.canvas.render_next_frame` is set to `true` to force a re-render.
+
+---
+
+## `Document::blend_to_output()`
+
+Blends all layers into the `output_rgba` buffer. When a `dirty_rect` is set,
+only the pixels within that rectangle are recomputed (`blend_region`); otherwise
+the entire canvas is blended from scratch (`blend_layers`).
+
+### Signature
+
+```rust
+pub fn blend_to_output(&mut self) -> Option<(u32, u32, u32, u32)>
+```
+
+### Returns
+
+- `Some((x, y, width, height))` — the bounding box of the region that was
+  blended, usable as a partial upload hint.
+- `None` — the dirty rectangle was empty; no blending was performed.
+
+### Panics
+
+Panics if the underlying blend operation encounters mismatched layer lengths or
+an undersized output buffer. This signals a logic bug in the layer management
+code.
+
+### Side effects
+
+- Resizes `output_rgba` to `width × height × 4` if the dimensions have changed.
+- Sets `render_next_frame = false`.
+- After blending, resets `dirty_rect` to `None`.
