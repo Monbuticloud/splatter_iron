@@ -207,6 +207,29 @@ Panics if `DEFAULT_WIDTH * DEFAULT_HEIGHT` overflows `usize`. For 2000 × 1500 t
 
 The `Default` impl is the primary construction path used by `Document::new()` and by serde's `Default` for deserializing legacy files that omit canvas fields.
 
+## `impl Canvas`
+
+### `Canvas::new`
+
+```rust
+pub fn new(width: u32, height: u32) -> Self
+```
+
+Creates a new canvas with the specified dimensions and a single transparent layer. This is the parameterized constructor used when creating a canvas of non-default size (e.g. from a new-document dialog).
+
+The constructor allocates `width × height` pixels for the initial layer, each set to `Color32::TRANSPARENT`. Transient GPU state (`rendered_layers`, `output_rgba`, `dirty_rect`) starts empty, and `render_next_frame` is set to `true`.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `width` | `u32` | Canvas width in pixels |
+| `height` | `u32` | Canvas height in pixels |
+
+### Panics
+
+Panics if `width as usize * height as usize` overflows `usize`. This is an invariant violation: the canvas cannot represent more than `usize::MAX` pixels. In practice, this only occurs with astronomically large dimensions (e.g. > 4 gigapixels on 64-bit platforms).
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
