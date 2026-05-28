@@ -219,11 +219,11 @@ impl MyApp {
                             self.document.dirty_since_last_autosave = true;
                             if self.tool_configuration.previous_cursor_position.is_none() {
                                 let UndoRecord::Run { layer_index, color_after, runs, is_alpha_overlay } = stroke;
-                                self.undo.init_drag_accum(layer_index, self.document.canvas.width, color_after, is_alpha_overlay);
-                                self.undo.extend_drag_accum(runs);
+                                self.undo.init_drag_accumulator(layer_index, self.document.canvas.width, color_after, is_alpha_overlay);
+                                self.undo.extend_drag_accumulator(runs);
                             } else {
                                 let UndoRecord::Run { runs, .. } = stroke;
-                                self.undo.extend_drag_accum(runs);
+                                self.undo.extend_drag_accumulator(runs);
                             }
                         }
                     }
@@ -232,7 +232,7 @@ impl MyApp {
                     self.tool_configuration.previous_cursor_position = Some((pixel_x, pixel_y));
                 }
             } else {
-                self.undo.finalize_drag_accum();
+                self.undo.finalize_drag_accumulator();
                 self.tool_configuration.previous_tool = None;
                 self.tool_configuration.previous_cursor_position = None;
             }

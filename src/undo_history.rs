@@ -6,7 +6,7 @@ use crate::undo::{ redo_apply, undo_apply, RunSegment, UndoRecord };
 const MAX_STROKE_STACK: usize = 1000;
 
 /// Holds accumulated run segments during an active drag gesture.
-struct DragAccum {
+struct DragAccumulator {
     runs: Vec<RunSegment>,
     layer_index: usize,
     width: u32,
@@ -23,7 +23,7 @@ pub struct UndoHistory {
     pub visited_stamp: u32,
     pub drag_processed: Vec<u32>,
     pub drag_stamp_val: u32,
-    drag_accum: Option<DragAccum>,
+    drag_accumulator: Option<DragAccumulator>,
 }
 
 impl UndoHistory {
@@ -38,7 +38,7 @@ impl UndoHistory {
             visited_stamp: 1,
             drag_processed: vec![0u32; pixel_count],
             drag_stamp_val: 1,
-            drag_accum: None,
+            drag_accumulator: None,
         }
     }
 
@@ -96,10 +96,10 @@ impl UndoHistory {
     /// Begin accumulating undo data for a new drag gesture.
     ///
     /// Stores the layer and color metadata; runs are accumulated via
-    /// [`extend_drag_accum`] and finally pushed as one record via
-    /// [`finalize_drag_accum`].
-    pub fn init_drag_accum(&mut self, layer_index: usize, width: u32, color_after: eframe::egui::Color32, is_alpha_overlay: bool) {
-        self.drag_accum = Some(DragAccum {
+    /// [`extend_drag_accumulator`] and finally pushed as one record via
+    /// [`finalize_drag_accumulator`].
+    pub fn init_drag_accumulator(&mut self, layer_index: usize, width: u32, color_after: eframe::egui::Color32, is_alpha_overlay: bool) {
+        self.drag_accumulator = Some(DragAccumulator {
             runs: Vec::new(),
             layer_index,
             width,
@@ -116,23 +116,23 @@ impl UndoHistory {
     /// intermediate states to the original). For alpha overlay, runs are
     /// disjoint (guaranteed by `drag_processed`), so prepending has no
     /// correctness impact.
-    pub fn extend_drag_accum(&mut self, runs: Vec<RunSegment>) {
-        if let Some(ref mut accum) = self.drag_accum {
+    pub fn extend_drag_accumulator(&mut self, runs: Vec<RunSegment>) {
+        if let Some(ref mut accumulator) = self.drag_accumulator {
             let mut combined = runs;
-            combined.append(&mut accum.runs);
-            accum.runs = combined;
+            combined.append(&mut accumulator.runs);
+            accumulator.runs = combined;
         }
     }
 
     /// Finish accumulating drag data and push the result as a single undo record.
     ///
     /// No-op if no drag was in progress.
-    pub fn finalize_drag_accum(&mut self) {
-        if let Some(accum) = self.drag_accum.take() {
+    pub fn finalize_drag_accumulator(&mut self) {
+        if let Some(accumulator) = self.drag_accumulator.take() {
             let record = UndoRecord::Run {
-                layer_index: accum.layer_index,
-                color_after: accum.color_after,
-                runs: accum.runs,
+                layer_index: accumulator.layer_index,
+                color_after: accumulator.color_after,
+                runs: accumulator.runs,
                 is_alpha_overlay: accum.is_alpha_overlay,
             };
             self.push_undo(record);
