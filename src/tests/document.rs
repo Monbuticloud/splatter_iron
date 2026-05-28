@@ -196,17 +196,20 @@ fn blend_to_output_dirty_rect_returns_bounds() {
     assert!(document.canvas.dirty_rect.is_empty());
 }
 
-/// `blend_to_output` with only empty dirty rects returns `None` and clears
-/// render_next_frame.
+/// `blend_to_output` with only empty dirty rects (which are no-ops) does a
+/// full canvas blend when `render_next_frame` is true.
 #[test]
-fn blend_to_output_empty_dirty_rect_returns_none() {
+fn blend_to_output_empty_dirty_rect_triggers_full_blend() {
     let mut document = small_document();
+    // Empty rects are filtered out by DirtyRectList::add → no-op.
+    // An empty dirty list with render_next_frame=true triggers a full blend.
     document.canvas.dirty_rect.add(DirtyRect::empty());
+    assert!(document.canvas.dirty_rect.is_empty());
     document.canvas.render_next_frame = true;
 
     let result = document.blend_to_output();
 
-    assert_eq!(result, None);
+    assert_eq!(result, Some((0, 0, 10, 10)));
     assert!(!document.canvas.render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
 }
