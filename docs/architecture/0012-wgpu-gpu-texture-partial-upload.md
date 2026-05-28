@@ -1,4 +1,4 @@
-# ADR 13: wgpu GPU Texture with Partial Upload
+# ADR 12: wgpu GPU Texture with Partial Upload
 
 - **Status:** Accepted
 - **Date:** 2026-05-19
@@ -9,7 +9,7 @@
 Egui manages textures via `egui::TextureHandle`, which supports `tex.set()`
 to replace the entire texture contents. For a 2000×1500 canvas (12 MB RGBA),
 uploading the full texture every frame is expensive — even with dirty-rect
-blending (ADR-0006), the full pixel buffer still goes to the GPU each frame.
+blending (ADR-0005), the full pixel buffer still goes to the GPU each frame.
 
 The `egui_wgpu` renderer supports registering native wgpu textures via
 `renderer.register_native_texture()`, which allows direct

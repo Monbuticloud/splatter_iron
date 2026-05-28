@@ -1,4 +1,4 @@
-# ADR 5: SIMD + Rayon Parallel Pixel Blending
+# ADR 4: SIMD + Rayon Parallel Pixel Blending
 
 - **Status:** Accepted
 - **Date:** 2026-05-17

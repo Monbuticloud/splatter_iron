@@ -1,4 +1,4 @@
-# ADR 4: Layer-Based Canvas with Premultiplied Alpha
+# ADR 3: Layer-Based Canvas with Premultiplied Alpha
 
 - **Status:** Accepted
 - **Date:** 2026-05-16
@@ -57,7 +57,7 @@ Alternatives considered:
 - **Positive:** No dark fringing at alpha boundaries — crucial for anti-aliased
   brush strokes on transparent layers.
 - **Positive:** `Vec<Layer>` model maps directly to `Vec<&[Color32]>` in
-  `blend_layers`, enabling the SIMD + rayon path (ADR-0005).
+  `blend_layers`, enabling the SIMD + rayon path (ADR-0004).
 - **Negative:** All external color input (color picker, image import, export)
   must convert via `premultiply()`/`unpremultiply()`, adding a conversion pass.
 - **Negative:** File serialization stores premultiplied values; if another

@@ -1,4 +1,4 @@
-# ADR 2: MiMalloc Global Allocator
+# ADR 1: MiMalloc Global Allocator
 
 - **Status:** Accepted
 - **Date:** 2026-05-28

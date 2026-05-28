@@ -1,4 +1,4 @@
-# ADR 3: Egui/Eframe GUI Framework
+# ADR 2: Egui/Eframe GUI Framework
 
 - **Status:** Accepted
 - **Date:** 2026-05-16

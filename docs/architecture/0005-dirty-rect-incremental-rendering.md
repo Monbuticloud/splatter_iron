@@ -1,4 +1,4 @@
-# ADR 6: Dirty-Rect Incremental Rendering
+# ADR 5: Dirty-Rect Incremental Rendering
 
 - **Status:** Accepted
 - **Date:** 2026-05-19

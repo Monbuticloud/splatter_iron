@@ -1,4 +1,4 @@
-# ADR 12: Tool System with Uniform UndoRecord Interface
+# ADR 11: Tool System with Uniform UndoRecord Interface
 
 - **Status:** Accepted
 - **Date:** 2026-05-19
@@ -25,7 +25,7 @@ Extract all brush primitives into a `src/tools/` module hierarchy, each
 exporting functions that:
 
 1. Accept `&mut Canvas` as a parameter (not `&mut [Color32]` or raw indices)
-2. Return `UndoRecord` (the unified undo type from ADR-0007)
+2. Return `UndoRecord` (the unified undo type from ADR-0006)
 3. Update `canvas.dirty_rect` via `union()` before returning
 
 ```rust

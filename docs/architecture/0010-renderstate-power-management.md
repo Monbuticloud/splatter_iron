@@ -1,4 +1,4 @@
-# ADR 11: RenderState Power Management
+# ADR 10: RenderState Power Management
 
 - **Status:** Accepted
 - **Date:** 2026-05-17

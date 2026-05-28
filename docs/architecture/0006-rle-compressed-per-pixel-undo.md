@@ -1,4 +1,4 @@
-# ADR 7: RLE-Compressed Per-Pixel Undo/Redo
+# ADR 6: RLE-Compressed Per-Pixel Undo/Redo
 
 - **Status:** Accepted
 - **Date:** 2026-05-18

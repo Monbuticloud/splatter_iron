@@ -1,4 +1,4 @@
-# ADR 1: Record Architecture Decisions
+# ADR 13: Record Architecture Decisions
 
 - **Status:** Accepted
 - **Date:** 2026-05-28

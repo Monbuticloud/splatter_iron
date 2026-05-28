@@ -1,4 +1,4 @@
-# ADR 8: Visited-Stamp Drag Deduplication
+# ADR 7: Visited-Stamp Drag Deduplication
 
 - **Status:** Accepted
 - **Date:** 2026-05-18

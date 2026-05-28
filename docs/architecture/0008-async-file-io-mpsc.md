@@ -1,4 +1,4 @@
-# ADR 9: Async File IO via mpsc Channels
+# ADR 8: Async File IO via mpsc Channels
 
 - **Status:** Accepted
 - **Date:** 2026-05-18

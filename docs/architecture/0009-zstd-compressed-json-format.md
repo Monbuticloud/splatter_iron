@@ -1,4 +1,4 @@
-# ADR 10: Zstd-Compressed JSON (.splattercanvas)
+# ADR 9: Zstd-Compressed JSON (.splattercanvas)
 
 - **Status:** Accepted
 - **Date:** 2026-05-16
@@ -85,4 +85,4 @@ good compression on repetitive pixel data, and multi-threaded encoding via
 - **Negative:** Serialization allocates a temporary `Vec<u8>` for JSON output
   before compression — peak memory is ~2× the serialized size during save.
 - **Negative:** zstd level 10 is CPU-intensive for large canvases; must run on
-  a background thread (see ADR-0009).
+  a background thread (see ADR-0008).
