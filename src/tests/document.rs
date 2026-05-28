@@ -1,3 +1,8 @@
+//! Tests for `Document` — layer management, blend-to-output, and GPU upload.
+//!
+//! Covers adding, deleting, reordering, and selecting layers, as well as
+//! compositing output and tracking dirty regions for rendering.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{Canvas, DirtyRect, Layer};
