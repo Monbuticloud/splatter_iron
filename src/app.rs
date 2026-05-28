@@ -258,8 +258,9 @@ impl MyApp {
     ///
     /// # Panics
     ///
-    /// Panics if `render_state.renderer.write()` is poisoned (lock contention)
-    /// or if the wgpu device has been lost.
+    /// Panics in debug builds if the renderer lock cannot be acquired within
+    /// 10 seconds (parking_lot deadlock detection). Panics if the wgpu device
+    /// has been lost.
     pub fn recreate_gpu_texture(&mut self, frame: &mut eframe::Frame) {
         let Some(render_state) = frame.wgpu_render_state() else { return };
         let Some(gpu) = &mut self.gpu_texture else { return };
