@@ -15,6 +15,15 @@ use crate::undo::{ compress_run, RunSegment, UndoRecord };
 ///
 /// Captures before-pixel data for every modified pixel to support undo.
 ///
+/// # Parameters
+///
+/// * `seed_x` — Column of the starting fill point.
+/// * `seed_y` — Row of the starting fill point.
+/// * `canvas` — The canvas whose pixels will be modified.
+/// * `color` — Fill color (premultiplied-alpha).
+/// * `layer` — Index of the target layer.
+/// * `alpha_overlay` — Whether to alpha-blend instead of overwriting.
+///
 /// # Panics
 ///
 /// Panics if `layer >= canvas.pixels.len()`.
