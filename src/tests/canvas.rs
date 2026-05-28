@@ -1,3 +1,8 @@
+//! Tests for `Canvas` construction, defaults, and `DirtyRect` bookkeeping.
+//!
+//! Validates canvas creation at various sizes, canonical default output,
+//! and the dirty-rect tracking that drives partial GPU uploads.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, DirtyRect };
