@@ -113,3 +113,29 @@ Both `fill()` and `copy_from_slice()` are SIMD-optimized by the standard library
 ### Panics
 
 Panics if any run segment's `start + length` exceeds the target layer's pixel buffer length. This indicates a corrupt or mismatched undo record — the record must have been built from a different canvas state or layer configuration.
+
+## `fn redo_apply(canvas, record)`
+
+`redo_apply` reapplies a previously undone stroke to the canvas. It is the inverse of [`undo_apply`]: where undo restores before-pixels, redo writes the stroke's `color_after` back to the affected pixels.
+
+### Algorithm
+
+1. Destructure the record to extract `layer_index`, `color_after`, `runs`, and `is_alpha_overlay`.
+2. Index into `canvas.pixels[layer_index]` to get the target layer.
+3. If `is_alpha_overlay` is `true`: for each run, iterate pixel-by-pixel and blend `color_after` over the current pixel using `alpha_blend(existing, color_after)`. Iteration is necessary because each existing pixel may have been modified by intermediate operations.
+4. If `is_alpha_overlay` is `false`: for each run, fill the `[start..start+length)` range with `color_after` using `fill()` (fast `memset`).
+
+### Alpha-overlay redo
+
+The alpha-overlay path is deliberately slower (pixel-by-pixel iteration with function call per pixel) because it must handle the general case where intervening operations may have changed the base pixel values. This is an intentional correctness-vs-speed trade-off: opaque strokes can use a bulk fill, but alpha strokes must consult each current pixel.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `canvas` | `&mut Canvas` | The canvas whose layer pixels will be re-stroked |
+| `record` | `&UndoRecord` | The undo record containing after-pixel data |
+
+### Panics
+
+Panics if any run segment's `start + length` exceeds the target layer's pixel buffer length. Same invariant as [`undo_apply`]: the record must match the canvas's current layer configuration.
