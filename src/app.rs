@@ -236,6 +236,11 @@ impl MyApp {
     ///
     /// Uses `update_egui_texture_from_wgpu_texture` to keep the same
     /// `egui::TextureId`, avoiding stale entries in the renderer's map.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `render_state.renderer.write()` is poisoned (lock contention)
+    /// or if the wgpu device has been lost.
     pub fn recreate_gpu_texture(&mut self, frame: &mut eframe::Frame) {
         let Some(render_state) = frame.wgpu_render_state() else { return };
         let Some(gpu) = &mut self.gpu_texture else { return };
