@@ -264,18 +264,14 @@ fn bilinear_sampling_produces_interpolated_output() {
     );
 
     let pixels = &canvas.pixels[0].pixels;
-    // The middle pixel should be an interpolation between red and white
-    // rather than a hard cut between the two source pixels
-    let mid_pixel = pixels[5 * 10 + 5];
-    // With nearest, the middle pixel would map cleanly to one source
-    // pixel. With bilinear, it should be a blend.
-    assert_ne!(
-        mid_pixel, red_pixel,
-        "bilinear should not produce exact red at midpoint"
-    );
-    assert_ne!(
-        mid_pixel, white,
-        "bilinear should not produce exact white at midpoint"
+    // Pixel (4,5) maps to src_x_f = (4-3)*2/4 = 0.5, which lands
+    // exactly between the red (src 0) and white (src 1) source pixels.
+    // Bilinear should produce a 50:50 blend: (255, 128, 128, 255).
+    let mid_pixel = pixels[5 * 10 + 4];
+    let expected = Color32::from_rgba_premultiplied(255, 128, 128, 255);
+    assert_eq!(
+        mid_pixel, expected,
+        "bilinear should interpolate between red and white at midpoint",
     );
 }
 

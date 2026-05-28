@@ -99,11 +99,12 @@ fn stamp_at(
     let half_w = output_w / 2;
     let half_h = output_h / 2;
 
-    // Unclamped output bounds (may be negative)
+    // Unclamped output bounds (may be negative).
+    // Compute so the inclusive range spans exactly output_w × output_h.
     let out_left = (center_x as i64) - (half_w as i64);
     let out_top = (center_y as i64) - (half_h as i64);
-    let out_right = (center_x as i64) + (half_w as i64);
-    let out_bottom = (center_y as i64) + (half_h as i64);
+    let out_right = out_left + output_w as i64 - 1;
+    let out_bottom = out_top + output_h as i64 - 1;
 
     // Completely off-screen — nothing to do
     if out_right < 0 || out_left >= canvas_width as i64 || out_bottom < 0 || out_top >= canvas_height as i64 {
