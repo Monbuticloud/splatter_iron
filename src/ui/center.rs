@@ -34,7 +34,7 @@ impl MyApp {
     /// drawing strokes with the current tool on drag, and bucket fill on click.
     /// Updates the undo history and marks the document as dirty.
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
-        let (tex_id, canvas_pixel_size) = if let Some(gpu) = &self.gpu_texture {
+        let (texture_id, canvas_pixel_size) = if let Some(gpu) = &self.gpu_texture {
             (gpu.texture_id, egui::vec2(
                 self.document.canvas.width as f32,
                 self.document.canvas.height as f32,
@@ -45,14 +45,14 @@ impl MyApp {
             return;
         };
 
-        let avail = ui.available_size();
-        let scale = (avail.x / canvas_pixel_size.x).min(avail.y / canvas_pixel_size.y);
+        let available = ui.available_size();
+        let scale = (available.x / canvas_pixel_size.x).min(available.y / canvas_pixel_size.y);
         let draw_size = canvas_pixel_size * scale;
 
         let response = ui
             .add(
                 egui::Image
-                    ::new((tex_id, canvas_pixel_size))
+                    ::new((texture_id, canvas_pixel_size))
                     .fit_to_exact_size(draw_size)
                     .sense(egui::Sense::click_and_drag())
             )
@@ -66,7 +66,7 @@ impl MyApp {
                 }
 
                 ui.menu_button("Export As", |ui| {
-                    for (i, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
+                    for (format_index, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                         if ui.button(label).clicked() {
                             self.file_io.queue_file_action(PendingFileAction::Export(i));
                             ui.ctx().request_repaint();
@@ -86,10 +86,10 @@ impl MyApp {
             });
 
             if self.tool_configuration.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
-                    let local = hover_pos - response.rect.min;
+                    let local_position = hover_pos - response.rect.min;
                     let uv = egui::vec2(
-                        local.x / response.rect.width(),
-                        local.y / response.rect.height()
+                        local_position.x / response.rect.width(),
+                        local_position.y / response.rect.height()
                     );
 
                     let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
@@ -179,11 +179,11 @@ impl MyApp {
             }
 
             if response.clicked() && self.tool_configuration.current_tool == CurrentTool::BucketFill {
-                if let Some(pos) = response.interact_pointer_pos() {
-                    let local = pos - response.rect.min;
+                if let Some(position) = response.interact_pointer_pos() {
+                    let local_position = position - response.rect.min;
                     let uv = egui::vec2(
-                        local.x / response.rect.width(),
-                        local.y / response.rect.height()
+                        local_position.x / response.rect.width(),
+                        local_position.y / response.rect.height()
                     );
 
                     let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
@@ -203,11 +203,11 @@ impl MyApp {
             }
 
             if response.dragged() {
-                if let Some(pos) = response.interact_pointer_pos() {
-                    let local = pos - response.rect.min;
+                if let Some(position) = response.interact_pointer_pos() {
+                    let local_position = position - response.rect.min;
                     let uv = egui::vec2(
-                        local.x / response.rect.width(),
-                        local.y / response.rect.height()
+                        local_position.x / response.rect.width(),
+                        local_position.y / response.rect.height()
                     );
 
                     let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
@@ -258,7 +258,7 @@ impl MyApp {
 
             CurrentTool::Square | CurrentTool::SquareEraser => {
                 let first_frame = self.tool_configuration.previous_cursor_position.is_none();
-                let past = self.tool_configuration.previous_cursor_position;
+                let previous_position = self.tool_configuration.previous_cursor_position;
 
                 if first_frame {
                     if alpha_overlay {
@@ -272,20 +272,20 @@ impl MyApp {
                             self.undo.drag_stamp_value,
                         ))
                     } else {
-                        let half = self.tool_configuration.radius;
-                        let start_x = pixel_x.saturating_sub(half);
-                        let end_x = (pixel_x + half).min(self.document.canvas.width - 1);
-                        let start_y = pixel_y.saturating_sub(half);
-                        let end_y = (pixel_y + half).min(self.document.canvas.height - 1);
+                        let half_radius = self.tool_configuration.radius;
+                        let start_x = pixel_x.saturating_sub(half_radius);
+                        let end_x = (pixel_x + half_radius).min(self.document.canvas.width - 1);
+                        let start_y = pixel_y.saturating_sub(half_radius);
+                        let end_y = (pixel_y + half_radius).min(self.document.canvas.height - 1);
                         Some(draw_square(
                             start_x, start_y, end_x, end_y,
                             &mut self.document.canvas, color, self.document.current_layer, false,
                         ))
                     }
-                } else if let Some((past_x, past_y)) = past {
+                } else if let Some((previous_x, previous_y)) = previous_position {
                     let stamp = self.undo.next_stamp();
                     Some(draw_square_line(
-                        past_x, past_y, pixel_x, pixel_y,
+                        previous_x, previous_y, pixel_x, pixel_y,
                         self.tool_configuration.radius, &mut self.document.canvas, color,
                         self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
@@ -298,7 +298,7 @@ impl MyApp {
 
             CurrentTool::Circle | CurrentTool::CircleEraser => {
                 let first_frame = self.tool_configuration.previous_cursor_position.is_none();
-                let past = self.tool_configuration.previous_cursor_position;
+                let previous_position = self.tool_configuration.previous_cursor_position;
 
                 if first_frame {
                     if alpha_overlay {
@@ -318,10 +318,10 @@ impl MyApp {
                             self.document.current_layer, false,
                         ))
                     }
-                } else if let Some((past_x, past_y)) = past {
+                } else if let Some((previous_x, previous_y)) = previous_position {
                     let stamp = self.undo.next_stamp();
                     Some(draw_circle_line(
-                        past_x, past_y, pixel_x, pixel_y,
+                        previous_x, previous_y, pixel_x, pixel_y,
                         self.tool_configuration.radius, &mut self.document.canvas, color,
                         self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
