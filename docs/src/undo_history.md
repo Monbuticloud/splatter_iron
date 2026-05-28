@@ -211,3 +211,17 @@ Completes a drag gesture by consuming the accumulated `DragAccumulator` and push
 ### Idempotency
 
 Calling `finalize_drag_accumulator` when no drag is in progress is a safe no-op. The `take()` returns `None`, the `if let Some(...)` guard fires, and nothing happens. This simplifies cleanup code — the drag-end handler can unconditionally call `finalize_drag_accumulator` without tracking whether a drag was actually in progress.
+
+## `impl UndoHistory::clear()`
+
+Resets the undo history to its initial empty state. Drains all entries from `stroke_stack` and sets `redo_index` to 0. The visited-stamp buffers (`visited`, `drag_processed`) and stamp counters (`visited_stamp`, `drag_stamp_value`) are **not** reset — they remain valid for the current canvas.
+
+### When to call
+
+- Loading a new document (the new document has no history).
+- Creating a new canvas (same reason).
+- After a destructive operation that invalidates the undo history (e.g., canvas resize, layer deletion).
+
+### What persists
+
+After `clear()`, the allocation of the visited buffers is preserved. No reallocation occurs. This is intentional: `clear()` is often followed by more drawing, and preserving the allocations avoids unnecessary work.
