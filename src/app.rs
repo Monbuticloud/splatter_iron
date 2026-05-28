@@ -4,6 +4,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use std::time::Instant;
+
 use eframe::egui::{ self, Panel };
 use eframe::egui_wgpu::wgpu;
 use directories::ProjectDirs;
@@ -88,6 +90,14 @@ pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
     ("Farbfeld", ExportInformation { extensions: &["ff"], fmt: image::ImageFormat::Farbfeld }),
 ];
 
+/// A stamp image awaiting a user-provided name before being added to the library.
+pub struct PendingStamp {
+    pub pixels: Vec<egui::Color32>,
+    pub width: u32,
+    pub height: u32,
+    pub name: String,
+}
+
 /// UI-level state that doesn't belong to any domain module.
 pub struct UIState {
     /// Current rendering cadence (active, throttled, or frozen).
@@ -108,6 +118,10 @@ pub struct UIState {
     pub new_canvas_width: u32,
     /// Height input for the new canvas dialog (in pixels).
     pub new_canvas_height: u32,
+    /// A stamp image awaiting a name from the user before being added to the library.
+    pub pending_stamp_name: Option<PendingStamp>,
+    /// Transient toast message and the instant it was triggered.
+    pub toast_message: Option<(String, Instant)>,
 }
 
 impl Default for UIState {
@@ -124,6 +138,8 @@ impl Default for UIState {
             show_new_canvas_dialog: false,
             new_canvas_width: 2000,
             new_canvas_height: 1500,
+            pending_stamp_name: None,
+            toast_message: None,
         }
     }
 }
@@ -160,6 +176,8 @@ pub struct MyApp {
     /// `Some` when the wgpu backend is available; `None` falls back to
     /// the egui-managed texture path (full-buffer `tex.set()`).
     pub gpu_texture: Option<GpuTexture>,
+    /// Persistent stamp library (images, naming, disk storage).
+    pub stamp_library: crate::stamp_library::StampLibrary,
 }
 
 impl MyApp {
@@ -187,6 +205,8 @@ impl MyApp {
         let data_dir = project_dirs.data_dir().to_path_buf();
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
         std::fs::create_dir_all(&data_dir.join("autosaves")).expect("Couldn't create autosave dir");
+
+        let stamp_library = crate::stamp_library::StampLibrary::load_from_disk(&data_dir);
 
         let gpu_texture = creation_context.wgpu_render_state.as_ref().map(|render_state| {
             let width = canvas.width;
@@ -229,6 +249,7 @@ impl MyApp {
             ),
             ui: UIState::default(),
             gpu_texture,
+            stamp_library,
         }
     }
 
@@ -281,9 +302,14 @@ impl eframe::App for MyApp {
         self.file_io.poll_dialog_results(&mut self.document, &mut self.undo, &mut self.ui.displayed_error_list);
         self.file_io.poll_save_results(&mut self.document, &mut self.ui.displayed_error_list);
 
-        // Transfer a newly loaded stamp image into the tool configuration.
-        if let Some(stamp) = self.file_io.loaded_stamp_result.take() {
-            self.tool_configuration.stamp_image = Some(stamp);
+        // Transfer a newly loaded stamp image into the stamp library.
+        if let Some((pixels, w, h, name)) = self.file_io.loaded_stamp_data.take() {
+            self.ui.pending_stamp_name = Some(crate::app::PendingStamp {
+                pixels,
+                width: w,
+                height: h,
+                name,
+            });
         }
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {

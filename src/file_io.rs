@@ -41,6 +41,10 @@ pub enum PendingFileAction {
 /// Message sent back from the file-dialog thread to the UI thread.
 pub enum DialogResult {
     Picked(PathBuf),
+    /// Decoded stamp image pixels + dimensions + suggested name (file stem).
+    StampPixels(Vec<Color32>, u32, u32, String),
+    /// An error occurred during a file operation.
+    Error(String),
 }
 
 /// Distinguishes an autosave from a manual save in the async save pipeline.
@@ -80,7 +84,8 @@ pub struct FileIO {
     /// Base path for autosave directory (`{data_dir}/autosaves/`).
     pub app_local_data_directory: PathBuf,
     /// Result of a stamp-image load, consumed by the app frame after polling.
-    pub loaded_stamp_result: Option<(Vec<Color32>, u32, u32)>,
+    /// Contains pixels, width, height, and suggested name.
+    pub loaded_stamp_data: Option<(Vec<Color32>, u32, u32, String)>,
 }
 
 impl FileIO {
@@ -111,7 +116,7 @@ impl FileIO {
             save_result_sender,
             save_result_receiver,
             app_local_data_directory,
-            loaded_stamp_result: None,
+            loaded_stamp_data: None,
         }
     }
 
@@ -194,7 +199,32 @@ impl FileIO {
                             .add_filter("Images", IMPORT_EXTENSIONS)
                             .pick_file()
                     {
-                        let _ = sender.send(DialogResult::Picked(path));
+                        // Decode the image in the background thread to avoid
+                        // blocking the UI frame.
+                        match image::open(&path) {
+                            Ok(dynamic_image) => {
+                                let rgba = dynamic_image.to_rgba8();
+                                let (w, h) = rgba.dimensions();
+                                let pixel_count = (w as usize) * (h as usize);
+                                let mut pixels = Vec::with_capacity(pixel_count);
+                                for pixel in rgba.pixels() {
+                                    let straight = Color32::from_rgba_unmultiplied(
+                                        pixel[0], pixel[1], pixel[2], pixel[3],
+                                    );
+                                    pixels.push(crate::pixel::premultiply(straight));
+                                }
+                                let name = path
+                                    .file_stem()
+                                    .map(|s| s.to_string_lossy().into_owned())
+                                    .unwrap_or_else(|| "stamp".to_string());
+                                let _ = sender.send(DialogResult::StampPixels(pixels, w, h, name));
+                            }
+                            Err(error) => {
+                                let _ = sender.send(DialogResult::Error(
+                                    format!("Failed to load stamp: {error}"),
+                                ));
+                            }
+                        }
                     }
                 });
             }
@@ -220,6 +250,14 @@ impl FileIO {
     ) {
         while let Ok(result) = self.dialog_receiver.try_recv() {
             match result {
+                DialogResult::StampPixels(pixels, w, h, name) => {
+                    self.loaded_stamp_data = Some((pixels, w, h, name));
+                    self.pending_file_action = None;
+                }
+                DialogResult::Error(msg) => {
+                    error_list.push(msg);
+                    self.pending_file_action = None;
+                }
                 DialogResult::Picked(path) => {
                     let Some(pending) = self.pending_file_action.take() else {
                         continue;
@@ -290,25 +328,7 @@ impl FileIO {
                             }
                         }
                         PendingFileAction::LoadStamp => {
-                            // Decode the image into premultiplied pixels for stamp use.
-                            match image::open(&path) {
-                                Ok(dynamic_image) => {
-                                    let rgba = dynamic_image.to_rgba8();
-                                    let (w, h) = rgba.dimensions();
-                                    let pixel_count = (w as usize) * (h as usize);
-                                    let mut pixels = Vec::with_capacity(pixel_count);
-                                    for pixel in rgba.pixels() {
-                                        let straight = Color32::from_rgba_unmultiplied(
-                                            pixel[0], pixel[1], pixel[2], pixel[3],
-                                        );
-                                        pixels.push(crate::pixel::premultiply(straight));
-                                    }
-                                    self.loaded_stamp_result = Some((pixels, w, h));
-                                }
-                                Err(error) => error_list.push(
-                                    format!("Failed to load stamp: {error}"),
-                                ),
-                            }
+                            // Handled exclusively by the StampPixels variant above.
                         }
                     }
                 }
