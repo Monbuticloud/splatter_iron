@@ -151,3 +151,37 @@ pub fn upload_to_gpu(
 
 Panics if `dirty` coordinates exceed the texture bounds or if the computed byte
 offset falls outside `output_rgba`.
+
+---
+
+## `Document::render_to_texture(ui)`
+
+Blends all layers into `output_rgba`, then uploads the result to an egui texture
+for display. This is the fallback path for the Glow backend, where wgpu
+texture writes are not available. Always uploads the full texture — egui's
+texture API does not support partial updates.
+
+### Signature
+
+```rust
+pub fn render_to_texture(&mut self, ui: &egui::Ui)
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `ui` | `&egui::Ui` | Egui UI handle used to access `load_texture` |
+
+### Behaviour
+
+1. Calls `blend_to_output()` to ensure `output_rgba` is up to date.
+2. Constructs a `ColorImage` from the premultiplied RGBA buffer.
+3. If `self.canvas.rendered_layers` already holds a texture, calls `set(...)` on
+   it with the new image data.
+4. Otherwise, creates a new named texture via `ui.ctx().load_texture(...)` and
+   stores it in `self.canvas.rendered_layers`.
+
+### Texture options
+
+Uses `TextureOptions::LINEAR` for bilinear interpolation on the GPU.
