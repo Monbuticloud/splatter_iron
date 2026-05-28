@@ -32,6 +32,12 @@ static GLOBAL: MiMalloc = MiMalloc;
 ///
 /// Returns an error if the data directory cannot be resolved or created,
 /// or if the eframe window cannot be opened.
+///
+/// # Panics
+///
+/// Panics if the platform-specific data directory cannot be resolved
+/// (no home directory) or if the operating system refuses to create the
+/// data directory (e.g., file-system permissions).
 fn main() -> eframe::Result {
     let project_dirs = directories::ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME).expect(
         "Couldn't resolve app dir"
