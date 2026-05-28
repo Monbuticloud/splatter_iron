@@ -281,6 +281,11 @@ impl eframe::App for MyApp {
         self.file_io.poll_dialog_results(&mut self.document, &mut self.undo, &mut self.ui.displayed_error_list);
         self.file_io.poll_save_results(&mut self.document, &mut self.ui.displayed_error_list);
 
+        // Transfer a newly loaded stamp image into the tool configuration.
+        if let Some(stamp) = self.file_io.loaded_stamp_result.take() {
+            self.tool_configuration.stamp_image = Some(stamp);
+        }
+
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
             self.ui.render_state = RenderState::UnfocusedFrozen;
