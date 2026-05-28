@@ -40,6 +40,10 @@ impl UndoHistory {
     /// Create an empty undo history with a visited-stamp buffer of `pixel_count` zeros.
     ///
     /// `visited_stamp` starts at 1 so that 0 can serve as the "unvisited" sentinel.
+    ///
+    /// # Parameters
+    ///
+    /// * `pixel_count` — Number of pixels in the canvas (size of visited buffers).
     pub fn new(pixel_count: usize) -> Self {
         Self {
             stroke_stack: VecDeque::new(),
@@ -55,6 +59,10 @@ impl UndoHistory {
     /// Push a new undo record and truncate any redo history.
     ///
     /// Enforces `MAX_STROKE_STACK` by popping the oldest entries.
+    ///
+    /// # Parameters
+    ///
+    /// * `record` — The undo record to push onto the history stack.
     pub fn push_undo(&mut self, record: UndoRecord) {
         self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
         self.stroke_stack.push_back(record);
@@ -80,6 +88,10 @@ impl UndoHistory {
     /// Grow the visited buffer to accommodate a new canvas size if needed.
     ///
     /// Resets `visited_stamp` to 1 after resizing.
+    ///
+    /// # Parameters
+    ///
+    /// * `pixel_count` — Required number of entries in the visited buffers.
     pub fn resize_visited(&mut self, pixel_count: usize) {
         if self.visited.len() < pixel_count {
             self.visited = vec![0u32; pixel_count];
@@ -108,6 +120,13 @@ impl UndoHistory {
     /// Stores the layer and color metadata; runs are accumulated via
     /// [`extend_drag_accumulator`] and finally pushed as one record via
     /// [`finalize_drag_accumulator`].
+    ///
+    /// # Parameters
+    ///
+    /// * `layer_index` — Target layer for the drag gesture.
+    /// * `width` — Canvas width (for row-stride computations).
+    /// * `color_after` — Color applied by the drag stroke.
+    /// * `is_alpha_overlay` — Whether the stroke uses alpha overlay.
     pub fn init_drag_accumulator(&mut self, layer_index: usize, width: u32, color_after: eframe::egui::Color32, is_alpha_overlay: bool) {
         self.drag_accumulator = Some(DragAccumulator {
             runs: Vec::new(),
@@ -126,6 +145,10 @@ impl UndoHistory {
     /// intermediate states to the original). For alpha overlay, runs are
     /// disjoint (guaranteed by `drag_processed`), so prepending has no
     /// correctness impact.
+    ///
+    /// # Parameters
+    ///
+    /// * `runs` — Run segments captured during the current drag frame.
     pub fn extend_drag_accumulator(&mut self, runs: Vec<RunSegment>) {
         if let Some(ref mut accumulator) = self.drag_accumulator {
             let mut combined = runs;
@@ -169,6 +192,16 @@ impl UndoHistory {
     ///
     /// Each record is applied in reverse order (most recent first),
     /// and `redo_index` advances accordingly.
+    ///
+    /// # Parameters
+    ///
+    /// * `canvas` — The canvas to restore pixels on.
+    /// * `steps_multiplier` — Number of undo steps to apply.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any undo record contains corrupt run segments (delegates to
+    /// [`undo_apply`] which checks buffer bounds).
     pub fn undo_step(&mut self, canvas: &mut Canvas, steps_multiplier: usize) {
         let step_count = steps_multiplier.min(self.stroke_stack.len() - self.redo_index);
         for _ in 0..step_count {
@@ -182,6 +215,16 @@ impl UndoHistory {
     ///
     /// Each record is reapplied in order (oldest undone first),
     /// and `redo_index` decreases accordingly.
+    ///
+    /// # Parameters
+    ///
+    /// * `canvas` — The canvas to re-apply strokes on.
+    /// * `steps_multiplier` — Number of redo steps to apply.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any redo record contains corrupt run segments (delegates to
+    /// [`redo_apply`] which checks buffer bounds).
     pub fn redo_step(&mut self, canvas: &mut Canvas, steps_multiplier: usize) {
         let step_count = steps_multiplier.min(self.redo_index);
         for _ in 0..step_count {
