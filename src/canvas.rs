@@ -149,7 +149,7 @@ impl Canvas {
 }
 
 /// The drawing tool currently selected in the UI.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CurrentTool {
     /// Draw solid rectangles by dragging.
     Square,
