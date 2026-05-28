@@ -171,3 +171,29 @@ mouse_down()
 ### Internal state
 
 After calling `init_drag_accumulator`, the `drag_accumulator` field is `Some(DragAccumulator { runs: vec![], layer_index, width, color_after, is_alpha_overlay })`. The runs vector starts empty and is populated by subsequent calls to `extend_drag_accumulator`.
+
+## `impl UndoHistory::extend_drag_accumulator(runs)`
+
+Accumulates a frame's worth of run segments into the current drag accumulator. Called at the end of each frame during an active drag gesture, after the tool has drawn its pixels and collected the affected runs.
+
+### Prepending behavior
+
+New runs are **prepended** before previously accumulated runs (not appended). That is:
+
+```rust
+let mut combined = new_runs;
+combined.append(&mut accumulator.runs);
+accumulator.runs = combined;
+```
+
+This means the most recent frame's runs appear first in the final `UndoRecord`. For `undo_apply`, which processes runs in order, this ensures the most recent pixels are restored first, which is correct for overlapping non-alpha paint (each step walks back through intermediate states to the original). For alpha overlay, runs are guaranteed disjoint by `drag_processed` deduplication, so prepending has no correctness impact.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `runs` | `Vec<RunSegment>` | Run segments captured during the current drag frame |
+
+### Safety
+
+No-op if no drag accumulator is active (i.e., `init_drag_accumulator` was not called, or `finalize_drag_accumulator` already consumed it). The guard is a simple `if let Some(...)`.
