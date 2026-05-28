@@ -27,6 +27,10 @@ impl Document {
     ///
     /// Initializes with an empty save path, current layer 0,
     /// and `dirty_since_last_autosave = false`.
+    ///
+    /// # Parameters
+    ///
+    /// * `canvas` — The canvas to wrap.
     pub fn new(canvas: Canvas) -> Self {
         Self {
             canvas,
@@ -40,6 +44,11 @@ impl Document {
     ///
     /// Clears the save path, marks the canvas as not dirty, and resets
     /// the undo history (including resizing the visited buffer).
+    ///
+    /// # Parameters
+    ///
+    /// * `canvas` — The new canvas to use.
+    /// * `undo` — Undo history to clear and resize for the new canvas.
     pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory) {
         self.canvas = canvas;
         self.savefile_path.clear();
@@ -53,6 +62,11 @@ impl Document {
     ///
     /// Returns `Some((x, y, width, height))` of the blended region,
     /// or `None` if nothing was blended (empty dirty rect).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the underlying `blend_layers` or `blend_region` encounters
+    /// mismatched layer lengths or insufficient output buffer capacity.
     pub fn blend_to_output(&mut self) -> Option<(u32, u32, u32, u32)> {
         let pixel_count = (self.canvas.width as usize) * (self.canvas.height as usize);
 
@@ -93,6 +107,17 @@ impl Document {
     /// Upload the blended `output_rgba` (or a sub-region) to a wgpu GPU texture.
     ///
     /// Only the pixels within `dirty` are uploaded; `None` uploads the full canvas.
+    ///
+    /// # Parameters
+    ///
+    /// * `queue` — The wgpu queue for submitting write commands.
+    /// * `texture` — The destination GPU texture.
+    /// * `dirty` — Optional sub-region `(x, y, width, height)` to upload.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `dirty` coordinates exceed the texture bounds or if
+    /// `output_rgba` is too small for the offset + size computation.
     pub fn upload_to_gpu(
         &self,
         queue: &wgpu::Queue,
@@ -128,6 +153,10 @@ impl Document {
     ///
     /// Always uploads the full texture (egui's API does not support partial updates).
     /// This is the fallback path for the Glow backend.
+    ///
+    /// # Parameters
+    ///
+    /// * `ui` — The egui UI handle (used to access `load_texture`).
     pub fn render_to_texture(&mut self, ui: &egui::Ui) {
         self.blend_to_output();
 
@@ -162,6 +191,10 @@ impl Document {
     ///
     /// `current_layer` is clamped to `[0, layers.len() - 1]` after removal.
     /// Does NOT guard against deleting the last layer — the UI layer handles that.
+    ///
+    /// # Parameters
+    ///
+    /// * `index` — Index of the layer to remove.
     pub fn delete_layer(&mut self, index: usize) {
         self.canvas.pixels.remove(index);
         self.current_layer = self.current_layer
@@ -171,6 +204,10 @@ impl Document {
     }
 
     /// Swap the layer at `index` with the one above it (`index - 1`).
+    ///
+    /// # Parameters
+    ///
+    /// * `index` — Index of the layer to move up.
     ///
     /// # Panics
     ///
@@ -183,6 +220,10 @@ impl Document {
 
     /// Swap the layer at `index` with the one below it (`index + 1`).
     ///
+    /// # Parameters
+    ///
+    /// * `index` — Index of the layer to move down.
+    ///
     /// # Panics
     ///
     /// Panics if `index >= pixels.len() - 1` because there is no layer below.
@@ -193,6 +234,10 @@ impl Document {
     }
 
     /// Set the current (active) layer index.
+    ///
+    /// # Parameters
+    ///
+    /// * `index` — Index of the layer to select.
     pub fn select_layer(&mut self, index: usize) {
         self.current_layer = index;
     }
