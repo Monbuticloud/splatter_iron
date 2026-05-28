@@ -1,3 +1,6 @@
+//! Right panel: color picker, layer stack display, add/delete/move layer
+//! buttons, and undo/redo step multiplier slider.
+
 use eframe::egui;
 
 use crate::app::MyApp;
