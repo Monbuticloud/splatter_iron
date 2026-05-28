@@ -40,3 +40,29 @@ When the user drags the mouse across the canvas, each frame generates a new set 
 - `visited_stamp` starts at 1 (0 is the "unvisited" sentinel). When it wraps past `u32::MAX`, the `visited` buffer is zeroed and the stamp resets to 1.
 - `drag_stamp_value` follows the same wrap-and-reset pattern for `drag_processed`.
 - The `drag_accumulator` is `None` outside of an active drag gesture (initialized by `init_drag_accumulator`, consumed by `finalize_drag_accumulator`).
+
+## `impl UndoHistory::new(pixel_count)`
+
+Constructs an empty undo history with pre-allocated visited-stamp buffers sized to the canvas pixel count. This is called once when the application starts or when a new document is created.
+
+### Allocation strategy
+
+Both `visited` and `drag_processed` are allocated as `vec![0u32; pixel_count]` in a single call each. For a typical 4K canvas (3840×2160 ≈ 8.3M pixels), each buffer consumes 32 MB (8.3M × 4 bytes), totaling 64 MB for both buffers. This memory is allocated upfront and reused across the document's lifetime; it is only reallocated if the canvas grows via [`resize_visited`].
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `pixel_count` | `usize` | Number of pixels in the canvas, determines visited buffer sizes |
+
+### Initial state
+
+| Field | Initial value |
+|-------|---------------|
+| `stroke_stack` | Empty `VecDeque` |
+| `redo_index` | `0` |
+| `visited` | `vec![0u32; pixel_count]` |
+| `visited_stamp` | `1` (0 is the unvisited sentinel) |
+| `drag_processed` | `vec![0u32; pixel_count]` |
+| `drag_stamp_value` | `1` |
+| `drag_accumulator` | `None` |
