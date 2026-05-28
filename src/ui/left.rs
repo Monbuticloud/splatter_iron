@@ -80,7 +80,7 @@ impl MyApp {
                             let entry = &self.stamp_library.entries()[index];
                             let is_selected = Some(index) == selected;
 
-                            egui::Frame::none()
+                            egui::Frame::NONE
                                 .fill(if is_selected {
                                     SELECTED_TOOL_COLOR
                                 } else {

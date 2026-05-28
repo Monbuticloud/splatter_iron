@@ -208,9 +208,9 @@ impl MyApp {
                         }
                         CurrentTool::BucketFill => {}
                         CurrentTool::Stamp => {
-                            if let Some((_, stamp_w, stamp_h)) = &self.tool_configuration.stamp_image {
+                            if let Some(entry) = self.stamp_library.selected() {
                                 let output_w = self.tool_configuration.radius.max(1);
-                                let output_h = ((*stamp_h as f64 * output_w as f64 / *stamp_w as f64).round() as u32).max(1);
+                                let output_h = ((entry.height as f64 * output_w as f64 / entry.width as f64).round() as u32).max(1);
                                 let half_w = output_w / 2;
                                 let half_h = output_h / 2;
 
@@ -237,25 +237,20 @@ impl MyApp {
                                     egui::vec2(screen_w, screen_h),
                                 );
 
-                                let brush_alpha = self.tool_configuration.current_color.a();
-                                let fill_color = if brush_alpha == 0 {
-                                    Color32::TRANSPARENT
-                                } else {
-                                    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                                    let preview_alpha =
-                                        ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
-                                    Color32::from_rgba_premultiplied(
-                                        ((self.tool_configuration.current_color.r() as u32 * preview_alpha as u32)
-                                            / brush_alpha as u32) as u8,
-                                        ((self.tool_configuration.current_color.g() as u32 * preview_alpha as u32)
-                                            / brush_alpha as u32) as u8,
-                                        ((self.tool_configuration.current_color.b() as u32 * preview_alpha as u32)
-                                            / brush_alpha as u32) as u8,
-                                        preview_alpha,
-                                    )
-                                };
-                                ui.painter().rect_filled(preview_rect, 0.0, fill_color);
+                                // Draw the actual stamp image as the preview
+                                if let Some(tex_id) = entry.texture_id() {
+                                    ui.painter().image(
+                                        tex_id,
+                                        preview_rect,
+                                        egui::Rect::from_min_max(
+                                            egui::pos2(0.0, 0.0),
+                                            egui::pos2(1.0, 1.0),
+                                        ),
+                                        Color32::WHITE,
+                                    );
+                                }
 
+                                // Draw a semi-transparent border
                                 ui.painter().rect_stroke(
                                     preview_rect,
                                     0.0,
@@ -274,7 +269,7 @@ impl MyApp {
                 );
             }
 
-            if response.clicked() && self.tool_configuration.current_tool == CurrentTool::Stamp && self.tool_configuration.stamp_image.is_none() {
+            if response.clicked() && self.tool_configuration.current_tool == CurrentTool::Stamp && self.stamp_library.is_empty() {
                 self.file_io.queue_file_action(PendingFileAction::LoadStamp);
                 ui.ctx().request_repaint();
             }
@@ -449,10 +444,10 @@ impl MyApp {
                     (pixel_x, pixel_y)
                 };
 
-                self.tool_configuration.stamp_image.as_ref().map(|(stamp_pixels, stamp_w, stamp_h)| {
+                self.stamp_library.selected().map(|entry| {
                     draw_stamp_line(
                         start_x, start_y, pixel_x, pixel_y,
-                        stamp_pixels, *stamp_w, *stamp_h,
+                        &entry.pixels, entry.width, entry.height,
                         self.tool_configuration.radius, &mut self.document.canvas,
                         color, self.document.current_layer,
                         alpha_overlay, self.tool_configuration.stamp_tinted,
