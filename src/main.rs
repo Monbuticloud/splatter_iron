@@ -2,6 +2,9 @@
 // Alias: Mon, Monbuticloud
 // SPDX-License-Identifier: AGPL-3.0-only
 
+//! Application entry point: installs the MiMalloc global allocator, resolves
+//! the platform data directory, and launches the eframe GUI event loop.
+
 mod app;
 mod canvas;
 mod document;
