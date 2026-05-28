@@ -2,9 +2,7 @@
 //! loop, and wiring between the document, tools, undo history, and file IO.
 
 use std::sync::Arc;
-use std::time::Duration;
-
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use eframe::egui::{ self, Panel };
 use eframe::egui_wgpu::wgpu;
@@ -312,6 +310,9 @@ impl eframe::App for MyApp {
             });
         }
 
+        // Create egui textures for stamps (needs ctx — available once per frame).
+        self.stamp_library.create_textures(ui.ctx());
+
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
             self.ui.render_state = RenderState::UnfocusedFrozen;
@@ -454,6 +455,63 @@ impl eframe::App for MyApp {
                 });
             if !open {
                 self.ui.show_new_canvas_dialog = false;
+            }
+        }
+
+        // --- Stamp naming dialog ---
+        if self.ui.pending_stamp_name.is_some() {
+            // Take ownership of the pending stamp to avoid borrow conflicts.
+            let mut pending = self.ui.pending_stamp_name.take().unwrap();
+            let mut open = true;
+            let label = format!("Size: {}×{}", pending.width, pending.height);
+            egui::Window::new("Name Your Stamp")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .open(&mut open)
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Name:");
+                        ui.text_edit_singleline(&mut pending.name);
+                    });
+                    ui.label(&label);
+                    if ui.button("Add Stamp").clicked() && !pending.name.is_empty() {
+                        let stamp_name = pending.name.clone();
+                        let stamp_pixels = std::mem::take(&mut pending.pixels);
+                        let stamp_w = pending.width;
+                        let stamp_h = pending.height;
+                        self.stamp_library.add(
+                            stamp_name.clone(),
+                            stamp_pixels,
+                            stamp_w,
+                            stamp_h,
+                            ui.ctx(),
+                        );
+                        self.ui.toast_message = Some((
+                            format!("Stamp \"{stamp_name}\" added"),
+                            Instant::now(),
+                        ));
+                    }
+                });
+            if open {
+                self.ui.pending_stamp_name = Some(pending);
+            }
+        }
+
+        // --- Toast notification ---
+        if let Some((message, triggered_at)) = &self.ui.toast_message.clone() {
+            if triggered_at.elapsed() < std::time::Duration::from_secs(2) {
+                egui::Area::new(egui::Id::new("stamp_toast"))
+                    .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
+                    .show(ui, |ui| {
+                        ui.label(
+                            egui::RichText::new(message)
+                                .color(egui::Color32::WHITE)
+                                .background_color(egui::Color32::from_black_alpha(180)),
+                        );
+                    });
+            } else {
+                self.ui.toast_message = None;
             }
         }
 
