@@ -1,3 +1,8 @@
+//! Tests for per-pixel undo/redo record application (`undo_apply`, `redo_apply`).
+//!
+//! Verifies that stroke records correctly restore original pixels on undo
+//! and re-apply the stroke again on redo, including alpha-overlay records.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, Layer };
