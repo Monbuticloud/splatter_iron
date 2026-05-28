@@ -61,3 +61,28 @@ The compression decision uses a threshold constant `RLE_SHORT_RUN_THRESHOLD = 8`
 ### Performance
 
 `compress_run` scans the full run to check uniformity, which is O(N). For uniform runs this is unavoidable — we must verify that all pixels match. For non-uniform runs the same scan is needed to determine that compression is inapplicable, so worst-case is identical to best-case.
+
+## `enum UndoRecord`
+
+`UndoRecord` encodes a single drawing stroke in a form sufficient to both undo (restore before-pixels) and redo (reapply after-pixels). It carries all metadata needed to locate the affected pixels and reconstruct both states.
+
+Currently only the `Run` variant is defined. The enum is structured as a single-variant enum to allow future addition of alternative record types (e.g., full-layer snapshots, transform records) without breaking callers.
+
+### Variant: `UndoRecord::Run`
+
+The `Run` variant stores a stroke as a collection of compressed contiguous pixel runs. This representation is efficient for brush strokes, which typically touch many small disjoint regions per frame.
+
+#### Fields
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `layer_index` | `usize` | Index of the layer that was modified, used to select the target layer in the `Canvas.pixels` array |
+| `color_after` | `Color32` | Color applied by the stroke. For opaque strokes this is written directly; for alpha overlays it is blended with the existing pixel via [`alpha_blend`] |
+| `runs` | `Vec<RunSegment>` | Compressed run-length segments preserving before-pixel data. Each segment covers a contiguous span |
+| `is_alpha_overlay` | `bool` | Whether this stroke was drawn as an alpha overlay. Controls redo behavior: `true` blends `color_after` over existing pixels; `false` overwrites them outright |
+
+### Invariants
+
+- `layer_index` must be a valid index into `Canvas.pixels`. Violations cause a panic in `undo_apply`/`redo_apply`.
+- The sum of all `runs[*].length` must account for every pixel the stroke touched.
+- `runs` must be non-empty for a valid stroke record.
