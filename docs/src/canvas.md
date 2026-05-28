@@ -84,6 +84,29 @@ Runs in O(1) — a constant number of `min`/`max` comparisons. This is called on
 - After any number of `extend` calls, the rect is either still empty (if never called) or `min_x <= max_x && min_y <= max_y`.
 - A pixel within the rect after `extend(x, y)` is guaranteed to be included in the final uploaded texture region, so no visual artifacts from partial updates.
 
+## `DirtyRect::union`
+
+```rust
+pub fn union(&self, other: &Self) -> Self
+```
+
+Merges two dirty rectangles into one, producing the minimal axis-aligned bounding box that covers both input rects. This is used when consolidating dirty regions from multiple operations (e.g. merging the dirty rect from a brush stroke with the existing accumulated rect).
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `other` | `&Self` | The second rect to merge with `self` |
+
+### Returns
+
+A new `DirtyRect` whose bounds are the element-wise `min` of the two `min_*` fields and element-wise `max` of the two `max_*` fields.
+
+### Invariants
+
+- The result is empty iff both inputs are empty (since `u32::MAX` propagates through `min` and `0` through `max`).
+- The result is always a superset (inclusive) of both input rects.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
