@@ -41,12 +41,12 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
 pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     use std::io::Write;
     let json = serde_json::to_vec(canvas)?;
-    let n_threads = std::thread
+    let thread_count = std::thread
         ::available_parallelism()
-        .map(|n| n.get() as u32)
+        .map(|count| count.get() as u32)
         .unwrap_or(1);
     let mut encoder = zstd::stream::Encoder::new(Vec::new(), COMPRESSION_LEVEL)?;
-    encoder.multithread(n_threads)?;
+    encoder.multithread(thread_count)?;
     encoder.write_all(&json)?;
     let compressed = encoder.finish()?;
     Ok(compressed)
@@ -89,25 +89,25 @@ pub fn export_as_image(
 
     for y in 0..height {
         for x in 0..width {
-            let idx = ((y * width + x) as usize) * 4;
-            let r = premultiplied_rgba[idx];
-            let g = premultiplied_rgba[idx + 1];
-            let b = premultiplied_rgba[idx + 2];
-            let a = premultiplied_rgba[idx + 3];
+            let pixel_index = ((y * width + x) as usize) * 4;
+            let red = premultiplied_rgba[pixel_index];
+            let green = premultiplied_rgba[pixel_index + 1];
+            let blue = premultiplied_rgba[pixel_index + 2];
+            let alpha = premultiplied_rgba[pixel_index + 3];
 
-            let (fr, fg, fb, fa) = if is_jpeg {
+            let (final_red, final_green, final_blue, final_alpha) = if is_jpeg {
                 // Blend premultiplied RGBA against white background:
                 // fully transparent (a=0,r=0) -> white (255,255,255)
                 // For premultiplied over white: r' = r + (255 - a) (clamped)
-                let inv = (255u8).wrapping_sub(a); // 255 - a
-                (r.saturating_add(inv), g.saturating_add(inv), b.saturating_add(inv), 255u8)
+                let inverse_alpha = (255u8).wrapping_sub(alpha); // 255 - a
+                (red.saturating_add(inverse_alpha), green.saturating_add(inverse_alpha), blue.saturating_add(inverse_alpha), 255u8)
             } else {
-                let pm = Color32::from_rgba_premultiplied(r, g, b, a);
-                let straight = unpremultiply(pm);
+                let premultiplied = Color32::from_rgba_premultiplied(red, green, blue, alpha);
+                let straight = unpremultiply(premultiplied);
                 (straight.r(), straight.g(), straight.b(), straight.a())
             };
 
-            let rgba = image::Rgba([fr, fg, fb, fa]);
+            let rgba = image::Rgba([final_red, final_green, final_blue, final_alpha]);
             img.put_pixel(x, y, rgba);
         }
     }
@@ -211,8 +211,8 @@ pub fn export_as_image(
 /// Returns an error if the file cannot be read or the image format is
 /// not recognized by the `image` crate.
 pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
-    let dyn_img = image::open(path)?;
-    let rgba = dyn_img.to_rgba8();
+    let dynamic_image = image::open(path)?;
+    let rgba = dynamic_image.to_rgba8();
     let (width_u32, height_u32) = rgba.dimensions();
     let pixel_count = (width_u32 as usize) * (height_u32 as usize);
 
