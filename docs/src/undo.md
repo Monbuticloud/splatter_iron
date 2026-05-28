@@ -86,3 +86,30 @@ The `Run` variant stores a stroke as a collection of compressed contiguous pixel
 - `layer_index` must be a valid index into `Canvas.pixels`. Violations cause a panic in `undo_apply`/`redo_apply`.
 - The sum of all `runs[*].length` must account for every pixel the stroke touched.
 - `runs` must be non-empty for a valid stroke record.
+
+## `fn undo_apply(canvas, record)`
+
+`undo_apply` restores canvas pixels to their state before the stroke was applied. It is the core undo primitive: given an [`UndoRecord`], it walks each [`RunSegment`] and writes the saved before-pixels back into the layer's pixel buffer.
+
+### Algorithm
+
+1. Destructure the record to extract `layer_index`, `runs`, and discard `color_after`/`is_alpha_overlay` (irrelevant for undo).
+2. Index into `canvas.pixels[layer_index]` to get the target layer.
+3. For each run segment:
+   - If `before` is `BeforePixels::All(color)`, fill the `[start..start+length)` range with that single color using `fill()`, which becomes a fast `memset`.
+   - If `before` is `BeforePixels::Many(pixels)`, copy the saved vector slice into the range using `copy_from_slice()`, which compiles to `memcpy`.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `canvas` | `&mut Canvas` | The canvas whose layer pixels will be restored |
+| `record` | `&UndoRecord` | The undo record containing before-pixel data |
+
+### Performance
+
+Both `fill()` and `copy_from_slice()` are SIMD-optimized by the standard library for `Color32` (4 bytes per element). For typical brush strokes covering thousands of pixels, undo completes in microseconds.
+
+### Panics
+
+Panics if any run segment's `start + length` exceeds the target layer's pixel buffer length. This indicates a corrupt or mismatched undo record — the record must have been built from a different canvas state or layer configuration.
