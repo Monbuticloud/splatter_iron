@@ -37,7 +37,7 @@
 ## Notable
 
 - File format: `serde_json` → `zstd` level 10 → `.splattercanvas`
-- Circle brush primitives supported (fill + stamp line)
+- Circle brush and square brush primitives supported (fill + stamp line); bucket fill (scanline flood-fill)
 - Async file IO via mpsc channels; export 13 image formats (AVIF, PNG, JPEG, WebP, GIF, TIFF, TGA, ICO, PNM, QOI, EXR, HDR, Farbfeld)
 - No CI, no Makefile/justfile, no test harness
 - Dev profile: `overflow-checks = true`, `incremental = true`, `codegen-units = 512`, `opt-level = 1`
