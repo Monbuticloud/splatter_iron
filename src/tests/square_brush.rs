@@ -220,6 +220,46 @@ fn draw_square_line_clamps_to_canvas() {
     assert_eq!(canvas.pixels[0].pixels[0], red());
 }
 
+// --- Alpha overlay ---
+
+/// Alpha overlay mode for `draw_square` should blend instead of overwriting.
+#[test]
+fn draw_square_alpha_overlay_blends() {
+    let mut canvas = small_canvas();
+    // Pre-fill pixel with opaque white
+    canvas.pixels[0].pixels[0] = Color32::from_rgba_premultiplied(255, 255, 255, 255);
+    let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
+    square_brush::draw_square(0, 0, 1, 1, &mut canvas, semi_red, 0, true);
+    let blended = canvas.pixels[0].pixels[0];
+    // Blended result should differ from both pure white and pure semi_red
+    assert_ne!(
+        blended,
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        "alpha overlay changed pixel"
+    );
+    assert_ne!(blended, semi_red, "alpha overlay blended, not replaced");
+    // Result should be fully opaque (white was opaque)
+    assert_eq!(blended.a(), 255, "alpha overlay result is opaque");
+}
+
+/// Alpha overlay mode for `draw_square_line` should blend instead of overwriting.
+#[test]
+fn draw_square_line_alpha_overlay_blends() {
+    let mut canvas = small_canvas();
+    canvas.pixels[0].pixels[5 * 10 + 1] = Color32::from_rgba_premultiplied(255, 255, 255, 255);
+    let mut visited = vec![0u32; 100];
+    let mut drag_processed = vec![0u32; 100];
+    let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
+    square_brush::draw_square_line(1, 5, 1, 5, 1, &mut canvas, semi_red, 0, &mut visited, 1, true, &mut drag_processed, 1);
+    let blended = canvas.pixels[0].pixels[5 * 10 + 1];
+    assert_ne!(
+        blended,
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        "alpha overlay changed pixel"
+    );
+    assert_ne!(blended, semi_red, "alpha overlay blended");
+}
+
 // --------------------------------------------------
 //  Regression: semi-transparent premultiplied color
 // --------------------------------------------------
