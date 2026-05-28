@@ -161,6 +161,8 @@ pub enum CurrentTool {
     CircleEraser,
     /// Flood-fill a contiguous region of similar color.
     BucketFill,
+    /// Stamp an external image onto the canvas.
+    Stamp,
 }
 
 /// Desired rendering cadence: active wake for fast repaints,
