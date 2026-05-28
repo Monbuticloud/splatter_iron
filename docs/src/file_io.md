@@ -101,3 +101,29 @@ Queues a file dialog action and spawns it on a background thread. Dispatched via
 
 If the user cancels the dialog, no result is sent and `pending_file_action` remains set (consumed only when a `DialogResult` arrives).
 
+### `FileIO::poll_dialog_results`
+
+```rust
+pub fn poll_dialog_results(
+    &mut self,
+    document: &mut Document,
+    undo: &mut UndoHistory,
+    error_list: &mut Vec<String>,
+)
+```
+
+Called once per frame (before egui layout) to process completed file dialog results. Drains the `dialog_receiver` channel with `try_recv()`, matching each received `DialogResult::Picked(path)` against the `pending_file_action` to determine the operation.
+
+**Parameters:**
+- `document` — The `Document` to modify. For `Load` and `Import`, calls `document.replace_canvas()` with the deserialized/imported canvas. For `Save`, triggers an async save via `self.trigger_async_save()`.
+- `undo` — The `UndoHistory` to reset on load/import. Passed to `replace_canvas()` to clear the undo/redo stack.
+- `error_list` — A `Vec<String>` of error messages displayed to the user. Failures at any stage (file read, deserialization, import, export) are pushed here.
+
+**Operation details per action:**
+- **Save:** Appends `CANVAS_EXTENSION` if missing. Calls `trigger_async_save(document, SaveKind::ManualSave(path))`.
+- **Load:** Reads via `crate::files::load_data_from_file`, deserializes via `load_app_from_data`, replaces the canvas, and sets `document.savefile_path` to the loaded file's path.
+- **Import:** Calls `crate::files::import_image_as_canvas` and replaces the canvas (no save-path update).
+- **Export:** Skips if `output_rgba` is empty. Appends the default extension if missing. Calls `crate::files::export_as_image` with the format and dimensions from the canvas.
+
+After processing, `pending_file_action` is consumed (set to `None`).
+
