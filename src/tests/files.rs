@@ -1,3 +1,9 @@
+//! Tests for serialization — canvas save/load round-trips, export, import.
+//!
+//! Validates that `save_canvas_to_bytes` / `load_app_from_data` produce
+//! identical output, that image export produces valid headers, and that
+//! zstd-compressed `.splattercanvas` files survive round-trip.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{Canvas, Layer};
