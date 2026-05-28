@@ -4,6 +4,7 @@
 use eframe::egui::Color32;
 
 use crate::canvas::CurrentTool;
+use crate::stamp_library::StampSampling;
 
 /// Current tool selection, color, brush radius, undo/redo step count, and UI interaction state.
 pub struct ToolConfiguration {
@@ -27,6 +28,8 @@ pub struct ToolConfiguration {
     pub stamp_image: Option<(Vec<Color32>, u32, u32)>,
     /// Whether stamp pixels are tinted by `current_color`.
     pub stamp_tinted: bool,
+    /// Sampling strategy when scaling the stamp to canvas size.
+    pub stamp_sampling: StampSampling,
 }
 
 impl Default for ToolConfiguration {
@@ -45,6 +48,7 @@ impl Default for ToolConfiguration {
             undo_redo_steps_multiplier: 1,
             stamp_image: None,
             stamp_tinted: false,
+            stamp_sampling: StampSampling::Nearest,
         }
     }
 }
