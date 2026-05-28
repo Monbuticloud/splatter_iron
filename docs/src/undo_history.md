@@ -291,3 +291,36 @@ Each step is O(runs) where runs is the number of `RunSegment` values in the undo
 ### Panics
 
 Delegates to [`undo_apply`], which panics if any run segment's `start + length` exceeds the target layer's pixel buffer length.
+
+## `impl UndoHistory::redo_step(canvas, steps_multiplier)`
+
+Reapplies one or more previously undone records, restoring the canvas to a more recent state. Each step re-writes the stroke's `color_after` to the affected pixels, reversing the effect of a prior `undo_step`.
+
+### Algorithm
+
+1. Compute `step_count` as `steps_multiplier.min(self.redo_index)` to avoid exceeding the available redoable entries.
+2. For each step in `0..step_count`:
+   - Compute the index of the next redoable record: `stroke_stack.len() - redo_index`.
+   - Decrement `redo_index` by 1 (the record is at the new `redo_index`).
+   - Call `redo_apply(canvas, &self.stroke_stack[index])` to reapply the after-pixels.
+
+The key ordering difference from undo: undo processes records from most-recent to oldest (index decreasing), while redo processes records from oldest-undone to most-recently-undone (index increasing). This is achieved by decrementing `redo_index` *before* reading the record.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `canvas` | `&mut Canvas` | The canvas to reapply strokes on |
+| `steps_multiplier` | `usize` | Number of redo steps to apply |
+
+### Clamping
+
+Same as `undo_step`: if `steps_multiplier` exceeds the available redo count, only the available entries are redone. After all entries are redone, `can_redo()` returns `false`.
+
+### Performance
+
+Each step is O(runs) with the same characteristics as `undo_step`. For alpha-overlay strokes, each pixel in each run requires a call to `alpha_blend`, making redo slightly more expensive per pixel than undo (which is a bulk fill or memcpy).
+
+### Panics
+
+Delegates to [`redo_apply`], which panics if any run segment's `start + length` exceeds the target layer's pixel buffer length.
