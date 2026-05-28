@@ -11,7 +11,9 @@ use crate::pixel::alpha_blend;
 /// (`All`) or a full `Vec` of distinct colors (`Many`).
 #[derive(Clone)]
 pub enum BeforePixels {
+    /// Every pixel in the run had the same original color.
     All(Color32),
+    /// Pixels had distinct colors (run was compressed from a non-uniform span).
     Many(Vec<Color32>),
 }
 
@@ -47,9 +49,13 @@ pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
 /// `Run` stores runs of contiguous pixels, compressed for efficiency.
 pub enum UndoRecord {
     Run {
+        /// Index of the layer that was modified.
         layer_index: usize,
+        /// Color applied by the stroke (after-state).
         color_after: Color32,
+        /// Compressed run-length segments preserving before-pixel data.
         runs: Vec<RunSegment>,
+        /// Whether this stroke was drawn as an alpha overlay (vs. opaque).
         is_alpha_overlay: bool,
     },
 }
