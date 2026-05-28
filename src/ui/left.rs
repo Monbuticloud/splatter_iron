@@ -11,7 +11,10 @@ use crate::canvas::CurrentTool;
 const SELECTED_TOOL_COLOR: egui::Color32 = egui::Color32::from_rgb(128, 0, 128);
 
 /// Tint-mode options for the stamp tool.
-const STAMP_TINT_MODES: &[(&str, bool)] = &[("Original", false), ("Tinted", true)];
+const STAMP_TINT_MODES: &[(&str, bool)] = &[
+    ("Original", false),
+    ("Tinted", true),
+];
 
 impl MyApp {
     /// Render the left tool panel with selectable tool buttons.
@@ -32,12 +35,36 @@ impl MyApp {
         let old_selection_color = ui.visuals().selection.bg_fill;
         ui.visuals_mut().selection.bg_fill = SELECTED_TOOL_COLOR;
 
-        ui.selectable_value(&mut self.tool_configuration.current_tool, CurrentTool::Square, "Square Tool");
-        ui.selectable_value(&mut self.tool_configuration.current_tool, CurrentTool::Circle, "Circle Tool");
-        ui.selectable_value(&mut self.tool_configuration.current_tool, CurrentTool::SquareEraser, "Square Eraser");
-        ui.selectable_value(&mut self.tool_configuration.current_tool, CurrentTool::CircleEraser, "Circle Eraser");
-        ui.selectable_value(&mut self.tool_configuration.current_tool, CurrentTool::BucketFill, "Bucket Fill");
-        ui.selectable_value(&mut self.tool_configuration.current_tool, CurrentTool::Stamp, "Stamp Tool");
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
+            CurrentTool::Square,
+            "Square Tool"
+        );
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
+            CurrentTool::Circle,
+            "Circle Tool"
+        );
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
+            CurrentTool::SquareEraser,
+            "Square Eraser"
+        );
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
+            CurrentTool::CircleEraser,
+            "Circle Eraser"
+        );
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
+            CurrentTool::BucketFill,
+            "Bucket Fill"
+        );
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
+            CurrentTool::Stamp,
+            "Stamp Tool"
+        );
 
         // Restore original selection color
         ui.visuals_mut().selection.bg_fill = old_selection_color;
@@ -54,7 +81,7 @@ impl MyApp {
             } else {
                 ui.label("No stamp loaded");
                 ui.label("Click canvas or right-click");
-                ui.label("→ Replace Stamp Image");
+                ui.label("Replace Stamp Image");
             }
         }
     }
