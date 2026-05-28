@@ -199,23 +199,23 @@ fn blend_pixel_range(
 
     // Fast path: single layer — memcpy RGBA bytes
     if layers.len() == 1 {
-        let src: &[u8] = cast_slice(&layers[0][pixel_start..pixel_end]);
-        let dst = &mut output[pixel_start * BYTES_PER_PIXEL..pixel_end * BYTES_PER_PIXEL];
-        dst.copy_from_slice(src);
+        let source: &[u8] = cast_slice(&layers[0][pixel_start..pixel_end]);
+        let destination = &mut output[pixel_start * BYTES_PER_PIXEL..pixel_end * BYTES_PER_PIXEL];
+        destination.copy_from_slice(source);
         return;
     }
 
     // Scalar head: pixels before the first 4-aligned boundary
     let aligned_start = (pixel_start + 3) & !3;
     let head_end = aligned_start.min(pixel_end);
-    for i in pixel_start..head_end {
-        let mut pixel = layers[0][i];
+    for pixel_index in pixel_start..head_end {
+        let mut pixel = layers[0][pixel_index];
         for &layer_slice in &layers[1..] {
-            pixel = alpha_blend(pixel, layer_slice[i]);
+            pixel = alpha_blend(pixel, layer_slice[pixel_index]);
         }
         let rgba = pixel.to_array();
-        let byte_i = i * BYTES_PER_PIXEL;
-        output[byte_i..byte_i + BYTES_PER_PIXEL].copy_from_slice(&rgba);
+        let byte_index = pixel_index * BYTES_PER_PIXEL;
+        output[byte_index..byte_index + BYTES_PER_PIXEL].copy_from_slice(&rgba);
     }
 
     // SIMD-aligned body
@@ -242,14 +242,14 @@ fn blend_pixel_range(
 
     // Scalar tail
     let tail_start = aligned_end.max(pixel_start);
-    for i in tail_start..pixel_end {
-        let mut pixel = layers[0][i];
+    for pixel_index in tail_start..pixel_end {
+        let mut pixel = layers[0][pixel_index];
         for &layer_slice in &layers[1..] {
-            pixel = alpha_blend(pixel, layer_slice[i]);
+            pixel = alpha_blend(pixel, layer_slice[pixel_index]);
         }
         let rgba = pixel.to_array();
-        let byte_i = i * BYTES_PER_PIXEL;
-        output[byte_i..byte_i + BYTES_PER_PIXEL].copy_from_slice(&rgba);
+        let byte_index = pixel_index * BYTES_PER_PIXEL;
+        output[byte_index..byte_index + BYTES_PER_PIXEL].copy_from_slice(&rgba);
     }
 }
 
@@ -270,8 +270,8 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
 
     let pixel_count = layers[0].len();
     #[cfg(debug_assertions)]
-    for (i, layer) in layers.iter().enumerate() {
-        assert_eq!(layer.len(), pixel_count, "blend_layers: layer {i} length mismatch");
+    for (layer_index, layer) in layers.iter().enumerate() {
+        assert_eq!(layer.len(), pixel_count, "blend_layers: layer {layer_index} length mismatch");
     }
     assert_eq!(output.len(), pixel_count * BYTES_PER_PIXEL, "blend_layers: output length mismatch");
 
