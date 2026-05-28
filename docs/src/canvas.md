@@ -184,6 +184,29 @@ The type derives `Clone` for undo/redo snapshotting and `Serialize`/`Deserialize
 - `output_rgba` is either empty (before first render) or has exactly `(width * height * 4)` bytes.
 - When `dirty_rect` is `Some(rect)` and `!rect.is_empty()`, only the sub-region within the rect needs a texture upload; when `None`, the entire composite must be regenerated.
 
+## `impl Default for Canvas`
+
+```rust
+fn default() -> Self
+```
+
+Creates a default canvas with the dimensions `2000 × 1500` pixels and a single fully-transparent layer. The constants `DEFAULT_WIDTH` and `DEFAULT_HEIGHT` are defined at module scope in `src/canvas.rs`.
+
+The default canvas starts with:
+- One transparent layer (all pixels set to `Color32::TRANSPARENT`).
+- An empty `output_rgba` buffer (allocated lazily on first render).
+- No GPU texture handle (`rendered_layers: None`).
+- No pre-existing dirty region (`dirty_rect: None`).
+- `render_next_frame: true` to trigger immediate initial compositing.
+
+### Panics
+
+Panics if `DEFAULT_WIDTH * DEFAULT_HEIGHT` overflows `usize`. For 2000 × 1500 this is impossible on any practical platform (3 million elements).
+
+### Usage
+
+The `Default` impl is the primary construction path used by `Document::new()` and by serde's `Default` for deserializing legacy files that omit canvas fields.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
