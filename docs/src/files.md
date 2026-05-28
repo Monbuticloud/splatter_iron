@@ -53,3 +53,39 @@ Returns an error if:
 - The decompressed bytes are not valid UTF-8 JSON.
 - The JSON structure does not match the `Canvas` type (e.g. missing fields,
   wrong field types).
+
+---
+
+## `save_canvas_to_bytes(canvas)`
+
+Serialises a `Canvas` to zstd-compressed JSON bytes without writing to disk.
+Uses multi-threaded (zstdmt) compression at level 10. This is intentionally
+split from `save_bytes_to_file` so that the CPU-heavy compression can be
+offloaded to a background thread.
+
+### Signature
+
+```rust
+pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>>
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `canvas` | `&Canvas` | The canvas to serialise |
+
+### Errors
+
+Returns an error if:
+- JSON serialisation of the `Canvas` fails (should not happen in practice since
+  `Canvas` derives `Serialize` and contains only plain data).
+- Zstd compression fails (e.g. out of memory).
+
+### Performance notes
+
+- Compression level `10` provides a good trade-off between file size and speed
+  for `.splattercanvas` files.
+- The thread count is set to `available_parallelism()`, falling back to 1 if
+  the system cannot report the number of hardware threads.
+- The encoder uses zstdmt for multi-threaded compression.
