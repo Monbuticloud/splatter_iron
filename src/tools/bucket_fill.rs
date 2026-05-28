@@ -141,7 +141,7 @@ pub fn draw_bucket_fill(
     if min_x != u32::MAX {
         let rect = DirtyRect::new(min_x, min_y, max_x, max_y);
         canvas.dirty_rect = match canvas.dirty_rect {
-            Some(rectangle) => Some(rectangle.union(&rect)),
+            Some(existing) => Some(existing.union(&rect)),
             None => Some(rect),
         };
     }
