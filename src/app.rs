@@ -8,7 +8,7 @@ use directories::ProjectDirs;
 use crate::canvas::{ Canvas, RenderState };
 use crate::document::Document;
 use crate::file_io::{ FileIO, SaveKind };
-use crate::tool_config::ToolConfig;
+use crate::tool_configuration::ToolConfig;
 use crate::undo_history::UndoHistory;
 
 // --- App identity constants ---

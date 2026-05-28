@@ -8,7 +8,7 @@ mod document;
 mod file_io;
 mod files;
 mod pixel;
-mod tool_config;
+mod tool_configuration;
 mod tools;
 mod ui;
 mod undo;
