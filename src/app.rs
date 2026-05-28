@@ -15,13 +15,18 @@ use crate::tool_configuration::ToolConfiguration;
 use crate::undo_history::UndoHistory;
 
 // --- App identity constants ---
+/// Reverse-domain qualifier for the platform data directory.
 pub const APP_QUALIFIER: &str = "com";
+/// Organization name for the platform data directory.
 pub const APP_ORGANIZATION: &str = "Monbuticloud";
+/// Application name for the platform data directory and window title.
 pub const APP_NAME: &str = "SplatterIron";
 
-// --- Canvas & save file constants ---
+/// File extension for native canvas files (zstd-compressed JSON).
 pub const CANVAS_EXTENSION: &str = ".splattercanvas";
+/// File-dialog filter name for `.splattercanvas` files.
 pub const FILE_FILTER_NAME: &str = "SplatterCanvas";
+/// Default save-file name used when no path has been set.
 pub const DEFAULT_CANVAS_NAME: &str = "canvas.splattercanvas";
 
 /// Maximum canvas dimension (8192 = 2¹³). This is the de-facto max 2D texture
@@ -48,6 +53,7 @@ const REPAINT_DELAY_MULTIPLIER: u32 = 5;
 const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 
 // --- Image import extensions ---
+/// File-extension list accepted by the image-import dialog (19 formats).
 pub const IMPORT_EXTENSIONS: &[&str] = &[
     "avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
     "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff",
