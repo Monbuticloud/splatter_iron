@@ -138,3 +138,36 @@ Increments the drag-scoped `drag_stamp_value` without consuming it as a return v
 ### Overflow handling
 
 Same pattern as `next_stamp`: when `drag_stamp_value` wraps past `u32::MAX`, the `drag_processed` buffer is zeroed in O(N) time and the stamp resets to 1.
+
+## `impl UndoHistory::init_drag_accumulator(layer_index, width, color_after, is_alpha_overlay)`
+
+Begins accumulating undo data for a new drag gesture. Called on mouse-down (or pen-down/touch-start) before any pixels are drawn. Sets the layer and color metadata that will be shared across all frames of the drag.
+
+### Drag-accumulation lifecycle
+
+```
+mouse_down()
+  → init_drag_accumulator(layer, width, color, alpha)
+  → frame_1():
+      draw_something()
+      → extend_drag_accumulator(frame_1_runs)
+  → frame_2():
+      draw_more()
+      → extend_drag_accumulator(frame_2_runs)
+  → ...
+  → mouse_up()
+      → finalize_drag_accumulator()  // pushes one UndoRecord
+```
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `layer_index` | `usize` | Target layer for this drag gesture |
+| `width` | `u32` | Canvas width (stored for potential row-stride computations) |
+| `color_after` | `Color32` | Color applied by the drag stroke |
+| `is_alpha_overlay` | `bool` | Whether the drag uses alpha-overlay blending |
+
+### Internal state
+
+After calling `init_drag_accumulator`, the `drag_accumulator` field is `Some(DragAccumulator { runs: vec![], layer_index, width, color_after, is_alpha_overlay })`. The runs vector starts empty and is populated by subsequent calls to `extend_drag_accumulator`.
