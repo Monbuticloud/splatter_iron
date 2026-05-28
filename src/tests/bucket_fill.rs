@@ -137,12 +137,8 @@ fn bucket_fill_corner_seed() {
 fn bucket_fill_returns_undo() {
     let mut canvas = canvas_with_red_square();
     let record = bucket_fill::draw_bucket_fill(2, 2, &mut canvas, blue(), 0, false);
-    match record {
-        crate::undo::UndoRecord::Run { runs, .. } => {
-            assert!(!runs.is_empty(), "undo should contain run segments");
-        }
-        _ => panic!("expected UndoRecord::Run"),
-    }
+    let crate::undo::UndoRecord::Run { runs, .. } = &record;
+    assert!(!runs.is_empty(), "undo should contain run segments");
 }
 
 // --------------------------------------------------
@@ -163,4 +159,40 @@ fn bucket_fill_preserves_premultiplied_semi_transparent() {
     );
     assert_eq!(canvas.pixels[0].pixels[0].r(), 128, "r must not be darkend");
     assert_eq!(canvas.pixels[0].pixels[9 * 10 + 9], semi, "far corner also preserved");
+}
+
+// --- Alpha overlay ---
+
+/// Alpha overlay mode should blend the fill color over the existing pixels.
+#[test]
+fn bucket_fill_alpha_overlay_blends() {
+    let mut canvas = small_canvas();
+    // Pre-fill with opaque white
+    crate::tools::square_brush::draw_square(0, 0, 10, 10, &mut canvas, Color32::from_rgba_premultiplied(255, 255, 255, 255), 0, false);
+    let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
+    bucket_fill::draw_bucket_fill(0, 0, &mut canvas, semi_red, 0, true);
+    let blended = canvas.pixels[0].pixels[0];
+    // Blended result should be different from both pure white and pure semi_red
+    assert_ne!(
+        blended,
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        "alpha overlay changed pixel"
+    );
+    assert_ne!(blended, semi_red, "alpha overlay blended, not replaced");
+    // Alpha should be fully opaque (white was opaque, semi-red adds to it)
+    assert_eq!(blended.a(), 255, "alpha overlay result is opaque");
+}
+
+// --- Seed outside canvas bounds ---
+
+/// A fill seed outside canvas bounds should clamp and fill from the edge.
+#[test]
+fn bucket_fill_seed_outside_bounds() {
+    let mut canvas = small_canvas();
+    // Fill the canvas with red first
+    crate::tools::square_brush::draw_square(0, 0, 10, 10, &mut canvas, red(), 0, false);
+    // Seed at (100, 100) — outside canvas — should clamp to (9, 9)
+    bucket_fill::draw_bucket_fill(100, 100, &mut canvas, blue(), 0, false);
+    // The clamped seed should find the red region and fill it
+    assert_eq!(canvas.pixels[0].pixels[99], blue(), "far corner filled after clamped seed");
 }
