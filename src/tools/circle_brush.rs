@@ -133,10 +133,10 @@ pub fn draw_circle(
             let e = row_start + span_end as usize + 1;
             let mut before = Vec::with_capacity(e - s);
             before.extend_from_slice(&pixels[s..e]);
-            let (before, len) = compress_run(before);
+            let (before, length) = compress_run(before);
             runs.push(RunSegment {
                 start: s as u32,
-                len,
+                length,
                 before,
             });
         }
@@ -150,10 +150,10 @@ pub fn draw_circle(
                 let e = row_start + span_end as usize + 1;
                 let mut before = Vec::with_capacity(e - s);
                 before.extend_from_slice(&pixels[s..e]);
-                let (before, len) = compress_run(before);
+                let (before, length) = compress_run(before);
                 runs.push(RunSegment {
                     start: s as u32,
-                    len,
+                    length,
                     before,
                 });
             }
@@ -367,8 +367,8 @@ pub fn draw_circle_line(
                 }
                 x += 1;
             }
-            let (rle_before, len) = compress_run(before);
-            runs.push(RunSegment { start: run_start, len, before: rle_before });
+            let (rle_before, length) = compress_run(before);
+            runs.push(RunSegment { start: run_start, length, before: rle_before });
         }
     }
 

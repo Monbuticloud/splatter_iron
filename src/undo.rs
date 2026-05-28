@@ -14,7 +14,7 @@ pub enum BeforePixels {
 /// A contiguous range of pixels in an undo `Run` record.
 pub struct RunSegment {
     pub start: u32,
-    pub len: u32,
+    pub length: u32,
     pub before: BeforePixels,
 }
 
@@ -26,15 +26,15 @@ const RLE_SHORT_RUN_THRESHOLD: u32 = 8;
 /// a single color (`BeforePixels::All`) instead of the full vector.
 /// Short or non-uniform runs store the full `Vec<Color32>`.
 pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
-    let len = pixels.len() as u32;
-    if len < RLE_SHORT_RUN_THRESHOLD {
-        return (BeforePixels::Many(pixels), len);
+    let length = pixels.len() as u32;
+    if length < RLE_SHORT_RUN_THRESHOLD {
+        return (BeforePixels::Many(pixels), length);
     }
     let first = pixels[0];
     if pixels.iter().all(|&p| p == first) {
-        (BeforePixels::All(first), len)
+        (BeforePixels::All(first), length)
     } else {
-        (BeforePixels::Many(pixels), len)
+        (BeforePixels::Many(pixels), length)
     }
 }
 
@@ -58,11 +58,11 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     let UndoRecord::Run { layer_index, color_after: _, runs, is_alpha_overlay: _ } = record;
     let layer = &mut canvas.pixels[*layer_index];
     for run in runs {
-        let end = (run.start as usize) + run.len as usize;
+        let end = (run.start as usize) + run.length as usize;
         match &run.before {
-            BeforePixels::All(c) => layer.pixels[run.start as usize..end].fill(*c),
-            BeforePixels::Many(v) => {
-                layer.pixels[run.start as usize..end].copy_from_slice(v);
+            BeforePixels::All(color) => layer.pixels[run.start as usize..end].fill(*color),
+            BeforePixels::Many(pixels) => {
+                layer.pixels[run.start as usize..end].copy_from_slice(pixels);
             }
         }
     }
@@ -77,14 +77,14 @@ pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     let layer = &mut canvas.pixels[*layer_index];
     if *is_alpha_overlay {
         for run in runs {
-            let end = (run.start as usize) + run.len as usize;
+            let end = (run.start as usize) + run.length as usize;
             for pixel in layer.pixels[run.start as usize..end].iter_mut() {
                 *pixel = alpha_blend(*pixel, *color_after);
             }
         }
     } else {
         for run in runs {
-            let end = (run.start as usize) + run.len as usize;
+            let end = (run.start as usize) + run.length as usize;
             layer.pixels[run.start as usize..end].fill(*color_after);
         }
     }

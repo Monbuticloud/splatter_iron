@@ -9,8 +9,8 @@ use crate::undo::{ self, BeforePixels, UndoRecord };
 #[test]
 fn compress_run_short_returns_many() {
     let pixels = vec![Color32::RED; 4];
-    let (before, len) = undo::compress_run(pixels.clone());
-    assert_eq!(len, 4);
+    let (before, length) = undo::compress_run(pixels.clone());
+    assert_eq!(length, 4);
     assert!(matches!(before, BeforePixels::Many(_)));
 }
 
@@ -18,8 +18,8 @@ fn compress_run_short_returns_many() {
 #[test]
 fn compress_run_uniform_long_returns_all() {
     let pixels = vec![Color32::GREEN; 20];
-    let (before, len) = undo::compress_run(pixels);
-    assert_eq!(len, 20);
+    let (before, length) = undo::compress_run(pixels);
+    assert_eq!(length, 20);
     let BeforePixels::All(c) = before else { panic!("expected All") };
     assert_eq!(c, Color32::GREEN);
 }
@@ -30,8 +30,8 @@ fn compress_run_mixed_long_returns_many() {
     let pixels: Vec<Color32> = (0..20)
         .map(|i| if i % 2 == 0 { Color32::RED } else { Color32::BLUE })
         .collect();
-    let (before, len) = undo::compress_run(pixels);
-    assert_eq!(len, 20);
+    let (before, length) = undo::compress_run(pixels);
+    assert_eq!(length, 20);
     assert!(matches!(before, BeforePixels::Many(_)));
 }
 
@@ -41,15 +41,15 @@ fn compress_run_threshold_boundary() {
     // RLE_SHORT_RUN_THRESHOLD = 8
     let uniform = vec![Color32::RED; 8];
     let (_, len) = undo::compress_run(uniform);
-    assert_eq!(len, 8, "len 8 should be short → Many");
+    assert_eq!(length, 8, "len 8 should be short → Many");
 }
 
 /// A uniform run just above the threshold should be stored as `All`.
 #[test]
 fn compress_run_just_above_threshold() {
     let uniform = vec![Color32::RED; 9];
-    let (before, len) = undo::compress_run(uniform);
-    assert_eq!(len, 9);
+    let (before, length) = undo::compress_run(uniform);
+    assert_eq!(length, 9);
     assert!(matches!(before, BeforePixels::All(_)));
 }
 

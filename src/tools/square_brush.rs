@@ -166,15 +166,15 @@ pub fn draw_square(
         let row_start = (y as usize) * width;
         let start = row_start + (start_x as usize);
         let end = row_start + (end_x as usize);
-        let run_len = end - start;
+        let run_length = end - start;
 
-        let mut before = Vec::with_capacity(run_len);
+        let mut before = Vec::with_capacity(run_length);
         before.extend_from_slice(&pixels[start..end]);
-        let (before, len) = compress_run(before);
+        let (before, length) = compress_run(before);
 
         runs.push(RunSegment {
             start: start as u32,
-            len,
+            length,
             before,
         });
     }
@@ -275,8 +275,8 @@ pub fn draw_square_line(
                 }
                 x += 1;
             }
-            let (rle_before, len) = compress_run(before);
-            runs.push(RunSegment { start: run_start, len, before: rle_before });
+            let (rle_before, length) = compress_run(before);
+            runs.push(RunSegment { start: run_start, length, before: rle_before });
         }
     }
 

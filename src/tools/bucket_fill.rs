@@ -70,10 +70,10 @@ pub fn draw_bucket_fill(
         let span_end = row_start + right as usize + 1;
         let mut before_pixels = Vec::with_capacity(span_end - span_start);
         before_pixels.extend_from_slice(&pixels[span_start..span_end]);
-        let (before, len) = compress_run(before_pixels);
+        let (before, length) = compress_run(before_pixels);
         runs.push(RunSegment {
             start: span_start as u32,
-            len,
+            length,
             before,
         });
 
