@@ -1,3 +1,6 @@
+//! Top-level application state, identity constants, export formats, autosave
+//! loop, and wiring between the document, tools, undo history, and file IO.
+
 use std::sync::Arc;
 use std::time::Duration;
 
