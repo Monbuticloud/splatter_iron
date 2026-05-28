@@ -42,17 +42,17 @@ impl MyApp {
 
         ui.separator();
         ui.label("Save Path:");
-        ui.text_edit_singleline(&mut self.doc.savefile_path);
+        ui.text_edit_singleline(&mut self.document.savefile_path);
 
         ui.separator();
         let add_layer_button = ui.button("Add Layer");
         if add_layer_button.clicked() {
-            self.doc.add_layer();
+            self.document.add_layer();
         }
 
         egui::ScrollArea::vertical().show(ui, |ui| {
             let mut pending_layer_action = None;
-            for (i, _layer) in self.doc.canvas.pixels.iter().enumerate() {
+            for (i, _layer) in self.document.canvas.pixels.iter().enumerate() {
                 let _layer_panel = egui::CollapsingHeader
                     ::new(format!("Layer {i}"))
                     .show(ui, |ui| {
@@ -67,7 +67,7 @@ impl MyApp {
                         }
 
                         let move_down_button = ui.button("Move Down");
-                        if move_down_button.clicked() && i < self.doc.canvas.pixels.len() - 1 {
+                        if move_down_button.clicked() && i < self.document.canvas.pixels.len() - 1 {
                             pending_layer_action = Some(LayerAction::MoveDown(i));
                         }
 
@@ -75,7 +75,7 @@ impl MyApp {
                         if select_button.clicked() {
                             pending_layer_action = Some(LayerAction::Select(i));
                         }
-                        if i == self.doc.current_layer {
+                        if i == self.document.current_layer {
                             ui.label("Currently Selected");
                         }
                     });
@@ -85,10 +85,10 @@ impl MyApp {
                     LayerAction::Delete(index) => {
                         if
                             self.ui.pending_layer_for_deletion == Some(index) &&
-                            self.doc.canvas.pixels.len() > 1
+                            self.document.canvas.pixels.len() > 1
                         {
                             self.ui.pending_layer_for_deletion = None;
-                            self.doc.delete_layer(index);
+                            self.document.delete_layer(index);
                         } else {
                             self.ui.pending_layer_for_deletion = Some(index);
                         }
@@ -96,17 +96,17 @@ impl MyApp {
                     LayerAction::MoveUp(index) => {
                         if index > 0 {
                             self.ui.pending_layer_for_deletion = None;
-                            self.doc.move_layer_up(index);
+                            self.document.move_layer_up(index);
                         }
                     }
                     LayerAction::MoveDown(index) => {
-                        if index < self.doc.canvas.pixels.len() - 1 {
+                        if index < self.document.canvas.pixels.len() - 1 {
                             self.ui.pending_layer_for_deletion = None;
-                            self.doc.move_layer_down(index);
+                            self.document.move_layer_down(index);
                         }
                     }
                     LayerAction::Select(index) => {
-                        self.doc.select_layer(index);
+                        self.document.select_layer(index);
                     }
                 }
             }

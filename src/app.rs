@@ -127,7 +127,7 @@ pub struct GpuTexture {
 /// Top-level application state owned by eframe: document, tools, undo history,
 /// file IO, UI state, and optional wgpu GPU texture.
 pub struct MyApp {
-    pub doc: Document,
+    pub document: Document,
     pub tools: ToolConfiguration,
     pub undo: UndoHistory,
     pub file_io: FileIO,
@@ -187,7 +187,7 @@ impl MyApp {
         });
 
         Self {
-            doc: Document::new(canvas),
+            document: Document::new(canvas),
             tools: ToolConfiguration::default(),
             undo: UndoHistory::new(pixel_count),
             file_io: FileIO::new(
@@ -209,8 +209,8 @@ impl MyApp {
     pub fn recreate_gpu_texture(&mut self, frame: &mut eframe::Frame) {
         let Some(rs) = frame.wgpu_render_state() else { return };
         let Some(gpu) = &mut self.gpu_texture else { return };
-        let w = self.doc.canvas.width;
-        let h = self.doc.canvas.height;
+        let w = self.document.canvas.width;
+        let h = self.document.canvas.height;
         let size = wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 };
         gpu.texture = rs.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("splatter_iron_canvas"),
@@ -243,8 +243,8 @@ impl eframe::App for MyApp {
     /// When the viewport is unfocused, sleeps to reduce CPU usage.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         // Poll dialog results and save results before anything else.
-        self.file_io.poll_dialog_results(&mut self.doc, &mut self.undo, &mut self.ui.displayed_error_list);
-        self.file_io.poll_save_results(&mut self.doc, &mut self.ui.displayed_error_list);
+        self.file_io.poll_dialog_results(&mut self.document, &mut self.undo, &mut self.ui.displayed_error_list);
+        self.file_io.poll_save_results(&mut self.document, &mut self.ui.displayed_error_list);
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MS));
@@ -282,21 +282,21 @@ impl eframe::App for MyApp {
         // Recreate GPU texture if canvas dimensions have changed
         if let Some(gpu) = &self.gpu_texture {
             let s = gpu.texture.size();
-            if s.width != self.doc.canvas.width || s.height != self.doc.canvas.height {
+            if s.width != self.document.canvas.width || s.height != self.document.canvas.height {
                 self.recreate_gpu_texture(frame);
             }
         }
 
         // Render layers to texture if needed
         if self.gpu_texture.is_some() {
-            if self.doc.canvas.render_next_frame {
-                let dirty = self.doc.blend_to_output();
+            if self.document.canvas.render_next_frame {
+                let dirty = self.document.blend_to_output();
                 if let Some(ref gpu) = self.gpu_texture {
-                    self.doc.upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
+                    self.document.upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
                 }
             }
-        } else if self.doc.canvas.render_next_frame || self.doc.canvas.rendered_layers.is_none() {
-            self.doc.render_to_texture(ui);
+        } else if self.document.canvas.render_next_frame || self.document.canvas.rendered_layers.is_none() {
+            self.document.render_to_texture(ui);
         }
 
         let is_quitting = Panel::top("top").show_inside(ui, |ui| self.show_top_panel(ui)).inner;
@@ -376,7 +376,7 @@ impl eframe::App for MyApp {
                     ui.horizontal(|ui| {
                         if ui.button("Create").clicked() {
                             let canvas = Canvas::new(self.ui.new_canvas_width, self.ui.new_canvas_height);
-                            self.doc.replace_canvas(canvas, &mut self.undo);
+                            self.document.replace_canvas(canvas, &mut self.undo);
                             self.tools.previous_tool = None;
                             self.tools.previous_cursor_position = None;
                             self.ui.show_new_canvas_dialog = false;
@@ -397,12 +397,12 @@ impl eframe::App for MyApp {
 
         // Autosave every AUTOSAVE_INTERVAL_MINS minutes, but only if the canvas has been modified.
         if
-            self.doc.dirty_since_last_autosave &&
+            self.document.dirty_since_last_autosave &&
             self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >= Duration::from_mins(AUTOSAVE_INTERVAL_MINS)
         {
             self.ui.last_autosave_time = self.ui.time_elapsed;
             self.ui.times_autosaved += 1;
-            self.file_io.trigger_async_save(&self.doc, SaveKind::Autosave);
+            self.file_io.trigger_async_save(&self.document, SaveKind::Autosave);
         }
     }
 }

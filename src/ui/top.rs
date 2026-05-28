@@ -13,10 +13,10 @@ impl MyApp {
         ui.horizontal(|ui| {
             // Save
             if ui.button("Save").clicked() {
-                if self.doc.savefile_path.is_empty() {
+                if self.document.savefile_path.is_empty() {
                     self.file_io.queue_file_action(PendingFileAction::Save);
                 } else {
-                    self.file_io.save_to_current_path(&self.doc);
+                    self.file_io.save_to_current_path(&self.document);
                 }
                 ui.ctx().request_repaint();
             }
@@ -62,8 +62,8 @@ impl MyApp {
                     |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift
                 ) || undo_btn.clicked())
             {
-                self.undo.undo_step(&mut self.doc.canvas, self.tools.undo_redo_steps_multiplier);
-                self.doc.canvas.render_next_frame = true;
+                self.undo.undo_step(&mut self.document.canvas, self.tools.undo_redo_steps_multiplier);
+                self.document.canvas.render_next_frame = true;
             }
 
             // Redo: button, cmd+shift+Z, or cmd+Y
@@ -75,8 +75,8 @@ impl MyApp {
                     ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
                     redo_btn.clicked())
             {
-                self.undo.redo_step(&mut self.doc.canvas, self.tools.undo_redo_steps_multiplier);
-                self.doc.canvas.render_next_frame = true;
+                self.undo.redo_step(&mut self.document.canvas, self.tools.undo_redo_steps_multiplier);
+                self.document.canvas.render_next_frame = true;
             }
 
             ui.separator();

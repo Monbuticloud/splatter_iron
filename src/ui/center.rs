@@ -23,7 +23,7 @@ impl MyApp {
     /// Only renders if a texture exists (wgpu or fallback). Delegates
     /// interaction handling to `handle_canvas_interaction`.
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
-        if self.gpu_texture.is_some() || self.doc.canvas.rendered_layers.is_some() {
+        if self.gpu_texture.is_some() || self.document.canvas.rendered_layers.is_some() {
             self.handle_canvas_interaction(ui);
         }
     }
@@ -36,10 +36,10 @@ impl MyApp {
     fn handle_canvas_interaction(&mut self, ui: &mut egui::Ui) {
         let (tex_id, canvas_pixel_size) = if let Some(gpu) = &self.gpu_texture {
             (gpu.texture_id, egui::vec2(
-                self.doc.canvas.width as f32,
-                self.doc.canvas.height as f32,
+                self.document.canvas.width as f32,
+                self.document.canvas.height as f32,
             ))
-        } else if let Some(tex) = &self.doc.canvas.rendered_layers {
+        } else if let Some(tex) = &self.document.canvas.rendered_layers {
             (tex.id(), tex.size_vec2())
         } else {
             return;
@@ -79,7 +79,7 @@ impl MyApp {
 
                 if ui.button("Save As").clicked() {
                     self.file_io.queue_file_action(PendingFileAction::Save);
-                    self.doc.savefile_path.clear();
+                    self.document.savefile_path.clear();
                     ui.ctx().request_repaint();
                     ui.close();
                 }
@@ -92,20 +92,20 @@ impl MyApp {
                         local.y / response.rect.height()
                     );
 
-                    let pixel_x = (uv.x * (self.doc.canvas.width as f32)).floor() as u32;
-                    let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
+                    let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
+                    let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
                     match self.tools.current_tool {
                         CurrentTool::Circle | CurrentTool::CircleEraser => {
                             let center_screen_x =
                                 response.rect.min.x +
-                                (pixel_x as f32) * (draw_size.x / (self.doc.canvas.width as f32));
+                                (pixel_x as f32) * (draw_size.x / (self.document.canvas.width as f32));
                             let center_screen_y =
                                 response.rect.min.y +
-                                (pixel_y as f32) * (draw_size.y / (self.doc.canvas.height as f32));
+                                (pixel_y as f32) * (draw_size.y / (self.document.canvas.height as f32));
                             let screen_radius =
                                 (self.tools.radius as f32) *
-                                (draw_size.x / (self.doc.canvas.width as f32));
+                                (draw_size.x / (self.document.canvas.width as f32));
 
                             ui.painter().circle_stroke(
                                 Pos2::new(center_screen_x, center_screen_y),
@@ -118,23 +118,23 @@ impl MyApp {
 
                             let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
                             let preview_end_x =
-                                ((pixel_x + half_radius).min(self.doc.canvas.width - 1) as f32) + 1.0;
+                                ((pixel_x + half_radius).min(self.document.canvas.width - 1) as f32) + 1.0;
                             let preview_start_y = pixel_y.saturating_sub(half_radius) as f32;
                             let preview_end_y =
-                                ((pixel_y + half_radius).min(self.doc.canvas.height - 1) as f32) + 1.0;
+                                ((pixel_y + half_radius).min(self.document.canvas.height - 1) as f32) + 1.0;
 
                             let screen_x =
                                 response.rect.min.x +
-                                preview_start_x * (draw_size.x / (self.doc.canvas.width as f32));
+                                preview_start_x * (draw_size.x / (self.document.canvas.width as f32));
                             let screen_y =
                                 response.rect.min.y +
-                                preview_start_y * (draw_size.y / (self.doc.canvas.height as f32));
+                                preview_start_y * (draw_size.y / (self.document.canvas.height as f32));
                             let screen_w =
                                 (preview_end_x - preview_start_x) *
-                                (draw_size.x / (self.doc.canvas.width as f32));
+                                (draw_size.x / (self.document.canvas.width as f32));
                             let screen_h =
                                 (preview_end_y - preview_start_y) *
-                                (draw_size.y / (self.doc.canvas.height as f32));
+                                (draw_size.y / (self.document.canvas.height as f32));
 
                             let preview_rect = Rect::from_min_size(
                                 Pos2::new(screen_x, screen_y),
@@ -186,19 +186,19 @@ impl MyApp {
                         local.y / response.rect.height()
                     );
 
-                    let pixel_x = (uv.x * (self.doc.canvas.width as f32)).floor() as u32;
-                    let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
+                    let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
+                    let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
-                    self.doc.canvas.render_next_frame = true;
+                    self.document.canvas.render_next_frame = true;
                     let stroke = draw_bucket_fill(
                         pixel_x, pixel_y,
-                        &mut self.doc.canvas,
+                        &mut self.document.canvas,
                         self.tools.current_color,
-                        self.doc.current_layer,
+                        self.document.current_layer,
                         self.tools.alpha_overlay,
                     );
                     self.undo.push_undo(stroke);
-                    self.doc.dirty_since_last_autosave = true;
+                    self.document.dirty_since_last_autosave = true;
                 }
             }
 
@@ -210,16 +210,16 @@ impl MyApp {
                         local.y / response.rect.height()
                     );
 
-                    let pixel_x = (uv.x * (self.doc.canvas.width as f32)).floor() as u32;
-                    let pixel_y = (uv.y * (self.doc.canvas.height as f32)).floor() as u32;
+                    let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
+                    let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
                     if self.tools.current_tool != CurrentTool::BucketFill {
-                        self.doc.canvas.render_next_frame = true;
+                        self.document.canvas.render_next_frame = true;
                         if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
-                            self.doc.dirty_since_last_autosave = true;
+                            self.document.dirty_since_last_autosave = true;
                             if self.tools.previous_cursor_position.is_none() {
                                 let UndoRecord::Run { layer_index, color_after, runs, is_alpha_overlay } = stroke;
-                                self.undo.init_drag_accum(layer_index, self.doc.canvas.width, color_after, is_alpha_overlay);
+                                self.undo.init_drag_accum(layer_index, self.document.canvas.width, color_after, is_alpha_overlay);
                                 self.undo.extend_drag_accum(runs);
                             } else {
                                 let UndoRecord::Run { runs, .. } = stroke;
@@ -266,28 +266,28 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         Some(draw_square_line(
                             pixel_x, pixel_y, pixel_x, pixel_y,
-                            self.tools.radius, &mut self.doc.canvas, color,
-                            self.doc.current_layer, &mut self.undo.visited, stamp,
+                            self.tools.radius, &mut self.document.canvas, color,
+                            self.document.current_layer, &mut self.undo.visited, stamp,
                             true, &mut self.undo.drag_processed,
                             self.undo.drag_stamp_val,
                         ))
                     } else {
                         let half = self.tools.radius;
                         let start_x = pixel_x.saturating_sub(half);
-                        let end_x = (pixel_x + half).min(self.doc.canvas.width - 1);
+                        let end_x = (pixel_x + half).min(self.document.canvas.width - 1);
                         let start_y = pixel_y.saturating_sub(half);
-                        let end_y = (pixel_y + half).min(self.doc.canvas.height - 1);
+                        let end_y = (pixel_y + half).min(self.document.canvas.height - 1);
                         Some(draw_square(
                             start_x, start_y, end_x, end_y,
-                            &mut self.doc.canvas, color, self.doc.current_layer, false,
+                            &mut self.document.canvas, color, self.document.current_layer, false,
                         ))
                     }
                 } else if let Some((past_x, past_y)) = past {
                     let stamp = self.undo.next_stamp();
                     Some(draw_square_line(
                         past_x, past_y, pixel_x, pixel_y,
-                        self.tools.radius, &mut self.doc.canvas, color,
-                        self.doc.current_layer, &mut self.undo.visited, stamp,
+                        self.tools.radius, &mut self.document.canvas, color,
+                        self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
                         self.undo.drag_stamp_val,
                     ))
@@ -306,24 +306,24 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         Some(draw_circle_line(
                             pixel_x, pixel_y, pixel_x, pixel_y,
-                            self.tools.radius, &mut self.doc.canvas, color,
-                            self.doc.current_layer, &mut self.undo.visited, stamp,
+                            self.tools.radius, &mut self.document.canvas, color,
+                            self.document.current_layer, &mut self.undo.visited, stamp,
                             true, &mut self.undo.drag_processed,
                             self.undo.drag_stamp_val,
                         ))
                     } else {
                         Some(draw_circle(
                             pixel_x, pixel_y,
-                            self.tools.radius, &mut self.doc.canvas, color,
-                            self.doc.current_layer, false,
+                            self.tools.radius, &mut self.document.canvas, color,
+                            self.document.current_layer, false,
                         ))
                     }
                 } else if let Some((past_x, past_y)) = past {
                     let stamp = self.undo.next_stamp();
                     Some(draw_circle_line(
                         past_x, past_y, pixel_x, pixel_y,
-                        self.tools.radius, &mut self.doc.canvas, color,
-                        self.doc.current_layer, &mut self.undo.visited, stamp,
+                        self.tools.radius, &mut self.document.canvas, color,
+                        self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
                         self.undo.drag_stamp_val,
                     ))
