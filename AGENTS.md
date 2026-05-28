@@ -31,7 +31,8 @@
 | `src/undo_history.rs` | `UndoHistory` — undo/redo stack with visited-stamp dedup (`MAX_STROKE_STACK = 1000`), `push_undo()` / `undo_step()` / `redo_step()` / `next_stamp()` |
 | `src/tool_config.rs` | `ToolConfig` — `current_tool`, `current_color`, `radius`, `show_brush_preview`, `undo_redo_steps_multiplier` |
 | `src/ui/` | 4 panels: `top` (file menu), `left` (tools), `right` (color / layers), `center` (canvas) |
-| `src/tests/` | 6 test modules: `pixel`, `undo`, `undo_history`, `canvas`, `document`, `files` |
+| `src/tools/` | `bucket_fill` (scanline flood-fill), `circle_brush` (midpoint-circle span fill), `square_brush` (rectangular fill) — all return `UndoRecord`, used by `Document`/`Canvas` |
+| `src/tests/` | 9 test modules: `pixel`, `undo`, `undo_history`, `canvas`, `document`, `files`, `bucket_fill`, `circle_brush`, `square_brush` |
 
 ## Notable
 
