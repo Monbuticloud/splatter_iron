@@ -20,11 +20,18 @@ struct DragAccumulator {
 /// Manages the undo/redo history stack with a visited-stamp buffer for
 /// brush-stroke deduplication.
 pub struct UndoHistory {
+    /// Stack of undo records, most recent at the back.
     pub stroke_stack: VecDeque<UndoRecord>,
+    /// Index within `stroke_stack` delimiting redo entries (entries >= this
+    /// index are redoable).
     pub redo_index: usize,
+    /// Per-pixel stamp counters for deduplication during drag strokes.
     pub visited: Vec<u32>,
+    /// Global stamp counter incremented per stroke.
     pub visited_stamp: u32,
+    /// Per-pixel drag stamps for the current drag gesture.
     pub drag_processed: Vec<u32>,
+    /// Stamp value for the current drag gesture.
     pub drag_stamp_value: u32,
     drag_accumulator: Option<DragAccumulator>,
 }
