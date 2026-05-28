@@ -62,10 +62,21 @@
 ### Git Standards
 
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
-- Subject ≤50 chars; body explains "why" when the commit message alone is insufficient.
-- **🔬 Ultra-granular commits**: One function → one commit. One docstring → one commit. One test → one commit. Another test → another commit. No commit shall contain more than one logical change. **There is no such thing as too many commits.** A commit that fixes a function and adds its docstring in the same snapshot is *too big* — split it. If you hesitate whether to commit, commit. Err on the side of granularity always.
-- **Self-imposed rule**: If a commit message contains "and", "also", or "fixup", the commit is too large. Split it.
-- **Always commit**: Commit after every logical change, regardless of whether the user asked. Each function, each docstring, each test gets its own commit. **There is no threshold below which a change is "too small to commit."**
+- **🔬 Atomic commits — zero tolerance for batches**: One function → one commit. One docstring → one commit. One test → one commit. A struct definition and its `impl` block are separate commits. Adding a function and its docstring in the same snapshot is strictly forbidden — split them. A commit that touches more than one of these categories is a violation:
+    - function / method body
+    - docstring (inline or `docs/src/`)
+    - test function
+    - struct / enum / trait definition
+    - use / import statement
+    - config file (Cargo.toml, clippy.toml, etc.)
+    - any other logical unit that stands alone
+- **Self-imposed rule**: If a commit message contains any of the words `and`, `also`, or `fixup` (case‑insensitive, whole word), the commit is too large. Split it.
+- **Pre‑commit self‑audit (mandatory)**: Before every `git commit`, you MUST:
+    1. Read the full commit message and verify it contains none of the forbidden words.
+    2. Run `git diff --cached --stat` and mentally confirm all changes belong to exactly one category from the list above.
+    3. If either check fails, abort the commit and split the changes.
+- **Always commit**: Commit after every logical micro‑unit, regardless of whether the user asked. Do not wait. There is no change too small to commit.
+- **Token economy does not apply to commits** — you are explicitly forbidden from batching commits to save tokens. Granularity is more important than verbosity.
 
 ### Code Standards
 
