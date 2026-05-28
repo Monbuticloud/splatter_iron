@@ -62,7 +62,7 @@ impl MyApp {
                     |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift
                 ) || undo_btn.clicked())
             {
-                self.undo.undo_step(&mut self.document.canvas, self.tools.undo_redo_steps_multiplier);
+                self.undo.undo_step(&mut self.document.canvas, self.tool_configuration.undo_redo_steps_multiplier);
                 self.document.canvas.render_next_frame = true;
             }
 
@@ -75,7 +75,7 @@ impl MyApp {
                     ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
                     redo_btn.clicked())
             {
-                self.undo.redo_step(&mut self.document.canvas, self.tools.undo_redo_steps_multiplier);
+                self.undo.redo_step(&mut self.document.canvas, self.tool_configuration.undo_redo_steps_multiplier);
                 self.document.canvas.render_next_frame = true;
             }
 

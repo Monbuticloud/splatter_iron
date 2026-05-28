@@ -85,7 +85,7 @@ impl MyApp {
                 }
             });
 
-            if self.tools.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
+            if self.tool_configuration.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
                     let local = hover_pos - response.rect.min;
                     let uv = egui::vec2(
                         local.x / response.rect.width(),
@@ -95,7 +95,7 @@ impl MyApp {
                     let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
                     let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
-                    match self.tools.current_tool {
+                    match self.tool_configuration.current_tool {
                         CurrentTool::Circle | CurrentTool::CircleEraser => {
                             let center_screen_x =
                                 response.rect.min.x +
@@ -104,17 +104,17 @@ impl MyApp {
                                 response.rect.min.y +
                                 (pixel_y as f32) * (draw_size.y / (self.document.canvas.height as f32));
                             let screen_radius =
-                                (self.tools.radius as f32) *
+                                (self.tool_configuration.radius as f32) *
                                 (draw_size.x / (self.document.canvas.width as f32));
 
                             ui.painter().circle_stroke(
                                 Pos2::new(center_screen_x, center_screen_y),
                                 screen_radius,
-                                egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tools.current_color),
+                                egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tool_configuration.current_color),
                             );
                         }
                         CurrentTool::Square | CurrentTool::SquareEraser => {
-                            let half_radius = self.tools.radius;
+                            let half_radius = self.tool_configuration.radius;
 
                             let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
                             let preview_end_x =
@@ -141,7 +141,7 @@ impl MyApp {
                                 egui::vec2(screen_w, screen_h)
                             );
 
-                            let brush_alpha = self.tools.current_color.a();
+                            let brush_alpha = self.tool_configuration.current_color.a();
                             let fill_color = if brush_alpha == 0 {
                                 Color32::TRANSPARENT
                             } else {
@@ -149,11 +149,11 @@ impl MyApp {
                                 let preview_alpha =
                                     ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
                                 Color32::from_rgba_premultiplied(
-                                    ((self.tools.current_color.r() as u32 * preview_alpha as u32)
+                                    ((self.tool_configuration.current_color.r() as u32 * preview_alpha as u32)
                                         / brush_alpha as u32) as u8,
-                                    ((self.tools.current_color.g() as u32 * preview_alpha as u32)
+                                    ((self.tool_configuration.current_color.g() as u32 * preview_alpha as u32)
                                         / brush_alpha as u32) as u8,
-                                    ((self.tools.current_color.b() as u32 * preview_alpha as u32)
+                                    ((self.tool_configuration.current_color.b() as u32 * preview_alpha as u32)
                                         / brush_alpha as u32) as u8,
                                     preview_alpha,
                                 )
@@ -163,7 +163,7 @@ impl MyApp {
                             ui.painter().rect_stroke(
                                 preview_rect,
                                 0.0,
-                                egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tools.current_color),
+                                egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tool_configuration.current_color),
                                 StrokeKind::Middle
                             );
                         }
@@ -178,7 +178,7 @@ impl MyApp {
                 );
             }
 
-            if response.clicked() && self.tools.current_tool == CurrentTool::BucketFill {
+            if response.clicked() && self.tool_configuration.current_tool == CurrentTool::BucketFill {
                 if let Some(pos) = response.interact_pointer_pos() {
                     let local = pos - response.rect.min;
                     let uv = egui::vec2(
@@ -193,9 +193,9 @@ impl MyApp {
                     let stroke = draw_bucket_fill(
                         pixel_x, pixel_y,
                         &mut self.document.canvas,
-                        self.tools.current_color,
+                        self.tool_configuration.current_color,
                         self.document.current_layer,
-                        self.tools.alpha_overlay,
+                        self.tool_configuration.alpha_overlay,
                     );
                     self.undo.push_undo(stroke);
                     self.document.dirty_since_last_autosave = true;
@@ -213,11 +213,11 @@ impl MyApp {
                     let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
                     let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
-                    if self.tools.current_tool != CurrentTool::BucketFill {
+                    if self.tool_configuration.current_tool != CurrentTool::BucketFill {
                         self.document.canvas.render_next_frame = true;
                         if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
                             self.document.dirty_since_last_autosave = true;
-                            if self.tools.previous_cursor_position.is_none() {
+                            if self.tool_configuration.previous_cursor_position.is_none() {
                                 let UndoRecord::Run { layer_index, color_after, runs, is_alpha_overlay } = stroke;
                                 self.undo.init_drag_accum(layer_index, self.document.canvas.width, color_after, is_alpha_overlay);
                                 self.undo.extend_drag_accum(runs);
@@ -228,13 +228,13 @@ impl MyApp {
                         }
                     }
 
-                    self.tools.previous_tool = Some(self.tools.current_tool);
-                    self.tools.previous_cursor_position = Some((pixel_x, pixel_y));
+                    self.tool_configuration.previous_tool = Some(self.tool_configuration.current_tool);
+                    self.tool_configuration.previous_cursor_position = Some((pixel_x, pixel_y));
                 }
             } else {
                 self.undo.finalize_drag_accum();
-                self.tools.previous_tool = None;
-                self.tools.previous_cursor_position = None;
+                self.tool_configuration.previous_tool = None;
+                self.tool_configuration.previous_cursor_position = None;
             }
     }
 
@@ -247,18 +247,18 @@ impl MyApp {
     /// Square and Circle tools handle first-frame (stamp) vs subsequent-frame (line) logic.
     fn apply_stroke(&mut self, pixel_x: u32, pixel_y: u32) -> Option<UndoRecord> {
         let is_eraser = matches!(
-            self.tools.current_tool,
+            self.tool_configuration.current_tool,
             CurrentTool::SquareEraser | CurrentTool::CircleEraser
         );
-        let color = if is_eraser { Color32::TRANSPARENT } else { self.tools.current_color };
-        let alpha_overlay = self.tools.alpha_overlay && !is_eraser;
+        let color = if is_eraser { Color32::TRANSPARENT } else { self.tool_configuration.current_color };
+        let alpha_overlay = self.tool_configuration.alpha_overlay && !is_eraser;
 
-        match self.tools.current_tool {
+        match self.tool_configuration.current_tool {
             CurrentTool::BucketFill => None,
 
             CurrentTool::Square | CurrentTool::SquareEraser => {
-                let first_frame = self.tools.previous_cursor_position.is_none();
-                let past = self.tools.previous_cursor_position;
+                let first_frame = self.tool_configuration.previous_cursor_position.is_none();
+                let past = self.tool_configuration.previous_cursor_position;
 
                 if first_frame {
                     if alpha_overlay {
@@ -266,13 +266,13 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         Some(draw_square_line(
                             pixel_x, pixel_y, pixel_x, pixel_y,
-                            self.tools.radius, &mut self.document.canvas, color,
+                            self.tool_configuration.radius, &mut self.document.canvas, color,
                             self.document.current_layer, &mut self.undo.visited, stamp,
                             true, &mut self.undo.drag_processed,
                             self.undo.drag_stamp_val,
                         ))
                     } else {
-                        let half = self.tools.radius;
+                        let half = self.tool_configuration.radius;
                         let start_x = pixel_x.saturating_sub(half);
                         let end_x = (pixel_x + half).min(self.document.canvas.width - 1);
                         let start_y = pixel_y.saturating_sub(half);
@@ -286,7 +286,7 @@ impl MyApp {
                     let stamp = self.undo.next_stamp();
                     Some(draw_square_line(
                         past_x, past_y, pixel_x, pixel_y,
-                        self.tools.radius, &mut self.document.canvas, color,
+                        self.tool_configuration.radius, &mut self.document.canvas, color,
                         self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
                         self.undo.drag_stamp_val,
@@ -297,8 +297,8 @@ impl MyApp {
             }
 
             CurrentTool::Circle | CurrentTool::CircleEraser => {
-                let first_frame = self.tools.previous_cursor_position.is_none();
-                let past = self.tools.previous_cursor_position;
+                let first_frame = self.tool_configuration.previous_cursor_position.is_none();
+                let past = self.tool_configuration.previous_cursor_position;
 
                 if first_frame {
                     if alpha_overlay {
@@ -306,7 +306,7 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         Some(draw_circle_line(
                             pixel_x, pixel_y, pixel_x, pixel_y,
-                            self.tools.radius, &mut self.document.canvas, color,
+                            self.tool_configuration.radius, &mut self.document.canvas, color,
                             self.document.current_layer, &mut self.undo.visited, stamp,
                             true, &mut self.undo.drag_processed,
                             self.undo.drag_stamp_val,
@@ -314,7 +314,7 @@ impl MyApp {
                     } else {
                         Some(draw_circle(
                             pixel_x, pixel_y,
-                            self.tools.radius, &mut self.document.canvas, color,
+                            self.tool_configuration.radius, &mut self.document.canvas, color,
                             self.document.current_layer, false,
                         ))
                     }
@@ -322,7 +322,7 @@ impl MyApp {
                     let stamp = self.undo.next_stamp();
                     Some(draw_circle_line(
                         past_x, past_y, pixel_x, pixel_y,
-                        self.tools.radius, &mut self.document.canvas, color,
+                        self.tool_configuration.radius, &mut self.document.canvas, color,
                         self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
                         self.undo.drag_stamp_val,

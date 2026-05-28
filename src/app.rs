@@ -128,7 +128,7 @@ pub struct GpuTexture {
 /// file IO, UI state, and optional wgpu GPU texture.
 pub struct MyApp {
     pub document: Document,
-    pub tools: ToolConfiguration,
+    pub tool_configuration: ToolConfiguration,
     pub undo: UndoHistory,
     pub file_io: FileIO,
     pub ui: UIState,
@@ -188,7 +188,7 @@ impl MyApp {
 
         Self {
             document: Document::new(canvas),
-            tools: ToolConfiguration::default(),
+            tool_configuration: ToolConfiguration::default(),
             undo: UndoHistory::new(pixel_count),
             file_io: FileIO::new(
                 dialog_sender,
@@ -377,8 +377,8 @@ impl eframe::App for MyApp {
                         if ui.button("Create").clicked() {
                             let canvas = Canvas::new(self.ui.new_canvas_width, self.ui.new_canvas_height);
                             self.document.replace_canvas(canvas, &mut self.undo);
-                            self.tools.previous_tool = None;
-                            self.tools.previous_cursor_position = None;
+                            self.tool_configuration.previous_tool = None;
+                            self.tool_configuration.previous_cursor_position = None;
                             self.ui.show_new_canvas_dialog = false;
                         }
                         if ui.button("Cancel").clicked() {

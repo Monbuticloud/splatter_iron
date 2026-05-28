@@ -23,22 +23,22 @@ impl MyApp {
         ui.separator();
         ui.label("Color Selector");
 
-        ui.color_edit_button_srgba(&mut self.tools.current_color);
+        ui.color_edit_button_srgba(&mut self.tool_configuration.current_color);
 
         ui.separator();
 
         ui.label("Undo/Redo Strength");
         ui.add(
-            egui::DragValue::new(&mut self.tools.undo_redo_steps_multiplier).range(UNDO_REDO_RANGE),
+            egui::DragValue::new(&mut self.tool_configuration.undo_redo_steps_multiplier).range(UNDO_REDO_RANGE),
         )
         .on_hover_text("Number of paint strokes per undo or redo step");
 
         ui.label("::Brush Settings::");
         ui.separator();
         ui.label("Brush Radius:");
-        ui.add(egui::DragValue::new(&mut self.tools.radius).range(BRUSH_RADIUS_RANGE));
-        ui.checkbox(&mut self.tools.show_brush_preview, "Brush Preview");
-        ui.checkbox(&mut self.tools.alpha_overlay, "Alpha Overlay");
+        ui.add(egui::DragValue::new(&mut self.tool_configuration.radius).range(BRUSH_RADIUS_RANGE));
+        ui.checkbox(&mut self.tool_configuration.show_brush_preview, "Brush Preview");
+        ui.checkbox(&mut self.tool_configuration.alpha_overlay, "Alpha Overlay");
 
         ui.separator();
         ui.label("Save Path:");
