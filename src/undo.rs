@@ -53,6 +53,11 @@ pub enum UndoRecord {
 /// Restore canvas state that was changed by a stroke, using its undo record.
 ///
 /// Restores the saved before-pixels in each run segment.
+///
+/// # Panics
+///
+/// Panics if any run segment extends past the end of the target layer's
+/// pixel buffer. This indicates a corrupt or mismatched undo record.
 #[inline]
 pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     let UndoRecord::Run { layer_index, color_after: _, runs, is_alpha_overlay: _ } = record;
@@ -71,6 +76,11 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
 /// Reapply a previously undone stroke from its undo record.
 ///
 /// Fills the segment range with `color_after`.
+///
+/// # Panics
+///
+/// Panics if any run segment extends past the end of the target layer's
+/// pixel buffer. This indicates a corrupt or mismatched undo record.
 #[inline]
 pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     let UndoRecord::Run { layer_index, color_after, runs, is_alpha_overlay } = record;
