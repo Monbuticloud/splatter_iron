@@ -1,0 +1,16 @@
+msrv = "1.85.0"
+
+too-many-arguments-threshold = 9
+
+disallowed-names = [
+    "foo",
+    "bar",
+    "baz",
+    "quux",
+    "qux",
+    "thing",
+    "stuff",
+    "data",
+    "temp",
+    "tmp",
+]
