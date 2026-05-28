@@ -96,6 +96,7 @@
 
 ### Agent Expectations
 
+- Before committing, perform the Commit Checklist exactly as written in the Git Standards section. If any box is unchecked, stop and split the commit.
 - All functions and structs MUST have an inline docstring. `docs/src/` files are post-implementation supplements — they are also required, but the inline doc comes first.
 - Before editing a file, read surrounding context to match conventions.
 - **Commit after every logical change — always. Do not wait for the user to ask.** Each function, each docstring, each test gets its own commit. If a commit message contains "and", "also", or "fixup", split it.
