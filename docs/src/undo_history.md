@@ -260,3 +260,34 @@ Entries at indices `[stroke_stack.len() - redo_index, stroke_stack.len())` are r
 | After all undone | N (= len) | false | true |
 | After 1 redo | N-1 | true | true (if >0) |
 | After new push | 0 | true | false |
+
+## `impl UndoHistory::undo_step(canvas, steps_multiplier)`
+
+Applies one or more undo records from the stroke stack, restoring the canvas to progressively earlier states. Each step restores the before-pixels of the most recent undoable stroke.
+
+### Algorithm
+
+1. Compute `step_count` as `steps_multiplier.min(stroke_stack.len() - redo_index)` to avoid exceeding the available undoable entries.
+2. For each step in `0..step_count`:
+   - Compute the index of the next undoable record: `stroke_stack.len() - 1 - redo_index`.
+   - Call `undo_apply(canvas, &self.stroke_stack[index])` to restore before-pixels.
+   - Increment `redo_index` by 1.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `canvas` | `&mut Canvas` | The canvas to restore pixels on |
+| `steps_multiplier` | `usize` | Number of undo steps to apply. In the UI, this is multiplied by scroll distance for fast-scroll undo |
+
+### Clamping
+
+If `steps_multiplier` exceeds the available undo count, only the available entries are undone. The method never underflows or enters an invalid state. After calling `undo_step` with a large multiplier, `can_undo()` will return `false` because all entries have been undone.
+
+### Performance
+
+Each step is O(runs) where runs is the number of `RunSegment` values in the undo record. Typical brush strokes have tens to hundreds of run segments. Bulk operations (bucket fill) may have millions but are amortized across the step count.
+
+### Panics
+
+Delegates to [`undo_apply`], which panics if any run segment's `start + length` exceeds the target layer's pixel buffer length.
