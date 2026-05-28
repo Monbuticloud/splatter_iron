@@ -21,3 +21,29 @@ save path, and coordinates GPU texture uploads.
 - `dirty_since_last_autosave` is set to `true` by the autosave loop when a
   stroke or layer change is detected, and reset to `false` after a successful
   autosave or explicit save.
+
+---
+
+## `Document::new(canvas)`
+
+Constructs a `Document` wrapping the supplied `Canvas`.
+
+Initialises the document with an empty save path, `current_layer = 0`, and
+`dirty_since_last_autosave = false`.
+
+### Signature
+
+```rust
+pub fn new(canvas: Canvas) -> Self
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `canvas` | `Canvas` | The backing canvas to wrap |
+
+### Behaviour
+
+- Stores the canvas as-is; no copy or clone is made.
+- All other fields are set to their default initial values.
