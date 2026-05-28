@@ -1,3 +1,6 @@
+//! Async file-dialog and save handling via mpsc channels.  Manages save-to-
+//! current-path, save-as, load, and autosave workflows with result polling.
+
 use std::path::{ Path, PathBuf };
 use std::sync::mpsc;
 
