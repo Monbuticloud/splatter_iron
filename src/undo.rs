@@ -34,6 +34,10 @@ const RLE_SHORT_RUN_THRESHOLD: u32 = 8;
 /// If the run is longer than 8 pixels and all pixels are identical, stores
 /// a single color (`BeforePixels::All`) instead of the full vector.
 /// Short or non-uniform runs store the full `Vec<Color32>`.
+///
+/// # Parameters
+///
+/// * `pixels` — Contiguous run of before-pixels to compress.
 pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
     let length = pixels.len() as u32;
     if length < RLE_SHORT_RUN_THRESHOLD {
@@ -67,6 +71,11 @@ pub enum UndoRecord {
 ///
 /// Restores the saved before-pixels in each run segment.
 ///
+/// # Parameters
+///
+/// * `canvas` — The canvas whose layer pixels will be restored.
+/// * `record` — The undo record containing before-pixel data.
+///
 /// # Panics
 ///
 /// Panics if any run segment extends past the end of the target layer's
@@ -89,6 +98,11 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
 /// Reapply a previously undone stroke from its undo record.
 ///
 /// Fills the segment range with `color_after`.
+///
+/// # Parameters
+///
+/// * `canvas` — The canvas whose layer pixels will be re-stroked.
+/// * `record` — The undo record containing after-pixel data.
 ///
 /// # Panics
 ///
