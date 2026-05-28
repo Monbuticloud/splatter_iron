@@ -1,3 +1,10 @@
+//! Tests for `UndoHistory` — stack management, visited-stamp deduplication,
+//! drag-accumulator lifecycle, and multi-step undo/redo.
+//!
+//! Exercises the full undo/redo pipeline with real brush strokes to
+//! validate that the history stack behaves correctly under interleaved
+//! drag and single-click operations.
+
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, Layer };
