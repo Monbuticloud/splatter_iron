@@ -33,3 +33,31 @@ A stroke touching many disconnected regions of the canvas produces multiple `Run
 
 - `start + length` must not exceed the layer's pixel buffer length. Violations cause a panic in [`undo_apply`].
 - The number of color values in `before` (1 if `All`, `length` if `Many`) matches `length`. This is guaranteed by [`compress_run`] during record construction.
+
+## `fn compress_run(pixels)`
+
+`compress_run` implements run-length encoding for undo storage. It takes a contiguous run of before-stroke pixel colors and decides whether to store them compactly (as a single `Color32` via [`BeforePixels::All`]) or as the full vector ([`BeforePixels::Many`]).
+
+The compression decision uses a threshold constant `RLE_SHORT_RUN_THRESHOLD = 8`. Runs shorter than 8 pixels always store the full vector because the allocation overhead of a `Vec` (3 words: pointer, length, capacity) exceeds the savings for very short spans.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `pixels` | `Vec<Color32>` | Contiguous run of before-pixel colors to compress |
+
+### Returns
+
+`(BeforePixels, u32)` — a tuple of the compressed pixel data and the run length. The run length is always `pixels.len()` cast to `u32`.
+
+### Decision matrix
+
+| Condition | Result |
+|-----------|--------|
+| Run length < 8 | `Many(pixels)` — vector stored as-is |
+| All pixels equal, length ≥ 8 | `All(color)` — single color |
+| Not all equal, length ≥ 8 | `Many(pixels)` — vector must be stored |
+
+### Performance
+
+`compress_run` scans the full run to check uniformity, which is O(N). For uniform runs this is unavoidable — we must verify that all pixels match. For non-uniform runs the same scan is needed to determine that compression is inapplicable, so worst-case is identical to best-case.

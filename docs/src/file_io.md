@@ -16,3 +16,11 @@ A file-dialog action queued for execution on a background thread. The result is 
 | `Export(usize)` | Opens a native `rfd::FileDialog` "save" dialog for the export format at the given index into `EXPORT_FORMATS`. Sets default filename to `export.{primary_extension}`. Spawns a thread; on user selection, sends `DialogResult::Picked(path)`. |
 
 Derives `Clone`, `Copy`.
+
+### `DialogResult`
+
+Message sent from the file-dialog background thread to the UI thread after the user interacts with a native dialog.
+
+| Variant | Description |
+|---------|-------------|
+| `Picked(PathBuf)` | User selected a file path via the native dialog. Sent through `dialog_sender` and received by `poll_dialog_results` on the next frame. |
