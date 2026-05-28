@@ -132,3 +132,19 @@ the Glow (OpenGL) backend where the egui-managed texture path (full-buffer
 
 Each frame, `Document::upload_to_gpu` writes only the dirty sub-region via
 `wgpu::Queue::write_texture`, avoiding a full-buffer transfer.
+
+## `struct MyApp`
+
+The top-level application struct owned by eframe, composing every subsystem:
+
+| Field | Type | Purpose |
+|---|---|---|
+| `document` | `Document` | Canvas document — layers, dimensions, save path |
+| `tool_configuration` | `ToolConfiguration` | Active tool, colour, radius, brush-preview toggle |
+| `undo` | `UndoHistory` | Undo/redo stack with 1000-entry capacity and visited-stamp deduplication |
+| `file_io` | `FileIO` | Async file-dialog and save-operation manager (mpsc channels) |
+| `ui` | `UIState` | Render state, autosave counters, dialog flags |
+| `gpu_texture` | `Option<GpuTexture>` | WGPU texture for partial-upload rendering; `None` under Glow backend |
+
+All fields are `pub` to give panel methods (`show_top_panel`, `show_left_panel`,
+etc.) direct access without getter boilerplate.
