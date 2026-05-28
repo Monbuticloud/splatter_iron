@@ -40,3 +40,22 @@ These cover all raster image formats supported by the `image` crate, including
 legacy formats (TGA, ICO, PNM variants) and HDR/EXR for high-dynamic-range
 workflows. The list is used to build the file-type filter shown in native OS
 file-open dialogs.
+
+## Export Format Registry
+
+### `struct ExportInformation`
+
+Holds a list of file extensions and the corresponding `image::ImageFormat`
+enum variant for one export target.
+
+```rust
+pub struct ExportInformation {
+    pub extensions: &'static [&'static str],
+    pub fmt: image::ImageFormat,
+}
+```
+
+Used as the value type in the `EXPORT_FORMATS` lookup table. The
+`extensions` slice drives the file-extension filter in native save dialogs;
+`fmt` is passed directly to `image::ImageEncoder` implementations during
+export.
