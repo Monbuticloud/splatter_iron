@@ -134,6 +134,17 @@ fn stamp_line_positions(
 /// `start_y >= end_y` the call is a no-op and returns an empty undo record.
 /// Captures before-pixel data for every touched position to support undo.
 ///
+/// # Parameters
+///
+/// * `start_x` — Left column of the rectangle (inclusive).
+/// * `start_y` — Top row of the rectangle (inclusive).
+/// * `end_x` — Right column of the rectangle (exclusive).
+/// * `end_y` — Bottom row of the rectangle (exclusive).
+/// * `canvas` — The canvas whose pixels will be modified.
+/// * `color` — Fill colour (premultiplied-alpha).
+/// * `layer` — Index of the target layer.
+/// * `alpha_overlay` — Whether to alpha-blend instead of overwriting.
+///
 /// # Panics
 ///
 /// Panics if `layer >= canvas.pixels.len()`.
@@ -211,6 +222,22 @@ pub fn draw_square(
 /// Uses `stamp_line_positions` to find all touched pixels, then applies the
 /// color and captures before-data for undo. The `visited` buffer and `stamp`
 /// value must be managed by the caller to avoid re-processing old stamps.
+///
+/// # Parameters
+///
+/// * `start_x` — Column of the line start point.
+/// * `start_y` — Row of the line start point.
+/// * `end_x` — Column of the line end point.
+/// * `end_y` — Row of the line end point.
+/// * `brush_radius` — Brush radius in pixels.
+/// * `canvas` — The canvas whose pixels will be modified.
+/// * `color` — Stroke colour (premultiplied-alpha).
+/// * `layer` — Index of the target layer.
+/// * `visited` — Stamp buffer for pixel deduplication.
+/// * `stamp` — Current stamp value for this stroke.
+/// * `alpha_overlay` — Whether to alpha-blend instead of overwriting.
+/// * `drag_processed` — Drag-scoped deduplication buffer.
+/// * `drag_stamp_value` — Current drag stamp value.
 ///
 /// # Panics
 ///
