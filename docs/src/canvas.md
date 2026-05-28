@@ -230,6 +230,41 @@ The constructor allocates `width × height` pixels for the initial layer, each s
 
 Panics if `width as usize * height as usize` overflows `usize`. This is an invariant violation: the canvas cannot represent more than `usize::MAX` pixels. In practice, this only occurs with astronomically large dimensions (e.g. > 4 gigapixels on 64-bit platforms).
 
+## `enum CurrentTool`
+
+```rust
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CurrentTool { ... }
+```
+
+Identifies the drawing tool currently selected in the UI tool panel. The enum is stored in [`ToolConfig`] and matched exhaustively in the canvas interaction handler to dispatch the correct brush function.
+
+Each variant selects a different drawing primitive or operation:
+
+### Variants
+
+| Variant | Behaviour |
+|---------|-----------|
+| `Square` | Fill axis-aligned rectangles. Dispatches to [`square_brush::fill_rect`] which writes `UndoRecord` entries for every pixel in the dragged rectangle. |
+| `Circle` | Fill circles using the midpoint circle algorithm. Dispatches to [`circle_brush::fill_circle`] for span-based fill, producing an `UndoRecord`. |
+| `SquareEraser` | Erase by dragging a rectangular region. Sets affected pixels to `Color32::TRANSPARENT` with a square mask. Dispatches to [`square_brush::fill_rect`] with the eraser color. |
+| `CircleEraser` | Erase by dragging a circular region. Sets affected pixels to `Color32::TRANSPARENT` with a circular mask. Dispatches to [`circle_brush::fill_circle`] with the eraser color. |
+| `BucketFill` | Flood-fill a contiguous region of similar color using a scanline algorithm. Dispatches to [`bucket_fill::flood_fill`]. |
+
+### Matching
+
+The `Canvas` rendering code and `Document` interaction handlers exhaustively match on `CurrentTool`:
+
+```rust
+match tool_config.current_tool {
+    CurrentTool::Square | CurrentTool::SquareEraser => { /* square brush dispatch */ }
+    CurrentTool::Circle | CurrentTool::CircleEraser => { /* circle brush dispatch */ }
+    CurrentTool::BucketFill => { /* flood fill dispatch */ }
+}
+```
+
+Eraser variants reuse the same brush primitives as their fill counterparts but write `Color32::TRANSPARENT` as the stroke color.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
