@@ -1,3 +1,6 @@
+//! Serialization and deserialization of canvas data (zstd-compressed JSON,
+//! `.splattercanvas` format), plus image export to 13 formats.
+
 use std::io::BufWriter;
 use std::path::Path;
 use bytemuck::cast_slice;
