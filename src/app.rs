@@ -356,10 +356,10 @@ impl eframe::App for MyApp {
                 .open(&mut open)
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        for &(label, w, h) in NEW_CANVAS_PRESETS {
-                            if ui.button(format!("{label}\n{w}×{h}")).clicked() {
-                                self.ui.new_canvas_width = w;
-                                self.ui.new_canvas_height = h;
+                        for &(label, width, height) in NEW_CANVAS_PRESETS {
+                            if ui.button(format!("{label}\n{width}×{height}")).clicked() {
+                                self.ui.new_canvas_width = width;
+                                self.ui.new_canvas_height = height;
                             }
                         }
                     });

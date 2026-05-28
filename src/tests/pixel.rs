@@ -66,8 +66,8 @@ fn unpremultiply_opaque_is_identity() {
 /// Premultiplying a zero-alpha color should produce `TRANSPARENT`.
 #[test]
 fn premultiply_zero_alpha() {
-    let c = Color32::from_rgba_unmultiplied(200, 100, 50, 0);
-    assert_eq!(pixel::premultiply(c), Color32::TRANSPARENT);
+    let color = Color32::from_rgba_unmultiplied(200, 100, 50, 0);
+    assert_eq!(pixel::premultiply(color), Color32::TRANSPARENT);
 }
 
 /// Unpremultiplying `TRANSPARENT` should return `TRANSPARENT` unchanged.
@@ -111,12 +111,12 @@ fn blend_layers_single_layer_copy() {
     let pixels = vec![Color32::from_rgba_premultiplied(50, 100, 150, 200); pixel_count];
     let mut output = vec![0u8; pixel_count * 4];
     pixel::blend_layers(&[&pixels], &mut output);
-    for (i, p) in pixels.iter().enumerate() {
-        let arr = p.to_array();
-        assert_eq!(output[i * 4], arr[0]);
-        assert_eq!(output[i * 4 + 1], arr[1]);
-        assert_eq!(output[i * 4 + 2], arr[2]);
-        assert_eq!(output[i * 4 + 3], arr[3]);
+    for (pixel_index, pixel) in pixels.iter().enumerate() {
+        let arr = pixel.to_array();
+        assert_eq!(output[pixel_index * 4], arr[0]);
+        assert_eq!(output[pixel_index * 4 + 1], arr[1]);
+        assert_eq!(output[pixel_index * 4 + 2], arr[2]);
+        assert_eq!(output[pixel_index * 4 + 3], arr[3]);
     }
 }
 

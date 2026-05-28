@@ -168,12 +168,12 @@ pub fn export_as_image(
             let pixel_count = (width * height) as usize;
             let mut float_bytes = Vec::with_capacity(pixel_count * 3 * 4);
             for chunk in raw.chunks_exact(4) {
-                let r = f32::from(chunk[0]) / F32_COLOR_MAX;
-                let g = f32::from(chunk[1]) / F32_COLOR_MAX;
-                let b = f32::from(chunk[2]) / F32_COLOR_MAX;
-                float_bytes.extend_from_slice(&r.to_ne_bytes());
-                float_bytes.extend_from_slice(&g.to_ne_bytes());
-                float_bytes.extend_from_slice(&b.to_ne_bytes());
+                let red = f32::from(chunk[0]) / F32_COLOR_MAX;
+                let green = f32::from(chunk[1]) / F32_COLOR_MAX;
+                let blue = f32::from(chunk[2]) / F32_COLOR_MAX;
+                float_bytes.extend_from_slice(&red.to_ne_bytes());
+                float_bytes.extend_from_slice(&green.to_ne_bytes());
+                float_bytes.extend_from_slice(&blue.to_ne_bytes());
             }
             let encoder = image::codecs::hdr::HdrEncoder::new(writer);
             encoder.write_image(&float_bytes, width, height, image::ExtendedColorType::Rgb32F)?;
