@@ -131,6 +131,20 @@ if let Some(dirty) = &canvas.dirty_rect {
 }
 ```
 
+## `DirtyRect::width`
+
+```rust
+pub const fn width(&self) -> u32
+```
+
+Returns the number of columns in the dirty rectangle, or `0` if the rect is empty.
+
+The width is computed as `max_x - min_x + 1` when non-empty, which yields the inclusive count of pixel columns. An empty rect returns `0` without performing arithmetic on the sentinel bounds.
+
+### Returns
+
+The column count of the bounding box, or `0` for an empty rect.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
