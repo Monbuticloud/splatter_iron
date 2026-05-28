@@ -21,6 +21,27 @@ A value of `None` in `Canvas::dirty_rect` signals that the entire composite need
 - For a non-empty rect, `min_x <= max_x` and `min_y <= max_y` must hold.
 - Coordinates are in pixel-space (not texture-space). `width() = max_x - min_x + 1` and `height() = max_y - min_y + 1` when non-empty.
 
+## `DirtyRect::new`
+
+```rust
+pub const fn new(min_x: u32, min_y: u32, max_x: u32, max_y: u32) -> Self
+```
+
+Constructs a `DirtyRect` directly from explicit bounds.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `min_x` | `u32` | Leftmost column (inclusive) |
+| `min_y` | `u32` | Topmost row (inclusive) |
+| `max_x` | `u32` | Rightmost column (inclusive) |
+| `max_y` | `u32` | Bottommost row (inclusive) |
+
+The caller is responsible for maintaining the invariant that `min_x <= max_x` and `min_y <= max_y` for a meaningful non-empty rect. Passing inverted bounds produces an empty rect indistinguishable from one created by `empty()`.
+
+This function is `const` and can be used in static or constant contexts.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
