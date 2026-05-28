@@ -1,3 +1,6 @@
+//! Left tool palette: tool selection buttons for square, circle, square
+//! eraser, circle eraser, and bucket-fill.
+
 use eframe::egui;
 
 use crate::app::MyApp;
