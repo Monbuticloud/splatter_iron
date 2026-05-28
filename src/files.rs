@@ -15,6 +15,10 @@ const JPEG_QUALITY: u8 = 100;
 
 /// Read the raw bytes of a file from disk.
 ///
+/// # Parameters
+///
+/// * `path` — Path to the file to read.
+///
 /// # Errors
 ///
 /// Returns `std::io::Error` if the file cannot be read (e.g. not found, permission denied).
@@ -23,6 +27,10 @@ pub fn load_data_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
 }
 
 /// Deserialize a `Canvas` from zstd-compressed JSON bytes.
+///
+/// # Parameters
+///
+/// * `data` — Zstd-compressed JSON bytes produced by [`save_canvas_to_bytes`].
 ///
 /// # Errors
 ///
@@ -37,6 +45,10 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
 ///
 /// Uses multi-threaded zstd compression. This is the CPU-heavy part of saving
 /// and should be called on a background thread.
+///
+/// # Parameters
+///
+/// * `canvas` — The canvas to serialize.
 ///
 /// # Errors
 ///
@@ -60,6 +72,11 @@ pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
 /// This is a pure I/O operation — serialization should be done beforehand
 /// with [`save_canvas_to_bytes`].
 ///
+/// # Parameters
+///
+/// * `data` — Pre-serialized bytes to write.
+/// * `path` — Destination file path.
+///
 /// # Errors
 ///
 /// Returns an error if the file cannot be written.
@@ -76,6 +93,14 @@ pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
 ///
 /// Supports 13 formats: `AVIF`, `PNG`, `JPEG`, `WebP`, `GIF`, `TIFF`, `TGA`, `ICO`, `PNM`,
 /// `QOI`, `OpenEXR`, `HDR`, and `Farbfeld`.
+///
+/// # Parameters
+///
+/// * `premultiplied_rgba` — Flattened premultiplied RGBA pixel data.
+/// * `width` — Image width in pixels.
+/// * `height` — Image height in pixels.
+/// * `path` — Destination file path (extension determines format).
+/// * `format` — Target image format from the `image` crate.
 ///
 /// # Errors
 ///
@@ -208,6 +233,10 @@ pub fn export_as_image(
 /// Supports any format that the `image` crate can decode. The resulting
 /// canvas has one layer with premultiplied-alpha RGBA pixels at the
 /// image's native resolution.
+///
+/// # Parameters
+///
+/// * `path` — Path to the image file to import.
 ///
 /// # Errors
 ///
