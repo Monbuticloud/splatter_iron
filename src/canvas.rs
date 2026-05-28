@@ -12,15 +12,20 @@ const DEFAULT_HEIGHT: u32 = 1500;
 /// A single layer of pixels in the canvas.
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Layer {
+    /// Premultiplied-alpha RGBA pixels in row-major order.
     pub pixels: Vec<Color32>,
 }
 
 /// Axis-aligned bounding box of a modified region on the canvas.
 #[derive(Clone, Copy, Default)]
 pub struct DirtyRect {
+    /// Minimum column index (inclusive) of the dirty region.
     pub min_x: u32,
+    /// Minimum row index (inclusive) of the dirty region.
     pub min_y: u32,
+    /// Maximum column index (inclusive) of the dirty region.
     pub max_x: u32,
+    /// Maximum row index (inclusive) of the dirty region.
     pub max_y: u32,
 }
 
@@ -73,13 +78,17 @@ impl DirtyRect {
 /// GPU texture state, and a flag to request re-rendering.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Canvas {
+    /// Ordered list of layers from bottom (index 0) to top.
     pub pixels: Vec<Layer>,
+    /// Canvas height in pixels.
     pub height: u32,
+    /// Canvas width in pixels.
     pub width: u32,
+    /// Cached GPU texture handle for rendered composite (egui-managed).
     #[serde(skip)]
     pub rendered_layers: Option<TextureHandle>,
-    // #[serde(skip)]
-    // pub placeholder_texture: Option<TextureHandle>,
+    /// Premultiplied-alpha output buffer holding the blended result
+    /// of all layers (width × height × 4 bytes).
     #[serde(skip)]
     pub output_rgba: Vec<u8>,
 
@@ -88,6 +97,7 @@ pub struct Canvas {
     #[serde(skip)]
     pub dirty_rect: Option<DirtyRect>,
 
+    /// Flag to request a full re-render on the next frame.
     pub render_next_frame: bool,
 }
 
