@@ -456,6 +456,7 @@ impl MyApp {
                         self.tool_configuration.radius, &mut self.document.canvas,
                         color, self.document.current_layer,
                         alpha_overlay, self.tool_configuration.stamp_tinted,
+                        self.tool_configuration.stamp_sampling,
                         &mut self.undo.drag_processed,
                         self.undo.drag_stamp_value,
                     )
