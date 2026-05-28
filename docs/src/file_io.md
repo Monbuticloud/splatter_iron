@@ -160,3 +160,19 @@ Convenience method that saves to the document's existing `savefile_path` asynchr
 
 Useful for keyboard shortcuts (e.g. Ctrl+S) that re-save to the same path without opening a dialog. If the document has no path yet, the caller should first call `queue_file_action(PendingFileAction::Save)` to prompt the user.
 
+### `FileIO::poll_save_results`
+
+```rust
+pub fn poll_save_results(&self, document: &mut Document, error_list: &mut Vec<String>)
+```
+
+Called once per frame to process completed async save results. Drains the `save_result_receiver` channel with `try_recv()` and updates document state or pushes errors accordingly.
+
+**Parameters:**
+- `document` — The `Document` to update based on the save outcome:
+  - `Autosave` → Sets `document.dirty_since_last_autosave = false`, marking the autosave as up-to-date.
+  - `ManualSave(path)` → Sets `document.savefile_path = path.display().to_string()` and `document.canvas.render_next_frame = true`, updating the UI with the new save location and triggering a re-render.
+- `error_list` — A `Vec<String>` where `Failed(message)` results are pushed as `"Save failed: {message}"`.
+
+Non-blocking: uses `try_recv()` so it will not stall the frame if no save has completed.
+
