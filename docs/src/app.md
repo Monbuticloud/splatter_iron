@@ -148,3 +148,31 @@ The top-level application struct owned by eframe, composing every subsystem:
 
 All fields are `pub` to give panel methods (`show_top_panel`, `show_left_panel`,
 etc.) direct access without getter boilerplate.
+
+## `impl MyApp`
+
+### `MyApp::new(creation_context)`
+
+Constructor invoked once by eframe at startup.
+
+Steps:
+
+1. Creates a pair of mpsc channels — one for dialog-send requests, one for
+   save-result notifications.
+2. Builds a default `Canvas` (800×600) and computes its pixel count for the
+   undo-history capacity.
+3. Resolves the platform data directory via `ProjectDirs` using the three
+   identity constants, then creates the `autosaves/` subdirectory.
+4. When the wgpu render state is available (`creation_context.wgpu_render_state`),
+   creates a GPU `Rgba8UnormSrgb` texture sized to the canvas, registers it
+   with the egui_wgpu renderer as a native texture via
+   `renderer.register_native_texture`, and wraps it in `GpuTexture`.
+5. Assembles `MyApp` with a new `Document`, default `ToolConfiguration`,
+   `UndoHistory` sized to `pixel_count`, `FileIO` wired to both mpsc
+   channels, default `UIState`, and the optional `GpuTexture`.
+
+# Panics
+
+Panics if `ProjectDirs::from` returns `None` (no home directory) or if
+`std::fs::create_dir_all` fails for either the data directory or the
+autosaves subdirectory (permissions, read-only filesystem).
