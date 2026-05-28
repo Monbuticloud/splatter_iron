@@ -59,3 +59,28 @@ Used as the value type in the `EXPORT_FORMATS` lookup table. The
 `extensions` slice drives the file-extension filter in native save dialogs;
 `fmt` is passed directly to `image::ImageEncoder` implementations during
 export.
+
+### `EXPORT_FORMATS`
+
+A static lookup table mapping display names to `ExportInformation` entries.
+All 13 export targets:
+
+| Display name | Extensions | `image::ImageFormat` |
+|---|---|---|
+| AVIF | `avif` | `Avif` |
+| PNG | `png` | `Png` |
+| JPEG | `jpg`, `jpeg` | `Jpeg` |
+| WebP | `webp` | `WebP` |
+| GIF | `gif` | `Gif` |
+| TIFF | `tiff`, `tif` | `Tiff` |
+| TGA | `tga` | `Tga` |
+| ICO | `ico` | `Ico` |
+| PNM | `pnm`, `pgm`, `ppm`, `pbm`, `pam` | `Pnm` |
+| QOI | `qoi` | `Qoi` |
+| EXR | `exr` | `OpenExr` |
+| HDR | `hdr` | `Hdr` |
+| Farbfeld | `ff` | `Farbfeld` |
+
+The PNM entry covers all five Portable Anymap sub-formats (PBM/PGM/PPM/PAM).
+The table drives the export dialog's format picker and is extensible by
+adding entries to the slice.
