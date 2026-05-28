@@ -34,6 +34,7 @@
 | `src/tools/` | `bucket_fill` (scanline flood-fill), `circle_brush` (midpoint-circle span fill), `square_brush` (rectangular fill) — all return `UndoRecord`, used by `Document`/`Canvas` |
 | `src/tests/` | 9 test modules: `pixel`, `undo`, `undo_history`, `canvas`, `document`, `files`, `bucket_fill`, `circle_brush`, `square_brush` |
 | `docs/src/` | Mirrors `src/` structure; one `.md` per `.rs` file for post-implementation documentation |
+| `docs/architecture/` | Numbered ADRs for deliberate architecture decisions |
 
 ## Notable
 
