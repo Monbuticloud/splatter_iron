@@ -109,8 +109,8 @@ fn save_load_roundtrip_transparent() {
 fn export_png_roundtrip() {
     let canvas = checkerboard_4x4();
     let mut rgba = Vec::with_capacity(16 * 4);
-    for p in &canvas.pixels[0].pixels {
-        rgba.extend_from_slice(&p.to_array());
+    for pixel in &canvas.pixels[0].pixels {
+        rgba.extend_from_slice(&pixel.to_array());
     }
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("test.png");

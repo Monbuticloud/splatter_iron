@@ -40,7 +40,7 @@ fn compress_run_mixed_long_returns_many() {
 fn compress_run_threshold_boundary() {
     // RLE_SHORT_RUN_THRESHOLD = 8
     let uniform = vec![Color32::RED; 8];
-    let (_, len) = undo::compress_run(uniform);
+    let (_, length) = undo::compress_run(uniform);
     assert_eq!(length, 8, "len 8 should be short → Many");
 }
 

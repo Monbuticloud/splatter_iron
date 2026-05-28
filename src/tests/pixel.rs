@@ -3,11 +3,11 @@ use eframe::egui::Color32;
 use crate::pixel;
 
 /// Check that every channel of `a` and `b` differs by at most `max_diff`.
-fn channels_close(a: Color32, b: Color32, max_diff: u8) -> bool {
-    a.r().abs_diff(b.r()) <= max_diff &&
-        a.g().abs_diff(b.g()) <= max_diff &&
-        a.b().abs_diff(b.b()) <= max_diff &&
-        a.a().abs_diff(b.a()) <= max_diff
+fn channels_close(left: Color32, right: Color32, max_diff: u8) -> bool {
+    left.r().abs_diff(right.r()) <= max_diff &&
+        left.g().abs_diff(right.g()) <= max_diff &&
+        left.b().abs_diff(right.b()) <= max_diff &&
+        left.a().abs_diff(right.a()) <= max_diff
 }
 
 /// Premultiplying an opaque color should return it unchanged.
@@ -141,23 +141,23 @@ fn blend_layers_two_layers_opaque() {
 /// `blend_region` on a single layer should match `blend_layers` for that region.
 #[test]
 fn blend_region_single_layer_matches_full() {
-    let w = 8u32;
-    let h = 8u32;
-    let pixel_count = (w * h) as usize;
+    let width = 8u32;
+    let height = 8u32;
+    let pixel_count = (width * height) as usize;
     let pixels = vec![Color32::from_rgba_premultiplied(100, 150, 200, 255); pixel_count];
     let mut full_out = vec![0u8; pixel_count * 4];
     let mut region_out = vec![0u8; pixel_count * 4];
 
     pixel::blend_layers(&[&pixels], &mut full_out);
-    pixel::blend_region(&[&pixels], &mut region_out, w, 2, 2, 5, 5);
+    pixel::blend_region(&[&pixels], &mut region_out, width, 2, 2, 5, 5);
 
     // Pixels outside region should be untouched (zero)
     assert_eq!(region_out[0..2 * 8 * 4], vec![0u8; 2 * 8 * 4][..]);
     // Pixels inside region should match full blend
     for y in 2..=5 {
         for x in 2..=5 {
-            let idx = (y * w + x) as usize * 4;
-            assert_eq!(region_out[idx..idx + 4], full_out[idx..idx + 4],
+            let pixel_index = (y * width + x) as usize * 4;
+            assert_eq!(region_out[pixel_index..pixel_index + 4], full_out[pixel_index..pixel_index + 4],
                 "mismatch at ({x},{y})");
         }
     }
@@ -166,25 +166,25 @@ fn blend_region_single_layer_matches_full() {
 /// `blend_region` with two layers should match `blend_layers` in the specified rect.
 #[test]
 fn blend_region_two_layers() {
-    let w = 6u32;
-    let h = 6u32;
-    let pixel_count = (w * h) as usize;
+    let width = 6u32;
+    let height = 6u32;
+    let pixel_count = (width * height) as usize;
     let bottom = vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); pixel_count];
     let top = vec![Color32::from_rgba_premultiplied(0, 255, 0, 128); pixel_count];
     let mut full_out = vec![0u8; pixel_count * 4];
     let mut region_out = vec![0u8; pixel_count * 4];
 
     pixel::blend_layers(&[&bottom, &top], &mut full_out);
-    pixel::blend_region(&[&bottom, &top], &mut region_out, w, 1, 1, 4, 4);
+    pixel::blend_region(&[&bottom, &top], &mut region_out, width, 1, 1, 4, 4);
 
-    for y in 0..h {
-        for x in 0..w {
-            let idx = (y * w + x) as usize * 4;
+    for y in 0..height {
+        for x in 0..width {
+            let pixel_index = (y * width + x) as usize * 4;
             if x >= 1 && x <= 4 && y >= 1 && y <= 4 {
-                assert_eq!(region_out[idx..idx + 4], full_out[idx..idx + 4],
+                assert_eq!(region_out[pixel_index..pixel_index + 4], full_out[pixel_index..pixel_index + 4],
                     "mismatch at ({x},{y})");
             } else {
-                assert_eq!(region_out[idx..idx + 4], [0, 0, 0, 0],
+                assert_eq!(region_out[pixel_index..pixel_index + 4], [0, 0, 0, 0],
                     "outside region should be zero at ({x},{y})");
             }
         }
