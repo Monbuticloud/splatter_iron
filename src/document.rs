@@ -92,11 +92,11 @@ impl Document {
         texture: &wgpu::Texture,
         dirty: &Option<(u32, u32, u32, u32)>,
     ) {
-        let cw = self.canvas.width;
-        let ch = self.canvas.height;
-        let (x, y, w, h) = dirty.unwrap_or((0, 0, cw, ch));
+        let canvas_width = self.canvas.width;
+        let canvas_height = self.canvas.height;
+        let (x, y, width, height) = dirty.unwrap_or((0, 0, canvas_width, canvas_height));
 
-        if w == 0 || h == 0 {
+        if width == 0 || height == 0 {
             return;
         }
 
@@ -109,11 +109,11 @@ impl Document {
             },
             &self.canvas.output_rgba,
             wgpu::TexelCopyBufferLayout {
-                offset: (y as usize * cw as usize + x as usize) as u64 * 4,
-                bytes_per_row: Some(cw * 4),
+                offset: (y as usize * canvas_width as usize + x as usize) as u64 * 4,
+                bytes_per_row: Some(canvas_width * 4),
                 rows_per_image: None,
             },
-            wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+            wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
         );
     }
 
