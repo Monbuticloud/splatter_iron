@@ -121,11 +121,60 @@ fn undo_record_is_runs_variant() {
 fn empty_square_produces_empty_runs() {
     let mut canvas = small_white_canvas();
     let record = square_brush::draw_square(5, 5, 5, 5, &mut canvas, red(), 0, false);
-    if let UndoRecord::Run { runs, .. } = &record {
-        assert!(runs.is_empty(), "zero-area rect should produce no runs");
-    } else {
-        panic!("Expected Run variant");
+    let UndoRecord::Run { runs, .. } = &record;
+    assert!(runs.is_empty(), "zero-area rect should produce no runs");
+}
+
+/// An empty pixel vec should produce length 0 and `Many` variant.
+#[test]
+fn compress_run_empty_returns_many() {
+    let (before, length) = undo::compress_run(Vec::new());
+    assert_eq!(length, 0);
+    assert!(matches!(before, BeforePixels::Many(_)));
+}
+
+/// `redo_apply` with alpha overlay should blend instead of overwriting.
+#[test]
+fn redo_apply_alpha_overlay_blends() {
+    let mut canvas = small_white_canvas();
+    let semi = Color32::from_rgba_premultiplied(128, 0, 0, 128);
+    let record = square_brush::draw_square(0, 0, 5, 5, &mut canvas, semi, 0, true);
+    // After draw: pixels are alpha-blended semi-transparent red over white
+    let after_draw = canvas.pixels[0].pixels[0];
+    undo::undo_apply(&mut canvas, &record);
+    // After undo: original white should be restored
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        Color32::from_rgba_premultiplied(255, 255, 255, 255)
+    );
+    undo::redo_apply(&mut canvas, &record);
+    // After redo: should match the blended result
+    assert_eq!(canvas.pixels[0].pixels[0], after_draw, "redo blend matches original blend");
+}
+
+/// `undo_apply` with a uniform run stored as `BeforePixels::All` should restore correctly.
+#[test]
+fn undo_apply_before_pixels_all_restores() {
+    let mut canvas = small_white_canvas();
+    // Draw a large enough square (all 100 pixels) to trigger RLE → `All` compression
+    let record = square_brush::draw_square(0, 0, 10, 10, &mut canvas, red(), 0, false);
+    let UndoRecord::Run { runs, .. } = &record;
+    for run in runs {
+        assert!(
+            matches!(run.before, BeforePixels::All(_)),
+            "uniform run should compress to All"
+        );
     }
+    undo::undo_apply(&mut canvas, &record);
+    // All pixels should be restored to original white
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        Color32::from_rgba_premultiplied(255, 255, 255, 255)
+    );
+    assert_eq!(
+        canvas.pixels[0].pixels[99],
+        Color32::from_rgba_premultiplied(255, 255, 255, 255)
+    );
 }
 
 /// Multiple undo/redo operations should compose correctly.
