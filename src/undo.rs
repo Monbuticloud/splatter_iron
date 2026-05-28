@@ -19,8 +19,11 @@ pub enum BeforePixels {
 
 /// A contiguous range of pixels in an undo `Run` record.
 pub struct RunSegment {
+    /// Starting pixel index within the layer's flat pixel array.
     pub start: u32,
+    /// Number of contiguous pixels in this run.
     pub length: u32,
+    /// Original pixel values before the stroke (compressed storage).
     pub before: BeforePixels,
 }
 
