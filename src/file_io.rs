@@ -63,11 +63,17 @@ pub enum SaveResult {
 /// Holds channel pairs for receiving dialog results and save outcomes,
 /// plus the app's local data directory path for autosaves.
 pub struct FileIO {
+    /// File action queued for the next background thread iteration.
     pub pending_file_action: Option<PendingFileAction>,
+    /// Channel sender for dispatching dialog requests to the background thread.
     pub dialog_sender: mpsc::Sender<DialogResult>,
+    /// Channel receiver for receiving dialog results on the UI thread.
     pub dialog_receiver: mpsc::Receiver<DialogResult>,
+    /// Channel sender for dispatching save requests to the background thread.
     pub save_result_sender: mpsc::Sender<SaveResult>,
+    /// Channel receiver for receiving save results on the UI thread.
     pub save_result_receiver: mpsc::Receiver<SaveResult>,
+    /// Base path for autosave directory (`{data_dir}/autosaves/`).
     pub app_local_data_directory: PathBuf,
 }
 
