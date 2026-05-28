@@ -29,30 +29,30 @@ fn fill_circle_impl(
     alpha_overlay: bool,
 ) {
     if radius == 0 {
-        let idx = (center_y as usize) * width + center_x as usize;
+        let pixel_index = (center_y as usize) * width + center_x as usize;
         if alpha_overlay {
-            pixels[idx] = crate::pixel::alpha_blend(pixels[idx], color);
+            pixels[pixel_index] = crate::pixel::alpha_blend(pixels[pixel_index], color);
         } else {
-            pixels[idx] = color;
+            pixels[pixel_index] = color;
         }
         return;
     }
 
-    let r_sq = (radius as u64) * (radius as u64);
+    let radius_squared = (radius as u64) * (radius as u64);
 
-    for dy in 0..=radius {
-        let dy_sq = (dy as u64) * (dy as u64);
-        let dx = ((r_sq - dy_sq) as f64).sqrt() as u32;
-        let span_start = center_x.saturating_sub(dx).min(canvas_width - 1);
-        let span_end = (center_x + dx).min(canvas_width - 1);
+    for delta_y in 0..=radius {
+        let delta_y_squared = (delta_y as u64) * (delta_y as u64);
+        let delta_x = ((radius_squared - delta_y_squared) as f64).sqrt() as u32;
+        let span_start = center_x.saturating_sub(delta_x).min(canvas_width - 1);
+        let span_end = (center_x + delta_x).min(canvas_width - 1);
         if span_start > span_end {
             continue;
         }
 
         let apply = |span: &mut [Color32]| {
             if alpha_overlay {
-                for p in span.iter_mut() {
-                    *p = crate::pixel::alpha_blend(*p, color);
+                for pixel in span.iter_mut() {
+                    *pixel = crate::pixel::alpha_blend(*pixel, color);
                 }
             } else {
                 span.fill(color);
@@ -60,14 +60,14 @@ fn fill_circle_impl(
         };
 
         // Top half row
-        if let Some(y) = center_y.checked_sub(dy) {
+        if let Some(y) = center_y.checked_sub(delta_y) {
             let row_start = (y as usize) * width;
             apply(&mut pixels[row_start + span_start as usize..=row_start + span_end as usize]);
         }
 
         // Bottom half (skip centre-row duplicate)
-        if dy != 0 {
-            let y = center_y + dy;
+        if delta_y != 0 {
+            let y = center_y + delta_y;
             if y < canvas_height {
                 let row_start = (y as usize) * width;
                 apply(&mut pixels[row_start + span_start as usize..=row_start + span_end as usize]);
@@ -114,45 +114,45 @@ pub fn draw_circle(
     let pixels = &mut canvas.pixels[layer].pixels;
     let mut runs: Vec<RunSegment> = Vec::new();
 
-    let r_sq = (radius as u64) * (radius as u64);
+    let radius_squared = (radius as u64) * (radius as u64);
 
-    for dy in 0..=radius {
-        let dy_sq = (dy as u64) * (dy as u64);
-        let dx = ((r_sq - dy_sq) as f64).sqrt() as u32;
-        let span_start = center_x.saturating_sub(dx).min(canvas.width - 1);
-        let span_end = (center_x + dx).min(canvas.width - 1);
+    for delta_y in 0..=radius {
+        let delta_y_squared = (delta_y as u64) * (delta_y as u64);
+        let delta_x = ((radius_squared - delta_y_squared) as f64).sqrt() as u32;
+        let span_start = center_x.saturating_sub(delta_x).min(canvas.width - 1);
+        let span_end = (center_x + delta_x).min(canvas.width - 1);
 
         if span_start > span_end {
             continue;
         }
 
         // Top half row
-        if let Some(y) = center_y.checked_sub(dy) {
+        if let Some(y) = center_y.checked_sub(delta_y) {
             let row_start = (y as usize) * width;
-            let s = row_start + span_start as usize;
-            let e = row_start + span_end as usize + 1;
-            let mut before = Vec::with_capacity(e - s);
-            before.extend_from_slice(&pixels[s..e]);
+            let start = row_start + span_start as usize;
+            let end = row_start + span_end as usize + 1;
+            let mut before = Vec::with_capacity(end - start);
+            before.extend_from_slice(&pixels[start..end]);
             let (before, length) = compress_run(before);
             runs.push(RunSegment {
-                start: s as u32,
+                start: start as u32,
                 length,
                 before,
             });
         }
 
         // Bottom half (skip centre-row duplicate)
-        if dy != 0 {
-            let y = center_y + dy;
+        if delta_y != 0 {
+            let y = center_y + delta_y;
             if y < height {
                 let row_start = (y as usize) * width;
-                let s = row_start + span_start as usize;
-                let e = row_start + span_end as usize + 1;
-                let mut before = Vec::with_capacity(e - s);
-                before.extend_from_slice(&pixels[s..e]);
+                let start = row_start + span_start as usize;
+                let end = row_start + span_end as usize + 1;
+                let mut before = Vec::with_capacity(end - start);
+                before.extend_from_slice(&pixels[start..end]);
                 let (before, length) = compress_run(before);
                 runs.push(RunSegment {
-                    start: s as u32,
+                    start: start as u32,
                     length,
                     before,
                 });
@@ -163,13 +163,13 @@ pub fn draw_circle(
     // Fill the circle
     fill_circle_impl(pixels, width, center_x, center_y, radius, color, canvas.width, height, alpha_overlay);
 
-    let cx_min = center_x.saturating_sub(radius);
-    let cy_min = center_y.saturating_sub(radius);
-    let cx_max = (center_x + radius).min(canvas.width - 1);
-    let cy_max = (center_y + radius).min(canvas.height - 1);
-    let rect = DirtyRect::new(cx_min, cy_min, cx_max, cy_max);
+    let circle_min_x = center_x.saturating_sub(radius);
+    let circle_min_y = center_y.saturating_sub(radius);
+    let circle_max_x = (center_x + radius).min(canvas.width - 1);
+    let circle_max_y = (center_y + radius).min(canvas.height - 1);
+    let rect = DirtyRect::new(circle_min_x, circle_min_y, circle_max_x, circle_max_y);
     canvas.dirty_rect = match canvas.dirty_rect {
-        Some(r) => Some(r.union(&rect)),
+        Some(rectangle) => Some(rectangle.union(&rect)),
         None => Some(rect),
     };
 
@@ -204,33 +204,33 @@ fn stamp_circle_positions(
     dirty_rect: &mut DirtyRect,
 ) {
     if geo_radius == 0 {
-        let mut cx = start_x as i32;
-        let mut cy = start_y as i32;
-        let tx = end_x as i32;
-        let ty = end_y as i32;
-        let dx = tx.abs_diff(cx) as i32;
-        let sx = if cx < tx { 1 } else { -1 };
-        let dy = -(ty.abs_diff(cy) as i32);
-        let sy = if cy < ty { 1 } else { -1 };
-        let mut err = dx + dy;
+        let mut current_x = start_x as i32;
+        let mut current_y = start_y as i32;
+        let target_x = end_x as i32;
+        let target_y = end_y as i32;
+        let delta_x = target_x.abs_diff(current_x) as i32;
+        let step_x = if current_x < target_x { 1 } else { -1 };
+        let delta_y = -(target_y.abs_diff(current_y) as i32);
+        let step_y = if current_y < target_y { 1 } else { -1 };
+        let mut error = delta_x + delta_y;
         loop {
-            if cx >= 0 && (cx as u32) < width as u32 && cy >= 0 && (cy as u32) < height {
-                let x = cx as u32;
-                let y = cy as u32;
+            if current_x >= 0 && (current_x as u32) < width as u32 && current_y >= 0 && (current_y as u32) < height {
+                let x = current_x as u32;
+                let y = current_y as u32;
                 visited[(y as usize) * width + x as usize] = stamp;
                 dirty_rect.extend(x, y);
             }
-            if cx == tx && cy == ty {
+            if current_x == target_x && current_y == target_y {
                 break;
             }
-            let e2 = err.saturating_mul(2);
-            if e2 >= dy {
-                err += dy;
-                cx += sx;
+            let error_times_two = error.saturating_mul(2);
+            if error_times_two >= delta_y {
+                error += delta_y;
+                current_x += step_x;
             }
-            if e2 <= dx {
-                err += dx;
-                cy += sy;
+            if error_times_two <= delta_x {
+                error += delta_x;
+                current_y += step_y;
             }
         }
         return;
@@ -245,44 +245,44 @@ fn stamp_circle_positions(
     let step_x = if current_x < target_x { 1 } else { -1 };
     let delta_y = -(target_y.abs_diff(current_y) as i32);
     let step_y = if current_y < target_y { 1 } else { -1 };
-    let mut err = delta_x + delta_y;
+    let mut error = delta_x + delta_y;
 
-    let r_sq = (geo_radius as u64) * (geo_radius as u64);
+    let radius_squared = (geo_radius as u64) * (geo_radius as u64);
 
     loop {
-        let g = geo_radius as i32;
-        let cy_min = (current_y - g).max(0) as u32;
-        let cy_max = (current_y + g).min(height as i32 - 1).max(0) as u32;
-        let cx_min = (current_x - g).max(0) as u32;
-        let cx_max = (current_x + g).min(width as i32 - 1).max(0) as u32;
-        dirty_rect.extend(cx_min, cy_min);
-        dirty_rect.extend(cx_max, cy_max);
+        let geo_radius_i32 = geo_radius as i32;
+        let circle_min_y = (current_y - geo_radius_i32).max(0) as u32;
+        let circle_max_y = (current_y + geo_radius_i32).min(height as i32 - 1).max(0) as u32;
+        let circle_min_x = (current_x - geo_radius_i32).max(0) as u32;
+        let circle_max_x = (current_x + geo_radius_i32).min(width as i32 - 1).max(0) as u32;
+        dirty_rect.extend(circle_min_x, circle_min_y);
+        dirty_rect.extend(circle_max_x, circle_max_y);
 
-        for dy in -g..=g {
-            let y = current_y + dy;
+        for delta_y in -geo_radius_i32..=geo_radius_i32 {
+            let y = current_y + delta_y;
             if y < 0 || y >= height as i32 {
                 continue;
             }
-            let dy_sq = (dy.abs() as u64) * (dy.abs() as u64);
-            let dx = ((r_sq - dy_sq) as f64).sqrt() as i32;
+            let delta_y_squared = (delta_y.abs() as u64) * (delta_y.abs() as u64);
+            let delta_x = ((radius_squared - delta_y_squared) as f64).sqrt() as i32;
             let row_start = (y as usize) * width;
-            let start_x_local = (current_x - dx).max(0).min(width as i32 - 1) as usize;
-            let end_x_local = (current_x + dx).max(0).min(width as i32 - 1) as usize;
-            for x in start_x_local..=end_x_local {
-                visited[row_start + x] = stamp;
+            let start_x_local = (current_x - delta_x).max(0).min(width as i32 - 1) as usize;
+            let end_x_local = (current_x + delta_x).max(0).min(width as i32 - 1) as usize;
+            for pixel_index in start_x_local..=end_x_local {
+                visited[row_start + pixel_index] = stamp;
             }
         }
 
         if current_x == target_x && current_y == target_y {
             break;
         }
-        let e2 = err.saturating_mul(2);
-        if e2 >= delta_y {
-            err += delta_y;
+        let error_times_two = error.saturating_mul(2);
+        if error_times_two >= delta_y {
+            error += delta_y;
             current_x += step_x;
         }
-        if e2 <= delta_x {
-            err += delta_x;
+        if error_times_two <= delta_x {
+            error += delta_x;
             current_y += step_y;
         }
     }
@@ -337,33 +337,33 @@ pub fn draw_circle_line(
         let row_start = (y as usize) * width;
         let mut x = dirty_rect.min_x;
         while x <= dirty_rect.max_x {
-            let idx = row_start + x as usize;
-            if visited[idx] != stamp {
+            let pixel_index = row_start + x as usize;
+            if visited[pixel_index] != stamp {
                 x += 1;
                 continue;
             }
-            if alpha_overlay && drag_processed[idx] == drag_stamp_val {
+            if alpha_overlay && drag_processed[pixel_index] == drag_stamp_val {
                 x += 1;
                 continue;
             }
-            let run_start = idx as u32;
+            let run_start = pixel_index as u32;
             let mut before = Vec::new();
             while x <= dirty_rect.max_x {
-                let idx2 = row_start + x as usize;
-                if visited[idx2] != stamp {
+                let next_pixel_index = row_start + x as usize;
+                if visited[next_pixel_index] != stamp {
                     break;
                 }
-                if alpha_overlay && drag_processed[idx2] == drag_stamp_val {
+                if alpha_overlay && drag_processed[next_pixel_index] == drag_stamp_val {
                     break;
                 }
-                before.push(pixels[idx2]);
-                pixels[idx2] = if alpha_overlay {
-                    crate::pixel::alpha_blend(pixels[idx2], color)
+                before.push(pixels[next_pixel_index]);
+                pixels[next_pixel_index] = if alpha_overlay {
+                    crate::pixel::alpha_blend(pixels[next_pixel_index], color)
                 } else {
                     color
                 };
                 if alpha_overlay {
-                    drag_processed[idx2] = drag_stamp_val;
+                    drag_processed[next_pixel_index] = drag_stamp_val;
                 }
                 x += 1;
             }
@@ -373,7 +373,7 @@ pub fn draw_circle_line(
     }
 
     canvas.dirty_rect = match canvas.dirty_rect {
-        Some(r) => Some(r.union(&dirty_rect)),
+        Some(rectangle) => Some(rectangle.union(&dirty_rect)),
         None => Some(dirty_rect),
     };
 
