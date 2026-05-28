@@ -42,6 +42,24 @@ The caller is responsible for maintaining the invariant that `min_x <= max_x` an
 
 This function is `const` and can be used in static or constant contexts.
 
+## `DirtyRect::empty`
+
+```rust
+pub const fn empty() -> Self
+```
+
+Creates an empty `DirtyRect` with inverted bounds (`min_x = MAX`, `min_y = MAX`, `max_x = 0`, `max_y = 0`). This sentinel state is the starting point before any pixel has been recorded.
+
+The first call to `extend(point)` will overwrite these sentinel values with the point's coordinates, transforming the rect into a single-pixel region. Until then, `is_empty()` returns `true` and `width()`/`height()` return `0`.
+
+This is the idiomatic constructor for incremental dirty tracking:
+```rust
+let mut dirty = DirtyRect::empty();
+for pixel in stroke_pixels {
+    dirty.extend(pixel.x, pixel.y);
+}
+```
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
