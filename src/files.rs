@@ -8,7 +8,7 @@ use crate::canvas::{ Canvas, Layer };
 use crate::pixel::{ premultiply, unpremultiply, F32_COLOR_MAX };
 
 const COMPRESSION_LEVEL: i32 = 10;
-const JPEG_QUALITY: u8 = 95;
+const JPEG_QUALITY: u8 = 100;
 
 /// Read the raw bytes of a file from disk.
 ///
@@ -126,8 +126,12 @@ pub fn export_as_image(
     // JPEG requires RGB8 (3 bytes/pixel). Alpha was already blended
     // against white in the loop above, so strip the alpha channel.
     if format == image::ImageFormat::Jpeg {
-        let rgb: Vec<u8> = img.pixels().flat_map(|p| [p[0], p[1], p[2]]).collect();
-        image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY)
+        let rgb: Vec<u8> = img
+            .pixels()
+            .flat_map(|p| [p[0], p[1], p[2]])
+            .collect();
+        image::codecs::jpeg::JpegEncoder
+            ::new_with_quality(writer, JPEG_QUALITY)
             .write_image(&rgb, width, height, image::ExtendedColorType::Rgb8)?;
         return Ok(());
     }
@@ -148,13 +152,15 @@ pub fn export_as_image(
         image::ImageFormat::Avif => export_via!(image::codecs::avif::AvifEncoder::new(writer))?,
         image::ImageFormat::Png => export_via!(image::codecs::png::PngEncoder::new(writer))?,
 
-        image::ImageFormat::WebP => export_via!(image::codecs::webp::WebPEncoder::new_lossless(writer))?,
+        image::ImageFormat::WebP =>
+            export_via!(image::codecs::webp::WebPEncoder::new_lossless(writer))?,
         image::ImageFormat::Tiff => export_via!(image::codecs::tiff::TiffEncoder::new(writer))?,
         image::ImageFormat::Tga => export_via!(image::codecs::tga::TgaEncoder::new(writer))?,
         image::ImageFormat::Ico => export_via!(image::codecs::ico::IcoEncoder::new(writer))?,
         image::ImageFormat::Pnm => export_via!(image::codecs::pnm::PnmEncoder::new(writer))?,
         image::ImageFormat::Qoi => export_via!(image::codecs::qoi::QoiEncoder::new(writer))?,
-        image::ImageFormat::OpenExr => export_via!(image::codecs::openexr::OpenExrEncoder::new(writer))?,
+        image::ImageFormat::OpenExr =>
+            export_via!(image::codecs::openexr::OpenExrEncoder::new(writer))?,
         image::ImageFormat::Hdr => {
             // Build Rgb32F image from the straight RGBA buffer.
             // HDR stores linear float RGB (alpha is ignored).
