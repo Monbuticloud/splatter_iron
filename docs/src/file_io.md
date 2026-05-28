@@ -24,3 +24,12 @@ Message sent from the file-dialog background thread to the UI thread after the u
 | Variant | Description |
 |---------|-------------|
 | `Picked(PathBuf)` | User selected a file path via the native dialog. Sent through `dialog_sender` and received by `poll_dialog_results` on the next frame. |
+
+### `SaveKind`
+
+Distinguishes an autosave from a manual save in the async save pipeline.
+
+| Variant | Description |
+|---------|-------------|
+| `Autosave` | Periodic autosave triggered by the 2-minute timer in `UIState`. Saves to `{data_dir}/autosaves/{timestamp}.splattercanvas`. The resulting path is not surfaced to the user. |
+| `ManualSave(PathBuf)` | Explicit user-initiated save to a chosen path. The `PathBuf` is the file path selected via dialog or the current `savefile_path`. |
