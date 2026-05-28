@@ -237,3 +237,33 @@ pub fn delete_layer(&mut self, index: usize)
      decremented by 1 (via `saturating_sub(1)`).
    - The result is clamped to `[0, layers.len() - 1]` with `min()`.
 3. Sets `render_next_frame = true`.
+
+---
+
+## `Document::move_layer_up(index)`
+
+Swaps the layer at `index` with the layer above it (`index - 1`) and updates
+`current_layer` to follow the moved layer.
+
+### Signature
+
+```rust
+pub fn move_layer_up(&mut self, index: usize)
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `index` | `usize` | Index of the layer to move upward |
+
+### Panics
+
+Panics if `index == 0` — there is no layer above to swap with. The caller
+(the UI) must ensure that `index > 0` before calling.
+
+### Behaviour
+
+- Performs `self.canvas.pixels.swap(index, index - 1)`.
+- Sets `current_layer = index - 1` (the layer moves with the swap).
+- Sets `render_next_frame = true`.
