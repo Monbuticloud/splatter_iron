@@ -82,6 +82,14 @@ impl FileIO {
     ///
     /// `dialog_sender`/`dialog_receiver` are used for file dialog results.
     /// `save_result_sender`/`save_result_receiver` are used for async save outcomes.
+    ///
+    /// # Parameters
+    ///
+    /// * `dialog_sender` — Channel sender for file-dialog results.
+    /// * `dialog_receiver` — Channel receiver for file-dialog results.
+    /// * `save_result_sender` — Channel sender for async save results.
+    /// * `save_result_receiver` — Channel receiver for async save results.
+    /// * `app_local_data_directory` — Base path for autosave directory.
     pub fn new(
         dialog_sender: mpsc::Sender<DialogResult>,
         dialog_receiver: mpsc::Receiver<DialogResult>,
@@ -105,6 +113,10 @@ impl FileIO {
     /// The dialog is dispatched to the main thread via `rfd` to avoid macOS
     /// winit re-entrancy panics. Supports Save, Load, Import, and Export
     /// actions with appropriate file filters and default names.
+    ///
+    /// # Parameters
+    ///
+    /// * `action` — The file-dialog action to perform.
     pub fn queue_file_action(&mut self, action: PendingFileAction) {
         let sender = self.dialog_sender.clone();
 
@@ -174,6 +186,12 @@ impl FileIO {
     /// Called once per frame before egui layout. Handles load, import,
     /// save, and export actions by reading/writing files and updating
     /// document state or the error list accordingly.
+    ///
+    /// # Parameters
+    ///
+    /// * `document` — The document to modify on load/import.
+    /// * `undo` — Undo history to reset on load/import.
+    /// * `error_list` — Error list to push failure messages into.
     pub fn poll_dialog_results(
         &mut self,
         document: &mut Document,
@@ -263,6 +281,11 @@ impl FileIO {
     /// For autosaves, the file name is a timestamp under `AUTOSAVE_DIRECTORY`.
     /// For manual saves, the provided path is used. Results are sent back
     /// via `save_result_sender`.
+    ///
+    /// # Parameters
+    ///
+    /// * `document` — The document whose canvas will be saved.
+    /// * `kind` — Whether this is an autosave or a manual save to a specific path.
     pub fn trigger_async_save(&self, document: &Document, kind: SaveKind) {
         let canvas = document.canvas.clone();
         let path = match &kind {
@@ -293,6 +316,10 @@ impl FileIO {
     /// Save to the current `savefile_path` asynchronously.
     ///
     /// No-op if `savefile_path` is empty.
+    ///
+    /// # Parameters
+    ///
+    /// * `document` — The document whose canvas will be saved.
     pub fn save_to_current_path(&self, document: &Document) {
         if !document.savefile_path.is_empty() {
             self.trigger_async_save(document, SaveKind::ManualSave(PathBuf::from(&document.savefile_path)));
@@ -303,6 +330,11 @@ impl FileIO {
     ///
     /// Marks the document as clean after autosave, sets the save path
     /// after manual save, and pushes errors to the error list.
+    ///
+    /// # Parameters
+    ///
+    /// * `document` — The document to update save-path / dirty-flag on.
+    /// * `error_list` — Error list to push failure messages into.
     pub fn poll_save_results(&self, document: &mut Document, error_list: &mut Vec<String>) {
         while let Ok(result) = self.save_result_receiver.try_recv() {
             match result {
