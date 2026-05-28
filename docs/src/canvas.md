@@ -159,6 +159,31 @@ The height is computed as `max_y - min_y + 1` when non-empty, yielding the inclu
 
 The row count of the bounding box, or `0` for an empty rect.
 
+## `struct Canvas`
+
+`Canvas` is the core raster data structure: an ordered stack of [`Layer`]s plus metadata for compositing, rendering, and dirty tracking. It owns the pixel data, the cached composite output buffer, and the GPU texture handle.
+
+The type derives `Clone` for undo/redo snapshotting and `Serialize`/`Deserialize` for file persistence. Serde skips transient GPU/rendering state (`rendered_layers`, `output_rgba`, `dirty_rect`).
+
+### Fields
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `pixels` | `Vec<Layer>` | Layer stack, bottom (index 0) to top |
+| `height` | `u32` | Canvas height in pixels |
+| `width` | `u32` | Canvas width in pixels |
+| `rendered_layers` | `Option<TextureHandle>` | Cached GPU texture handle for the blended composite |
+| `output_rgba` | `Vec<u8>` | Premultiplied-alpha RGBA output buffer (width × height × 4 bytes) |
+| `dirty_rect` | `Option<DirtyRect>` | Bounding box of pixels changed since last upload; `None` triggers full re-blend |
+| `render_next_frame` | `bool` | Flag requesting full re-render on next frame |
+
+### Invariants
+
+- All layers in `pixels` have exactly `width * height` pixels.
+- After construction, `width * height` does not overflow `usize` (enforced by checked arithmetic in the constructor).
+- `output_rgba` is either empty (before first render) or has exactly `(width * height * 4)` bytes.
+- When `dirty_rect` is `Some(rect)` and `!rect.is_empty()`, only the sub-region within the rect needs a texture upload; when `None`, the entire composite must be regenerated.
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
