@@ -2,6 +2,8 @@
 //! interaction (brush strokes, eraser, bucket-fill), and applies strokes
 //! to the document.
 
+use std::sync::Arc;
+
 use std::time::Duration;
 
 use eframe::egui::{ self, Color32, Rect, Pos2 };
@@ -285,10 +287,10 @@ impl MyApp {
                     let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
                     let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
-                    self.document.canvas.render_next_frame = true;
+                    Arc::make_mut(&mut self.document.canvas).render_next_frame = true;
                     let stroke = draw_bucket_fill(
                         pixel_x, pixel_y,
-                        &mut self.document.canvas,
+                        Arc::make_mut(&mut self.document.canvas),
                         self.tool_configuration.current_color,
                         self.document.current_layer,
                         self.tool_configuration.alpha_overlay,
@@ -310,7 +312,7 @@ impl MyApp {
                     let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
                     if self.tool_configuration.current_tool != CurrentTool::BucketFill {
-                        self.document.canvas.render_next_frame = true;
+                        Arc::make_mut(&mut self.document.canvas).render_next_frame = true;
                         if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
                             self.document.dirty_since_last_autosave = true;
                             if self.tool_configuration.previous_cursor_position.is_none() {
@@ -362,7 +364,7 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         Some(draw_square_line(
                             pixel_x, pixel_y, pixel_x, pixel_y,
-                            self.tool_configuration.radius, &mut self.document.canvas, color,
+                            self.tool_configuration.radius, Arc::make_mut(&mut self.document.canvas), color,
                             self.document.current_layer, &mut self.undo.visited, stamp,
                             true, &mut self.undo.drag_processed,
                             self.undo.drag_stamp_value,
@@ -375,14 +377,14 @@ impl MyApp {
                         let end_y = (pixel_y + half_radius).min(self.document.canvas.height - 1);
                         Some(draw_square(
                             start_x, start_y, end_x, end_y,
-                            &mut self.document.canvas, color, self.document.current_layer, false,
+                            Arc::make_mut(&mut self.document.canvas), color, self.document.current_layer, false,
                         ))
                     }
                 } else if let Some((previous_x, previous_y)) = previous_position {
                     let stamp = self.undo.next_stamp();
                     Some(draw_square_line(
                         previous_x, previous_y, pixel_x, pixel_y,
-                        self.tool_configuration.radius, &mut self.document.canvas, color,
+                        self.tool_configuration.radius, Arc::make_mut(&mut self.document.canvas), color,
                         self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
                         self.undo.drag_stamp_value,
@@ -402,7 +404,7 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         Some(draw_circle_line(
                             pixel_x, pixel_y, pixel_x, pixel_y,
-                            self.tool_configuration.radius, &mut self.document.canvas, color,
+                            self.tool_configuration.radius, Arc::make_mut(&mut self.document.canvas), color,
                             self.document.current_layer, &mut self.undo.visited, stamp,
                             true, &mut self.undo.drag_processed,
                             self.undo.drag_stamp_value,
@@ -410,7 +412,7 @@ impl MyApp {
                     } else {
                         Some(draw_circle(
                             pixel_x, pixel_y,
-                            self.tool_configuration.radius, &mut self.document.canvas, color,
+                            self.tool_configuration.radius, Arc::make_mut(&mut self.document.canvas), color,
                             self.document.current_layer, false,
                         ))
                     }
@@ -418,7 +420,7 @@ impl MyApp {
                     let stamp = self.undo.next_stamp();
                     Some(draw_circle_line(
                         previous_x, previous_y, pixel_x, pixel_y,
-                        self.tool_configuration.radius, &mut self.document.canvas, color,
+                        self.tool_configuration.radius, Arc::make_mut(&mut self.document.canvas), color,
                         self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
                         self.undo.drag_stamp_value,
@@ -450,7 +452,7 @@ impl MyApp {
                     draw_stamp_line(
                         start_x, start_y, pixel_x, pixel_y,
                         &entry.pixels, entry.width, entry.height,
-                        self.tool_configuration.radius, &mut self.document.canvas,
+                        self.tool_configuration.radius, Arc::make_mut(&mut self.document.canvas),
                         color, self.document.current_layer,
                         &mut self.undo.visited, stamp,
                         alpha_overlay, self.tool_configuration.stamp_tint_mode == crate::stamp_library::StampTintMode::Tinted,

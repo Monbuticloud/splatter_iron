@@ -102,8 +102,8 @@ impl MyApp {
                     |input_state| input_state.key_pressed(egui::Key::Z) && input_state.modifiers.command && !input_state.modifiers.shift
                 ) || undo_button.clicked())
             {
-                self.undo.undo_step(&mut self.document.canvas, self.tool_configuration.undo_redo_steps_multiplier);
-                self.document.canvas.render_next_frame = true;
+                self.undo.undo_step(self.document.canvas_mut(), self.tool_configuration.undo_redo_steps_multiplier);
+                self.document.canvas_mut().render_next_frame = true;
             }
 
             // Redo: button, cmd+shift+Z, or cmd+Y
@@ -115,8 +115,8 @@ impl MyApp {
                     ui.input(|input_state| input_state.key_pressed(egui::Key::Y) && input_state.modifiers.command) ||
                     redo_button.clicked())
             {
-                self.undo.redo_step(&mut self.document.canvas, self.tool_configuration.undo_redo_steps_multiplier);
-                self.document.canvas.render_next_frame = true;
+                self.undo.redo_step(self.document.canvas_mut(), self.tool_configuration.undo_redo_steps_multiplier);
+                self.document.canvas_mut().render_next_frame = true;
             }
 
             ui.separator();

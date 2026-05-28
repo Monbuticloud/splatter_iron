@@ -1,6 +1,8 @@
 //! Wraps a [`Canvas`] with save-path tracking, layer management
 //! (add/delete/move/select), and GPU texture upload logic.
 
+use std::sync::Arc;
+
 use eframe::egui::{ self, Color32 };
 use eframe::egui_wgpu::wgpu;
 
@@ -10,10 +12,13 @@ use crate::undo_history::UndoHistory;
 
 const TEXTURE_NAME: &str = "rendered_layers";
 
-/// Wraps a canvas with its save path, current layer, and dirty-tracking state.
+/// Wraps a canvas (behind `Arc` for COW during async saves) with its save
+/// path, current layer, and dirty-tracking state.
 pub struct Document {
     /// The canvas being edited (layers, dimensions, pixel data).
-    pub canvas: Canvas,
+    /// Wrapped in `Arc` so async save can hold a reference while the UI
+    /// thread continues drawing — `Arc::make_mut` clones only when needed.
+    pub canvas: Arc<Canvas>,
     /// Filesystem path most recently saved to / loaded from, or empty.
     pub savefile_path: String,
     /// Index of the currently active layer within `canvas.pixels`.
@@ -33,7 +38,7 @@ impl Document {
     /// * `canvas` — The canvas to wrap.
     pub fn new(canvas: Canvas) -> Self {
         Self {
-            canvas,
+            canvas: Arc::new(canvas),
             savefile_path: String::new(),
             current_layer: 0,
             dirty_since_last_autosave: false,
@@ -50,12 +55,20 @@ impl Document {
     /// * `canvas` — The new canvas to use.
     /// * `undo` — Undo history to clear and resize for the new canvas.
     pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory) {
-        self.canvas = canvas;
+        self.canvas = Arc::new(canvas);
         self.savefile_path.clear();
         self.dirty_since_last_autosave = false;
         undo.clear();
         undo.resize_visited((self.canvas.width * self.canvas.height) as usize);
-        self.canvas.render_next_frame = true;
+        self.canvas_mut().render_next_frame = true;
+    }
+
+    /// Get a mutable reference to the canvas, cloning-on-write if needed.
+    ///
+    /// When an async save holds an `Arc<Canvas>`, this clones the canvas
+    /// (COW). When no other references exist, it's a cheap `Arc::get_mut`.
+    pub fn canvas_mut(&mut self) -> &mut Canvas {
+        Arc::make_mut(&mut self.canvas)
     }
 
     /// Blend all layers into `output_rgba` (only the dirty regions if known).
@@ -69,24 +82,27 @@ impl Document {
     /// Panics if the underlying `blend_layers` or `blend_region` encounters
     /// mismatched layer lengths or insufficient output buffer capacity.
     pub fn blend_to_output(&mut self) -> Option<(u32, u32, u32, u32)> {
-        let pixel_count = (self.canvas.width as usize) * (self.canvas.height as usize);
+        let canvas = self.canvas_mut();
+        let pixel_count = (canvas.width as usize) * (canvas.height as usize);
 
-        if self.canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
-            self.canvas.output_rgba = vec![0; pixel_count * RGBA_CHANNELS];
+        if canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
+            canvas.output_rgba = vec![0; pixel_count * RGBA_CHANNELS];
         }
-        self.canvas.render_next_frame = false;
+        canvas.render_next_frame = false;
 
-        let layer_slices: Vec<&[Color32]> = self.canvas.pixels
+        let layer_slices: Vec<&[Color32]> = canvas.pixels
             .iter()
             .map(|l| l.pixels.as_slice())
             .collect();
 
-        let rects = self.canvas.dirty_rect.take_all();
+        let rects = canvas.dirty_rect.take_all();
+        let output = &mut canvas.output_rgba;
+        let width = canvas.width;
+        let height = canvas.height;
 
         let result = if rects.is_empty() {
-            // No specific dirty rects — full blend (undo/redo, initial load, etc.)
-            pixel::blend_layers(&layer_slices, &mut self.canvas.output_rgba);
-            Some((0, 0, self.canvas.width, self.canvas.height))
+            pixel::blend_layers(&layer_slices, output);
+            Some((0, 0, width, height))
         } else {
             let mut union_rect: Option<DirtyRect> = None;
             for rect in &rects {
@@ -95,8 +111,8 @@ impl Document {
                 }
                 pixel::blend_region(
                     &layer_slices,
-                    &mut self.canvas.output_rgba,
-                    self.canvas.width,
+                    output,
+                    width,
                     rect.min_x,
                     rect.min_y,
                     rect.max_x,
@@ -174,12 +190,13 @@ impl Document {
             &self.canvas.output_rgba
         );
 
-        match &mut self.canvas.rendered_layers {
+        let rendered = &mut self.canvas_mut().rendered_layers;
+        match rendered {
             Some(tex) => {
                 tex.set(image, egui::TextureOptions::LINEAR);
             }
             None => {
-                self.canvas.rendered_layers = Some(
+                *rendered = Some(
                     ui.ctx().load_texture(TEXTURE_NAME, image, egui::TextureOptions::LINEAR)
                 );
             }
@@ -190,10 +207,11 @@ impl Document {
     ///
     /// Sets `render_next_frame` to `true` so the composite is re-blended.
     pub fn add_layer(&mut self) {
-        self.canvas.pixels.push(Layer {
-            pixels: vec![Color32::TRANSPARENT; (self.canvas.width * self.canvas.height) as usize],
+        let canvas = self.canvas_mut();
+        canvas.pixels.push(Layer {
+            pixels: vec![Color32::TRANSPARENT; (canvas.width * canvas.height) as usize],
         });
-        self.canvas.render_next_frame = true;
+        canvas.render_next_frame = true;
     }
 
     /// Remove the layer at `index` and adjust `current_layer` if needed.
@@ -205,11 +223,11 @@ impl Document {
     ///
     /// * `index` — Index of the layer to remove.
     pub fn delete_layer(&mut self, index: usize) {
-        self.canvas.pixels.remove(index);
+        self.canvas_mut().pixels.remove(index);
         self.current_layer = self.current_layer
             .saturating_sub(1)
             .min(self.canvas.pixels.len().saturating_sub(1));
-        self.canvas.render_next_frame = true;
+        self.canvas_mut().render_next_frame = true;
     }
 
     /// Swap the layer at `index` with the one above it (`index - 1`).
@@ -222,9 +240,10 @@ impl Document {
     ///
     /// Panics if `index == 0` because there is no layer above to swap with.
     pub fn move_layer_up(&mut self, index: usize) {
-        self.canvas.pixels.swap(index, index - 1);
         self.current_layer = index - 1;
-        self.canvas.render_next_frame = true;
+        let canvas = self.canvas_mut();
+        canvas.pixels.swap(index, index - 1);
+        canvas.render_next_frame = true;
     }
 
     /// Swap the layer at `index` with the one below it (`index + 1`).
@@ -237,9 +256,10 @@ impl Document {
     ///
     /// Panics if `index >= pixels.len() - 1` because there is no layer below.
     pub fn move_layer_down(&mut self, index: usize) {
-        self.canvas.pixels.swap(index, index + 1);
         self.current_layer = index + 1;
-        self.canvas.render_next_frame = true;
+        let canvas = self.canvas_mut();
+        canvas.pixels.swap(index, index + 1);
+        canvas.render_next_frame = true;
     }
 
     /// Set the current (active) layer index.

@@ -404,7 +404,7 @@ impl FileIO {
                 }
                 SaveResult::ManualSave(path) => {
                     document.savefile_path = path.display().to_string();
-                    document.canvas.render_next_frame = true;
+                    document.canvas_mut().render_next_frame = true;
                 }
                 SaveResult::Failed(message) => {
                     error_list.push(format!("Save failed: {message}"));

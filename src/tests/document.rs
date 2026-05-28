@@ -41,7 +41,7 @@ fn add_layer_increases_count() {
     let mut document = small_document();
     document.add_layer();
     assert_eq!(document.canvas.pixels.len(), 2);
-    assert!(document.canvas.render_next_frame);
+    assert!(document.canvas_mut().render_next_frame);
 }
 
 /// A newly added layer should match the canvas dimensions.
@@ -146,7 +146,7 @@ fn replace_canvas_resets_state() {
     assert_eq!(document.canvas.pixels.len(), 2);
     assert!(document.savefile_path.is_empty());
     assert!(!document.dirty_since_last_autosave);
-    assert!(document.canvas.render_next_frame);
+    assert!(document.canvas_mut().render_next_frame);
     assert!(!undo.can_undo());
 }
 
@@ -170,12 +170,12 @@ fn blend_to_output_full_canvas_sets_render_state() {
     let mut document = small_document();
     assert_eq!(document.canvas.output_rgba.len(), 0);
     assert!(document.canvas.dirty_rect.is_empty());
-    document.canvas.render_next_frame = true;
+    document.canvas_mut().render_next_frame = true;
 
     let result = document.blend_to_output();
 
     assert_eq!(result, Some((0, 0, 10, 10)));
-    assert!(!document.canvas.render_next_frame);
+    assert!(!document.canvas_mut().render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
     assert_eq!(document.canvas.output_rgba.len(), 100 * 4);
 }
@@ -185,14 +185,14 @@ fn blend_to_output_full_canvas_sets_render_state() {
 #[test]
 fn blend_to_output_dirty_rect_returns_bounds() {
     let mut document = small_document();
-    document.canvas.dirty_rect.add(DirtyRect::new(2, 3, 5, 7));
-    document.canvas.render_next_frame = true;
+    document.canvas_mut().dirty_rect.add(DirtyRect::new(2, 3, 5, 7));
+    document.canvas_mut().render_next_frame = true;
 
     let result = document.blend_to_output();
 
     // DirtyRect(2,3,5,7) -> width=4, height=5
     assert_eq!(result, Some((2, 3, 4, 5)));
-    assert!(!document.canvas.render_next_frame);
+    assert!(!document.canvas_mut().render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
 }
 
@@ -203,14 +203,14 @@ fn blend_to_output_empty_dirty_rect_triggers_full_blend() {
     let mut document = small_document();
     // Empty rects are filtered out by DirtyRectList::add → no-op.
     // An empty dirty list with render_next_frame=true triggers a full blend.
-    document.canvas.dirty_rect.add(DirtyRect::empty());
+    document.canvas_mut().dirty_rect.add(DirtyRect::empty());
     assert!(document.canvas.dirty_rect.is_empty());
-    document.canvas.render_next_frame = true;
+    document.canvas_mut().render_next_frame = true;
 
     let result = document.blend_to_output();
 
     assert_eq!(result, Some((0, 0, 10, 10)));
-    assert!(!document.canvas.render_next_frame);
+    assert!(!document.canvas_mut().render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
 }
 
@@ -247,19 +247,19 @@ fn delete_layer_decrements_current_when_below() {
 #[test]
 fn add_layer_sets_render_next_frame() {
     let mut document = small_document();
-    document.canvas.render_next_frame = false;
+    document.canvas_mut().render_next_frame = false;
     document.add_layer();
-    assert!(document.canvas.render_next_frame, "add_layer triggers re-render");
+    assert!(document.canvas_mut().render_next_frame, "add_layer triggers re-render");
 }
 
 /// `delete_layer` should set `render_next_frame` to true.
 #[test]
 fn delete_layer_sets_render_next_frame() {
     let mut document = small_document();
-    document.canvas.render_next_frame = false;
+    document.canvas_mut().render_next_frame = false;
     document.add_layer();
     document.delete_layer(1);
-    assert!(document.canvas.render_next_frame, "delete_layer triggers re-render");
+    assert!(document.canvas_mut().render_next_frame, "delete_layer triggers re-render");
 }
 
 /// `move_layer_up` should set `render_next_frame` to true.
@@ -267,9 +267,9 @@ fn delete_layer_sets_render_next_frame() {
 fn move_layer_up_sets_render_next_frame() {
     let mut document = small_document();
     document.add_layer();
-    document.canvas.render_next_frame = false;
+    document.canvas_mut().render_next_frame = false;
     document.move_layer_up(1);
-    assert!(document.canvas.render_next_frame, "move_layer_up triggers re-render");
+    assert!(document.canvas_mut().render_next_frame, "move_layer_up triggers re-render");
 }
 
 /// `move_layer_down` should set `render_next_frame` to true.
@@ -277,9 +277,9 @@ fn move_layer_up_sets_render_next_frame() {
 fn move_layer_down_sets_render_next_frame() {
     let mut document = small_document();
     document.add_layer();
-    document.canvas.render_next_frame = false;
+    document.canvas_mut().render_next_frame = false;
     document.move_layer_down(0);
-    assert!(document.canvas.render_next_frame, "move_layer_down triggers re-render");
+    assert!(document.canvas_mut().render_next_frame, "move_layer_down triggers re-render");
 }
 
 /// `move_layer_up(0)` should panic because there is no layer above to swap with.
@@ -324,19 +324,19 @@ fn select_layer_out_of_bounds_sets_index() {
 #[test]
 fn blend_to_output_twice_resets_state() {
     let mut document = small_document();
-    document.canvas.render_next_frame = true;
+    document.canvas_mut().render_next_frame = true;
 
     // First blend — full canvas (no dirty rects)
     let result1 = document.blend_to_output();
     assert_eq!(result1, Some((0, 0, 10, 10)));
-    assert!(!document.canvas.render_next_frame);
+    assert!(!document.canvas_mut().render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
 
     // Second blend — still no dirty rects, full blend again
-    document.canvas.render_next_frame = true; // force flag back on
+    document.canvas_mut().render_next_frame = true; // force flag back on
     let result2 = document.blend_to_output();
     assert_eq!(result2, Some((0, 0, 10, 10)));
-    assert!(!document.canvas.render_next_frame);
+    assert!(!document.canvas_mut().render_next_frame);
 }
 
 /// `add_layer` initializes layer pixels to transparent.
@@ -356,7 +356,7 @@ fn move_layer_up_swaps_ordering() {
     document.add_layer();
     // Layers: [0: transparent, 1: transparent, 2: transparent]
     // Mark layer 0 with a pixel change to track it
-    document.canvas.pixels[0].pixels[0] = Color32::from_rgba_premultiplied(255, 0, 0, 255);
+    document.canvas_mut().pixels[0].pixels[0] = Color32::from_rgba_premultiplied(255, 0, 0, 255);
     document.move_layer_up(1);
     // After swap: [1: transparent, 0: has red pixel, 2: transparent]
     assert_eq!(
