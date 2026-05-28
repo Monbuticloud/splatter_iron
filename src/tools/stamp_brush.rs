@@ -72,6 +72,11 @@ fn sample_bilinear(
 /// clamps to canvas bounds, maps each output pixel back to the source
 /// stamp image via nearest-neighbour sampling, applies tint/alpha-overlay,
 /// and captures before-pixel data for undo.
+///
+/// Uses a `visited` buffer per-stroke (combined with `stamp`) to avoid
+/// re-processing pixels already covered by an earlier stamp position in
+/// the same stroke, and a `drag_processed` buffer per-drag-gesture to
+/// avoid re-painting alpha-overlay pixels across frames.
 #[inline]
 #[allow(clippy::too_many_arguments)]
 fn stamp_at(
@@ -89,6 +94,8 @@ fn stamp_at(
     alpha_overlay: bool,
     tinted: bool,
     sampling: StampSampling,
+    visited: &mut [u32],
+    stamp: u32,
     drag_processed: &mut [u32],
     drag_stamp_value: u32,
     runs: &mut Vec<RunSegment>,
@@ -148,6 +155,15 @@ fn stamp_at(
         for (_x_idx, x) in (left..=right).enumerate() {
             let idx = row_start + x as usize;
 
+            // Skip pixels already painted by an overlapping stamp in this stroke
+            if visited[idx] == stamp {
+                if let Some(rs) = run_start.take() {
+                    let (rle_before, length) = compress_run(std::mem::take(&mut before));
+                    runs.push(RunSegment { start: rs, length, before: rle_before });
+                }
+                continue;
+            }
+
             // If already processed in this alpha-overlay drag, close the run
             if alpha_overlay && drag_processed[idx] == drag_stamp_value {
                 if let Some(rs) = run_start.take() {
@@ -193,6 +209,8 @@ fn stamp_at(
                 stamp_pixel
             };
 
+            visited[idx] = stamp;
+
             if alpha_overlay {
                 drag_processed[idx] = drag_stamp_value;
             }
@@ -230,6 +248,8 @@ fn stamp_at(
 /// * `canvas` — The canvas to draw on.
 /// * `color` — Tool colour (premultiplied); used for tinting.
 /// * `layer` — Index of the target layer.
+/// * `visited` — Per-stroke pixel dedup buffer.
+/// * `stamp` — Stroke-scoped stamp value for the visited buffer.
 /// * `alpha_overlay` — Alpha-blend instead of overwriting.
 /// * `tinted` — Multiply stamp pixels by `color`.
 /// * `sampling` — Pixel-sampling strategy (nearest or bilinear).
@@ -252,6 +272,8 @@ pub fn draw_stamp_line(
     canvas: &mut Canvas,
     color: Color32,
     layer: usize,
+    visited: &mut [u32],
+    stamp: u32,
     alpha_overlay: bool,
     tinted: bool,
     sampling: StampSampling,
@@ -306,6 +328,8 @@ pub fn draw_stamp_line(
             alpha_overlay,
             tinted,
             sampling,
+            visited,
+            stamp,
             drag_processed,
             drag_stamp_value,
             &mut runs,

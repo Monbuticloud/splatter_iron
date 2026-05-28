@@ -444,12 +444,15 @@ impl MyApp {
                     (pixel_x, pixel_y)
                 };
 
+                let stamp = self.undo.next_stamp();
+
                 self.stamp_library.selected().map(|entry| {
                     draw_stamp_line(
                         start_x, start_y, pixel_x, pixel_y,
                         &entry.pixels, entry.width, entry.height,
                         self.tool_configuration.radius, &mut self.document.canvas,
                         color, self.document.current_layer,
+                        &mut self.undo.visited, stamp,
                         alpha_overlay, self.tool_configuration.stamp_tint_mode == crate::stamp_library::StampTintMode::Tinted,
                         self.tool_configuration.stamp_sampling,
                         &mut self.undo.drag_processed,

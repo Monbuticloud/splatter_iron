@@ -23,11 +23,12 @@ fn solid_stamp() -> (Vec<Color32>, u32, u32) {
 fn single_stamp_at_center() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     // radius=2 → output 2×2 centred at (5,5) → covers (4..5, 4..5)
     stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -49,10 +50,11 @@ fn single_stamp_at_center() {
 fn stamp_minimum_radius() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, w, h, 0, &mut canvas, red(), 0, false, false,
+        5, 5, 5, 5, &stamp, w, h, 0, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -66,11 +68,12 @@ fn stamp_minimum_radius() {
 fn tinted_stamp_applies_color() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
     let tint = Color32::from_rgba_premultiplied(128, 128, 128, 255);
 
     stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, tint, 0, false, true,
+        5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, tint, 0, &mut visited, 1, false, true,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -94,10 +97,11 @@ fn alpha_overlay_blends_stamp() {
     // Use a semi-transparent red stamp pixel for visible blending
     let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
     let stamp = vec![semi_red];
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, 1, 1, 2, &mut canvas, red(), 0, true, false,
+        5, 5, 5, 5, &stamp, 1, 1, 2, &mut canvas, red(), 0, &mut visited, 1, true, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -113,13 +117,14 @@ fn alpha_overlay_blends_stamp() {
 fn stamp_clamps_to_canvas_edge() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     // Centre at (0,0), radius=4 → output 4×4, half=2
     // out_left = -2, out_top = -2 → clamped to (0,0)
     // Only bottom-right quarter is visible
     stamp_brush::draw_stamp_line(
-        0, 0, 0, 0, &stamp, w, h, 4, &mut canvas, red(), 0, false, false,
+        0, 0, 0, 0, &stamp, w, h, 4, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -137,12 +142,13 @@ fn stamp_clamps_to_canvas_edge() {
 fn stamp_line_interpolates() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     // Drag from (2,2) to (7,7), radius=4 → output 4×4, step=2
     // Multiple stamps should be placed along the diagonal
     stamp_brush::draw_stamp_line(
-        2, 2, 7, 7, &stamp, w, h, 4, &mut canvas, red(), 0, false, false,
+        2, 2, 7, 7, &stamp, w, h, 4, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -161,10 +167,11 @@ fn stamp_line_interpolates() {
 fn oversized_stamp_clamps() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, w, h, 100, &mut canvas, red(), 0, false, false,
+        5, 5, 5, 5, &stamp, w, h, 100, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -182,10 +189,11 @@ fn oversized_stamp_clamps() {
 fn stamp_produces_valid_undo_record() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     let record = stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -200,10 +208,11 @@ fn stamp_produces_valid_undo_record() {
 fn stamp_does_not_affect_outside() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -227,11 +236,12 @@ fn stamp_rectangular_aspect() {
         blue(),
         Color32::from_rgba_premultiplied(255, 255, 255, 255),
     ];
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     // radius=4 → output 4×1 (preserves 4:1 aspect)
     stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, 4, 1, 4, &mut canvas, red(), 0, false, false,
+        5, 5, 5, 5, &stamp, 4, 1, 4, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
@@ -255,11 +265,12 @@ fn bilinear_sampling_produces_interpolated_output() {
     let red_pixel = Color32::from_rgba_premultiplied(255, 0, 0, 255);
     let white = Color32::from_rgba_premultiplied(255, 255, 255, 255);
     let stamp = vec![red_pixel, white];
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     // radius 4 → output width 4, height = (1*4/2) = 2 → output 4×2
     stamp_brush::draw_stamp_line(
-        5, 5, 5, 5, &stamp, 2, 1, 4, &mut canvas, red(), 0, false, false,
+        5, 5, 5, 5, &stamp, 2, 1, 4, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Bilinear, &mut drag_processed, 1,
     );
 
@@ -280,11 +291,12 @@ fn bilinear_sampling_produces_interpolated_output() {
 fn stamp_fully_off_screen_noop() {
     let mut canvas = small_canvas();
     let (stamp, w, h) = solid_stamp();
+    let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
 
     // Center at (100, 100) — far outside the 10×10 canvas
     stamp_brush::draw_stamp_line(
-        100, 100, 100, 100, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        100, 100, 100, 100, &stamp, w, h, 2, &mut canvas, red(), 0, &mut visited, 1, false, false,
         StampSampling::Nearest,
         &mut drag_processed, 1,
     );
