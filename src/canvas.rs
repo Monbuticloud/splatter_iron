@@ -136,10 +136,15 @@ impl Canvas {
 /// The drawing tool currently selected in the UI.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CurrentTool {
+    /// Draw solid rectangles by dragging.
     Square,
+    /// Draw solid circles by dragging.
     Circle,
+    /// Erase by dragging a rectangular eraser.
     SquareEraser,
+    /// Erase by dragging a circular eraser.
     CircleEraser,
+    /// Flood-fill a contiguous region of similar color.
     BucketFill,
 }
 
@@ -147,7 +152,10 @@ pub enum CurrentTool {
 /// idle throttled for slow repaints, or frozen when viewport is unfocused.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum RenderState {
-    ActiveWake(Duration), // Full rendering
-    IdleThrottled, // Slow repainting, frames still run but repainting is throttled
-    UnfocusedFrozen, // No rendering
+    /// Full rendering — canvas redraws every frame (active interaction).
+    ActiveWake(Duration),
+    /// Slow repainting — frames still run but canvas repainting is throttled.
+    IdleThrottled,
+    /// No rendering — viewport is unfocused, all GPU work suspended.
+    UnfocusedFrozen,
 }
