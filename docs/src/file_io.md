@@ -127,3 +127,23 @@ Called once per frame (before egui layout) to process completed file dialog resu
 
 After processing, `pending_file_action` is consumed (set to `None`).
 
+### `FileIO::trigger_async_save`
+
+```rust
+pub fn trigger_async_save(&self, document: &Document, kind: SaveKind)
+```
+
+Spawns a background thread to serialize and write the canvas to disk. Clones the canvas to avoid borrowing the `Document` across threads. The thread pipeline is:
+
+1. `crate::files::save_canvas_to_bytes(&canvas)` — serializes to zstd-compressed JSON bytes.
+2. `crate::files::save_bytes_to_file(&data, &path)` — writes bytes to disk.
+3. Sends a `SaveResult` back via `save_result_sender`.
+
+**Parameters:**
+- `document` — The document whose canvas is cloned and saved. The entire `Canvas` struct is cloned (`document.canvas.clone()`), so the UI thread can continue rendering immediately.
+- `kind` — Determines the save path:
+  - `Autosave` — Path is `{app_local_data_directory}/autosaves/{timestamp}.splattercanvas` where timestamp uses `AUTOSAVE_DATE_FORMAT` (`%Y-%m-%d_%H-%M-%S`).
+  - `ManualSave(path)` — Uses the provided `PathBuf` directly.
+
+**Failure modes:** Returns `SaveResult::Failed` with a descriptive string if serialization fails (stage 1) or file write fails (stage 2). The error is prefixed with `"Serialisation failed: "` or `"Write failed: "` respectively.
+
