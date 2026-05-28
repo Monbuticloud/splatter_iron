@@ -176,3 +176,23 @@ Steps:
 Panics if `ProjectDirs::from` returns `None` (no home directory) or if
 `std::fs::create_dir_all` fails for either the data directory or the
 autosaves subdirectory (permissions, read-only filesystem).
+
+### `MyApp::recreate_gpu_texture(frame)`
+
+Replaces the wgpu texture after a canvas resize while keeping the same
+`egui::TextureId`.
+
+Called from the main frame loop when `gpu.texture.size()` no longer matches
+`self.document.canvas.width` / `height`. Destroys the old texture (via
+`Drop`) and creates a new one with updated dimensions, then calls
+`renderer.update_egui_texture_from_wgpu_texture` to associate the existing
+`egui::TextureId` with the new wgpu texture view, avoiding stale entries in
+the renderer's internal map.
+
+Early-returns (no-op) when the wgpu render state is absent or when
+`gpu_texture` is `None` (Glow backend).
+
+# Panics
+
+Panics if `render_state.renderer.write()` is poisoned (lock contention) or
+if the wgpu device has been lost.
