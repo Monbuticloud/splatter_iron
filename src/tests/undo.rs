@@ -1,6 +1,7 @@
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, Layer };
+use crate::tests::common::red;
 use crate::tools::square_brush;
 use crate::undo::{ self, BeforePixels, UndoRecord };
 
@@ -65,11 +66,6 @@ fn small_white_canvas() -> Canvas {
         dirty_rect: None,
         render_next_frame: false,
     }
-}
-
-/// Shortcut for a fully opaque red color in premultiplied format.
-fn red() -> Color32 {
-    Color32::from_rgba_premultiplied(255, 0, 0, 255)
 }
 
 /// `undo_apply` should restore the pixels that were present before the stroke.

@@ -1,6 +1,7 @@
 pub mod bucket_fill;
 pub mod canvas;
 pub mod circle_brush;
+pub mod common;
 pub mod document;
 pub mod files;
 pub mod pixel;

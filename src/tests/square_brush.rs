@@ -1,27 +1,8 @@
 use eframe::egui::Color32;
 
 use crate::canvas::{ Canvas, Layer };
+use crate::tests::common::{ red, small_canvas };
 use crate::tools::square_brush;
-
-/// Build a 10×10 single-layer transparent canvas for use in tests.
-fn small_canvas() -> Canvas {
-    Canvas {
-        pixels: vec![Layer {
-            pixels: vec![Color32::TRANSPARENT; 100],
-        }],
-        height: 10,
-        width: 10,
-        output_rgba: Vec::new(),
-        rendered_layers: None,
-        dirty_rect: None,
-        render_next_frame: false,
-    }
-}
-
-/// Shortcut for a fully opaque red color in premultiplied format.
-fn red() -> Color32 {
-    Color32::from_rgba_premultiplied(255, 0, 0, 255)
-}
 
 // --- draw_square ---
 
