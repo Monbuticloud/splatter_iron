@@ -171,7 +171,7 @@ Steps:
    `UndoHistory` sized to `pixel_count`, `FileIO` wired to both mpsc
    channels, default `UIState`, and the optional `GpuTexture`.
 
-# Panics
+### Panics
 
 Panics if `ProjectDirs::from` returns `None` (no home directory) or if
 `std::fs::create_dir_all` fails for either the data directory or the
@@ -192,7 +192,55 @@ the renderer's internal map.
 Early-returns (no-op) when the wgpu render state is absent or when
 `gpu_texture` is `None` (Glow backend).
 
-# Panics
+### Panics
 
 Panics if `render_state.renderer.write()` is poisoned (lock contention) or
 if the wgpu device has been lost.
+
+## `impl eframe::App for MyApp`
+
+### `fn ui(&mut self, ui, frame)`
+
+The per-frame entry point called by eframe. Orchestrates the entire frame
+lifecycle:
+
+1. **Poll async I/O** — calls `file_io.poll_dialog_results` and
+   `file_io.poll_save_results` before any UI work, feeding results into
+   the document and error list.
+2. **Unfocused sleep** — when the viewport is not focused, sleeps for 50 ms
+   and sets render state to `UnfocusedFrozen`, then returns early to
+   minimise CPU usage.
+3. **Delta-time accounting** — reads `predicted_dt` and `stable_dt` from
+   egui input, accumulates `time_elapsed` from the real delta.
+4. **Render-state state machine**:
+   - `ActiveWake(duration)` — subtracts predicted delta; transitions to
+     `IdleThrottled` when remaining time reaches zero.
+   - `IdleThrottled` — schedules `request_repaint_after` at 5× the
+     predicted delta to throttle frame rate.
+   - `UnfocusedFrozen` — resets to `IdleThrottled` and returns early.
+5. **GPU texture resize** — if canvas dimensions changed, calls
+   `recreate_gpu_texture`.
+6. **Canvas render** — when the wgpu path is active and `render_next_frame`
+   is set, blends layers, computes dirty rects, and uploads via
+   `write_texture`. Falls back to egui-managed texture rendering
+   (`render_to_texture`) otherwise.
+7. **Panel layout** — renders four panels in order:
+   - Top: file menu (save, load, export, new canvas) via `show_top_panel`.
+   - Left: tool palette via `show_left_panel`.
+   - Right: colour picker + layer stack via `show_right_panel`.
+   - Center: canvas viewport via `show_central_panel`.
+8. **Error overlay** — when `displayed_error_list` is non-empty, shows a
+   centred `egui::Window` with Dismiss, Copy error, and Dismiss All
+   buttons. Errors are removed in descending index order after dismissal.
+9. **New Canvas dialog** — when `show_new_canvas_dialog` is true, shows a
+   modal with preset size buttons (XS 800×600, S 1280×960, M 2000×1500,
+   L 2560×1920, XL 3200×2400) and custom width/height sliders clamped
+   4–8192. On Create, replaces the canvas via
+   `Document::replace_canvas`, resets the tool's previous-state fields,
+   and closes the dialog.
+10. **Quit** — if the top panel returned `is_quitting`, sends
+    `ViewportCommand::Close`.
+11. **Autosave** — every 2 minutes of wall-clock time, if the canvas has
+    been modified since the last autosave (`dirty_since_last_autosave`),
+    triggers an async autosave via `file_io.trigger_async_save` with
+    `SaveKind::Autosave`.
