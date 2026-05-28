@@ -1,3 +1,6 @@
+//! Undo/redo stack with visited-stamp deduplication for brush strokes and
+//! a drag accumulator that merges per-frame run segments into a single record.
+
 use std::collections::VecDeque;
 
 use crate::canvas::Canvas;
