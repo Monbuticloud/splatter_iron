@@ -54,7 +54,7 @@ fn save_load_roundtrip_identical_pixels() {
 /// Save and load a 2-layer canvas; both layers should survive the roundtrip.
 #[test]
 fn save_load_roundtrip_multi_layer() {
-    let mut canvas = Canvas {
+    let canvas = Canvas {
         pixels: vec![
             Layer { pixels: vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); 9] },
             Layer { pixels: vec![Color32::from_rgba_premultiplied(0, 0, 255, 255); 9] },
@@ -183,4 +183,67 @@ fn invalid_data_returns_error() {
 fn empty_data_returns_error() {
     let result = files::load_app_from_data(&[]);
     assert!(result.is_err());
+}
+
+// --- Export additional formats ---
+
+/// Export a checkerboard canvas to WebP and verify it exists and has content.
+#[test]
+fn export_webp_creates_file() {
+    let mut rgba = Vec::with_capacity(4 * 4);
+    for _ in 0..4 {
+        rgba.extend_from_slice(&[255, 128, 64, 255]);
+    }
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.webp");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::WebP)
+        .expect("export WebP");
+    assert!(path.exists());
+    let metadata = std::fs::metadata(&path).expect("metadata");
+    assert!(metadata.len() > 0, "WebP file should have content");
+}
+
+/// Export a canvas to GIF and verify it exists and has content.
+#[test]
+fn export_gif_creates_file() {
+    let mut rgba = Vec::with_capacity(4 * 4);
+    for _ in 0..4 {
+        rgba.extend_from_slice(&[255, 128, 64, 255]);
+    }
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.gif");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Gif)
+        .expect("export GIF");
+    assert!(path.exists());
+    let metadata = std::fs::metadata(&path).expect("metadata");
+    assert!(metadata.len() > 0, "GIF file should have content");
+}
+
+/// Export a canvas to TIFF and verify it exists and has content.
+#[test]
+fn export_tiff_creates_file() {
+    let mut rgba = Vec::with_capacity(4 * 4);
+    for _ in 0..4 {
+        rgba.extend_from_slice(&[255, 128, 64, 255]);
+    }
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.tiff");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Tiff)
+        .expect("export TIFF");
+    assert!(path.exists());
+    let metadata = std::fs::metadata(&path).expect("metadata");
+    assert!(metadata.len() > 0, "TIFF file should have content");
+}
+
+// --- save_bytes_to_file / load_data_from_file ---
+
+/// `save_bytes_to_file` and `load_data_from_file` should round-trip correctly.
+#[test]
+fn save_bytes_to_file_roundtrip() {
+    let data = b"hello, splatter canvas test data!";
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.bin");
+    files::save_bytes_to_file(data, &path).expect("save bytes");
+    let loaded = files::load_data_from_file(&path).expect("load bytes");
+    assert_eq!(loaded, data, "bytes round-trip");
 }
