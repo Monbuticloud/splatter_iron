@@ -3,6 +3,7 @@ pub mod canvas;
 pub mod circle_brush;
 pub mod common;
 pub mod document;
+pub mod file_io;
 pub mod files;
 pub mod pixel;
 pub mod square_brush;

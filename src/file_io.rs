@@ -38,6 +38,7 @@ pub enum SaveKind {
 }
 
 /// Result sent back via channel when an async save completes.
+#[derive(Debug)]
 pub enum SaveResult {
     Autosave,
     ManualSave(PathBuf),
