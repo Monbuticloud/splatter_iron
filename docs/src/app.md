@@ -84,3 +84,26 @@ All 13 export targets:
 The PNM entry covers all five Portable Anymap sub-formats (PBM/PGM/PPM/PAM).
 The table drives the export dialog's format picker and is extensible by
 adding entries to the slice.
+
+## UI State
+
+### `struct UIState`
+
+Tracks transient UI concerns that don't belong to any domain module:
+
+| Field | Type | Purpose |
+|---|---|---|
+| `render_state` | `RenderState` | Current rendering cadence — active, idle-throttled, or unfocused-frozen |
+| `time_elapsed` | `Duration` | Total wall-clock time since application start |
+| `times_autosaved` | `u32` | Number of autosaves performed this session |
+| `last_autosave_time` | `Duration` | Wall-clock timestamp of the most recent autosave completion |
+| `displayed_error_list` | `Vec<String>` | Error messages shown in the centred error overlay |
+| `pending_layer_for_deletion` | `Option<usize>` | Layer index awaiting deletion confirmation, if any |
+| `show_new_canvas_dialog` | `bool` | Whether the "New Canvas" size picker is open |
+| `new_canvas_width` | `u32` | Width slider value for the new-canvas dialog (pixels, clamped 4–8192) |
+| `new_canvas_height` | `u32` | Height slider value for the new-canvas dialog (pixels, clamped 4–8192) |
+
+The `time_elapsed` field drives the 2-minute autosave interval check in the
+main frame loop. `displayed_error_list` is populated by `FileIO::poll_*`
+methods and drained by the error overlay window. The new-canvas fields are
+used by the "New Canvas" dialog modal and reset on dialog close.
