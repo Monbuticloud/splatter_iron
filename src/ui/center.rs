@@ -69,6 +69,14 @@ impl MyApp {
             )
             .on_hover_cursor(egui::CursorIcon::Crosshair);
 
+            // Draw a purple border around the canvas.
+            ui.painter().rect_stroke(
+                response.rect,
+                0.0,
+                egui::Stroke::new(2.0, Color32::from_rgb(128, 0, 128)),
+                egui::epaint::StrokeKind::Inside,
+            );
+
             response.context_menu(|ui| {
                 if ui.button("Import").clicked() {
                     self.file_io.pending_file_action = Some(PendingFileAction::Import);
