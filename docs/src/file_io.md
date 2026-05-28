@@ -147,3 +147,16 @@ Spawns a background thread to serialize and write the canvas to disk. Clones the
 
 **Failure modes:** Returns `SaveResult::Failed` with a descriptive string if serialization fails (stage 1) or file write fails (stage 2). The error is prefixed with `"Serialisation failed: "` or `"Write failed: "` respectively.
 
+### `FileIO::save_to_current_path`
+
+```rust
+pub fn save_to_current_path(&self, document: &Document)
+```
+
+Convenience method that saves to the document's existing `savefile_path` asynchronously. No-op if `savefile_path` is empty (i.e. the document has never been saved or loaded from a file).
+
+**Parameters:**
+- `document` — The document whose canvas is saved. Delegates to `self.trigger_async_save(document, SaveKind::ManualSave(PathBuf::from(&document.savefile_path)))`.
+
+Useful for keyboard shortcuts (e.g. Ctrl+S) that re-save to the same path without opening a dialog. If the document has no path yet, the caller should first call `queue_file_action(PendingFileAction::Save)` to prompt the user.
+
