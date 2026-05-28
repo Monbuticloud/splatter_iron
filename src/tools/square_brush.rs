@@ -70,7 +70,7 @@ fn stamp_line_positions(
     let step_x = if current_x < target_x { 1 } else { -1 };
     let delta_y = -(target_y.abs_diff(current_y) as i32);
     let step_y = if current_y < target_y { 1 } else { -1 };
-    let mut err = delta_x + delta_y;
+    let mut error = delta_x + delta_y;
 
     loop {
         let brush_start_x = current_x
@@ -98,21 +98,21 @@ fn stamp_line_positions(
         for y in brush_start_y..brush_end_y {
             let row_start = (y as usize) * width;
             for x in brush_start_x..brush_end_x {
-                let idx = (row_start + (x as usize)) as u32;
-                visited[idx as usize] = stamp;
+                let pixel_index = (row_start + (x as usize)) as u32;
+                visited[pixel_index as usize] = stamp;
             }
         }
 
         if current_x == target_x && current_y == target_y {
             break;
         }
-        let e2 = err.saturating_mul(2);
-        if e2 >= delta_y {
-            err += delta_y;
+        let error_times_two = error.saturating_mul(2);
+        if error_times_two >= delta_y {
+            error += delta_y;
             current_x += step_x;
         }
-        if e2 <= delta_x {
-            err += delta_x;
+        if error_times_two <= delta_x {
+            error += delta_x;
             current_y += step_y;
         }
     }
@@ -184,7 +184,7 @@ pub fn draw_square(
 
     let rect = DirtyRect::new(start_x, start_y, end_x - 1, end_y - 1);
     canvas.dirty_rect = match canvas.dirty_rect {
-        Some(r) => Some(r.union(&rect)),
+        Some(rectangle) => Some(rectangle.union(&rect)),
         None => Some(rect),
     };
 
@@ -219,7 +219,7 @@ pub fn draw_square_line(
     stamp: u32,
     alpha_overlay: bool,
     drag_processed: &mut [u32],
-    drag_stamp_val: u32,
+    drag_stamp_value: u32,
 ) -> UndoRecord {
     let width = canvas.width as usize;
     let height = canvas.height;
@@ -245,33 +245,33 @@ pub fn draw_square_line(
         let row_start = (y as usize) * width;
         let mut x = dirty_rect.min_x;
         while x <= dirty_rect.max_x {
-            let idx = row_start + x as usize;
-            if visited[idx] != stamp {
+            let pixel_index = row_start + x as usize;
+            if visited[pixel_index] != stamp {
                 x += 1;
                 continue;
             }
-            if alpha_overlay && drag_processed[idx] == drag_stamp_val {
+            if alpha_overlay && drag_processed[pixel_index] == drag_stamp_value {
                 x += 1;
                 continue;
             }
-            let run_start = idx as u32;
+            let run_start = pixel_index as u32;
             let mut before = Vec::new();
             while x <= dirty_rect.max_x {
-                let idx2 = row_start + x as usize;
-                if visited[idx2] != stamp {
+                let next_pixel_index = row_start + x as usize;
+                if visited[next_pixel_index] != stamp {
                     break;
                 }
-                if alpha_overlay && drag_processed[idx2] == drag_stamp_val {
+                if alpha_overlay && drag_processed[next_pixel_index] == drag_stamp_value {
                     break;
                 }
-                before.push(pixels[idx2]);
-                pixels[idx2] = if alpha_overlay {
-                    crate::pixel::alpha_blend(pixels[idx2], color)
+                before.push(pixels[next_pixel_index]);
+                pixels[next_pixel_index] = if alpha_overlay {
+                    crate::pixel::alpha_blend(pixels[next_pixel_index], color)
                 } else {
                     color
                 };
                 if alpha_overlay {
-                    drag_processed[idx2] = drag_stamp_val;
+                    drag_processed[next_pixel_index] = drag_stamp_value;
                 }
                 x += 1;
             }
@@ -281,7 +281,7 @@ pub fn draw_square_line(
     }
 
     canvas.dirty_rect = match canvas.dirty_rect {
-        Some(r) => Some(r.union(&dirty_rect)),
+        Some(rectangle) => Some(rectangle.union(&dirty_rect)),
         None => Some(dirty_rect),
     };
 

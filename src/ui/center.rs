@@ -269,7 +269,7 @@ impl MyApp {
                             self.tool_configuration.radius, &mut self.document.canvas, color,
                             self.document.current_layer, &mut self.undo.visited, stamp,
                             true, &mut self.undo.drag_processed,
-                            self.undo.drag_stamp_val,
+                            self.undo.drag_stamp_value,
                         ))
                     } else {
                         let half = self.tool_configuration.radius;
@@ -289,7 +289,7 @@ impl MyApp {
                         self.tool_configuration.radius, &mut self.document.canvas, color,
                         self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
-                        self.undo.drag_stamp_val,
+                        self.undo.drag_stamp_value,
                     ))
                 } else {
                     None
@@ -309,7 +309,7 @@ impl MyApp {
                             self.tool_configuration.radius, &mut self.document.canvas, color,
                             self.document.current_layer, &mut self.undo.visited, stamp,
                             true, &mut self.undo.drag_processed,
-                            self.undo.drag_stamp_val,
+                            self.undo.drag_stamp_value,
                         ))
                     } else {
                         Some(draw_circle(
@@ -325,7 +325,7 @@ impl MyApp {
                         self.tool_configuration.radius, &mut self.document.canvas, color,
                         self.document.current_layer, &mut self.undo.visited, stamp,
                         alpha_overlay, &mut self.undo.drag_processed,
-                        self.undo.drag_stamp_val,
+                        self.undo.drag_stamp_value,
                     ))
                 } else {
                     None

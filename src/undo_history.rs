@@ -22,7 +22,7 @@ pub struct UndoHistory {
     pub visited: Vec<u32>,
     pub visited_stamp: u32,
     pub drag_processed: Vec<u32>,
-    pub drag_stamp_val: u32,
+    pub drag_stamp_value: u32,
     drag_accumulator: Option<DragAccumulator>,
 }
 
@@ -37,7 +37,7 @@ impl UndoHistory {
             visited: vec![0u32; pixel_count],
             visited_stamp: 1,
             drag_processed: vec![0u32; pixel_count],
-            drag_stamp_val: 1,
+            drag_stamp_value: 1,
             drag_accumulator: None,
         }
     }
@@ -78,7 +78,7 @@ impl UndoHistory {
             self.drag_processed = vec![0u32; pixel_count];
         }
         self.visited_stamp = 1;
-        self.drag_stamp_val = 1;
+        self.drag_stamp_value = 1;
     }
 
     /// Advance and return the drag-scoped processed stamp.
@@ -86,10 +86,10 @@ impl UndoHistory {
     /// Resets the `drag_processed` buffer when the stamp wraps past `u32::MAX`.
     #[inline]
     pub fn advance_drag_stamp(&mut self) {
-        self.drag_stamp_val = self.drag_stamp_val.wrapping_add(1);
-        if self.drag_stamp_val == 0 {
+        self.drag_stamp_value = self.drag_stamp_value.wrapping_add(1);
+        if self.drag_stamp_value == 0 {
             self.drag_processed.fill(0);
-            self.drag_stamp_val = 1;
+            self.drag_stamp_value = 1;
         }
     }
 

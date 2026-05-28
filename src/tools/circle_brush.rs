@@ -311,7 +311,7 @@ pub fn draw_circle_line(
     stamp: u32,
     alpha_overlay: bool,
     drag_processed: &mut [u32],
-    drag_stamp_val: u32,
+    drag_stamp_value: u32,
 ) -> UndoRecord {
     let width = canvas.width as usize;
     let height = canvas.height;
@@ -342,7 +342,7 @@ pub fn draw_circle_line(
                 x += 1;
                 continue;
             }
-            if alpha_overlay && drag_processed[pixel_index] == drag_stamp_val {
+            if alpha_overlay && drag_processed[pixel_index] == drag_stamp_value {
                 x += 1;
                 continue;
             }
@@ -353,7 +353,7 @@ pub fn draw_circle_line(
                 if visited[next_pixel_index] != stamp {
                     break;
                 }
-                if alpha_overlay && drag_processed[next_pixel_index] == drag_stamp_val {
+                if alpha_overlay && drag_processed[next_pixel_index] == drag_stamp_value {
                     break;
                 }
                 before.push(pixels[next_pixel_index]);
@@ -363,7 +363,7 @@ pub fn draw_circle_line(
                     color
                 };
                 if alpha_overlay {
-                    drag_processed[next_pixel_index] = drag_stamp_val;
+                    drag_processed[next_pixel_index] = drag_stamp_value;
                 }
                 x += 1;
             }
