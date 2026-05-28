@@ -164,6 +164,54 @@ fn draw_circle_line_clamps_to_canvas() {
     assert_eq!(canvas.pixels[0].pixels[0], red(), "corner colored");
 }
 
+// --- Alpha overlay ---
+
+/// Alpha overlay mode for `draw_circle` should blend instead of overwriting.
+#[test]
+fn draw_circle_alpha_overlay_blends() {
+    let mut canvas = small_canvas();
+    // Pre-fill pixel at center with opaque white
+    canvas.pixels[0].pixels[5 * 10 + 5] = Color32::from_rgba_premultiplied(255, 255, 255, 255);
+    let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
+    circle_brush::draw_circle(5, 5, 1, &mut canvas, semi_red, 0, true);
+    let blended = canvas.pixels[0].pixels[5 * 10 + 5];
+    // Blended result should differ from both pure white and pure semi_red
+    assert_ne!(
+        blended,
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        "alpha overlay changed pixel"
+    );
+    assert_ne!(blended, semi_red, "alpha overlay blended, not replaced");
+}
+
+/// Alpha overlay mode for `draw_circle_line` should blend instead of overwriting.
+#[test]
+fn draw_circle_line_alpha_overlay_blends() {
+    let mut canvas = small_canvas();
+    canvas.pixels[0].pixels[5 * 10 + 1] = Color32::from_rgba_premultiplied(255, 255, 255, 255);
+    let mut visited = vec![0u32; 100];
+    let mut drag_processed = vec![0u32; 100];
+    let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
+    circle_brush::draw_circle_line(1, 5, 1, 5, 0, &mut canvas, semi_red, 0, &mut visited, 1, true, &mut drag_processed, 1);
+    let blended = canvas.pixels[0].pixels[5 * 10 + 1];
+    assert_ne!(
+        blended,
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        "alpha overlay changed pixel"
+    );
+    assert_ne!(blended, semi_red, "alpha overlay blended");
+}
+
+/// A circle drawn fully outside the canvas bounds should return an empty undo record.
+#[test]
+fn draw_circle_fully_off_screen_returns_empty_undo() {
+    let mut canvas = small_canvas();
+    // Center at (100, 100) — well outside the 10x10 canvas
+    let record = circle_brush::draw_circle(100, 100, 5, &mut canvas, red(), 0, false);
+    let crate::undo::UndoRecord::Run { runs, .. } = &record;
+    assert!(runs.is_empty(), "off-screen circle should produce no runs");
+}
+
 // --------------------------------------------------
 //  Regression: semi-transparent premultiplied color
 // --------------------------------------------------
