@@ -54,20 +54,20 @@ pub fn draw_bucket_fill(
     while let Some((x, y)) = stack.pop() {
         let row_start = (y as usize) * width;
 
-        let mut left = x as i64;
-        while left > 0 && pixels[row_start + (left - 1) as usize] == target {
-            left -= 1;
+        let mut left_x = x as i64;
+        while left_x > 0 && pixels[row_start + (left_x - 1) as usize] == target {
+            left_x -= 1;
         }
-        let left = left as u32;
+        let left_x = left_x as u32;
 
-        let mut right = x as i64;
-        while right < (width - 1) as i64 && pixels[row_start + (right + 1) as usize] == target {
-            right += 1;
+        let mut right_x = x as i64;
+        while right_x < (width - 1) as i64 && pixels[row_start + (right_x + 1) as usize] == target {
+            right_x += 1;
         }
-        let right = right as u32;
+        let right_x = right_x as u32;
 
-        let span_start = row_start + left as usize;
-        let span_end = row_start + right as usize + 1;
+        let span_start = row_start + left_x as usize;
+        let span_end = row_start + right_x as usize + 1;
         let mut before_pixels = Vec::with_capacity(span_end - span_start);
         before_pixels.extend_from_slice(&pixels[span_start..span_end]);
         let (before, length) = compress_run(before_pixels);
@@ -78,33 +78,33 @@ pub fn draw_bucket_fill(
         });
 
         if alpha_overlay {
-            for p in pixels[span_start..span_end].iter_mut() {
-                *p = crate::pixel::alpha_blend(*p, color);
+            for pixel in pixels[span_start..span_end].iter_mut() {
+                *pixel = crate::pixel::alpha_blend(*pixel, color);
             }
         } else {
             pixels[span_start..span_end].fill(color);
         }
 
-        if left < min_x { min_x = left; }
-        if right > max_x { max_x = right; }
+        if left_x < min_x { min_x = left_x; }
+        if right_x > max_x { max_x = right_x; }
         if y < min_y { min_y = y; }
         if y > max_y { max_y = y; }
 
-        let search_left = if left > 0 { left - 1 } else { 0 };
-        let search_right = (right + 1).min(canvas.width - 1);
+        let search_left = if left_x > 0 { left_x - 1 } else { 0 };
+        let search_right = (right_x + 1).min(canvas.width - 1);
 
         // Row above
         if y > 0 {
             let prev_row = (y - 1) as usize * width;
-            let mut cx = search_left;
-            while cx <= search_right {
-                if pixels[prev_row + cx as usize] == target {
-                    stack.push((cx, y - 1));
-                    while cx <= search_right && pixels[prev_row + cx as usize] == target {
-                        cx += 1;
+            let mut check_x = search_left;
+            while check_x <= search_right {
+                if pixels[prev_row + check_x as usize] == target {
+                    stack.push((check_x, y - 1));
+                    while check_x <= search_right && pixels[prev_row + check_x as usize] == target {
+                        check_x += 1;
                     }
                 } else {
-                    cx += 1;
+                    check_x += 1;
                 }
             }
         }
@@ -112,15 +112,15 @@ pub fn draw_bucket_fill(
         // Row below
         if y < height - 1 {
             let next_row = (y + 1) as usize * width;
-            let mut cx = search_left;
-            while cx <= search_right {
-                if pixels[next_row + cx as usize] == target {
-                    stack.push((cx, y + 1));
-                    while cx <= search_right && pixels[next_row + cx as usize] == target {
-                        cx += 1;
+            let mut check_x = search_left;
+            while check_x <= search_right {
+                if pixels[next_row + check_x as usize] == target {
+                    stack.push((check_x, y + 1));
+                    while check_x <= search_right && pixels[next_row + check_x as usize] == target {
+                        check_x += 1;
                     }
                 } else {
-                    cx += 1;
+                    check_x += 1;
                 }
             }
         }
@@ -129,7 +129,7 @@ pub fn draw_bucket_fill(
     if min_x != u32::MAX {
         let rect = DirtyRect::new(min_x, min_y, max_x, max_y);
         canvas.dirty_rect = match canvas.dirty_rect {
-            Some(r) => Some(r.union(&rect)),
+            Some(rectangle) => Some(rectangle.union(&rect)),
             None => Some(rect),
         };
     }
