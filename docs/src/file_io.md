@@ -33,3 +33,15 @@ Distinguishes an autosave from a manual save in the async save pipeline.
 |---------|-------------|
 | `Autosave` | Periodic autosave triggered by the 2-minute timer in `UIState`. Saves to `{data_dir}/autosaves/{timestamp}.splattercanvas`. The resulting path is not surfaced to the user. |
 | `ManualSave(PathBuf)` | Explicit user-initiated save to a chosen path. The `PathBuf` is the file path selected via dialog or the current `savefile_path`. |
+
+### `SaveResult`
+
+Result sent back via channel when an async save completes. Received by `poll_save_results` on the UI thread.
+
+| Variant | Description |
+|---------|-------------|
+| `Autosave` | Autosave completed successfully. `poll_save_results` sets `document.dirty_since_last_autosave = false` in response. |
+| `ManualSave(PathBuf)` | Manual save completed to the given path. `poll_save_results` updates `document.savefile_path` and sets `render_next_frame = true`. |
+| `Failed(String)` | Save failed at either serialization (`save_canvas_to_bytes`) or file-write (`save_bytes_to_file`) stage. The string is a human-readable error message pushed to the error list. |
+
+Derives `Debug`.
