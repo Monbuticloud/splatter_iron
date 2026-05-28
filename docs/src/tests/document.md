@@ -63,3 +63,27 @@ With a dirty rect set, `blend_to_output` returns the dirty-rect bounds (translat
 ## `blend_to_output_empty_dirty_rect_returns_none`
 
 With an empty `DirtyRect`, `blend_to_output` returns `None` and clears render state.
+
+## `delete_layer_preserves_current_when_above`
+
+Deleting a layer at index 2 when `current_layer = 0` leaves `current_layer` unchanged at 0.
+
+## `delete_layer_decrements_current_when_below`
+
+Deleting a layer at index 0 when `current_layer = 2` decrements `current_layer` to 1.
+
+## `add_layer_sets_render_next_frame`
+
+`add_layer` sets `render_next_frame` to `true` after adding a transparent layer.
+
+## `delete_layer_sets_render_next_frame`
+
+`delete_layer` sets `render_next_frame` to `true` after removing a layer.
+
+## `move_layer_up_sets_render_next_frame`
+
+`move_layer_up` sets `render_next_frame` to `true` after swapping layers.
+
+## `move_layer_down_sets_render_next_frame`
+
+`move_layer_down` sets `render_next_frame` to `true` after swapping layers.

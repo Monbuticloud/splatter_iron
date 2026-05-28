@@ -48,6 +48,18 @@ A full undo → redo → undo cycle restores the original state each time.
 
 A zero-area square produces an undo record whose runs list is empty.
 
+## `compress_run_empty_returns_many`
+
+An empty pixel vec returns length 0 and `BeforePixels::Many`.
+
+## `redo_apply_alpha_overlay_blends`
+
+`redo_apply` on an alpha-overlay stroke blends the colour over the restored background, matching the original blended result (undo→redo is lossless for alpha-overlay strokes).
+
+## `undo_apply_before_pixels_all_restores`
+
+A uniform full-canvas square compresses each run as `BeforePixels::All`. `undo_apply` restores all pixels to the original white using the `fill` path.
+
 ## `multiple_undos_stack`
 
 Two consecutive strokes can be undone in reverse order and redone in original order, composing correctly.

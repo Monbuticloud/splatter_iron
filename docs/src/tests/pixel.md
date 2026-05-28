@@ -70,6 +70,14 @@ With two opaque layers, the top layer fully occludes the bottom across every pix
 
 Calling `blend_region` with an empty layer list does not panic and leaves the output buffer unchanged.
 
+## `blend_layers_three_layers`
+
+With three opaque layers (red → green → blue), the topmost (blue) fully occludes the rest at every pixel.
+
+## `blend_layers_semi_transparent_top`
+
+A semi-transparent red top layer blended over an opaque green bottom layer produces an opaque red-tinted result; both red and green channels are positive, with red dominating.
+
 ## Regression: `premultiply_of_premultiplied_darkens_again`
 
 Documents the bug pattern: calling `premultiply` on an already-premultiplied `Color32` double-scales the RGB channels, producing a darker color (e.g. 50% transparent red drops from r=128 to r=64).

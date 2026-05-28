@@ -34,3 +34,15 @@ The union of two overlapping rects produces the minimum bounding box covering bo
 ## `canvas_dirty_rect_default_none`
 
 A freshly constructed `Canvas` has `dirty_rect: None`.
+
+## `canvas_new_sets_dimensions`
+
+`Canvas::new(42, 24)` creates a canvas with `width=42`, `height=24`, one transparent layer, and the correct pixel count.
+
+## `default_render_next_frame_is_true`
+
+The default canvas sets `render_next_frame` to `true` (initial full re-render needed).
+
+## `canvas_new_render_next_frame_is_true`
+
+`Canvas::new(10, 10)` also sets `render_next_frame` to `true`.
