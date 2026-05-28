@@ -247,6 +247,38 @@ fn stamp_rectangular_aspect() {
     );
 }
 
+/// Bilinear sampling should produce a smooth interpolated output.
+#[test]
+fn bilinear_sampling_produces_interpolated_output() {
+    let mut canvas = small_canvas();
+    // 1×2 stamp: left red, right white
+    let red_pixel = Color32::from_rgba_premultiplied(255, 0, 0, 255);
+    let white = Color32::from_rgba_premultiplied(255, 255, 255, 255);
+    let stamp = vec![red_pixel, white];
+    let mut drag_processed = vec![0u32; 100];
+
+    // radius 4 → output width 4, height = (1*4/2) = 2 → output 4×2
+    stamp_brush::draw_stamp_line(
+        5, 5, 5, 5, &stamp, 2, 1, 4, &mut canvas, red(), 0, false, false,
+        StampSampling::Bilinear, &mut drag_processed, 1,
+    );
+
+    let pixels = &canvas.pixels[0].pixels;
+    // The middle pixel should be an interpolation between red and white
+    // rather than a hard cut between the two source pixels
+    let mid_pixel = pixels[5 * 10 + 5];
+    // With nearest, the middle pixel would map cleanly to one source
+    // pixel. With bilinear, it should be a blend.
+    assert_ne!(
+        mid_pixel, red_pixel,
+        "bilinear should not produce exact red at midpoint"
+    );
+    assert_ne!(
+        mid_pixel, white,
+        "bilinear should not produce exact white at midpoint"
+    );
+}
+
 /// Stamp fully off-screen should be a no-op and produce an empty undo record.
 #[test]
 fn stamp_fully_off_screen_noop() {
