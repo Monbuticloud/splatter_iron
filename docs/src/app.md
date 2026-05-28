@@ -113,3 +113,22 @@ used by the "New Canvas" dialog modal and reset on dialog close.
 Initialises with `IdleThrottled` rendering, zero elapsed time, no autosaves,
 no pending layer deletion, dialog closed, and default dimensions of
 2000×1500. This matches the "M" preset in the new-canvas dialog.
+
+## GPU Texture
+
+### `struct GpuTexture`
+
+Holds the wgpu resources for partial-upload canvas rendering:
+
+| Field | Type | Purpose |
+|---|---|---|
+| `texture` | `wgpu::Texture` | The GPU-side RGBA texture storing the composite canvas image |
+| `texture_id` | `egui::TextureId` | Egui texture ID registered with the egui_wgpu renderer for display |
+| `queue` | `Arc<wgpu::Queue>` | WGPU command queue for uploading dirty-rect data each frame |
+
+Created during `MyApp::new` when the wgpu backend is available; absent under
+the Glow (OpenGL) backend where the egui-managed texture path (full-buffer
+`tex.set()`) is used instead.
+
+Each frame, `Document::upload_to_gpu` writes only the dirty sub-region via
+`wgpu::Queue::write_texture`, avoiding a full-buffer transfer.
