@@ -87,3 +87,15 @@ Pushes a new undo record onto the history stack and invalidates any existing red
 ### Stack-limit behavior
 
 When the limit is hit, the oldest stroke is silently dropped. This means the user loses the ability to undo the earliest strokes in the session. The limit of 1000 is generous enough for most painting sessions — even at 10 strokes per second, a user would need 100 seconds of continuous drawing to hit the cap.
+
+## `impl UndoHistory::next_stamp()`
+
+Increments the global `visited_stamp` counter and returns the new value. Each call effectively starts a new stroke for deduplication purposes: subsequent pixel writes will record their before-pixels in the undo record because no pixel's visited stamp matches the new value.
+
+### Overflow handling
+
+When `visited_stamp` wraps past `u32::MAX` back to 0, the visited buffer is zeroed in O(N) time and the stamp resets to 1. This is necessary because stamp 0 is the global "unvisited" sentinel used during buffer initialization and resize. Without this reset, pixels never visited in the current stamp epoch would still carry stale stamps from the prior epoch, causing false deduplication hits.
+
+### Returns
+
+A `u32` stamp value guaranteed to differ from all previous stamps (modulo overflow). Callers use this to initialize `visited_stamp` before emitting a stroke's pixels.
