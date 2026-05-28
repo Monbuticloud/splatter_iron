@@ -107,3 +107,9 @@ The `time_elapsed` field drives the 2-minute autosave interval check in the
 main frame loop. `displayed_error_list` is populated by `FileIO::poll_*`
 methods and drained by the error overlay window. The new-canvas fields are
 used by the "New Canvas" dialog modal and reset on dialog close.
+
+### `impl Default for UIState`
+
+Initialises with `IdleThrottled` rendering, zero elapsed time, no autosaves,
+no pending layer deletion, dialog closed, and default dimensions of
+2000×1500. This matches the "M" preset in the new-canvas dialog.

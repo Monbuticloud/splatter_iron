@@ -60,3 +60,26 @@ Manages async file dialogs and save operations via background threads. Holds cha
 | `save_result_sender` | `mpsc::Sender<SaveResult>` | Channel sender for dispatching save outcomes from the background save thread to the UI thread. Cloned into each save-spawned thread. |
 | `save_result_receiver` | `mpsc::Receiver<SaveResult>` | Channel receiver for polling save results on the UI thread. Polled once per frame in `poll_save_results`. |
 | `app_local_data_directory` | `PathBuf` | Base path for the autosave directory. Autosaves are written to `{app_local_data_directory}/autosaves/{timestamp}.splattercanvas`. |
+
+## Methods
+
+### `FileIO::new`
+
+```rust
+pub fn new(
+    dialog_sender: mpsc::Sender<DialogResult>,
+    dialog_receiver: mpsc::Receiver<DialogResult>,
+    save_result_sender: mpsc::Sender<SaveResult>,
+    save_result_receiver: mpsc::Receiver<SaveResult>,
+    app_local_data_directory: PathBuf,
+) -> Self
+```
+
+Constructor that stores the two channel pairs and the app data directory. Initializes `pending_file_action` to `None`.
+
+**Parameters:**
+- `dialog_sender` / `dialog_receiver` — Channel pair for file-dialog results (background thread → UI thread).
+- `save_result_sender` / `save_result_receiver` — Channel pair for async save outcomes (background thread → UI thread).
+- `app_local_data_directory` — Base path under which the `autosaves/` subdirectory is created.
+
+**Returns:** A fully initialized `FileIO` with no pending action. The channels are typically created by the caller (e.g. `app.rs`) via `mpsc::channel()` before passing them into `new`.
