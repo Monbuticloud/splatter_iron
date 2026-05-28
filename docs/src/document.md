@@ -297,3 +297,28 @@ Panics if `index >= pixels.len() - 1` — there is no layer below. The caller
 - Performs `self.canvas.pixels.swap(index, index + 1)`.
 - Sets `current_layer = index + 1` (the layer moves with the swap).
 - Sets `render_next_frame = true`.
+
+---
+
+## `Document::select_layer(index)`
+
+Sets the current (active) layer index. Does **not** trigger a re-render — layer
+selection only affects which layer receives future brush strokes.
+
+### Signature
+
+```rust
+pub fn select_layer(&mut self, index: usize)
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `index` | `usize` | Index of the layer to select |
+
+### Behaviour
+
+- Sets `self.current_layer = index`.
+- No validation of the index is performed; the caller must ensure `index <
+  self.canvas.pixels.len()`.
