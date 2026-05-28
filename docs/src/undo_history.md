@@ -225,3 +225,38 @@ Resets the undo history to its initial empty state. Drains all entries from `str
 ### What persists
 
 After `clear()`, the allocation of the visited buffers is preserved. No reallocation occurs. This is intentional: `clear()` is often followed by more drawing, and preserving the allocations avoids unnecessary work.
+
+## `impl UndoHistory::can_undo()`
+
+Returns `true` if there is at least one stroke in the history stack that can be undone.
+
+### Logic
+
+```rust
+self.redo_index < self.stroke_stack.len()
+```
+
+Entries at indices `[0, stroke_stack.len() - redo_index)` are undoable. As undo steps are applied, `redo_index` grows toward `stroke_stack.len()`. When `redo_index == stroke_stack.len()`, all entries have been undone and there is nothing left to undo.
+
+## `impl UndoHistory::can_redo()`
+
+Returns `true` if there is at least one previously undone stroke that can be reapplied.
+
+### Logic
+
+```rust
+self.redo_index > 0
+```
+
+Entries at indices `[stroke_stack.len() - redo_index, stroke_stack.len())` are redoable. When `redo_index` is 0, no entries have been undone and there is nothing to redo. A non-zero `redo_index` means entries were undone and are available for redo.
+
+### State transitions
+
+| Action | `redo_index` | `can_undo` | `can_redo` |
+|--------|-------------|------------|------------|
+| Initial (empty) | 0 | false | false |
+| After push | 0 | true | false |
+| After 1 undo | 1 | true (if >1 entries) | true |
+| After all undone | N (= len) | false | true |
+| After 1 redo | N-1 | true | true (if >0) |
+| After new push | 0 | true | false |
