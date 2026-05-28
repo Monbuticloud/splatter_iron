@@ -187,6 +187,12 @@ fn blend_simd_chunk(
 ///
 /// Handles 4-pixel SIMD alignment, with optional rayon parallelism
 /// when `parallel` is true and there are enough chunks.
+///
+/// # Panics
+///
+/// Panics if `layers` is empty, if any layer is shorter than
+/// `pixel_start + pixel_count`, or if `output` is shorter than
+/// `(pixel_start + pixel_count) * BYTES_PER_PIXEL`.
 #[inline]
 fn blend_pixel_range(
     layers: &[&[Color32]],
