@@ -185,3 +185,25 @@ pub fn render_to_texture(&mut self, ui: &egui::Ui)
 ### Texture options
 
 Uses `TextureOptions::LINEAR` for bilinear interpolation on the GPU.
+
+---
+
+## `Document::add_layer()`
+
+Appends a new transparent layer to the canvas. The new layer is filled entirely
+with `Color32::TRANSPARENT` and uses the same dimensions as the existing canvas.
+
+### Signature
+
+```rust
+pub fn add_layer(&mut self)
+```
+
+### Behaviour
+
+- Pushes a `Layer` containing `width × height` transparent pixels onto
+  `self.canvas.pixels`.
+- Sets `self.canvas.render_next_frame = true` so the compositor re-blends all
+  layers on the next frame.
+- Does **not** change `current_layer` — the newly added layer is appended at the
+  end; the UI is responsible for selecting it if desired.
