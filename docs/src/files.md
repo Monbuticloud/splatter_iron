@@ -117,3 +117,77 @@ Returns an error if:
 - The parent directory does not exist.
 - The calling process lacks write permission.
 - An I/O error occurs during the write (disk full, etc.).
+
+---
+
+## `export_as_image(premultiplied_rgba, width, height, path, format)`
+
+Exports a flattened premultiplied RGBA pixel buffer to a file in one of 13
+supported image formats.
+
+For JPEG the alpha channel is blended against a white background so the image
+is fully opaque. For all other formats the premultiplied pixels are converted to
+straight (unmultiplied) alpha.
+
+### Signature
+
+```rust
+pub fn export_as_image(
+    premultiplied_rgba: &[u8],
+    width: u32,
+    height: u32,
+    path: &Path,
+    format: image::ImageFormat,
+) -> anyhow::Result<()>
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `premultiplied_rgba` | `&[u8]` | Flattened premultiplied RGBA bytes (e.g. from `output_rgba`) |
+| `width` | `u32` | Image width in pixels |
+| `height` | `u32` | Image height in pixels |
+| `path` | `&Path` | Destination file path (extension determines format only for the file system; the `format` parameter is authoritative) |
+| `format` | `image::ImageFormat` | Target image format |
+
+### Supported formats
+
+| Format | Variant | Alpha handling | Notes |
+|---|---|---|---|
+| AVIF | `AvifEncoder` | Straight alpha | Lossy by default |
+| PNG | `PngEncoder` | Straight alpha | Lossless |
+| JPEG | `JpegEncoder` | Blended against white | Quality 100 |
+| WebP | `WebPEncoder::new_lossless` | Straight alpha | Lossless variant |
+| GIF | `GifEncoder` | Straight alpha | Single frame |
+| TIFF | `TiffEncoder` | Straight alpha | — |
+| TGA | `TgaEncoder` | Straight alpha | — |
+| ICO | `IcoEncoder` | Straight alpha | — |
+| PNM | `PnmEncoder` | Straight alpha | — |
+| QOI | `QoiEncoder` | Straight alpha | Quite OK Image |
+| OpenEXR | `OpenExrEncoder` | Straight alpha | HDR format |
+| HDR | `HdrEncoder` | RGB float (alpha ignored) | RGB32F, linear |
+| Farbfeld | `FarbfeldEncoder` | Straight alpha | RGBA16, native endian |
+
+### JPEG special case
+
+For JPEG, the premultiplied alpha is un-done by blending against white:
+`r' = r + (255 - a)`, clamped. The resulting RGB8 image has no alpha channel.
+
+### HDR special case
+
+HDR stores linear float RGB. Each u8 channel is divided by 255.0 to recover a
+normalised float, then written as an RGB32F pixel. Alpha is discarded.
+
+### Farbfeld special case
+
+Farbfeld requires u16 per channel, native endian. Each u8 value is widened to
+u16 and written as RGBA16.
+
+### Errors
+
+Returns an error if:
+- The file cannot be created at `path`.
+- The chosen image encoder fails.
+- `format` is not one of the 13 supported variants (the `_` arm bails with
+  `"Unsupported export format"`).
