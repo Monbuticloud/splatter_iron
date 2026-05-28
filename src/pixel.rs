@@ -8,7 +8,9 @@ use eframe::egui::Color32;
 use rayon::prelude::*;
 use wide::u32x4;
 
+/// Number of bytes per pixel in RGBA output buffers.
 pub const BYTES_PER_PIXEL: usize = 4;
+/// Maximum `f32` value used for normalising `u8` color channels.
 pub const F32_COLOR_MAX: f32 = 255.0;
 
 // SIMD constant for the (value * alpha + 128) >> 8 fixed-point blend
