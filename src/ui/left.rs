@@ -16,6 +16,11 @@ impl MyApp {
     /// Temporarily overrides the selection color to purple so the active tool
     /// stands out visually. Shows Square, Circle, Square Eraser, Circle Eraser,
     /// and Bucket Fill.
+    /// Render the left tool-selection panel (Square, Circle, Erasers, Bucket Fill).
+    ///
+    /// # Parameters
+    ///
+    /// * `ui` — The egui UI handle.
     pub fn show_left_panel(&mut self, ui: &mut egui::Ui) {
         // Temporarily override selection color to purple for tool buttons.
         // Using ui.selectable_value() gives us built-in highlight + click handling

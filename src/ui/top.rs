@@ -10,6 +10,13 @@ impl MyApp {
     /// Undo/Redo buttons, and Close.
     ///
     /// Returns `true` if Close was pressed, signaling the app to quit.
+    /// Render the top menu bar with Save, Load, New, and Export actions.
+    ///
+    /// Returns `true` if the user triggered a quit action.
+    ///
+    /// # Parameters
+    ///
+    /// * `ui` — The egui UI handle.
     pub fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
         let mut is_quitting = false;
         ui.horizontal(|ui| {

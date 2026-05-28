@@ -21,6 +21,12 @@ impl MyApp {
     ///
     /// Layer actions (add, delete, move up/down, select) are processed
     /// via a `LayerAction` enum to avoid borrowing conflicts.
+    /// Render the right settings panel: colour selector, brush radius, alpha
+    /// overlay toggle, brush preview toggle, undo strength, layer list, and save path.
+    ///
+    /// # Parameters
+    ///
+    /// * `ui` — The egui UI handle.
     pub fn show_right_panel(&mut self, ui: &mut egui::Ui) {
         ui.label("Settings");
         ui.separator();

@@ -26,6 +26,13 @@ impl MyApp {
     ///
     /// Only renders if a texture exists (wgpu or fallback). Delegates
     /// interaction handling to `handle_canvas_interaction`.
+    /// Render the central canvas panel where brush strokes and interaction occur.
+    ///
+    /// No-op when neither a GPU texture nor an egui-managed texture is available.
+    ///
+    /// # Parameters
+    ///
+    /// * `ui` — The egui UI handle.
     pub fn show_central_panel(&mut self, ui: &mut egui::Ui) {
         if self.gpu_texture.is_some() || self.document.canvas.rendered_layers.is_some() {
             self.handle_canvas_interaction(ui);
