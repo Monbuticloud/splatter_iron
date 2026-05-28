@@ -12,5 +12,6 @@ pub mod file_io;
 pub mod files;
 pub mod pixel;
 pub mod square_brush;
+pub mod stamp_brush;
 pub mod undo;
 pub mod undo_history;
