@@ -137,3 +137,33 @@ and the single-layer fast path (`memcpy`) run on the calling thread.
 - (debug builds only) If any layer has a different pixel count from
   `layers[0]`.
 - If `output.len() != layers[0].len() * 4`.
+
+## `fn blend_region()`
+
+```rust
+pub fn blend_region(
+    layers: &[&[Color32]],
+    output: &mut [u8],
+    canvas_width: u32,
+    min_x: u32,
+    min_y: u32,
+    max_x: u32,
+    max_y: u32,
+)
+```
+
+Blend only the pixels within a dirty rectangle, row by row. This is an
+optimisation over `blend_layers` when only a small portion of the canvas has
+changed (e.g. during a brush stroke or a bucket fill).
+
+**Performance:** Each row segment is processed via `blend_pixel_range` with
+`parallel = false`. Dirty rects from brush strokes are typically small
+enough that parallel overhead would dominate — sequential iteration across
+rows with scalar + SIMD within each row is the preferred strategy.
+
+**Empty layers:** Returns immediately if `layers` is empty (no-op), unlike
+`blend_layers` which panics.
+
+**Panics:**
+- If any layer has fewer pixels than required by the region bounds.
+- If `output` is too small for the required byte range.
