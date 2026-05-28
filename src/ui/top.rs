@@ -34,9 +34,9 @@ impl MyApp {
 
             // Export menu with all supported formats
             ui.menu_button("Export", |ui| {
-                for (i, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
+                for (format_index, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                     if ui.button(label).clicked() {
-                        self.file_io.queue_file_action(PendingFileAction::Export(i));
+                        self.file_io.queue_file_action(PendingFileAction::Export(format_index));
                         ui.ctx().request_repaint();
                         ui.close();
                     }
@@ -52,15 +52,15 @@ impl MyApp {
             ui.separator();
 
             // Undo / Redo buttons
-            let undo_btn = ui.button("Undo");
-            let redo_btn = ui.button("Redo");
+            let undo_button = ui.button("Undo");
+            let redo_button = ui.button("Redo");
 
             // Undo: button or keyboard shortcut
             if
                 self.undo.can_undo() &&
                 (ui.input(
-                    |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && !i.modifiers.shift
-                ) || undo_btn.clicked())
+                    |input_state| input_state.key_pressed(egui::Key::Z) && input_state.modifiers.command && !input_state.modifiers.shift
+                ) || undo_button.clicked())
             {
                 self.undo.undo_step(&mut self.document.canvas, self.tool_configuration.undo_redo_steps_multiplier);
                 self.document.canvas.render_next_frame = true;
@@ -70,10 +70,10 @@ impl MyApp {
             if
                 self.undo.can_redo() &&
                 (ui.input(
-                    |i| i.key_pressed(egui::Key::Z) && i.modifiers.command && i.modifiers.shift
+                    |input_state| input_state.key_pressed(egui::Key::Z) && input_state.modifiers.command && input_state.modifiers.shift
                 ) ||
-                    ui.input(|i| i.key_pressed(egui::Key::Y) && i.modifiers.command) ||
-                    redo_btn.clicked())
+                    ui.input(|input_state| input_state.key_pressed(egui::Key::Y) && input_state.modifiers.command) ||
+                    redo_button.clicked())
             {
                 self.undo.redo_step(&mut self.document.canvas, self.tool_configuration.undo_redo_steps_multiplier);
                 self.document.canvas.render_next_frame = true;
