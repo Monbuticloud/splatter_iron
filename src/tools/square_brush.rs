@@ -151,7 +151,6 @@ pub fn draw_square(
     if start_x >= end_x || start_y >= end_y {
         return UndoRecord::Run {
             layer_index: layer,
-            width: canvas.width,
             color_after: color,
             runs: Vec::new(),
             is_alpha_overlay: alpha_overlay,
@@ -191,7 +190,6 @@ pub fn draw_square(
 
     UndoRecord::Run {
         layer_index: layer,
-        width: canvas.width,
         color_after: color,
         runs,
         is_alpha_overlay: alpha_overlay,
@@ -289,7 +287,6 @@ pub fn draw_square_line(
 
     UndoRecord::Run {
         layer_index: layer,
-        width: canvas.width,
         color_after: color,
         runs,
         is_alpha_overlay: alpha_overlay,

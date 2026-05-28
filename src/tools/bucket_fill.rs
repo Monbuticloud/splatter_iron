@@ -36,7 +36,6 @@ pub fn draw_bucket_fill(
     if target == color {
         return UndoRecord::Run {
             layer_index: layer,
-            width: canvas.width,
             color_after: color,
             runs: Vec::new(),
             is_alpha_overlay: alpha_overlay,
@@ -137,7 +136,6 @@ pub fn draw_bucket_fill(
 
     UndoRecord::Run {
         layer_index: layer,
-        width: canvas.width,
         color_after: color,
         runs,
         is_alpha_overlay: alpha_overlay,

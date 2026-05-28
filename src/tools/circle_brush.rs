@@ -105,7 +105,6 @@ pub fn draw_circle(
     if radius == 0 || center_x >= canvas.width || center_y >= height {
         return UndoRecord::Run {
             layer_index: layer,
-            width: canvas.width,
             color_after: color,
             runs: Vec::new(),
             is_alpha_overlay: alpha_overlay,
@@ -176,7 +175,6 @@ pub fn draw_circle(
 
     UndoRecord::Run {
         layer_index: layer,
-        width: canvas.width,
         color_after: color,
         runs,
         is_alpha_overlay: alpha_overlay,
@@ -381,7 +379,6 @@ pub fn draw_circle_line(
 
     UndoRecord::Run {
         layer_index: layer,
-        width: canvas.width,
         color_after: color,
         runs,
         is_alpha_overlay: alpha_overlay,
