@@ -5,7 +5,6 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::Canvas;
 use crate::tests::common::{ red, blue, small_canvas };
 use crate::tools::stamp_brush;
 
@@ -204,5 +203,56 @@ fn stamp_does_not_affect_outside() {
         canvas.pixels[0].pixels[0],
         Color32::TRANSPARENT,
         "pixel outside stamp bounds unchanged",
+    );
+}
+
+/// Rectangular stamp (non-square) should preserve aspect ratio when placed.
+#[test]
+fn stamp_rectangular_aspect() {
+    let mut canvas = small_canvas();
+    // 4×1 stamp: red, green, blue, white
+    let stamp = vec![
+        red(),
+        Color32::from_rgba_premultiplied(0, 255, 0, 255),
+        blue(),
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+    ];
+    let mut drag_processed = vec![0u32; 100];
+
+    // radius=4 → output 4×1 (preserves 4:1 aspect)
+    stamp_brush::draw_stamp_line(
+        5, 5, 5, 5, &stamp, 4, 1, 4, &mut canvas, red(), 0, false, false,
+        &mut drag_processed, 1,
+    );
+
+    let pixels = &canvas.pixels[0].pixels;
+    // Source (0,0) → output (3,5) = red
+    assert_eq!(pixels[5 * 10 + 3], red(), "rect stamp left pixel");
+    // Source (3,0) → output (6,5) = white
+    assert_eq!(
+        pixels[5 * 10 + 6],
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        "rect stamp right pixel"
+    );
+}
+
+/// Stamp fully off-screen should be a no-op and produce an empty undo record.
+#[test]
+fn stamp_fully_off_screen_noop() {
+    let mut canvas = small_canvas();
+    let (stamp, w, h) = solid_stamp();
+    let mut drag_processed = vec![0u32; 100];
+
+    // Center at (100, 100) — far outside the 10×10 canvas
+    stamp_brush::draw_stamp_line(
+        100, 100, 100, 100, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        &mut drag_processed, 1,
+    );
+
+    // Canvas should remain fully transparent
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        Color32::TRANSPARENT,
+        "off-screen stamp leaves canvas unchanged",
     );
 }
