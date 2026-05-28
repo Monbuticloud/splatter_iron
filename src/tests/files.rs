@@ -247,3 +247,155 @@ fn save_bytes_to_file_roundtrip() {
     let loaded = files::load_data_from_file(&path).expect("load bytes");
     assert_eq!(loaded, data, "bytes round-trip");
 }
+
+// --- Remaining export format tests (AVIF, TGA, ICO, PNM, QOI, EXR, HDR, Farbfeld) ---
+
+/// Helper: export checkerboard data to a given format, verify file exists and has content.
+fn check_export(format: image::ImageFormat, extension: &str) {
+    let mut rgba = Vec::with_capacity(16 * 4);
+    for y in 0..4u8 {
+        for x in 0..4u8 {
+            if (x + y) % 2 == 0 {
+                rgba.extend_from_slice(&[255, 255, 255, 255]);
+            } else {
+                rgba.extend_from_slice(&[0, 0, 0, 255]);
+            }
+        }
+    }
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join(format!("test.{extension}"));
+    files::export_as_image(&rgba, 4, 4, &path, format).expect(&format!("export {format:?}"));
+    assert!(path.exists(), "file should exist for {format:?}");
+    let metadata = std::fs::metadata(&path).expect("metadata");
+    assert!(metadata.len() > 0, "file should have content for {format:?}");
+}
+
+#[test]
+fn export_avif_creates_file() {
+    check_export(image::ImageFormat::Avif, "avif");
+}
+
+#[test]
+fn export_tga_creates_file() {
+    check_export(image::ImageFormat::Tga, "tga");
+}
+
+#[test]
+fn export_ico_creates_file() {
+    check_export(image::ImageFormat::Ico, "ico");
+}
+
+#[test]
+fn export_pnm_creates_file() {
+    check_export(image::ImageFormat::Pnm, "pnm");
+}
+
+#[test]
+fn export_qoi_creates_file() {
+    check_export(image::ImageFormat::Qoi, "qoi");
+}
+
+/// OpenEXR does not support Rgba8 directly, so export is expected to fail.
+#[test]
+fn export_exr_unsupported_color_type() {
+    let rgba = vec![255u8; 16];
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.exr");
+    let result = files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::OpenExr);
+    assert!(result.is_err(), "OpenEXR over Rgba8 should error");
+}
+
+#[test]
+fn export_hdr_creates_file() {
+    check_export(image::ImageFormat::Hdr, "hdr");
+}
+
+#[test]
+fn export_farbfeld_creates_file() {
+    check_export(image::ImageFormat::Farbfeld, "ff");
+}
+
+/// Export with an unsupported format should return an error.
+#[test]
+fn export_unsupported_format_errors() {
+    let rgba = vec![255u8; 16];
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.bmp");
+    let result = files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Bmp);
+    assert!(result.is_err(), "unsupported format should error");
+    let err = format!("{}", result.unwrap_err());
+    assert!(err.contains("Unsupported"), "error should mention unsupported: {err}");
+}
+
+/// Export with zero-width image should fail gracefully.
+#[test]
+fn export_zero_width_fails() {
+    let rgba = vec![255u8; 0];
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.png");
+    let result = files::export_as_image(&rgba, 0, 1, &path, image::ImageFormat::Png);
+    assert!(result.is_err());
+}
+
+/// Import a JPEG image as a canvas roundtrip.
+#[test]
+fn import_jpeg_as_canvas() {
+    // Create a 2x2 JPEG file, then import it
+    let mut rgba = Vec::with_capacity(4 * 4);
+    rgba.extend_from_slice(&[255, 0, 0, 255]);
+    rgba.extend_from_slice(&[0, 255, 0, 255]);
+    rgba.extend_from_slice(&[0, 0, 255, 255]);
+    rgba.extend_from_slice(&[128, 128, 128, 255]);
+
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test_import.jpg");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Jpeg)
+        .expect("export JPEG for import test");
+
+    let imported = files::import_image_as_canvas(&path).expect("import JPEG");
+    assert_eq!(imported.width, 2);
+    assert_eq!(imported.height, 2);
+    assert_eq!(imported.pixels.len(), 1);
+    // JPEG is lossy, so we can't compare exact pixels — just check that it loaded
+    assert!(imported.render_next_frame);
+}
+
+/// Decompress corrupted zstd data should return an error.
+#[test]
+fn decompress_corrupted_data_errors() {
+    let corrupted = b"this is not valid zstd compressed data at all!!!";
+    let result = files::load_app_from_data(corrupted);
+    assert!(result.is_err());
+}
+
+/// Decompress slightly corrupt zstd frame (valid header, bad content).
+#[test]
+fn decompress_partially_corrupted_zstd_errors() {
+    // Build a minimal but invalid zstd frame
+    let mut buf = Vec::new();
+    // Magic number for zstd
+    buf.extend_from_slice(&[0x28, 0xB5, 0x2F, 0xFD]);
+    // Frame header (1 byte: content_size_flag=0, single_segment=1,
+    //               reserved=0, window_log=0)
+    buf.push(0x00);
+    // Add some garbage as body
+    buf.extend_from_slice(&[0xDE, 0xAD, 0xBE, 0xEF]);
+    let result = files::load_app_from_data(&buf);
+    assert!(result.is_err());
+}
+
+/// Export and re-import TIFF roundtrip.
+#[test]
+fn export_tiff_roundtrip() {
+    let mut rgba = Vec::with_capacity(4 * 4);
+    for _ in 0..4 {
+        rgba.extend_from_slice(&[128, 64, 32, 255]);
+    }
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("roundtrip.tiff");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Tiff)
+        .expect("export TIFF for roundtrip");
+    let imported = files::import_image_as_canvas(&path).expect("import TIFF");
+    assert_eq!(imported.width, 2);
+    assert_eq!(imported.height, 2);
+}

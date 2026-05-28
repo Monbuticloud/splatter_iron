@@ -100,6 +100,129 @@ fn remove_last_stamp_clears_selection() {
     assert!(lib.selected().is_none());
 }
 
+/// Retrieve a stamp by valid index.
+#[test]
+fn get_valid_index() {
+    let dir = tempdir();
+    let mut lib = StampLibrary::load_from_disk(&dir);
+
+    let (pixels, w, h) = red_stamp();
+    lib.add("get_test".to_string(), pixels, w, h, &Context::default());
+
+    let entry = lib.get(0);
+    assert!(entry.is_some());
+    assert_eq!(entry.unwrap().name, "get_test");
+}
+
+/// `get` with an out-of-bounds index should return `None`.
+#[test]
+fn get_out_of_bounds_returns_none() {
+    let dir = tempdir();
+    let lib = StampLibrary::load_from_disk(&dir);
+    assert!(lib.get(0).is_none());
+    assert!(lib.get(100).is_none());
+    assert!(lib.get(usize::MAX).is_none());
+}
+
+/// `entries` should return a slice matching internal state.
+#[test]
+fn entries_returns_all() {
+    let dir = tempdir();
+    let mut lib = StampLibrary::load_from_disk(&dir);
+
+    let (p1, w, h) = red_stamp();
+    lib.add("a".to_string(), p1, w, h, &Context::default());
+    let (p2, w, h) = red_stamp();
+    lib.add("b".to_string(), p2, w, h, &Context::default());
+
+    let entries = lib.entries();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[0].name, "a");
+    assert_eq!(entries[1].name, "b");
+}
+
+/// `entries` on an empty library should return an empty slice.
+#[test]
+fn entries_empty_library() {
+    let dir = tempdir();
+    let lib = StampLibrary::load_from_disk(&dir);
+    assert!(lib.entries().is_empty());
+}
+
+/// `selected_mut` allows mutation of the selected stamp's fields.
+#[test]
+fn selected_mut_allows_mutation() {
+    let dir = tempdir();
+    let mut lib = StampLibrary::load_from_disk(&dir);
+
+    let (pixels, w, h) = red_stamp();
+    lib.add("mutable".to_string(), pixels, w, h, &Context::default());
+
+    let entry = lib.selected_mut().expect("should have selected");
+    entry.name = "mutated".to_string();
+    assert_eq!(lib.selected().unwrap().name, "mutated");
+}
+
+/// `selected_mut` on an empty library should return `None`.
+#[test]
+fn selected_mut_empty_library() {
+    let dir = tempdir();
+    let mut lib = StampLibrary::load_from_disk(&dir);
+    assert!(lib.selected_mut().is_none());
+}
+
+/// `remove` with an out-of-bounds index should be a no-op.
+#[test]
+fn remove_out_of_bounds_noop() {
+    let dir = tempdir();
+    let mut lib = StampLibrary::load_from_disk(&dir);
+
+    let (pixels, w, h) = red_stamp();
+    lib.add("survivor".to_string(), pixels, w, h, &Context::default());
+    assert_eq!(lib.len(), 1);
+
+    lib.remove(5);
+    assert_eq!(lib.len(), 1, "OOB remove should not change count");
+    assert!(lib.selected().is_some());
+}
+
+/// `select` with an out-of-bounds index should be a no-op.
+#[test]
+fn select_out_of_bounds_noop() {
+    let dir = tempdir();
+    let mut lib = StampLibrary::load_from_disk(&dir);
+
+    let (pixels, w, h) = red_stamp();
+    lib.add("pickme".to_string(), pixels, w, h, &Context::default());
+    assert_eq!(lib.selected_index(), Some(0));
+
+    lib.select(42);
+    assert_eq!(
+        lib.selected_index(),
+        Some(0),
+        "OOB select should not change selection"
+    );
+}
+
+/// Multiple stamps — remove middle, verify ordering preserved.
+#[test]
+fn remove_middle_preserves_order() {
+    let dir = tempdir();
+    let mut lib = StampLibrary::load_from_disk(&dir);
+
+    let (p1, w, h) = red_stamp();
+    lib.add("first".to_string(), p1, w, h, &Context::default());
+    let (p2, w, h) = red_stamp();
+    lib.add("second".to_string(), p2, w, h, &Context::default());
+    let (p3, w, h) = red_stamp();
+    lib.add("third".to_string(), p3, w, h, &Context::default());
+
+    lib.remove(1);
+    assert_eq!(lib.len(), 2);
+    assert_eq!(lib.entries()[0].name, "first");
+    assert_eq!(lib.entries()[1].name, "third");
+}
+
 /// Helper: create a temporary directory that cleans itself up on drop.
 fn tempdir() -> std::path::PathBuf {
     let ts = std::time::SystemTime::now()

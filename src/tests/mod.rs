@@ -3,6 +3,7 @@
 //! Each module mirrors a corresponding source module to validate its
 //! correctness, edge cases, and invariants under controlled conditions.
 
+pub mod app;
 pub mod bucket_fill;
 pub mod canvas;
 pub mod circle_brush;

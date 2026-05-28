@@ -6,6 +6,8 @@
 use std::path::PathBuf;
 use std::sync::mpsc;
 
+use eframe::egui::Color32;
+
 use crate::canvas::Canvas;
 use crate::document::Document;
 use crate::file_io::{ DialogResult, FileIO, PendingFileAction, SaveKind, SaveResult };
@@ -137,4 +139,159 @@ fn trigger_async_save_writes_file() {
     // Wait a bit for the async thread to finish
     std::thread::sleep(std::time::Duration::from_millis(100));
     assert!(path.exists(), "file should exist at {path:?}");
+}
+
+// --- poll_dialog_results — additional dialog result paths ---
+
+/// `poll_dialog_results` with a StampPixels result should set loaded_stamp_data.
+#[test]
+fn poll_dialog_results_stamp_pixels_sets_loaded() {
+    let (mut file_io, dialog_sender, _) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    let pixels = vec![Color32::RED; 4];
+    dialog_sender
+        .send(DialogResult::StampPixels(pixels.clone(), 2, 2, "stamp_name".to_string()))
+        .unwrap();
+    file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+
+    assert!(file_io.loaded_stamp_data.is_some());
+    let (loaded_pixels, w, h, name) = file_io.loaded_stamp_data.take().unwrap();
+    assert_eq!(loaded_pixels, pixels);
+    assert_eq!(w, 2);
+    assert_eq!(h, 2);
+    assert_eq!(name, "stamp_name");
+    assert!(errors.is_empty());
+}
+
+/// `poll_dialog_results` with an Error result should append to error list.
+#[test]
+fn poll_dialog_results_error_appends() {
+    let (mut file_io, dialog_sender, _) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    dialog_sender
+        .send(DialogResult::Error("test error message".to_string()))
+        .unwrap();
+    file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+
+    assert!(!errors.is_empty());
+    assert!(errors.iter().any(|e| e.contains("test error message")));
+    // pending_file_action should be cleared
+    assert!(file_io.pending_file_action.is_none());
+}
+
+/// `poll_dialog_results` with a Load path pointing to a valid .splattercanvas file
+/// should load and replace the document canvas.
+#[test]
+fn poll_dialog_results_load_replaces_canvas() {
+    use crate::files::{ save_canvas_to_bytes, save_bytes_to_file };
+    let (mut file_io, dialog_sender, _) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    // Create a valid .splattercanvas file
+    let source_canvas = Canvas::new(3, 4);
+    let data = save_canvas_to_bytes(&source_canvas).expect("save source canvas");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let file_path = dir.path().join("test.splattercanvas");
+    save_bytes_to_file(&data, &file_path).expect("write file");
+
+    file_io.pending_file_action = Some(PendingFileAction::Load);
+    dialog_sender.send(DialogResult::Picked(file_path)).unwrap();
+    file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+
+    assert!(errors.is_empty(), "errors: {errors:?}");
+    assert_eq!(document.canvas.width, 3);
+    assert_eq!(document.canvas.height, 4);
+    assert!(document.canvas.render_next_frame);
+    assert!(file_io.pending_file_action.is_none());
+}
+
+/// `poll_dialog_results` with an Import path pointing to a valid image file
+/// should import and replace the document canvas.
+#[test]
+fn poll_dialog_results_import_replaces_canvas() {
+    use crate::files::export_as_image;
+    let (mut file_io, dialog_sender, _) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    // Create a valid PNG file
+    let rgba = vec![255u8; 16]; // 2x2 white opaque
+    let dir = tempfile::tempdir().expect("temp dir");
+    let img_path = dir.path().join("test_import.png");
+    export_as_image(&rgba, 2, 2, &img_path, image::ImageFormat::Png)
+        .expect("create test image");
+
+    file_io.pending_file_action = Some(PendingFileAction::Import);
+    dialog_sender.send(DialogResult::Picked(img_path)).unwrap();
+    file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+
+    assert!(errors.is_empty(), "errors: {errors:?}");
+    assert_eq!(document.canvas.width, 2);
+    assert_eq!(document.canvas.height, 2);
+    assert!(file_io.pending_file_action.is_none());
+}
+
+/// `queue_file_action` with Save should set pending_file_action and spawn a thread.
+#[test]
+fn queue_file_action_save_sets_pending() {
+    let (mut file_io, _, _) = test_file_io();
+    assert!(file_io.pending_file_action.is_none());
+    file_io.queue_file_action(PendingFileAction::Save);
+    // pending_file_action should be set (async dialog thread is spawned)
+    assert!(file_io.pending_file_action.is_some());
+    // Clean up by taking the action
+    let _ = file_io.pending_file_action.take();
+}
+
+/// `queue_file_action` with LoadStamp should set pending_file_action.
+#[test]
+fn queue_file_action_load_stamp_sets_pending() {
+    let (mut file_io, _, _) = test_file_io();
+    file_io.queue_file_action(PendingFileAction::LoadStamp);
+    assert!(file_io.pending_file_action.is_some());
+    let _ = file_io.pending_file_action.take();
+}
+
+/// `save_to_current_path` with a non-empty path should call trigger_async_save.
+#[test]
+fn save_to_current_path_non_empty_triggers_save() {
+    let (save_sender, save_receiver) = mpsc::channel();
+    let (dialog_sender, dialog_receiver) = mpsc::channel();
+    let file_io = FileIO::new(
+        dialog_sender,
+        dialog_receiver,
+        save_sender,
+        save_receiver,
+        PathBuf::from("/tmp"),
+    );
+    let mut document = Document::new(Canvas::new(1, 1));
+    document.savefile_path = "/tmp/test_save_non_empty.splattercanvas".to_string();
+    file_io.save_to_current_path(&document);
+    // Should have sent a save result eventually (may complete after a delay)
+    std::thread::sleep(std::time::Duration::from_millis(200));
+    // We can't easily check the channel without consuming the receiver,
+    // but at least the async save thread was spawned without panic
+}
+
+/// `poll_save_results` with manual save sets document path even if it's empty.
+#[test]
+fn poll_save_results_manual_save_empty_path() {
+    let (file_io, _, save_sender) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut errors = Vec::new();
+
+    save_sender.send(SaveResult::ManualSave(PathBuf::new())).unwrap();
+    file_io.poll_save_results(&mut document, &mut errors);
+
+    // Path should be set to empty string representation
+    assert!(errors.is_empty());
 }

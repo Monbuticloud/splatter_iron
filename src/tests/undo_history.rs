@@ -7,7 +7,6 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::Canvas;
 use crate::tests::common::{ red, small_canvas };
 use crate::tools::square_brush;
 use crate::undo::{ UndoRecord };
@@ -81,7 +80,7 @@ fn undo_redo_multi_step() {
     let mut canvas = small_canvas();
     let (r1, r2) = {
         let r1 = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
-        let blue = Color32::from_rgba_premultiplied(0, 0, 255, 255);
+    let blue = Color32::from_rgba_premultiplied(0, 0, 255, 255);
         let r2 = square_brush::draw_square(3, 3, 6, 6, &mut canvas, blue, 0, false);
         (r1, r2)
     };
@@ -196,18 +195,16 @@ fn advance_drag_stamp_wrapping_resets() {
 fn drag_accumulator_full_lifecycle() {
     let mut history = UndoHistory::new(100);
     let mut canvas = small_canvas();
-    let blue = Color32::from_rgba_premultiplied(0, 0, 255, 255);
+    let _blue = Color32::from_rgba_premultiplied(0, 0, 255, 255);
 
     // Simulate a two-frame drag
     history.init_drag_accumulator(0, 10, red(), false);
     let record1 = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
-    if let UndoRecord::Run { runs, .. } = record1 {
-        history.extend_drag_accumulator(runs);
-    }
+    let UndoRecord::Run { runs, .. } = record1;
+    history.extend_drag_accumulator(runs);
     let record2 = square_brush::draw_square(3, 3, 6, 6, &mut canvas, red(), 0, false);
-    if let UndoRecord::Run { runs, .. } = record2 {
-        history.extend_drag_accumulator(runs);
-    }
+    let UndoRecord::Run { runs, .. } = record2;
+    history.extend_drag_accumulator(runs);
     history.finalize_drag_accumulator();
 
     assert!(history.can_undo(), "drag should produce one undo record");
@@ -268,4 +265,79 @@ fn max_stack_eviction_pops_oldest() {
     }
     assert_eq!(history.stroke_stack.len(), 1000, "stack capped at 1000");
     assert!(history.can_undo(), "still has undo records");
+}
+
+/// `extend_drag_accumulator` without prior `init_drag_accumulator` should be a no-op.
+#[test]
+fn extend_drag_without_init_noop() {
+    let mut history = UndoHistory::new(100);
+    // No init was called — extending should not crash or create state
+    history.extend_drag_accumulator(Vec::new());
+    assert!(!history.can_undo());
+}
+
+/// `extend_drag_accumulator` with some runs without init should not crash.
+#[test]
+fn extend_drag_without_init_with_runs_noop() {
+    use crate::undo::{ RunSegment, BeforePixels };
+    let mut history = UndoHistory::new(100);
+    let runs = vec![RunSegment {
+        start: 0,
+        length: 5,
+        before: BeforePixels::All(Color32::RED),
+    }];
+    history.extend_drag_accumulator(runs);
+    assert!(!history.can_undo());
+}
+
+/// `finalize_drag_accumulator` without prior `init_drag_accumulator` should be a no-op.
+#[test]
+fn finalize_drag_without_init_noop() {
+    let mut history = UndoHistory::new(100);
+    history.finalize_drag_accumulator();
+    assert!(!history.can_undo());
+    assert!(!history.can_redo());
+}
+
+/// `undo_step` on an empty history should be a no-op.
+#[test]
+fn undo_step_on_empty_history_noop() {
+    let mut history = UndoHistory::new(100);
+    let mut canvas = crate::tests::common::small_canvas();
+    // Should not panic
+    history.undo_step(&mut canvas, 1);
+    assert!(!history.can_undo());
+}
+
+/// `redo_step` on an empty history should be a no-op.
+#[test]
+fn redo_step_on_empty_history_noop() {
+    let mut history = UndoHistory::new(100);
+    let mut canvas = crate::tests::common::small_canvas();
+    history.redo_step(&mut canvas, 1);
+    assert!(!history.can_redo());
+}
+
+/// `push_undo` with zero-length runs (empty record) should still push.
+#[test]
+fn push_undo_empty_record() {
+    use crate::undo::UndoRecord;
+    let mut history = UndoHistory::new(100);
+    let empty_record = UndoRecord::Run {
+        layer_index: 0,
+        color_after: Color32::RED,
+        runs: Vec::new(),
+        is_alpha_overlay: false,
+    };
+    history.push_undo(empty_record);
+    assert!(history.can_undo());
+}
+
+/// `resize_visited` with identical size should be a no-op.
+#[test]
+fn resize_visited_same_size_noop() {
+    let mut history = UndoHistory::new(100);
+    history.resize_visited(100);
+    assert_eq!(history.visited.len(), 100);
+    assert_eq!(history.drag_processed.len(), 100);
 }

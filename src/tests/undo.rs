@@ -202,3 +202,116 @@ fn multiple_undos_stack() {
     assert_eq!(canvas.pixels[0].pixels[0], red(), "first square reapplied");
     assert_eq!(canvas.pixels[0].pixels[33], blue, "second square reapplied");
 }
+
+/// `undo_apply` with a corrupt run segment (start past layer end) should panic.
+#[test]
+#[should_panic]
+fn undo_apply_corrupt_run_panics() {
+    use crate::undo::{ RunSegment, BeforePixels };
+    let mut canvas = small_white_canvas();
+    let corrupt = UndoRecord::Run {
+        layer_index: 0,
+        color_after: Color32::RED,
+        runs: vec![RunSegment {
+            start: 200, // beyond 10x10 canvas (100 pixels)
+            length: 1,
+            before: BeforePixels::All(Color32::WHITE),
+        }],
+        is_alpha_overlay: false,
+    };
+    undo::undo_apply(&mut canvas, &corrupt);
+}
+
+/// `redo_apply` with a corrupt run segment (run past layer end) should panic.
+#[test]
+#[should_panic]
+fn redo_apply_corrupt_run_panics() {
+    use crate::undo::{ RunSegment, BeforePixels };
+    let mut canvas = small_white_canvas();
+    let corrupt = UndoRecord::Run {
+        layer_index: 0,
+        color_after: Color32::RED,
+        runs: vec![RunSegment {
+            start: 50, // valid start
+            length: 100, // extends past 100-pixel buffer end (50+100 > 100)
+            before: BeforePixels::All(Color32::WHITE),
+        }],
+        is_alpha_overlay: false,
+    };
+    undo::redo_apply(&mut canvas, &corrupt);
+}
+
+/// `undo_apply` with `BeforePixels::Many` containing wrong number of pixels
+/// should panic (slice length mismatch).
+#[test]
+#[should_panic]
+fn undo_apply_before_pixels_many_wrong_length_panics() {
+    use crate::undo::{ RunSegment, BeforePixels };
+    let mut canvas = small_white_canvas();
+    let corrupt = UndoRecord::Run {
+        layer_index: 0,
+        color_after: Color32::RED,
+        runs: vec![RunSegment {
+            start: 0,
+            length: 5,
+            before: BeforePixels::Many(vec![Color32::RED; 3]), // length 3, expected 5
+        }],
+        is_alpha_overlay: false,
+    };
+    undo::undo_apply(&mut canvas, &corrupt);
+}
+
+/// `compress_run` with all identical pixels above threshold returns `All`.
+#[test]
+fn compress_run_identical_long() {
+    let pixels = vec![Color32::from_rgba_premultiplied(42, 100, 200, 128); 15];
+    let (before, length) = undo::compress_run(pixels);
+    assert_eq!(length, 15);
+    assert!(matches!(before, BeforePixels::All(c) if c == Color32::from_rgba_premultiplied(42, 100, 200, 128)));
+}
+
+/// Undo on a record where length of the run is 0 (empty run).
+#[test]
+fn undo_apply_empty_run_noop() {
+    use crate::undo::{ RunSegment, BeforePixels };
+    let mut canvas = small_white_canvas();
+    let record = UndoRecord::Run {
+        layer_index: 0,
+        color_after: Color32::RED,
+        runs: vec![RunSegment {
+            start: 0,
+            length: 0,
+            before: BeforePixels::All(Color32::WHITE),
+        }],
+        is_alpha_overlay: false,
+    };
+    // Should not panic despite being somewhat degenerate
+    undo::undo_apply(&mut canvas, &record);
+    // Pixel should still be white
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        Color32::from_rgba_premultiplied(255, 255, 255, 255)
+    );
+}
+
+/// `redo_apply` with empty run.
+#[test]
+fn redo_apply_empty_run_noop() {
+    use crate::undo::{ RunSegment, BeforePixels };
+    let mut canvas = small_white_canvas();
+    let record = UndoRecord::Run {
+        layer_index: 0,
+        color_after: Color32::RED,
+        runs: vec![RunSegment {
+            start: 0,
+            length: 0,
+            before: BeforePixels::All(Color32::WHITE),
+        }],
+        is_alpha_overlay: false,
+    };
+    undo::redo_apply(&mut canvas, &record);
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        Color32::from_rgba_premultiplied(255, 255, 255, 255)
+    );
+}

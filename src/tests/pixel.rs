@@ -279,11 +279,138 @@ fn premultiply_on_premul_storage_darkens() {
     // Color32 stores the premultiplied result, so .r() returns 128*128/255 ≈ 64.
     let stored_r = color.r();
     // Calling premultiply on the already-premultiplied storage darkens it.
-    let doubled = pixel::premultiply(color);
+    let doubled = pixel::premultiply(color    );
     assert!(
         doubled.r() < stored_r,
         "premultiply on premultiplied Color32 darkens: {} -> {}",
         stored_r,
         doubled.r()
     );
+}
+
+// --- blend_layers edge & panic cases ---
+
+/// `blend_layers` with an empty layer vec should panic.
+#[test]
+#[should_panic(expected = "at least one layer")]
+fn blend_layers_empty_layers_panics() {
+    let mut output = vec![0u8; 16];
+    pixel::blend_layers(&[], &mut output);
+}
+
+/// `blend_layers` with mismatched layer lengths should panic.
+#[test]
+#[should_panic(expected = "length mismatch")]
+fn blend_layers_mismatched_lengths_panics() {
+    let pixel_count = 4;
+    let bottom = vec![Color32::RED; pixel_count];
+    let top = vec![Color32::BLUE; pixel_count + 2]; // longer layer
+    let mut output = vec![0u8; pixel_count * 4];
+    pixel::blend_layers(&[&bottom, &top], &mut output);
+}
+
+/// `blend_layers` with output buffer too small should panic.
+#[test]
+#[should_panic(expected = "output length mismatch")]
+fn blend_layers_output_too_small_panics() {
+    let pixels = vec![Color32::RED; 4];
+    let mut output = vec![0u8; 4]; // should be 16 bytes for 4 pixels
+    pixel::blend_layers(&[&pixels], &mut output);
+}
+
+// --- blend_region edge cases ---
+
+/// `blend_region` with zero-width rect (min > max) should overflow
+/// in debug builds (overflow-checks = true).
+#[test]
+#[should_panic(expected = "attempt to subtract with overflow")]
+fn blend_region_zero_width_panics() {
+    let mut output = vec![0u8; 64];
+    let pixels = vec![Color32::RED; 16];
+    pixel::blend_region(&[&pixels], &mut output, 4, 5, 0, 4, 3);
+}
+
+/// `blend_region` with zero-height rect should be a no-op.
+#[test]
+fn blend_region_zero_height_noop() {
+    let mut output = vec![0u8; 64];
+    let pixels = vec![Color32::RED; 16];
+    // min_y=5, max_y=3 -> zero height, loop doesn't execute
+    pixel::blend_region(&[&pixels], &mut output, 4, 0, 5, 3, 3);
+    assert_eq!(output, vec![0u8; 64]);
+}
+
+/// `blend_region` with rect extending beyond canvas bounds should panic.
+#[test]
+#[should_panic]
+fn blend_region_out_of_bounds_panics() {
+    let mut output = vec![0u8; 64];
+    let pixels = vec![Color32::RED; 16];
+    // Canvas is 4x4 (16 pixels), rect (0, 0, 10, 3) extends beyond width
+    pixel::blend_region(&[&pixels], &mut output, 4, 0, 0, 10, 3);
+}
+
+// --- Additional edge cases for primitives ---
+
+/// `premultiply` on a color with alpha=1 should zero out all RGB channels
+/// (effectively invisible, but alpha=1 remains).
+#[test]
+fn premultiply_alpha_one_zeros_rgb() {
+    let color = Color32::from_rgba_unmultiplied(100, 200, 50, 1);
+    let premul = pixel::premultiply(color);
+    assert_eq!(premul.r(), 0, "red channel zeroed");
+    assert_eq!(premul.g(), 0, "green channel zeroed");
+    assert_eq!(premul.b(), 0, "blue channel zeroed");
+    assert_eq!(premul.a(), 1, "alpha preserved");
+}
+
+/// `unpremultiply` on fully opaque with max channels should be identity.
+#[test]
+fn unpremultiply_opaque_max_values() {
+    let color = Color32::from_rgba_premultiplied(255, 255, 255, 255);
+    assert_eq!(pixel::unpremultiply(color), color);
+}
+
+/// `alpha_blend` with fully transparent source and opaque destination
+/// should leave destination within ±1 (alpha may be 254 due to fixed-point).
+#[test]
+fn alpha_blend_transparent_over_opaque_no_change() {
+    let dest = Color32::from_rgba_premultiplied(128, 64, 32, 255);
+    let result = pixel::alpha_blend(dest, Color32::TRANSPARENT);
+    assert!(result.r().abs_diff(128) <= 1, "red: {}", result.r());
+    assert!(result.g().abs_diff(64) <= 1, "green: {}", result.g());
+    assert!(result.b().abs_diff(32) <= 1, "blue: {}", result.b());
+    // Fixed-point: (255*255 + 128) >> 8 = 254, so alpha may be 254 not 255
+    assert!(result.a() >= 254, "alpha: {}", result.a());
+}
+
+/// `blend_layers` with exactly 4 pixels (one SIMD chunk) should work.
+#[test]
+fn blend_layers_exactly_one_simd_chunk() {
+    let pixel_count = 4;
+    let bottom = vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); pixel_count];
+    let top = vec![Color32::from_rgba_premultiplied(0, 255, 0, 128); pixel_count];
+    let mut output = vec![0u8; pixel_count * 4];
+    pixel::blend_layers(&[&bottom, &top], &mut output);
+    // Result should be alpha-blended green over red
+    for i in 0..pixel_count {
+        assert_eq!(output[i * 4 + 3], 255, "alpha at {i}");
+        assert!(output[i * 4] > 0, "red at {i}"); // red still visible
+        assert!(output[i * 4 + 1] > 0, "green at {i}"); // green blended
+    }
+}
+
+/// `blend_layers` with 5 pixels (one SIMD chunk + scalar tail).
+#[test]
+fn blend_layers_simd_plus_tail() {
+    let pixel_count = 5;
+    let pixels = vec![Color32::from_rgba_premultiplied(100, 150, 200, 255); pixel_count];
+    let mut output = vec![0u8; pixel_count * 4];
+    pixel::blend_layers(&[&pixels], &mut output);
+    for i in 0..pixel_count {
+        assert_eq!(output[i * 4], 100, "pixel {i} red");
+        assert_eq!(output[i * 4 + 1], 150, "pixel {i} green");
+        assert_eq!(output[i * 4 + 2], 200, "pixel {i} blue");
+        assert_eq!(output[i * 4 + 3], 255, "pixel {i} alpha");
+    }
 }
