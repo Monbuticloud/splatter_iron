@@ -58,6 +58,14 @@ A brush radius of 3 covers a 7×7 area around the cursor; pixels outside the rad
 
 Drawing at (0,0) with a radius-5 brush does not panic; the corner pixel is colored.
 
+## `draw_square_alpha_overlay_blends`
+
+Alpha-overlay mode for `draw_square` blends semi-transparent red over opaque white; the result differs from both source and destination and remains fully opaque.
+
+## `draw_square_line_alpha_overlay_blends`
+
+Alpha-overlay mode for `draw_square_line` blends semi-transparent red over opaque white; the result differs from both source and destination.
+
 ## Regression: `draw_square_preserves_premultiplied_semi_transparent`
 
 Semi-transparent premultiplied color (128, 64, 32, 128) is stored verbatim; r=128 is not darkened.

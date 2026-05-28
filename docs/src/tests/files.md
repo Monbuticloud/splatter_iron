@@ -45,3 +45,19 @@ Exporting a 2×2 buffer with mixed opacity/transparency as PNG and re-importing 
 ## `empty_data_returns_error`
 
 `load_app_from_data` on an empty byte slice returns `Err`.
+
+## `export_webp_creates_file`
+
+Exporting a 2×2 uniform-color buffer as WebP produces a non-empty file on disk.
+
+## `export_gif_creates_file`
+
+Exporting a 2×2 uniform-color buffer as GIF produces a non-empty file on disk.
+
+## `export_tiff_creates_file`
+
+Exporting a 2×2 uniform-color buffer as TIFF produces a non-empty file on disk.
+
+## `save_bytes_to_file_roundtrip`
+
+`save_bytes_to_file` followed by `load_data_from_file` recovers the identical byte slice.

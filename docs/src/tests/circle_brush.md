@@ -54,6 +54,18 @@ A brush radius of 3 covers pixels at the center and within the radius; pixels ou
 
 Drawing at (0,0) with a radius-5 brush does not panic; the corner pixel is colored.
 
+## `draw_circle_alpha_overlay_blends`
+
+Alpha-overlay mode for `draw_circle` blends semi-transparent red over opaque white; the result differs from both source and destination.
+
+## `draw_circle_line_alpha_overlay_blends`
+
+Alpha-overlay mode for `draw_circle_line` blends semi-transparent red over opaque white; the result differs from both source and destination.
+
+## `draw_circle_fully_off_screen_returns_empty_undo`
+
+A circle centred at (100, 100) — well outside the 10×10 canvas — returns an `UndoRecord` with an empty runs list.
+
 ## Regression: `draw_circle_preserves_premultiplied_semi_transparent`
 
 Semi-transparent premultiplied color (128, 64, 32, 128) is stored verbatim at the center pixel; r=128 is not darkened.

@@ -17,11 +17,13 @@ The test suite is organised as one `#[cfg(test)]` module per source module, plus
 | `bucket_fill` | Scanline flood-fill — contiguous regions, leaks, multi-layer, premultiplied-alpha preservation |
 | `circle_brush` | Midpoint-circle span fill, stamp-line interpolation, edge clamping |
 | `square_brush` | Rectangular fill, stamp-line interpolation, coordinate clamping, zero-area edge cases |
+| `stamp_brush` | Single-stamp placement, scaling, tinting, alpha overlay, drag-line interpolation, edge clamping |
+| `tool_configuration` | `ToolConfiguration` default values and optional-field initial state |
 
 ## Test strategy
 
 - Every public function in the crate has at least one test entry point.
 - Regression tests for double-premultiply bugs (the most common correctness defect in the codebase) are present in `pixel`, `bucket_fill`, `circle_brush`, and `square_brush`.
-- Edge cases: zero-area brushes, bounding-box clamping, inverted coordinates, empty layer lists, wrapping stamp counters.
-- Round-trip tests verify serialisation symmetry for zstd/JSON and PNG image formats.
+- Edge cases: zero-area brushes, bounding-box clamping, inverted coordinates, empty layer lists, wrapping stamp counters, off-screen stamps, `MAX_STROKE_STACK` eviction.
+- Round-trip tests verify serialisation symmetry for zstd/JSON, PNG, WebP, GIF, and TIFF image formats.
 - Asynchronous file-IO tests exercise the mpsc channel plumbing without spawning real UI dialogs.

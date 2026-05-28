@@ -39,6 +39,14 @@ Filling from `(0, 0)` on a fully red canvas turns the entire canvas blue.
 
 The returned `UndoRecord` is the `Run` variant with at least one segment.
 
+## `bucket_fill_alpha_overlay_blends`
+
+Alpha-overlay mode blends semi-transparent red over opaque white; the result differs from both source and destination and remains fully opaque.
+
+## `bucket_fill_seed_outside_bounds`
+
+A fill seed at (100, 100) — outside the 10×10 canvas — clamps to (9, 9) and fills from the edge.
+
 ## Regression: `bucket_fill_preserves_premultiplied_semi_transparent`
 
 A semi-transparent premultiplied fill color (128, 64, 32, 128) is stored verbatim — no double-darkening.
