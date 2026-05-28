@@ -47,3 +47,34 @@ pub fn new(canvas: Canvas) -> Self
 
 - Stores the canvas as-is; no copy or clone is made.
 - All other fields are set to their default initial values.
+
+---
+
+## `Document::replace_canvas(canvas, undo)`
+
+Replaces the current canvas with a new one and resets the document to a clean
+state. The undo history is cleared and resized to match the new canvas's pixel
+count.
+
+### Signature
+
+```rust
+pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory)
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `canvas` | `Canvas` | New canvas to adopt |
+| `undo` | `&mut UndoHistory` | Undo history to clear and resize |
+
+### Side effects
+
+- `self.canvas` is replaced entirely.
+- `self.savefile_path` is cleared to `""`.
+- `self.dirty_since_last_autosave` is set to `false`.
+- `undo.clear()` is called, discarding all saved undo/redo records.
+- `undo.resize_visited(...)` reallocates the visited buffer to `width × height`
+  of the new canvas.
+- `self.canvas.render_next_frame` is set to `true` to force a re-render.
