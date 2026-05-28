@@ -5,6 +5,7 @@
 
 use eframe::egui::Color32;
 
+use crate::stamp_library::StampSampling;
 use crate::tests::common::{ red, blue, small_canvas };
 use crate::tools::stamp_brush;
 
@@ -27,6 +28,7 @@ fn single_stamp_at_center() {
     // radius=2 → output 2×2 centred at (5,5) → covers (4..5, 4..5)
     stamp_brush::draw_stamp_line(
         5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -51,6 +53,7 @@ fn stamp_minimum_radius() {
 
     stamp_brush::draw_stamp_line(
         5, 5, 5, 5, &stamp, w, h, 0, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -68,6 +71,7 @@ fn tinted_stamp_applies_color() {
 
     stamp_brush::draw_stamp_line(
         5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, tint, 0, false, true,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -94,6 +98,7 @@ fn alpha_overlay_blends_stamp() {
 
     stamp_brush::draw_stamp_line(
         5, 5, 5, 5, &stamp, 1, 1, 2, &mut canvas, red(), 0, true, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -115,6 +120,7 @@ fn stamp_clamps_to_canvas_edge() {
     // Only bottom-right quarter is visible
     stamp_brush::draw_stamp_line(
         0, 0, 0, 0, &stamp, w, h, 4, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -137,6 +143,7 @@ fn stamp_line_interpolates() {
     // Multiple stamps should be placed along the diagonal
     stamp_brush::draw_stamp_line(
         2, 2, 7, 7, &stamp, w, h, 4, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -158,6 +165,7 @@ fn oversized_stamp_clamps() {
 
     stamp_brush::draw_stamp_line(
         5, 5, 5, 5, &stamp, w, h, 100, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -178,6 +186,7 @@ fn stamp_produces_valid_undo_record() {
 
     let record = stamp_brush::draw_stamp_line(
         5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -195,6 +204,7 @@ fn stamp_does_not_affect_outside() {
 
     stamp_brush::draw_stamp_line(
         5, 5, 5, 5, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -222,6 +232,7 @@ fn stamp_rectangular_aspect() {
     // radius=4 → output 4×1 (preserves 4:1 aspect)
     stamp_brush::draw_stamp_line(
         5, 5, 5, 5, &stamp, 4, 1, 4, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
@@ -246,6 +257,7 @@ fn stamp_fully_off_screen_noop() {
     // Center at (100, 100) — far outside the 10×10 canvas
     stamp_brush::draw_stamp_line(
         100, 100, 100, 100, &stamp, w, h, 2, &mut canvas, red(), 0, false, false,
+        StampSampling::Nearest,
         &mut drag_processed, 1,
     );
 
