@@ -1,3 +1,6 @@
+//! Core canvas and layer types, brush-tool enum ([`CurrentTool`]),
+//! render-state machine ([`RenderState`]), and dirty-rect tracking.
+
 use std::time::Duration;
 
 use eframe::egui::{ Color32, TextureHandle };
