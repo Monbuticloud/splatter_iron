@@ -12,9 +12,13 @@ const TEXTURE_NAME: &str = "rendered_layers";
 
 /// Wraps a canvas with its save path, current layer, and dirty-tracking state.
 pub struct Document {
+    /// The canvas being edited (layers, dimensions, pixel data).
     pub canvas: Canvas,
+    /// Filesystem path most recently saved to / loaded from, or empty.
     pub savefile_path: String,
+    /// Index of the currently active layer within `canvas.pixels`.
     pub current_layer: usize,
+    /// Whether unsaved changes exist since the last autosave.
     pub dirty_since_last_autosave: bool,
 }
 
