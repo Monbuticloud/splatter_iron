@@ -1,3 +1,6 @@
+//! Wraps a [`Canvas`] with save-path tracking, layer management
+//! (add/delete/move/select), and GPU texture upload logic.
+
 use eframe::egui::{ self, Color32 };
 use eframe::egui_wgpu::wgpu;
 
