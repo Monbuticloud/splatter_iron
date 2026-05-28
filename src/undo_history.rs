@@ -1,9 +1,18 @@
 use std::collections::VecDeque;
 
 use crate::canvas::Canvas;
-use crate::undo::{ undo_apply, redo_apply, UndoRecord };
+use crate::undo::{ redo_apply, undo_apply, RunSegment, UndoRecord };
 
 const MAX_STROKE_STACK: usize = 1000;
+
+/// Holds accumulated run segments during an active drag gesture.
+struct DragAccum {
+    runs: Vec<RunSegment>,
+    layer_index: usize,
+    width: u32,
+    color_after: eframe::egui::Color32,
+    is_alpha_overlay: bool,
+}
 
 /// Manages the undo/redo history stack with a visited-stamp buffer for
 /// brush-stroke deduplication.
@@ -14,6 +23,7 @@ pub struct UndoHistory {
     pub visited_stamp: u32,
     pub drag_processed: Vec<u32>,
     pub drag_stamp_val: u32,
+    drag_accum: Option<DragAccum>,
 }
 
 impl UndoHistory {
@@ -28,6 +38,7 @@ impl UndoHistory {
             visited_stamp: 1,
             drag_processed: vec![0u32; pixel_count],
             drag_stamp_val: 1,
+            drag_accum: None,
         }
     }
 
@@ -79,6 +90,52 @@ impl UndoHistory {
         if self.drag_stamp_val == 0 {
             self.drag_processed.fill(0);
             self.drag_stamp_val = 1;
+        }
+    }
+
+    /// Begin accumulating undo data for a new drag gesture.
+    ///
+    /// Stores the layer and color metadata; runs are accumulated via
+    /// [`extend_drag_accum`] and finally pushed as one record via
+    /// [`finalize_drag_accum`].
+    pub fn init_drag_accum(&mut self, layer_index: usize, width: u32, color_after: eframe::egui::Color32, is_alpha_overlay: bool) {
+        self.drag_accum = Some(DragAccum {
+            runs: Vec::new(),
+            layer_index,
+            width,
+            color_after,
+            is_alpha_overlay,
+        });
+    }
+
+    /// Accumulate a frame's worth of run segments during a drag.
+    ///
+    /// New runs are **prepended** before previously accumulated runs so that
+    /// `undo_apply` processes most-recent runs first. This ensures correct
+    /// undo for overlapping non-alpha paint (each step walks back through
+    /// intermediate states to the original). For alpha overlay, runs are
+    /// disjoint (guaranteed by `drag_processed`), so prepending has no
+    /// correctness impact.
+    pub fn extend_drag_accum(&mut self, runs: Vec<RunSegment>) {
+        if let Some(ref mut accum) = self.drag_accum {
+            let mut combined = runs;
+            combined.append(&mut accum.runs);
+            accum.runs = combined;
+        }
+    }
+
+    /// Finish accumulating drag data and push the result as a single undo record.
+    ///
+    /// No-op if no drag was in progress.
+    pub fn finalize_drag_accum(&mut self) {
+        if let Some(accum) = self.drag_accum.take() {
+            let record = UndoRecord::Run {
+                layer_index: accum.layer_index,
+                color_after: accum.color_after,
+                runs: accum.runs,
+                is_alpha_overlay: accum.is_alpha_overlay,
+            };
+            self.push_undo(record);
         }
     }
 

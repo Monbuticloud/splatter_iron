@@ -216,8 +216,15 @@ impl MyApp {
                     if self.tools.current_tool != CurrentTool::BucketFill {
                         self.doc.canvas.render_next_frame = true;
                         if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
-                            self.undo.push_undo(stroke);
                             self.doc.dirty_since_last_autosave = true;
+                            if self.tools.previous_cursor_position.is_none() {
+                                let UndoRecord::Run { layer_index, color_after, runs, is_alpha_overlay } = stroke;
+                                self.undo.init_drag_accum(layer_index, self.doc.canvas.width, color_after, is_alpha_overlay);
+                                self.undo.extend_drag_accum(runs);
+                            } else {
+                                let UndoRecord::Run { runs, .. } = stroke;
+                                self.undo.extend_drag_accum(runs);
+                            }
                         }
                     }
 
@@ -225,6 +232,7 @@ impl MyApp {
                     self.tools.previous_cursor_position = Some((pixel_x, pixel_y));
                 }
             } else {
+                self.undo.finalize_drag_accum();
                 self.tools.previous_tool = None;
                 self.tools.previous_cursor_position = None;
             }
