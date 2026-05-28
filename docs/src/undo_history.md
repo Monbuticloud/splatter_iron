@@ -126,3 +126,15 @@ Buffers are only resized if the requested `pixel_count` exceeds the current buff
 ### Why unconditional stamp reset
 
 Even when buffers don't need growing (canvas shrank), the stamp is reset to 1. This is a correctness measure: stall stamps from the prior canvas are invalid for the new pixel geometry, and reusing them could cause false deduplication at overlapping index ranges.
+
+## `impl UndoHistory::advance_drag_stamp()`
+
+Increments the drag-scoped `drag_stamp_value` without consuming it as a return value. Each call marks a new frame within the current drag gesture, allowing per-frame deduplication via the `drag_processed` buffer.
+
+### Relationship to `next_stamp`
+
+`next_stamp` operates at the stroke level — it is called once per brush stroke (a single mouse-down-to-mouse-up sequence). `advance_drag_stamp` operates at the frame level within a drag — each frame of the drag receives a fresh stamp so that pixels touched in one frame are not re-recorded if the stroke revisits them in a later frame. The drag accumulator collects all frames' runs and merges them into one record; the frame-level stamps prevent duplicate runs for overlapping pixels across frames.
+
+### Overflow handling
+
+Same pattern as `next_stamp`: when `drag_stamp_value` wraps past `u32::MAX`, the `drag_processed` buffer is zeroed in O(N) time and the stamp resets to 1.
