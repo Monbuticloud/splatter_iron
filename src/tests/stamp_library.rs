@@ -1,14 +1,9 @@
 //! Tests for `StampLibrary` — add, remove, select, and persistence round-trip.
 
-use eframe::egui::{ Color32, Context };
+use eframe::egui::Context;
 
 use crate::stamp_library::StampLibrary;
-
-/// Create a simple 2×2 red stamp.
-fn red_stamp() -> (Vec<Color32>, u32, u32) {
-    let red = Color32::from_rgba_premultiplied(255, 0, 0, 255);
-    (vec![red; 4], 2, 2)
-}
+use crate::tests::common::red;
 
 /// Add one stamp and verify it is selected.
 #[test]
@@ -20,7 +15,7 @@ fn add_stamp_increments_count() {
     assert_eq!(lib.len(), 0);
     assert!(lib.selected().is_none());
 
-    let (pixels, w, h) = red_stamp();
+    let (pixels, w, h) = (vec![red(); 4], 2, 2);
     lib.add("test".to_string(), pixels, w, h, &Context::default());
 
     assert_eq!(lib.len(), 1);
@@ -36,7 +31,7 @@ fn remove_stamp_decrements_count() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (pixels, w, h) = red_stamp();
+    let (pixels, w, h) = (vec![red(); 4], 2, 2);
     lib.add("to_remove".to_string(), pixels, w, h, &Context::default());
     assert_eq!(lib.len(), 1);
 
@@ -51,10 +46,10 @@ fn select_switches_active_stamp() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (p1, w, h) = red_stamp();
+    let (p1, w, h) = (vec![red(); 4], 2, 2);
     lib.add("first".to_string(), p1, w, h, &Context::default());
 
-    let (p2, w, h) = red_stamp();
+    let (p2, w, h) = (vec![red(); 4], 2, 2);
     lib.add("second".to_string(), p2, w, h, &Context::default());
 
     lib.select(0);
@@ -74,7 +69,7 @@ fn persistence_round_trip() {
     // Create and save
     {
         let mut lib = StampLibrary::load_from_disk(&dir);
-        let (pixels, w, h) = red_stamp();
+        let (pixels, w, h) = (vec![red(); 4], 2, 2);
         lib.add("persist".to_string(), pixels, w, h, &Context::default());
     }
 
@@ -92,7 +87,7 @@ fn remove_last_stamp_clears_selection() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (pixels, w, h) = red_stamp();
+    let (pixels, w, h) = (vec![red(); 4], 2, 2);
     lib.add("only".to_string(), pixels, w, h, &Context::default());
     assert!(lib.selected().is_some());
 
@@ -106,7 +101,7 @@ fn get_valid_index() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (pixels, w, h) = red_stamp();
+    let (pixels, w, h) = (vec![red(); 4], 2, 2);
     lib.add("get_test".to_string(), pixels, w, h, &Context::default());
 
     let entry = lib.get(0);
@@ -130,9 +125,9 @@ fn entries_returns_all() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (p1, w, h) = red_stamp();
+    let (p1, w, h) = (vec![red(); 4], 2, 2);
     lib.add("a".to_string(), p1, w, h, &Context::default());
-    let (p2, w, h) = red_stamp();
+    let (p2, w, h) = (vec![red(); 4], 2, 2);
     lib.add("b".to_string(), p2, w, h, &Context::default());
 
     let entries = lib.entries();
@@ -155,7 +150,7 @@ fn selected_mut_allows_mutation() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (pixels, w, h) = red_stamp();
+    let (pixels, w, h) = (vec![red(); 4], 2, 2);
     lib.add("mutable".to_string(), pixels, w, h, &Context::default());
 
     let entry = lib.selected_mut().expect("should have selected");
@@ -177,7 +172,7 @@ fn remove_out_of_bounds_noop() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (pixels, w, h) = red_stamp();
+    let (pixels, w, h) = (vec![red(); 4], 2, 2);
     lib.add("survivor".to_string(), pixels, w, h, &Context::default());
     assert_eq!(lib.len(), 1);
 
@@ -192,7 +187,7 @@ fn select_out_of_bounds_noop() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (pixels, w, h) = red_stamp();
+    let (pixels, w, h) = (vec![red(); 4], 2, 2);
     lib.add("pickme".to_string(), pixels, w, h, &Context::default());
     assert_eq!(lib.selected_index(), Some(0));
 
@@ -210,11 +205,11 @@ fn remove_middle_preserves_order() {
     let dir = tempdir();
     let mut lib = StampLibrary::load_from_disk(&dir);
 
-    let (p1, w, h) = red_stamp();
+    let (p1, w, h) = (vec![red(); 4], 2, 2);
     lib.add("first".to_string(), p1, w, h, &Context::default());
-    let (p2, w, h) = red_stamp();
+    let (p2, w, h) = (vec![red(); 4], 2, 2);
     lib.add("second".to_string(), p2, w, h, &Context::default());
-    let (p3, w, h) = red_stamp();
+    let (p3, w, h) = (vec![red(); 4], 2, 2);
     lib.add("third".to_string(), p3, w, h, &Context::default());
 
     lib.remove(1);
