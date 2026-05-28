@@ -197,3 +197,17 @@ This means the most recent frame's runs appear first in the final `UndoRecord`. 
 ### Safety
 
 No-op if no drag accumulator is active (i.e., `init_drag_accumulator` was not called, or `finalize_drag_accumulator` already consumed it). The guard is a simple `if let Some(...)`.
+
+## `impl UndoHistory::finalize_drag_accumulator()`
+
+Completes a drag gesture by consuming the accumulated `DragAccumulator` and pushing its contents as a single `UndoRecord` onto the history stack. Called on mouse-up (or pen-up/touch-end).
+
+### Algorithm
+
+1. Take ownership of the accumulator via `self.drag_accumulator.take()`, leaving `None` in its place.
+2. Construct `UndoRecord::Run` from the accumulator's stored metadata and accumulated runs.
+3. Push the record via `self.push_undo(record)`, which handles truncation, stack-limit enforcement, and redo-index reset.
+
+### Idempotency
+
+Calling `finalize_drag_accumulator` when no drag is in progress is a safe no-op. The `take()` returns `None`, the `if let Some(...)` guard fires, and nothing happens. This simplifies cleanup code — the drag-end handler can unconditionally call `finalize_drag_accumulator` without tracking whether a drag was actually in progress.
