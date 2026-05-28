@@ -179,10 +179,10 @@ pub struct Canvas {
     #[serde(skip)]
     pub output_rgba: Vec<u8>,
 
-    /// Bounding box of pixels that changed since the last texture upload.
-    /// `None` means a full re-blend is needed (e.g. after layer reorder).
+    /// Regions that changed since the last texture upload.
+    /// When empty, a full re-blend is needed (e.g. after layer reorder).
     #[serde(skip)]
-    pub dirty_rect: Option<DirtyRect>,
+    pub dirty_rect: DirtyRectList,
 
     /// Flag to request a full re-render on the next frame.
     pub render_next_frame: bool,
@@ -202,7 +202,7 @@ impl Default for Canvas {
             output_rgba: Vec::new(),
             rendered_layers: None,
             // placeholder_texture: None,
-            dirty_rect: None,
+            dirty_rect: DirtyRectList::new(),
             render_next_frame: true,
         }
     }
@@ -229,7 +229,7 @@ impl Canvas {
             height,
             output_rgba: Vec::new(),
             rendered_layers: None,
-            dirty_rect: None,
+            dirty_rect: DirtyRectList::new(),
             render_next_frame: true,
         }
     }

@@ -6,7 +6,7 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{Canvas, Layer};
+use crate::canvas::{Canvas, DirtyRectList, Layer};
 use crate::files;
 
 /// Build a 4×4 checkerboard canvas with alternating white/black opaque pixels.
@@ -27,7 +27,7 @@ fn checkerboard_4x4() -> Canvas {
         width: 4,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: false,
     }
 }
@@ -63,7 +63,7 @@ fn save_load_roundtrip_multi_layer() {
         width: 3,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: false,
     };
     let data = files::save_canvas_to_bytes(&canvas).expect("save");
@@ -102,7 +102,7 @@ fn save_load_roundtrip_transparent() {
         width: 3,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: false,
     };
     let data = files::save_canvas_to_bytes(&canvas).expect("save");

@@ -182,10 +182,7 @@ pub fn draw_circle(
     let circle_max_x = (center_x + radius).min(canvas.width - 1);
     let circle_max_y = (center_y + radius).min(canvas.height - 1);
     let rect = DirtyRect::new(circle_min_x, circle_min_y, circle_max_x, circle_max_y);
-    canvas.dirty_rect = match canvas.dirty_rect {
-        Some(rectangle) => Some(rectangle.union(&rect)),
-        None => Some(rect),
-    };
+    canvas.dirty_rect.add(rect);
 
     UndoRecord::Run {
         layer_index: layer,
@@ -408,10 +405,7 @@ pub fn draw_circle_line(
         }
     }
 
-    canvas.dirty_rect = match canvas.dirty_rect {
-        Some(rectangle) => Some(rectangle.union(&dirty_rect)),
-        None => Some(dirty_rect),
-    };
+    canvas.dirty_rect.add(dirty_rect);
 
     UndoRecord::Run {
         layer_index: layer,

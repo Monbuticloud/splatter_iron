@@ -6,7 +6,7 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, Layer };
+use crate::canvas::{ Canvas, DirtyRectList, Layer };
 use crate::tests::common::{ red, small_canvas };
 use crate::tools::square_brush;
 
@@ -97,7 +97,7 @@ fn draw_square_multi_layer() {
         width: 10,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: false,
     };
     square_brush::draw_square(0, 0, 5, 5, &mut canvas, red(), 0, false);

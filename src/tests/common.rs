@@ -5,7 +5,7 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, Layer };
+use crate::canvas::{ Canvas, DirtyRectList, Layer };
 
 /// Build a 10×10 single-layer transparent canvas for use in tests.
 ///
@@ -21,7 +21,7 @@ pub fn small_canvas() -> Canvas {
         width: 10,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: false,
     }
 }

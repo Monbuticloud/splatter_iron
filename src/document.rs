@@ -4,7 +4,7 @@
 use eframe::egui::{ self, Color32 };
 use eframe::egui_wgpu::wgpu;
 
-use crate::canvas::{ Canvas, Layer };
+use crate::canvas::{ Canvas, DirtyRect, Layer };
 use crate::pixel::{ self, BYTES_PER_PIXEL as RGBA_CHANNELS };
 use crate::undo_history::UndoHistory;
 
@@ -58,10 +58,11 @@ impl Document {
         self.canvas.render_next_frame = true;
     }
 
-    /// Blend all layers into `output_rgba` (only the dirty region if known).
+    /// Blend all layers into `output_rgba` (only the dirty regions if known).
     ///
-    /// Returns `Some((x, y, width, height))` of the blended region,
-    /// or `None` if nothing was blended (empty dirty rect).
+    /// Returns `Some((x, y, width, height))` of the union of all blended regions,
+    /// or `None` if nothing was blended. When no dirty rects are tracked but a
+    /// re-blend was requested (e.g. after undo/redo), the full canvas is blended.
     ///
     /// # Panics
     ///
@@ -80,8 +81,18 @@ impl Document {
             .map(|l| l.pixels.as_slice())
             .collect();
 
-        let result = if let Some(rect) = &self.canvas.dirty_rect {
-            if !rect.is_empty() {
+        let rects = self.canvas.dirty_rect.take_all();
+
+        let result = if rects.is_empty() {
+            // No specific dirty rects — full blend (undo/redo, initial load, etc.)
+            pixel::blend_layers(&layer_slices, &mut self.canvas.output_rgba);
+            Some((0, 0, self.canvas.width, self.canvas.height))
+        } else {
+            let mut union_rect: Option<DirtyRect> = None;
+            for rect in &rects {
+                if rect.is_empty() {
+                    continue;
+                }
                 pixel::blend_region(
                     &layer_slices,
                     &mut self.canvas.output_rgba,
@@ -91,15 +102,13 @@ impl Document {
                     rect.max_x,
                     rect.max_y,
                 );
-                Some((rect.min_x, rect.min_y, rect.width(), rect.height()))
-            } else {
-                None
+                match union_rect {
+                    Some(r) => union_rect = Some(r.union(rect)),
+                    None => union_rect = Some(*rect),
+                }
             }
-        } else {
-            pixel::blend_layers(&layer_slices, &mut self.canvas.output_rgba);
-            Some((0, 0, self.canvas.width, self.canvas.height))
+            union_rect.map(|r| (r.min_x, r.min_y, r.width(), r.height()))
         };
-        self.canvas.dirty_rect = None;
 
         result
     }

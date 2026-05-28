@@ -6,7 +6,7 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, Layer };
+use crate::canvas::{ Canvas, DirtyRectList, Layer };
 use crate::tests::common::{ blue, red, small_canvas };
 use crate::tools::circle_brush;
 
@@ -67,7 +67,7 @@ fn draw_circle_multi_layer() {
         width: 10,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: false,
     };
     circle_brush::draw_circle(2, 2, 1, &mut canvas, red(), 0, false);

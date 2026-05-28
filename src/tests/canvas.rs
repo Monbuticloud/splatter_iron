@@ -78,11 +78,11 @@ fn dirty_rect_union() {
     assert_eq!(union_rect.height(), 21);
 }
 
-/// A newly constructed `Canvas` should have `dirty_rect: None`.
+/// A newly constructed `Canvas` should have an empty `DirtyRectList`.
 #[test]
-fn canvas_dirty_rect_default_none() {
+fn canvas_dirty_rect_default_empty() {
     let canvas = Canvas::default();
-    assert!(canvas.dirty_rect.is_none());
+    assert!(canvas.dirty_rect.is_empty());
 }
 
 // --- Canvas::new ---
@@ -136,7 +136,7 @@ fn canvas_serde_roundtrip() {
     // Skipped fields — should be defaults
     assert!(restored.rendered_layers.is_none());
     assert!(restored.output_rgba.is_empty());
-    assert!(restored.dirty_rect.is_none());
+    assert!(restored.dirty_rect.is_empty());
 }
 
 /// Multi-layer canvas serialization roundtrip.

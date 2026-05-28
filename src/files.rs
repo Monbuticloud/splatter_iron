@@ -7,7 +7,7 @@ use bytemuck::cast_slice;
 use eframe::egui::Color32;
 use image::ImageEncoder;
 
-use crate::canvas::{ Canvas, Layer };
+use crate::canvas::{ Canvas, DirtyRectList, Layer };
 use crate::pixel::{ premultiply, unpremultiply, F32_COLOR_MAX };
 
 const COMPRESSION_LEVEL: i32 = 10;
@@ -260,7 +260,7 @@ pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
         width: width_u32,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: true,
     })
 }

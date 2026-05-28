@@ -204,10 +204,7 @@ pub fn draw_square(
     fill_square_impl(pixels, width, start_x, end_x, start_y, end_y, color, alpha_overlay);
 
     let rect = DirtyRect::new(start_x, start_y, end_x - 1, end_y - 1);
-    canvas.dirty_rect = match canvas.dirty_rect {
-        Some(rectangle) => Some(rectangle.union(&rect)),
-        None => Some(rect),
-    };
+    canvas.dirty_rect.add(rect);
 
     UndoRecord::Run {
         layer_index: layer,
@@ -317,10 +314,7 @@ pub fn draw_square_line(
         }
     }
 
-    canvas.dirty_rect = match canvas.dirty_rect {
-        Some(rectangle) => Some(rectangle.union(&dirty_rect)),
-        None => Some(dirty_rect),
-    };
+    canvas.dirty_rect.add(dirty_rect);
 
     UndoRecord::Run {
         layer_index: layer,

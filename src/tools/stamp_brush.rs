@@ -313,10 +313,7 @@ pub fn draw_stamp_line(
         );
     }
 
-    canvas.dirty_rect = match canvas.dirty_rect {
-        Some(rect) => Some(rect.union(&dirty_rect)),
-        None => Some(dirty_rect),
-    };
+    canvas.dirty_rect.add(dirty_rect);
 
     UndoRecord::Run {
         layer_index: layer,

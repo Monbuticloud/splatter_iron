@@ -5,7 +5,7 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{Canvas, DirtyRect, Layer};
+use crate::canvas::{Canvas, DirtyRect, DirtyRectList, Layer};
 use crate::document::Document;
 use crate::undo_history::UndoHistory;
 
@@ -19,7 +19,7 @@ fn small_document() -> Document {
         width: 10,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: false,
     };
     Document::new(canvas)
@@ -138,7 +138,7 @@ fn replace_canvas_resets_state() {
         width: 2,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: None,
+        dirty_rect: DirtyRectList::new(),
         render_next_frame: false,
     };
     document.replace_canvas(new_canvas, &mut undo);
@@ -163,29 +163,29 @@ fn render_to_texture_allocates_output() {
     assert_eq!(pixel_count, 100);
 }
 
-/// `blend_to_output` with no dirty rect blends the full canvas and sets
-/// `render_next_frame` to false, resets `dirty_rect`, and sizes `output_rgba`.
+/// `blend_to_output` with no dirty rects blends the full canvas and sets
+/// `render_next_frame` to false, and sizes `output_rgba`.
 #[test]
 fn blend_to_output_full_canvas_sets_render_state() {
     let mut document = small_document();
     assert_eq!(document.canvas.output_rgba.len(), 0);
-    assert!(document.canvas.dirty_rect.is_none());
+    assert!(document.canvas.dirty_rect.is_empty());
     document.canvas.render_next_frame = true;
 
     let result = document.blend_to_output();
 
     assert_eq!(result, Some((0, 0, 10, 10)));
     assert!(!document.canvas.render_next_frame);
-    assert!(document.canvas.dirty_rect.is_none());
+    assert!(document.canvas.dirty_rect.is_empty());
     assert_eq!(document.canvas.output_rgba.len(), 100 * 4);
 }
 
-/// `blend_to_output` with a dirty rect only blends that region and returns
-/// its bounds.
+/// `blend_to_output` with dirty rects only blends those regions and returns
+/// the union bounds.
 #[test]
 fn blend_to_output_dirty_rect_returns_bounds() {
     let mut document = small_document();
-    document.canvas.dirty_rect = Some(DirtyRect::new(2, 3, 5, 7));
+    document.canvas.dirty_rect.add(DirtyRect::new(2, 3, 5, 7));
     document.canvas.render_next_frame = true;
 
     let result = document.blend_to_output();
@@ -193,22 +193,22 @@ fn blend_to_output_dirty_rect_returns_bounds() {
     // DirtyRect(2,3,5,7) -> width=4, height=5
     assert_eq!(result, Some((2, 3, 4, 5)));
     assert!(!document.canvas.render_next_frame);
-    assert!(document.canvas.dirty_rect.is_none());
+    assert!(document.canvas.dirty_rect.is_empty());
 }
 
-/// `blend_to_output` with an empty dirty rect returns `None` and clears
+/// `blend_to_output` with only empty dirty rects returns `None` and clears
 /// render_next_frame.
 #[test]
 fn blend_to_output_empty_dirty_rect_returns_none() {
     let mut document = small_document();
-    document.canvas.dirty_rect = Some(DirtyRect::empty());
+    document.canvas.dirty_rect.add(DirtyRect::empty());
     document.canvas.render_next_frame = true;
 
     let result = document.blend_to_output();
 
     assert_eq!(result, None);
     assert!(!document.canvas.render_next_frame);
-    assert!(document.canvas.dirty_rect.is_none());
+    assert!(document.canvas.dirty_rect.is_empty());
 }
 
 /// Deleting a layer above `current_layer` should leave `current_layer` unchanged.
@@ -317,19 +317,19 @@ fn select_layer_out_of_bounds_sets_index() {
 }
 
 /// Calling `blend_to_output` twice in a row — second call on clean state
-/// should set render_next_frame = false and return None-like result.
+/// should set render_next_frame = false and return full-canvas result.
 #[test]
 fn blend_to_output_twice_resets_state() {
     let mut document = small_document();
     document.canvas.render_next_frame = true;
 
-    // First blend — full canvas
+    // First blend — full canvas (no dirty rects)
     let result1 = document.blend_to_output();
     assert_eq!(result1, Some((0, 0, 10, 10)));
     assert!(!document.canvas.render_next_frame);
-    assert!(document.canvas.dirty_rect.is_none());
+    assert!(document.canvas.dirty_rect.is_empty());
 
-    // Second blend — no dirty rect, nothing to do
+    // Second blend — still no dirty rects, full blend again
     document.canvas.render_next_frame = true; // force flag back on
     let result2 = document.blend_to_output();
     assert_eq!(result2, Some((0, 0, 10, 10)));
