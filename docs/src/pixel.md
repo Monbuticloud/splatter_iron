@@ -36,3 +36,27 @@ constant documents the implicit conversion factor between the `[0, 255]`
 `u8` domain and the `[0.0, 1.0]` `f32` domain used in colour-space
 conversions or when interfacing with APIs that accept floating-point
 colour components.
+
+## `fn unpremultiply()`
+
+```rust
+pub fn unpremultiply(color: Color32) -> Color32
+```
+
+Converts a premultiplied-alpha `Color32` back to straight alpha. This is the
+inverse of [`premultiply`].
+
+Fully opaque (`alpha == 255`) and fully transparent (`alpha == 0`) pixels
+pass through unchanged — the alpha == 0 case is handled explicitly to avoid
+a division-by-zero hazard.
+
+**Algorithm:** For each colour channel `c`, the straight value is
+`(c * 255) / alpha`, clamped to `[0, 255]`. The result is re-packed via
+`Color32::from_rgba_premultiplied` (which accepts the RGBA values as-is;
+the "premultiplied" in the constructor name is a misnomer for this use
+case — the alpha channel is preserved unchanged).
+
+**Use in the pipeline:** This function is called when the user selects a
+colour from the UI colour picker (which returns straight-alpha) and the
+code needs to convert existing premultiplied swatches for display, or when
+exporting to image formats that expect straight-alpha data.
