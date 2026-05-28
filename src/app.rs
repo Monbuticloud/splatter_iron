@@ -38,11 +38,11 @@ const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
 ];
 
 // --- Performance constants ---
-const UNFOCUSED_SLEEP_MS: u64 = 50;
-const REPAINT_DELAY_MULT: u32 = 5;
+const UNFOCUSED_SLEEP_MILLISECONDS: u64 = 50;
+const REPAINT_DELAY_MULTIPLIER: u32 = 5;
 
 // --- Autosave interval ---
-const AUTOSAVE_INTERVAL_MINS: u64 = 2;
+const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 
 // --- Image import extensions ---
 pub const IMPORT_EXTENSIONS: &[&str] = &[
@@ -247,7 +247,7 @@ impl eframe::App for MyApp {
         self.file_io.poll_save_results(&mut self.document, &mut self.ui.displayed_error_list);
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
-            std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MS));
+            std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
             self.ui.render_state = RenderState::UnfocusedFrozen;
             return;
         }
@@ -265,13 +265,13 @@ impl eframe::App for MyApp {
                 let remaining = duration.saturating_sub(predicted_delta_time);
                 if remaining.is_zero() {
                     self.ui.render_state = RenderState::IdleThrottled;
-                    ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULT);
+                    ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULTIPLIER);
                 } else {
                     self.ui.render_state = RenderState::ActiveWake(remaining);
                 }
             }
             RenderState::IdleThrottled => {
-                ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULT);
+                ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULTIPLIER);
             }
             RenderState::UnfocusedFrozen => {
                 self.ui.render_state = RenderState::IdleThrottled;
@@ -395,10 +395,10 @@ impl eframe::App for MyApp {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         }
 
-        // Autosave every AUTOSAVE_INTERVAL_MINS minutes, but only if the canvas has been modified.
+        // Autosave every AUTOSAVE_INTERVAL_MINUTES minutes, but only if the canvas has been modified.
         if
             self.document.dirty_since_last_autosave &&
-            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >= Duration::from_mins(AUTOSAVE_INTERVAL_MINS)
+            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
         {
             self.ui.last_autosave_time = self.ui.time_elapsed;
             self.ui.times_autosaved += 1;

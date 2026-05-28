@@ -15,7 +15,7 @@ use crate::undo::UndoRecord;
 
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
-const ACTIVE_DURATION_MS: u64 = 550;
+const ACTIVE_DURATION_MILLISECONDS: u64 = 550;
 
 impl MyApp {
     /// Render the central canvas panel.
@@ -174,7 +174,7 @@ impl MyApp {
             if response.hovered() {
                 self.ui.pending_layer_for_deletion = None;
                 self.ui.render_state = RenderState::ActiveWake(
-                    Duration::from_millis(ACTIVE_DURATION_MS)
+                    Duration::from_millis(ACTIVE_DURATION_MILLISECONDS)
                 );
             }
 

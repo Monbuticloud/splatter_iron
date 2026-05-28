@@ -11,8 +11,8 @@ use crate::document::Document;
 use crate::undo_history::UndoHistory;
 
 // --- Autosave constants ---
-const AUTOSAVE_DIR: &str = "autosaves";
-const AUTOSAVE_DATE_FMT: &str = "%Y-%m-%d_%H-%M-%S";
+const AUTOSAVE_DIRECTORY: &str = "autosaves";
+const AUTOSAVE_DATE_FORMAT: &str = "%Y-%m-%d_%H-%M-%S";
 
 // --- File-dialog types ---
 
@@ -241,7 +241,7 @@ impl FileIO {
     /// Spawn a background thread to serialize and write the canvas to disk.
     ///
     /// The thread clones the current canvas to avoid blocking the UI.
-    /// For autosaves, the file name is a timestamp under `AUTOSAVE_DIR`.
+    /// For autosaves, the file name is a timestamp under `AUTOSAVE_DIRECTORY`.
     /// For manual saves, the provided path is used. Results are sent back
     /// via `save_result_sender`.
     pub fn trigger_async_save(&self, doc: &Document, kind: SaveKind) {
@@ -249,8 +249,8 @@ impl FileIO {
         let path = match &kind {
             SaveKind::Autosave =>
                 self.app_local_data_directory
-                    .join(AUTOSAVE_DIR)
-                    .join(format!("{}.splattercanvas", Local::now().format(AUTOSAVE_DATE_FMT))),
+                    .join(AUTOSAVE_DIRECTORY)
+                    .join(format!("{}.splattercanvas", Local::now().format(AUTOSAVE_DATE_FORMAT))),
             SaveKind::ManualSave(p) => p.clone(),
         };
         let tx = self.save_result_sender.clone();
