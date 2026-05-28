@@ -262,9 +262,13 @@ impl eframe::App for MyApp {
 
         match self.ui.render_state {
             RenderState::ActiveWake(duration) => {
-                self.ui.render_state = RenderState::ActiveWake(
-                    duration.saturating_sub(predicted_delta_time)
-                );
+                let remaining = duration.saturating_sub(predicted_delta_time);
+                if remaining.is_zero() {
+                    self.ui.render_state = RenderState::IdleThrottled;
+                    ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULT);
+                } else {
+                    self.ui.render_state = RenderState::ActiveWake(remaining);
+                }
             }
             RenderState::IdleThrottled => {
                 ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULT);
