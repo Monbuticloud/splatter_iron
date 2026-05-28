@@ -13,7 +13,7 @@ use crate::undo_history::UndoHistory;
 
 // --- App identity constants ---
 pub const APP_QUALIFIER: &str = "com";
-pub const APP_ORG: &str = "Monbuticloud";
+pub const APP_ORGANIZATION: &str = "Monbuticloud";
 pub const APP_NAME: &str = "SplatterIron";
 
 // --- Canvas & save file constants ---
@@ -151,7 +151,7 @@ impl MyApp {
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
 
-        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORG, APP_NAME).expect(
+        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME).expect(
             "Couldn't resolve app dir"
         );
         let data_dir = project_dirs.data_dir().to_path_buf();

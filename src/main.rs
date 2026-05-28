@@ -18,7 +18,7 @@ mod undo_history;
 mod tests;
 use mimalloc::MiMalloc;
 
-use crate::app::{ APP_QUALIFIER, APP_ORG, APP_NAME };
+use crate::app::{ APP_QUALIFIER, APP_ORGANIZATION, APP_NAME };
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -33,7 +33,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 /// Returns an error if the data directory cannot be resolved or created,
 /// or if the eframe window cannot be opened.
 fn main() -> eframe::Result {
-    let project_dirs = directories::ProjectDirs::from(APP_QUALIFIER, APP_ORG, APP_NAME).expect(
+    let project_dirs = directories::ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME).expect(
         "Couldn't resolve app dir"
     );
     let data_dir = project_dirs.data_local_dir().to_path_buf();
