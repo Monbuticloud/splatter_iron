@@ -23,9 +23,14 @@ const AUTOSAVE_DATE_FORMAT: &str = "%Y-%m-%d_%H-%M-%S";
 /// The result is received via channel at the start of a future frame.
 #[derive(Clone, Copy)]
 pub enum PendingFileAction {
+    /// Open a native "load" dialog and deserialize a `.splattercanvas` file.
     Load,
+    /// Open a native "save" dialog and serialize the current canvas.
     Save,
+    /// Open a native "open" dialog for importing an image as a new canvas.
     Import,
+    /// Open a native "save" dialog for exporting to one of the supported image
+    /// formats. The `usize` payload indexes into `EXPORT_FORMATS`.
     Export(usize),
 }
 
@@ -36,15 +41,20 @@ pub enum DialogResult {
 
 /// Distinguishes an autosave from a manual save in the async save pipeline.
 pub enum SaveKind {
+    /// Periodic autosave to `{data_dir}/autosaves/`.
     Autosave,
+    /// Explicit user-initiated save to a chosen path.
     ManualSave(PathBuf),
 }
 
 /// Result sent back via channel when an async save completes.
 #[derive(Debug)]
 pub enum SaveResult {
+    /// Autosave completed successfully (resulting path is not surfaced).
     Autosave,
+    /// Manual save completed to the given path.
     ManualSave(PathBuf),
+    /// Save failed with an error message.
     Failed(String),
 }
 
