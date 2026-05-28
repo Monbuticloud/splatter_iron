@@ -51,32 +51,32 @@ pub const IMPORT_EXTENSIONS: &[&str] = &[
 ];
 
 /// File extension list and image format for an export target.
-pub struct ExportInfo {
+pub struct ExportInformation {
     pub extensions: &'static [&'static str],
     pub fmt: image::ImageFormat,
 }
 
 /// Lookup table for all supported export formats.
-pub const EXPORT_FORMATS: &[(&str, ExportInfo)] = &[
-    ("AVIF", ExportInfo { extensions: &["avif"], fmt: image::ImageFormat::Avif }),
-    ("PNG", ExportInfo { extensions: &["png"], fmt: image::ImageFormat::Png }),
-    ("JPEG", ExportInfo { extensions: &["jpg", "jpeg"], fmt: image::ImageFormat::Jpeg }),
-    ("WebP", ExportInfo { extensions: &["webp"], fmt: image::ImageFormat::WebP }),
-    ("GIF", ExportInfo { extensions: &["gif"], fmt: image::ImageFormat::Gif }),
-    ("TIFF", ExportInfo { extensions: &["tiff", "tif"], fmt: image::ImageFormat::Tiff }),
-    ("TGA", ExportInfo { extensions: &["tga"], fmt: image::ImageFormat::Tga }),
-    ("ICO", ExportInfo { extensions: &["ico"], fmt: image::ImageFormat::Ico }),
+pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
+    ("AVIF", ExportInformation { extensions: &["avif"], fmt: image::ImageFormat::Avif }),
+    ("PNG", ExportInformation { extensions: &["png"], fmt: image::ImageFormat::Png }),
+    ("JPEG", ExportInformation { extensions: &["jpg", "jpeg"], fmt: image::ImageFormat::Jpeg }),
+    ("WebP", ExportInformation { extensions: &["webp"], fmt: image::ImageFormat::WebP }),
+    ("GIF", ExportInformation { extensions: &["gif"], fmt: image::ImageFormat::Gif }),
+    ("TIFF", ExportInformation { extensions: &["tiff", "tif"], fmt: image::ImageFormat::Tiff }),
+    ("TGA", ExportInformation { extensions: &["tga"], fmt: image::ImageFormat::Tga }),
+    ("ICO", ExportInformation { extensions: &["ico"], fmt: image::ImageFormat::Ico }),
     (
         "PNM",
-        ExportInfo {
+        ExportInformation {
             extensions: &["pnm", "pgm", "ppm", "pbm", "pam"],
             fmt: image::ImageFormat::Pnm,
         },
     ),
-    ("QOI", ExportInfo { extensions: &["qoi"], fmt: image::ImageFormat::Qoi }),
-    ("EXR", ExportInfo { extensions: &["exr"], fmt: image::ImageFormat::OpenExr }),
-    ("HDR", ExportInfo { extensions: &["hdr"], fmt: image::ImageFormat::Hdr }),
-    ("Farbfeld", ExportInfo { extensions: &["ff"], fmt: image::ImageFormat::Farbfeld }),
+    ("QOI", ExportInformation { extensions: &["qoi"], fmt: image::ImageFormat::Qoi }),
+    ("EXR", ExportInformation { extensions: &["exr"], fmt: image::ImageFormat::OpenExr }),
+    ("HDR", ExportInformation { extensions: &["hdr"], fmt: image::ImageFormat::Hdr }),
+    ("Farbfeld", ExportInformation { extensions: &["ff"], fmt: image::ImageFormat::Farbfeld }),
 ];
 
 /// UI-level state that doesn't belong to any domain module.
