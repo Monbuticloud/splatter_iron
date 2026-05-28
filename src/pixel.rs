@@ -20,6 +20,10 @@ const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
 ///
 /// This is the inverse of [`premultiply`]. Fully opaque or fully transparent
 /// pixels are returned unchanged (alpha == 0 never causes division by zero).
+///
+/// # Parameters
+///
+/// * `color` — Premultiplied-alpha color to convert.
 #[inline]
 pub fn unpremultiply(color: Color32) -> Color32 {
     let alpha = color.a();
@@ -41,6 +45,10 @@ pub fn unpremultiply(color: Color32) -> Color32 {
 ///
 /// **Caller must supply straight (non-premultiplied) RGB.**
 /// Calling this on an already-premultiplied pixel will darken colors again.
+///
+/// # Parameters
+///
+/// * `color` — Straight-alpha color to convert to premultiplied format.
 #[inline]
 pub const fn premultiply(color: Color32) -> Color32 {
     let alpha = color.a();
@@ -68,6 +76,11 @@ pub const fn premultiply(color: Color32) -> Color32 {
 ///
 /// Uses fixed-point arithmetic `(dest_channel * inverse_alpha + 128) >> 8`
 /// for each color channel. The result is in premultiplied-alpha format.
+///
+/// # Parameters
+///
+/// * `destination` — Background pixel (premultiplied).
+/// * `source` — Foreground pixel (premultiplied), composited over destination.
 #[inline]
 pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
     /// Blend a single color channel: `dest * inverse_alpha` with rounding.
@@ -272,6 +285,11 @@ fn blend_pixel_range(
 /// Uses SIMD (`wide::u32x4`) via rayon for parallel processing of 4-pixel chunks;
 /// remaining pixels are handled with scalar `alpha_blend`.
 ///
+/// # Parameters
+///
+/// * `layers` — Slice of layer pixel slices, ordered bottom-to-top.
+/// * `output` — RGBA output buffer (`len = layers[0].len() * 4`).
+///
 /// # Panics
 ///
 /// - If `layers` is empty.
@@ -296,6 +314,16 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
 /// Processes the region row-by-row, calling `blend_pixel_range` for each row
 /// segment. Sequential iteration is used since dirty rects from brush strokes
 /// are typically small enough that parallel overhead would dominate.
+///
+/// # Parameters
+///
+/// * `layers` — Slice of layer pixel slices, ordered bottom-to-top.
+/// * `output` — RGBA output buffer (full-canvas length).
+/// * `canvas_width` — Width of the canvas in pixels (for row stride computation).
+/// * `min_x` — Leftmost column of the region to blend (inclusive).
+/// * `min_y` — Topmost row of the region to blend (inclusive).
+/// * `max_x` — Rightmost column of the region to blend (inclusive).
+/// * `max_y` — Bottommost row of the region to blend (inclusive).
 ///
 /// # Panics
 ///
