@@ -86,3 +86,28 @@ Calling this on an already-premultiplied pixel will darken colours further.
 
 **Use in the pipeline:** Called when the user picks a colour or when brush
 tools produce new pixel data that must be composited into the layer stack.
+
+## `fn alpha_blend()`
+
+```rust
+pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32
+```
+
+Composites a premultiplied source pixel over a premultiplied destination
+pixel using the `over` compositing operator. Both inputs and the result
+are in premultiplied-alpha format.
+
+**Algorithm:** For each channel, computes:
+
+```
+result_channel = source_channel + (dest_channel * (255 - source_alpha) + 128) >> 8
+```
+
+The `>> 8` is a fixed-point division by 256 (with `+ 128` rounding bias),
+which approximates division by `255` closely enough for 8-bit colour while
+avoiding a hardware division or a 257-multiply.
+
+**Use in the pipeline:** This is the scalar fallback for edge pixels that
+don't align to the 4-pixel SIMD boundary in `blend_pixel_range`. It is also
+the primitive used by `blend_region`'s row-by-row processing (which runs
+sequentially since dirty rects are typically small).
