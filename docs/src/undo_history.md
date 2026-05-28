@@ -66,3 +66,24 @@ Both `visited` and `drag_processed` are allocated as `vec![0u32; pixel_count]` i
 | `drag_processed` | `vec![0u32; pixel_count]` |
 | `drag_stamp_value` | `1` |
 | `drag_accumulator` | `None` |
+
+## `impl UndoHistory::push_undo(record)`
+
+Pushes a new undo record onto the history stack and invalidates any existing redo history. This is called after each completed stroke or finalized drag gesture.
+
+### Operations
+
+1. **Truncate redo**: `stroke_stack.truncate(stroke_stack.len() - redo_index)` removes all redoable entries from the back of the deque. This implements the standard undo-behavior: a new action after an undo discards the stale redo history.
+2. **Push record**: `stroke_stack.push_back(record)` appends the new record as the most recent entry.
+3. **Enforce limit**: If the stack exceeds `MAX_STROKE_STACK` (1000), the oldest entry is popped from the front via `pop_front()`.
+4. **Reset redo_index**: Set to 0, indicating no redoable entries remain.
+
+### Parameters
+
+| Parameter | Type | Purpose |
+|-----------|------|---------|
+| `record` | `UndoRecord` | The record to push onto the history stack |
+
+### Stack-limit behavior
+
+When the limit is hit, the oldest stroke is silently dropped. This means the user loses the ability to undo the earliest strokes in the session. The limit of 1000 is generous enough for most painting sessions — even at 10 strokes per second, a user would need 100 seconds of continuous drawing to hit the cap.
