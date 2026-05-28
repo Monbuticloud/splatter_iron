@@ -124,6 +124,11 @@ impl Default for Canvas {
 impl Canvas {
     /// Create a new canvas with the given dimensions and a single transparent layer.
     ///
+    /// # Parameters
+    ///
+    /// * `width` — Canvas width in pixels.
+    /// * `height` — Canvas height in pixels.
+    ///
     /// # Panics
     ///
     /// Panics if `width * height` overflows `usize` (extremely unlikely in practice).
