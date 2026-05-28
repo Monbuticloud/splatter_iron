@@ -45,3 +45,18 @@ Result sent back via channel when an async save completes. Received by `poll_sav
 | `Failed(String)` | Save failed at either serialization (`save_canvas_to_bytes`) or file-write (`save_bytes_to_file`) stage. The string is a human-readable error message pushed to the error list. |
 
 Derives `Debug`.
+
+## Structs
+
+### `FileIO`
+
+Manages async file dialogs and save operations via background threads. Holds channel pairs for receiving dialog results and save outcomes, plus the app's local data directory path for autosaves.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `pending_file_action` | `Option<PendingFileAction>` | File action queued for the next background thread iteration. Set by `queue_file_action` before spawning the dialog thread; consumed by `poll_dialog_results` after a `DialogResult` is received. |
+| `dialog_sender` | `mpsc::Sender<DialogResult>` | Channel sender for dispatching dialog results back from the background thread to the UI thread. Cloned into each dialog-spawned thread. |
+| `dialog_receiver` | `mpsc::Receiver<DialogResult>` | Channel receiver for polling dialog results on the UI thread. Polled once per frame in `poll_dialog_results`. |
+| `save_result_sender` | `mpsc::Sender<SaveResult>` | Channel sender for dispatching save outcomes from the background save thread to the UI thread. Cloned into each save-spawned thread. |
+| `save_result_receiver` | `mpsc::Receiver<SaveResult>` | Channel receiver for polling save results on the UI thread. Polled once per frame in `poll_save_results`. |
+| `app_local_data_directory` | `PathBuf` | Base path for the autosave directory. Autosaves are written to `{app_local_data_directory}/autosaves/{timestamp}.splattercanvas`. |
