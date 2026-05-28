@@ -210,3 +210,122 @@ fn dirty_rect_default_covers_origin() {
     assert_eq!(rect.width(), 1);
     assert_eq!(rect.height(), 1);
 }
+
+// --- DirtyRectList ---
+
+use crate::canvas::DirtyRectList;
+
+/// A new list should be empty.
+#[test]
+fn dirty_rect_list_empty() {
+    let mut list = DirtyRectList::new();
+    assert!(list.is_empty());
+    assert!(list.take_all().is_empty());
+}
+
+/// Adding a rect makes the list non-empty.
+#[test]
+fn dirty_rect_list_add_single() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::new(0, 0, 10, 10));
+    assert!(!list.is_empty());
+    assert_eq!(list.take_all().len(), 1);
+}
+
+/// Two non-overlapping distant rects should stay separate.
+#[test]
+fn dirty_rect_list_non_overlapping_separate() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::new(0, 0, 5, 5));
+    list.add(DirtyRect::new(100, 100, 105, 105));
+    let rects = list.take_all();
+    assert_eq!(rects.len(), 2);
+}
+
+/// Two overlapping rects should merge into one.
+#[test]
+fn dirty_rect_list_overlapping_merges() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::new(0, 0, 10, 10));
+    list.add(DirtyRect::new(5, 5, 15, 15));
+    let rects = list.take_all();
+    assert_eq!(rects.len(), 1);
+    assert_eq!(rects[0].min_x, 0);
+    assert_eq!(rects[0].max_x, 15);
+}
+
+/// Two rects within proximity should merge.
+#[test]
+fn dirty_rect_list_proximity_merges() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::new(0, 0, 10, 10));
+    // 11px gap — within default proximity of 16, should merge
+    list.add(DirtyRect::new(21, 0, 31, 10));
+    let rects = list.take_all();
+    assert_eq!(rects.len(), 1);
+    assert_eq!(rects[0].min_x, 0);
+    assert_eq!(rects[0].max_x, 31);
+}
+
+/// Two rects beyond proximity should stay separate.
+#[test]
+fn dirty_rect_list_beyond_proximity_separate() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::new(0, 0, 10, 10));
+    // 50px gap — beyond proximity, stays separate
+    list.add(DirtyRect::new(60, 0, 70, 10));
+    let rects = list.take_all();
+    assert_eq!(rects.len(), 2);
+}
+
+/// Adding many rects beyond the max count triggers merge_all.
+#[test]
+fn dirty_rect_list_exceeds_max_merges_all() {
+    let mut list = DirtyRectList::new();
+    for i in 0..9 {
+        let x = i as u32 * 200;
+        list.add(DirtyRect::new(x, 0, x + 10, 10));
+    }
+    let rects = list.take_all();
+    assert_eq!(rects.len(), 1, "exceeding max should merge all");
+}
+
+/// Adding an empty rect should be a no-op.
+#[test]
+fn dirty_rect_list_add_empty_noop() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::empty());
+    assert!(list.is_empty());
+}
+
+/// Clear should reset the list.
+#[test]
+fn dirty_rect_list_clear() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::new(0, 0, 10, 10));
+    assert!(!list.is_empty());
+    list.clear();
+    assert!(list.is_empty());
+}
+
+/// take_all should drain all rects.
+#[test]
+fn dirty_rect_list_take_all_drains() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::new(0, 0, 10, 10));
+    assert_eq!(list.take_all().len(), 1);
+    assert!(list.is_empty());
+}
+
+/// merge_all should combine all rects into one bounding box.
+#[test]
+fn dirty_rect_list_merge_all() {
+    let mut list = DirtyRectList::new();
+    list.add(DirtyRect::new(0, 0, 5, 5));
+    list.add(DirtyRect::new(100, 100, 105, 105));
+    list.merge_all();
+    let rects = list.take_all();
+    assert_eq!(rects.len(), 1);
+    assert_eq!(rects[0].min_x, 0);
+    assert_eq!(rects[0].max_y, 105);
+}

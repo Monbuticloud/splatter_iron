@@ -74,6 +74,93 @@ impl DirtyRect {
     }
 }
 
+/// Minimum gap between two dirty rects before they are merged (in pixels).
+const DIRTY_RECT_PROXIMITY: u32 = 16;
+
+/// Maximum number of dirty rects before merging all into one bounding box.
+const DIRTY_RECT_MAX_COUNT: usize = 8;
+
+/// A list of dirty rectangles that tracks each dirty region individually,
+/// merging overlapping or proximate rects. When the count exceeds
+/// [`DIRTY_RECT_MAX_COUNT`], all rects are merged into a single bounding box.
+#[derive(Clone, Default)]
+pub struct DirtyRectList {
+    rects: Vec<DirtyRect>,
+}
+
+impl DirtyRectList {
+    /// Create an empty list.
+    pub fn new() -> Self {
+        Self { rects: Vec::new() }
+    }
+
+    /// Add a dirty rect, merging with overlapping or proximate rects.
+    ///
+    /// Two rects are merged when they overlap or when the gap between them
+    /// is ≤ [`DIRTY_RECT_PROXIMITY`] pixels. If the total exceeds
+    /// [`DIRTY_RECT_MAX_COUNT`], all rects are merged into one.
+    pub fn add(&mut self, rect: DirtyRect) {
+        if rect.is_empty() {
+            return;
+        }
+
+        let mut merged = rect;
+        let mut i = 0;
+        while i < self.rects.len() {
+            if rects_overlap_or_touch(&self.rects[i], &merged, DIRTY_RECT_PROXIMITY) {
+                merged = merged.union(&self.rects[i]);
+                self.rects.swap_remove(i);
+            } else {
+                i += 1;
+            }
+        }
+
+        self.rects.push(merged);
+
+        if self.rects.len() > DIRTY_RECT_MAX_COUNT {
+            self.merge_all();
+        }
+    }
+
+    /// Merge all tracked rects into a single bounding box.
+    pub fn merge_all(&mut self) {
+        if self.rects.is_empty() {
+            return;
+        }
+        let mut unified = DirtyRect::empty();
+        for rect in &self.rects {
+            unified = unified.union(rect);
+        }
+        self.rects.clear();
+        self.rects.push(unified);
+    }
+
+    /// Take all tracked rects and reset the list to empty.
+    pub fn take_all(&mut self) -> Vec<DirtyRect> {
+        std::mem::take(&mut self.rects)
+    }
+
+    /// Returns `true` when no rects are tracked.
+    pub fn is_empty(&self) -> bool {
+        self.rects.is_empty()
+    }
+
+    /// Clear all tracked rects.
+    pub fn clear(&mut self) {
+        self.rects.clear();
+    }
+}
+
+/// Returns `true` if two dirty rects overlap or are within `proximity` pixels.
+fn rects_overlap_or_touch(a: &DirtyRect, b: &DirtyRect, proximity: u32) -> bool {
+    let a_min_x = a.min_x.saturating_sub(proximity);
+    let a_min_y = a.min_y.saturating_sub(proximity);
+    let a_max_x = a.max_x.saturating_add(proximity);
+    let a_max_y = a.max_y.saturating_add(proximity);
+
+    !(a_max_x < b.min_x || a_min_x > b.max_x || a_max_y < b.min_y || a_min_y > b.max_y)
+}
+
 /// The core canvas data: a list of layers, dimensions, output RGBA buffer,
 /// GPU texture state, and a flag to request re-rendering.
 #[derive(Clone, Serialize, Deserialize)]
