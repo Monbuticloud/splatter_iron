@@ -14,6 +14,7 @@ use crate::tools::{
     bucket_fill::draw_bucket_fill,
     circle_brush::{ draw_circle, draw_circle_line },
     square_brush::{ draw_square, draw_square_line },
+    stamp_brush::draw_stamp_line,
 };
 use crate::undo::UndoRecord;
 
@@ -112,6 +113,15 @@ impl MyApp {
                     ui.ctx().request_repaint();
                     ui.close();
                 }
+
+                if self.tool_configuration.current_tool == CurrentTool::Stamp {
+                    ui.separator();
+                    if ui.button("Replace Stamp Image...").clicked() {
+                        self.file_io.queue_file_action(PendingFileAction::LoadStamp);
+                        ui.ctx().request_repaint();
+                        ui.close();
+                    }
+                }
             });
 
             if self.tool_configuration.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
@@ -197,6 +207,63 @@ impl MyApp {
                             );
                         }
                         CurrentTool::BucketFill => {}
+                        CurrentTool::Stamp => {
+                            if let Some((_, stamp_w, stamp_h)) = &self.tool_configuration.stamp_image {
+                                let output_w = self.tool_configuration.radius.max(1);
+                                let output_h = ((*stamp_h as f64 * output_w as f64 / *stamp_w as f64).round() as u32).max(1);
+                                let half_w = output_w / 2;
+                                let half_h = output_h / 2;
+
+                                let preview_start_x = (pixel_x.saturating_sub(half_w)).min(self.document.canvas.width - 1) as f32;
+                                let preview_end_x = ((pixel_x + half_w).min(self.document.canvas.width - 1) as f32) + 1.0;
+                                let preview_start_y = (pixel_y.saturating_sub(half_h)).min(self.document.canvas.height - 1) as f32;
+                                let preview_end_y = ((pixel_y + half_h).min(self.document.canvas.height - 1) as f32) + 1.0;
+
+                                let screen_x =
+                                    response.rect.min.x +
+                                    preview_start_x * (draw_size.x / (self.document.canvas.width as f32));
+                                let screen_y =
+                                    response.rect.min.y +
+                                    preview_start_y * (draw_size.y / (self.document.canvas.height as f32));
+                                let screen_w =
+                                    (preview_end_x - preview_start_x) *
+                                    (draw_size.x / (self.document.canvas.width as f32));
+                                let screen_h =
+                                    (preview_end_y - preview_start_y) *
+                                    (draw_size.y / (self.document.canvas.height as f32));
+
+                                let preview_rect = Rect::from_min_size(
+                                    Pos2::new(screen_x, screen_y),
+                                    egui::vec2(screen_w, screen_h),
+                                );
+
+                                let brush_alpha = self.tool_configuration.current_color.a();
+                                let fill_color = if brush_alpha == 0 {
+                                    Color32::TRANSPARENT
+                                } else {
+                                    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                                    let preview_alpha =
+                                        ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
+                                    Color32::from_rgba_premultiplied(
+                                        ((self.tool_configuration.current_color.r() as u32 * preview_alpha as u32)
+                                            / brush_alpha as u32) as u8,
+                                        ((self.tool_configuration.current_color.g() as u32 * preview_alpha as u32)
+                                            / brush_alpha as u32) as u8,
+                                        ((self.tool_configuration.current_color.b() as u32 * preview_alpha as u32)
+                                            / brush_alpha as u32) as u8,
+                                        preview_alpha,
+                                    )
+                                };
+                                ui.painter().rect_filled(preview_rect, 0.0, fill_color);
+
+                                ui.painter().rect_stroke(
+                                    preview_rect,
+                                    0.0,
+                                    egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tool_configuration.current_color),
+                                    StrokeKind::Middle,
+                                );
+                            }
+                        }
                     }
                 }
 
@@ -205,6 +272,11 @@ impl MyApp {
                 self.ui.render_state = RenderState::ActiveWake(
                     Duration::from_millis(ACTIVE_DURATION_MILLISECONDS)
                 );
+            }
+
+            if response.clicked() && self.tool_configuration.current_tool == CurrentTool::Stamp && self.tool_configuration.stamp_image.is_none() {
+                self.file_io.queue_file_action(PendingFileAction::LoadStamp);
+                ui.ctx().request_repaint();
             }
 
             if response.clicked() && self.tool_configuration.current_tool == CurrentTool::BucketFill {
@@ -359,6 +431,35 @@ impl MyApp {
                 } else {
                     None
                 }
+            }
+
+            CurrentTool::Stamp => {
+                let first_frame = self.tool_configuration.previous_cursor_position.is_none();
+                let previous_position = self.tool_configuration.previous_cursor_position;
+
+                if first_frame && alpha_overlay {
+                    self.undo.advance_drag_stamp();
+                }
+
+                let (start_x, start_y) = if first_frame {
+                    (pixel_x, pixel_y)
+                } else if let Some((px, py)) = previous_position {
+                    (px, py)
+                } else {
+                    (pixel_x, pixel_y)
+                };
+
+                self.tool_configuration.stamp_image.as_ref().map(|(stamp_pixels, stamp_w, stamp_h)| {
+                    draw_stamp_line(
+                        start_x, start_y, pixel_x, pixel_y,
+                        stamp_pixels, *stamp_w, *stamp_h,
+                        self.tool_configuration.radius, &mut self.document.canvas,
+                        color, self.document.current_layer,
+                        alpha_overlay, self.tool_configuration.stamp_tinted,
+                        &mut self.undo.drag_processed,
+                        self.undo.drag_stamp_value,
+                    )
+                })
             }
         }
     }
