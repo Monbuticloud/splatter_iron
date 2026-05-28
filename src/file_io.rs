@@ -87,7 +87,7 @@ impl FileIO {
     /// winit re-entrancy panics. Supports Save, Load, Import, and Export
     /// actions with appropriate file filters and default names.
     pub fn queue_file_action(&mut self, action: PendingFileAction) {
-        let tx = self.dialog_sender.clone();
+        let sender = self.dialog_sender.clone();
 
         match action {
             PendingFileAction::Save => {
@@ -100,7 +100,7 @@ impl FileIO {
                             .set_file_name(DEFAULT_CANVAS_NAME)
                             .save_file()
                     {
-                        let _ = tx.send(DialogResult::Picked(path));
+                        let _ = sender.send(DialogResult::Picked(path));
                     }
                 });
             }
@@ -113,7 +113,7 @@ impl FileIO {
                             .add_filter(FILE_FILTER_NAME, &[CANVAS_EXTENSION.trim_start_matches('.')])
                             .pick_file()
                     {
-                        let _ = tx.send(DialogResult::Picked(path));
+                        let _ = sender.send(DialogResult::Picked(path));
                     }
                 });
             }
@@ -126,24 +126,24 @@ impl FileIO {
                             .add_filter("Images", IMPORT_EXTENSIONS)
                             .pick_file()
                     {
-                        let _ = tx.send(DialogResult::Picked(path));
+                        let _ = sender.send(DialogResult::Picked(path));
                     }
                 });
             }
-            PendingFileAction::Export(idx) => {
-                self.pending_file_action = Some(PendingFileAction::Export(idx));
-                let info = &EXPORT_FORMATS[idx].1;
-                let exts: Vec<&str> = info.extensions.to_vec();
-                let default_name = format!("export.{}", info.extensions[0]);
+            PendingFileAction::Export(index) => {
+                self.pending_file_action = Some(PendingFileAction::Export(index));
+                let information = &EXPORT_FORMATS[index].1;
+                let extensions: Vec<&str> = information.extensions.to_vec();
+                let default_name = format!("export.{}", information.extensions[0]);
                 std::thread::spawn(move || {
                     if
                         let Some(path) = rfd::FileDialog
                             ::new()
-                            .add_filter(EXPORT_FORMATS[idx].0, &exts)
+                            .add_filter(EXPORT_FORMATS[index].0, &extensions)
                             .set_file_name(&default_name)
                             .save_file()
                     {
-                        let _ = tx.send(DialogResult::Picked(path));
+                        let _ = sender.send(DialogResult::Picked(path));
                     }
                 });
             }
@@ -157,7 +157,7 @@ impl FileIO {
     /// document state or the error list accordingly.
     pub fn poll_dialog_results(
         &mut self,
-        doc: &mut Document,
+        document: &mut Document,
         undo: &mut UndoHistory,
         error_list: &mut Vec<String>,
     ) {
@@ -169,13 +169,13 @@ impl FileIO {
                     };
                     match pending {
                         PendingFileAction::Save => {
-                            let path_str = path.display().to_string();
-                            let savepath = if path_str.ends_with(CANVAS_EXTENSION) {
+                            let path_string = path.display().to_string();
+                            let save_path = if path_string.ends_with(CANVAS_EXTENSION) {
                                 path
                             } else {
-                                PathBuf::from(format!("{path_str}{CANVAS_EXTENSION}"))
+                                PathBuf::from(format!("{path_string}{CANVAS_EXTENSION}"))
                             };
-                            self.trigger_async_save(doc, SaveKind::ManualSave(savepath));
+                            self.trigger_async_save(document, SaveKind::ManualSave(save_path));
                         }
                         PendingFileAction::Load => {
                             match crate::files::load_data_from_file(&path) {
@@ -183,52 +183,52 @@ impl FileIO {
                                     match crate::files::load_app_from_data(&data) {
                                         Ok(canvas) => {
                                             let save_path = path.display().to_string();
-                                            doc.replace_canvas(canvas, undo);
-                                            doc.savefile_path = save_path;
+                                            document.replace_canvas(canvas, undo);
+                                            document.savefile_path = save_path;
                                         }
-                                        Err(e) => error_list.push(
-                                            format!("Failed to load canvas: {e}")
-                                        ),
-                                    }
-                                }
-                                Err(e) => error_list.push(
-                                    format!("Failed to read file: {e}")
+                                Err(error) => error_list.push(
+                                    format!("Failed to load canvas: {error}")
+                                ),
+                            }
+                        }
+                        Err(error) => error_list.push(
+                            format!("Failed to read file: {error}")
                                 ),
                             }
                         }
                         PendingFileAction::Import => {
                             match crate::files::import_image_as_canvas(&path) {
-                                Ok(canvas) => doc.replace_canvas(canvas, undo),
-                                Err(e) => error_list.push(
-                                    format!("Import failed: {e}")
+                                Ok(canvas) => document.replace_canvas(canvas, undo),
+                                Err(error) => error_list.push(
+                                    format!("Import failed: {error}")
                                 ),
                             }
                         }
-                        PendingFileAction::Export(idx) => {
-                            if doc.canvas.output_rgba.is_empty() {
+                        PendingFileAction::Export(index) => {
+                            if document.canvas.output_rgba.is_empty() {
                                 continue;
                             }
-                            let info = &EXPORT_FORMATS[idx].1;
-                            let default_ext = info.extensions[0];
-                            let path_str = path.display().to_string();
-                            let path_str = if
-                                info.extensions.iter().any(|ext| path_str.ends_with(ext))
+                            let information = &EXPORT_FORMATS[index].1;
+                            let default_extension = information.extensions[0];
+                            let path_string = path.display().to_string();
+                            let path_string = if
+                                information.extensions.iter().any(|ext| path_string.ends_with(ext))
                             {
-                                path_str
+                                path_string
                             } else {
-                                format!("{path_str}.{default_ext}")
+                                format!("{path_string}.{default_extension}")
                             };
                             if
-                                let Err(e) = crate::files::export_as_image(
-                                    &doc.canvas.output_rgba,
-                                    doc.canvas.width,
-                                    doc.canvas.height,
-                                    Path::new(&path_str),
-                                    info.fmt
+                                let Err(error) = crate::files::export_as_image(
+                                    &document.canvas.output_rgba,
+                                    document.canvas.width,
+                                    document.canvas.height,
+                                    Path::new(&path_string),
+                                    information.fmt
                                 )
                             {
                                 error_list.push(
-                                    format!("Export failed: {e}")
+                                    format!("Export failed: {error}")
                                 );
                             }
                         }
@@ -244,16 +244,16 @@ impl FileIO {
     /// For autosaves, the file name is a timestamp under `AUTOSAVE_DIRECTORY`.
     /// For manual saves, the provided path is used. Results are sent back
     /// via `save_result_sender`.
-    pub fn trigger_async_save(&self, doc: &Document, kind: SaveKind) {
-        let canvas = doc.canvas.clone();
+    pub fn trigger_async_save(&self, document: &Document, kind: SaveKind) {
+        let canvas = document.canvas.clone();
         let path = match &kind {
             SaveKind::Autosave =>
                 self.app_local_data_directory
                     .join(AUTOSAVE_DIRECTORY)
                     .join(format!("{}.splattercanvas", Local::now().format(AUTOSAVE_DATE_FORMAT))),
-            SaveKind::ManualSave(p) => p.clone(),
+            SaveKind::ManualSave(save_path) => save_path.clone(),
         };
-        let tx = self.save_result_sender.clone();
+        let sender = self.save_result_sender.clone();
         std::thread::spawn(move || {
             let result = match crate::files::save_canvas_to_bytes(&canvas) {
                 Ok(data) =>
@@ -263,20 +263,20 @@ impl FileIO {
                                 SaveKind::Autosave => SaveResult::Autosave,
                                 SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
                             }
-                        Err(e) => SaveResult::Failed(format!("Write failed: {e}")),
+                        Err(error) => SaveResult::Failed(format!("Write failed: {error}")),
                     }
-                Err(e) => SaveResult::Failed(format!("Serialisation failed: {e}")),
+                Err(error) => SaveResult::Failed(format!("Serialisation failed: {error}")),
             };
-            let _ = tx.send(result);
+            let _ = sender.send(result);
         });
     }
 
     /// Save to the current `savefile_path` asynchronously.
     ///
     /// No-op if `savefile_path` is empty.
-    pub fn save_to_current_path(&self, doc: &Document) {
-        if !doc.savefile_path.is_empty() {
-            self.trigger_async_save(doc, SaveKind::ManualSave(PathBuf::from(&doc.savefile_path)));
+    pub fn save_to_current_path(&self, document: &Document) {
+        if !document.savefile_path.is_empty() {
+            self.trigger_async_save(document, SaveKind::ManualSave(PathBuf::from(&document.savefile_path)));
         }
     }
 
@@ -284,18 +284,18 @@ impl FileIO {
     ///
     /// Marks the document as clean after autosave, sets the save path
     /// after manual save, and pushes errors to the error list.
-    pub fn poll_save_results(&self, doc: &mut Document, error_list: &mut Vec<String>) {
+    pub fn poll_save_results(&self, document: &mut Document, error_list: &mut Vec<String>) {
         while let Ok(result) = self.save_result_receiver.try_recv() {
             match result {
                 SaveResult::Autosave => {
-                    doc.dirty_since_last_autosave = false;
+                    document.dirty_since_last_autosave = false;
                 }
                 SaveResult::ManualSave(path) => {
-                    doc.savefile_path = path.display().to_string();
-                    doc.canvas.render_next_frame = true;
+                    document.savefile_path = path.display().to_string();
+                    document.canvas.render_next_frame = true;
                 }
-                SaveResult::Failed(msg) => {
-                    error_list.push(format!("Save failed: {msg}"));
+                SaveResult::Failed(message) => {
+                    error_list.push(format!("Save failed: {message}"));
                 }
             }
         }
