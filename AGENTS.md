@@ -73,6 +73,7 @@
 ### Agent Expectations
 
 - Before editing a file, read surrounding context to match conventions.
+- **Commit after every logical change — always. Do not wait for the user to ask.** Each function, each docstring, each test gets its own commit. If a commit message contains "and", "also", or "fixup", split it.
 - Before committing, always run `cargo test && cargo clippy`.
 - During planning mode, use the `question` tool frequently to gather preferences and clarify intent before implementing.
 - If adding a new module, create a corresponding test module and register it in `src/tests/mod.rs`.
