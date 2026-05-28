@@ -144,7 +144,7 @@ impl MyApp {
     ///
     /// Falls back to the egui-managed texture path (full-buffer `tex.set()`)
     /// when wgpu render state is unavailable (e.g. Glow backend).
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(creation_context: &eframe::CreationContext<'_>) -> Self {
         use std::sync::mpsc;
         let (dialog_sender, dialog_receiver) = mpsc::channel();
         let (save_result_sender, save_result_receiver) = mpsc::channel();
@@ -158,11 +158,11 @@ impl MyApp {
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
         std::fs::create_dir_all(&data_dir.join("autosaves")).expect("Couldn't create autosave dir");
 
-        let gpu_texture = cc.wgpu_render_state.as_ref().map(|rs| {
-            let w = canvas.width;
-            let h = canvas.height;
-            let size = wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 };
-            let texture = rs.device.create_texture(&wgpu::TextureDescriptor {
+        let gpu_texture = creation_context.wgpu_render_state.as_ref().map(|render_state| {
+            let width = canvas.width;
+            let height = canvas.height;
+            let size = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+            let texture = render_state.device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("splatter_iron_canvas"),
                 size,
                 mip_level_count: 1,
@@ -173,16 +173,16 @@ impl MyApp {
                 view_formats: &[],
             });
             let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let mut renderer = rs.renderer.write();
+            let mut renderer = render_state.renderer.write();
             let texture_id = renderer.register_native_texture(
-                &rs.device,
+                &render_state.device,
                 &view,
                 wgpu::FilterMode::Linear,
             );
             GpuTexture {
                 texture,
                 texture_id,
-                queue: Arc::new(rs.queue.clone()),
+                queue: Arc::new(render_state.queue.clone()),
             }
         });
 
@@ -207,12 +207,12 @@ impl MyApp {
     /// Uses `update_egui_texture_from_wgpu_texture` to keep the same
     /// `egui::TextureId`, avoiding stale entries in the renderer's map.
     pub fn recreate_gpu_texture(&mut self, frame: &mut eframe::Frame) {
-        let Some(rs) = frame.wgpu_render_state() else { return };
+        let Some(render_state) = frame.wgpu_render_state() else { return };
         let Some(gpu) = &mut self.gpu_texture else { return };
-        let w = self.document.canvas.width;
-        let h = self.document.canvas.height;
-        let size = wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 };
-        gpu.texture = rs.device.create_texture(&wgpu::TextureDescriptor {
+        let width = self.document.canvas.width;
+        let height = self.document.canvas.height;
+        let size = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+        gpu.texture = render_state.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("splatter_iron_canvas"),
             size,
             mip_level_count: 1,
@@ -223,9 +223,9 @@ impl MyApp {
             view_formats: &[],
         });
         let view = gpu.texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let mut renderer = rs.renderer.write();
+        let mut renderer = render_state.renderer.write();
         renderer.update_egui_texture_from_wgpu_texture(
-            &rs.device,
+            &render_state.device,
             &view,
             wgpu::FilterMode::Linear,
             gpu.texture_id,
@@ -281,8 +281,8 @@ impl eframe::App for MyApp {
 
         // Recreate GPU texture if canvas dimensions have changed
         if let Some(gpu) = &self.gpu_texture {
-            let s = gpu.texture.size();
-            if s.width != self.document.canvas.width || s.height != self.document.canvas.height {
+            let texture_size = gpu.texture.size();
+            if texture_size.width != self.document.canvas.width || texture_size.height != self.document.canvas.height {
                 self.recreate_gpu_texture(frame);
             }
         }
