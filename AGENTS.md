@@ -71,7 +71,7 @@
 
 - **Clippy**: `all` + `pedantic` + `nursery` + `unwrap_used` → `warn`. Zero `#[allow(clippy::…)]` without an inline comment explaining why. Current codebase has exactly one exception (`cast_possible_truncation` + `cast_sign_loss` in `src/ui/center.rs` brush preview alpha).
 - **Unsafe**: Only in `TrackingAllocator` (`main.rs`) — the sole justified use. All other `unsafe` prohibited; use safe abstractions (`wide::u32x4` for SIMD, `bytemuck` for casting).
-- **Docs**: Every `pub` item gets a docstring. Document `# Panics` for invariant-violation panics and `# Errors` for `Result` returns.
+- **Docs**: Every `pub` item gets a docstring — document every argument, all invariants, all return values, side effects, and any additional nuance. Inline docs must convey the purpose in depth: a single function's docs may span two or more paragraphs. Document `# Panics` for invariant-violation panics and `# Errors` for `Result` returns. Additionally, `docs/src/` mirrors `src/` — each `.rs` file has a corresponding `.md` for post-implementation documentation. When checking for missing docs, also check `docs/src/` for missing functions.
 - **Tests**: Every `src/*.rs` module has a corresponding `src/tests/*.rs` module. New modules must add test coverage. Pre-commit gate: `cargo test && cargo clippy`.
 - **Error handling**: Panic on invariant violations (logic bugs) with documented `# Panics`. `Result` for recoverable errors (IO, deserialization, dialogs) with documented `# Errors`.
 
