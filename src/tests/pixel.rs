@@ -205,6 +205,45 @@ fn blend_region_empty_layers_no_panic() {
     // Should not panic, output unchanged
 }
 
+// --- Three layers ---
+
+/// With three opaque layers, the topmost should fully occlude the rest.
+#[test]
+fn blend_layers_three_layers() {
+    let pixel_count = 12;
+    let bottom = vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); pixel_count];
+    let middle = vec![Color32::from_rgba_premultiplied(0, 255, 0, 255); pixel_count];
+    let top = vec![Color32::from_rgba_premultiplied(0, 0, 255, 255); pixel_count];
+    let mut output = vec![0u8; pixel_count * 4];
+    pixel::blend_layers(&[&bottom, &middle, &top], &mut output);
+    for i in 0..pixel_count {
+        assert_eq!(output[i * 4], 0, "red channel at {i}");
+        assert_eq!(output[i * 4 + 1], 0, "green channel at {i}");
+        assert_eq!(output[i * 4 + 2], 255, "blue channel at {i}");
+        assert_eq!(output[i * 4 + 3], 255, "alpha channel at {i}");
+    }
+}
+
+/// Semi-transparent top layer should blend through to the opaque bottom layer.
+#[test]
+fn blend_layers_semi_transparent_top() {
+    let pixel_count = 12;
+    let bottom = vec![Color32::from_rgba_premultiplied(0, 255, 0, 255); pixel_count];
+    let top = vec![Color32::from_rgba_premultiplied(255, 0, 0, 128); pixel_count];
+    let mut output = vec![0u8; pixel_count * 4];
+    pixel::blend_layers(&[&bottom, &top], &mut output);
+    for i in 0..pixel_count {
+        // Opaque result, red from top blended over green bottom
+        assert_eq!(output[i * 4 + 3], 255, "opaque at {i}");
+        // Red channel should be > 0 (source contributes)
+        assert!(output[i * 4] > 0, "red at {i}");
+        // Green channel should be > 0 (dest still visible through src)
+        assert!(output[i * 4 + 1] > 0, "green at {i}");
+        // Result should be visually redder than green
+        assert!(output[i * 4] > output[i * 4 + 1], "more red than green at {i}");
+    }
+}
+
 // --------------------------------------------------
 //  Regression: double-premultiply guard
 // --------------------------------------------------
