@@ -107,6 +107,30 @@ A new `DirtyRect` whose bounds are the element-wise `min` of the two `min_*` fie
 - The result is empty iff both inputs are empty (since `u32::MAX` propagates through `min` and `0` through `max`).
 - The result is always a superset (inclusive) of both input rects.
 
+## `DirtyRect::is_empty`
+
+```rust
+pub const fn is_empty(&self) -> bool
+```
+
+Returns `true` if the rect covers no pixels. This occurs when either dimension is inverted: `min_x > max_x` or `min_y > max_y`.
+
+An empty rect is the initial state before any pixels are recorded (as produced by `empty()`). All brush operations and undo/redo calls check `is_empty()` before initiating a texture upload to avoid zero-area uploads.
+
+### Returns
+
+`true` if the bounding box is degenerate (no pixels covered), `false` otherwise.
+
+### Usage in rendering
+
+```rust
+if let Some(dirty) = &canvas.dirty_rect {
+    if !dirty.is_empty() {
+        // upload only the sub-region to the GPU
+    }
+}
+```
+
 ## `struct Layer`
 
 `Layer` represents a single 2D raster layer within the canvas layer stack. Each layer stores its pixel data as a flat `Vec<Color32>` in premultiplied-alpha row-major order, indexed as `pixels[y * width + x]`.
