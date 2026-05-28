@@ -60,3 +60,29 @@ case — the alpha channel is preserved unchanged).
 colour from the UI colour picker (which returns straight-alpha) and the
 code needs to convert existing premultiplied swatches for display, or when
 exporting to image formats that expect straight-alpha data.
+
+## `fn premultiply()`
+
+```rust
+pub const fn premultiply(color: Color32) -> Color32
+```
+
+Converts a straight-alpha `Color32` to premultiplied alpha. This is the
+inverse of [`unpremultiply`].
+
+Premultiplied alpha is the internal representation used throughout
+SplatterIron's blending pipeline — the `alpha_blend` function, SIMD blend
+chunks, and the layer compositor all assume premultiplied inputs. Using
+premultiplied alpha avoids colour-bleeding artifacts at semi-transparent
+edges and simplifies the over compositing operation to a single multiply-add.
+
+**Algorithm:** Uses fixed-point arithmetic `(c * alpha + 128) * 257 >> 16`
+for each colour channel, which implements correct rounding division by 255
+without a hardware division instruction. Fully opaque (`alpha == 255`)
+passes through unchanged. Fully transparent returns `Color32::TRANSPARENT`.
+
+**Caller invariant:** The input must be straight (non-premultiplied) RGBA.
+Calling this on an already-premultiplied pixel will darken colours further.
+
+**Use in the pipeline:** Called when the user picks a colour or when brush
+tools produce new pixel data that must be composited into the layer stack.
