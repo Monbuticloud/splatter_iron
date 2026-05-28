@@ -4,7 +4,7 @@ use std::sync::mpsc;
 use chrono::Local;
 
 use crate::app::{
-    CANVAS_EXT, EXPORT_FORMATS, FILE_FILTER_NAME, DEFAULT_CANVAS_NAME,
+    CANVAS_EXTENSION, EXPORT_FORMATS, FILE_FILTER_NAME, DEFAULT_CANVAS_NAME,
     IMPORT_EXTENSIONS,
 };
 use crate::document::Document;
@@ -96,7 +96,7 @@ impl FileIO {
                     if
                         let Some(path) = rfd::FileDialog
                             ::new()
-                            .add_filter(FILE_FILTER_NAME, &[CANVAS_EXT.trim_start_matches('.')])
+                            .add_filter(FILE_FILTER_NAME, &[CANVAS_EXTENSION.trim_start_matches('.')])
                             .set_file_name(DEFAULT_CANVAS_NAME)
                             .save_file()
                     {
@@ -110,7 +110,7 @@ impl FileIO {
                     if
                         let Some(path) = rfd::FileDialog
                             ::new()
-                            .add_filter(FILE_FILTER_NAME, &[CANVAS_EXT.trim_start_matches('.')])
+                            .add_filter(FILE_FILTER_NAME, &[CANVAS_EXTENSION.trim_start_matches('.')])
                             .pick_file()
                     {
                         let _ = tx.send(DialogResult::Picked(path));
@@ -170,10 +170,10 @@ impl FileIO {
                     match pending {
                         PendingFileAction::Save => {
                             let path_str = path.display().to_string();
-                            let savepath = if path_str.ends_with(CANVAS_EXT) {
+                            let savepath = if path_str.ends_with(CANVAS_EXTENSION) {
                                 path
                             } else {
-                                PathBuf::from(format!("{path_str}{CANVAS_EXT}"))
+                                PathBuf::from(format!("{path_str}{CANVAS_EXTENSION}"))
                             };
                             self.trigger_async_save(doc, SaveKind::ManualSave(savepath));
                         }

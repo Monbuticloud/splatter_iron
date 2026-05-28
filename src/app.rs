@@ -17,7 +17,7 @@ pub const APP_ORGANIZATION: &str = "Monbuticloud";
 pub const APP_NAME: &str = "SplatterIron";
 
 // --- Canvas & save file constants ---
-pub const CANVAS_EXT: &str = ".splattercanvas";
+pub const CANVAS_EXTENSION: &str = ".splattercanvas";
 pub const FILE_FILTER_NAME: &str = "SplatterCanvas";
 pub const DEFAULT_CANVAS_NAME: &str = "canvas.splattercanvas";
 
