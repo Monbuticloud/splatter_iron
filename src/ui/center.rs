@@ -20,6 +20,8 @@ use crate::undo::UndoRecord;
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
 const ACTIVE_DURATION_MILLISECONDS: u64 = 550;
+const CANVAS_BORDER_WIDTH: f32 = 2.0;
+const CANVAS_BORDER_COLOR: Color32 = Color32::from_rgb(128, 0, 128);
 
 impl MyApp {
     /// Render the central canvas panel.
@@ -69,13 +71,21 @@ impl MyApp {
             )
             .on_hover_cursor(egui::CursorIcon::Crosshair);
 
-            // Draw a purple border around the canvas.
-            ui.painter().rect_stroke(
-                response.rect,
-                0.0,
-                egui::Stroke::new(2.0, Color32::from_rgb(128, 0, 128)),
-                egui::epaint::StrokeKind::Inside,
-            );
+            // Draw a dashed purple border around the canvas.
+            for dash in egui::Shape::dashed_line(
+                &[
+                    response.rect.left_top(),
+                    response.rect.right_top(),
+                    response.rect.right_bottom(),
+                    response.rect.left_bottom(),
+                    response.rect.left_top(),
+                ],
+                egui::Stroke::new(CANVAS_BORDER_WIDTH, CANVAS_BORDER_COLOR),
+                6.0,
+                4.0,
+            ) {
+                ui.painter().add(dash);
+            }
 
             response.context_menu(|ui| {
                 if ui.button("Import").clicked() {
