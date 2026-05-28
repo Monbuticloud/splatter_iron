@@ -46,6 +46,12 @@ fn fill_square_impl(
 ///
 /// Clamps brush bounds to canvas dimensions. Tracks the bounding box of
 /// stamped pixels via `dirty_rect`.
+///
+/// # Panics
+///
+/// Panics if `visited` is shorter than `width * height`, since every
+/// pixel index along the stamped line is written directly into the
+/// visited buffer without a bounds check.
 #[inline]
 fn stamp_line_positions(
     start_x: u32,
