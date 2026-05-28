@@ -3,7 +3,7 @@ use eframe::egui::Color32;
 use crate::canvas::CurrentTool;
 
 /// Current tool selection, color, brush radius, undo/redo step count, and UI interaction state.
-pub struct ToolConfig {
+pub struct ToolConfiguration {
     pub current_tool: CurrentTool,
     pub current_color: Color32,
     pub radius: u32,
@@ -14,7 +14,7 @@ pub struct ToolConfig {
     pub undo_redo_steps_multiplier: usize,
 }
 
-impl Default for ToolConfig {
+impl Default for ToolConfiguration {
     /// Create a default tool configuration with the Square tool selected,
     /// white color, radius 100, brush preview enabled, and undo/redo step
     /// multiplier of 5.

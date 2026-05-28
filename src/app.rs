@@ -8,7 +8,7 @@ use directories::ProjectDirs;
 use crate::canvas::{ Canvas, RenderState };
 use crate::document::Document;
 use crate::file_io::{ FileIO, SaveKind };
-use crate::tool_configuration::ToolConfig;
+use crate::tool_configuration::ToolConfiguration;
 use crate::undo_history::UndoHistory;
 
 // --- App identity constants ---
@@ -128,7 +128,7 @@ pub struct GpuTexture {
 /// file IO, UI state, and optional wgpu GPU texture.
 pub struct MyApp {
     pub doc: Document,
-    pub tools: ToolConfig,
+    pub tools: ToolConfiguration,
     pub undo: UndoHistory,
     pub file_io: FileIO,
     pub ui: UIState,
@@ -188,7 +188,7 @@ impl MyApp {
 
         Self {
             doc: Document::new(canvas),
-            tools: ToolConfig::default(),
+            tools: ToolConfiguration::default(),
             undo: UndoHistory::new(pixel_count),
             file_io: FileIO::new(
                 dialog_sender,
