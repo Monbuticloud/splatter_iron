@@ -7,9 +7,10 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, Layer };
+use crate::canvas::Canvas;
 use crate::tests::common::{ red, small_canvas };
 use crate::tools::square_brush;
+use crate::undo::{ UndoRecord };
 use crate::undo_history::UndoHistory;
 
 /// A new undo history should have no undo or redo available.
@@ -132,4 +133,139 @@ fn stamp_wrapping_overflow_resets() {
     // wraps to 0, which triggers reset to 1
     assert_eq!(stamp, 1, "wrapping should reset to 1");
     assert_eq!(history.visited.iter().all(|&v| v == 0), true);
+}
+
+// --- resize_visited ---
+
+/// `resize_visited` should grow the visited buffer when the canvas gets larger.
+#[test]
+fn resize_visited_grows_buffer() {
+    let mut history = UndoHistory::new(100);
+    assert_eq!(history.visited.len(), 100);
+    assert_eq!(history.drag_processed.len(), 100);
+    history.resize_visited(250);
+    assert_eq!(history.visited.len(), 250);
+    assert_eq!(history.drag_processed.len(), 250);
+    assert_eq!(history.visited_stamp, 1);
+    assert_eq!(history.drag_stamp_value, 1);
+}
+
+/// `resize_visited` should not shrink the buffer.
+#[test]
+fn resize_visited_does_not_shrink() {
+    let mut history = UndoHistory::new(100);
+    history.resize_visited(50);
+    assert_eq!(history.visited.len(), 100, "should not shrink");
+    assert_eq!(history.drag_processed.len(), 100, "should not shrink");
+}
+
+// --- advance_drag_stamp ---
+
+/// `advance_drag_stamp` should increment the stamp value.
+#[test]
+fn advance_drag_stamp_increments() {
+    let mut history = UndoHistory::new(100);
+    let before = history.drag_stamp_value;
+    history.advance_drag_stamp();
+    assert_eq!(
+        history.drag_stamp_value,
+        before.wrapping_add(1),
+        "drag stamp incremented"
+    );
+}
+
+/// `advance_drag_stamp` should reset the drag_processed buffer when wrapping past u32::MAX.
+#[test]
+fn advance_drag_stamp_wrapping_resets() {
+    let mut history = UndoHistory::new(100);
+    history.drag_processed[42] = 1;
+    history.drag_stamp_value = u32::MAX;
+    history.advance_drag_stamp();
+    assert_eq!(history.drag_stamp_value, 1, "wrapping resets to 1");
+    assert_eq!(
+        history.drag_processed.iter().all(|&v| v == 0),
+        true,
+        "buffer cleared on wrap"
+    );
+}
+
+// --- Drag accumulator ---
+
+/// Full drag accumulator lifecycle: init, extend, finalize produces one undo record.
+#[test]
+fn drag_accumulator_full_lifecycle() {
+    let mut history = UndoHistory::new(100);
+    let mut canvas = small_canvas();
+    let blue = Color32::from_rgba_premultiplied(0, 0, 255, 255);
+
+    // Simulate a two-frame drag
+    history.init_drag_accumulator(0, 10, red(), false);
+    let record1 = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
+    if let UndoRecord::Run { runs, .. } = record1 {
+        history.extend_drag_accumulator(runs);
+    }
+    let record2 = square_brush::draw_square(3, 3, 6, 6, &mut canvas, red(), 0, false);
+    if let UndoRecord::Run { runs, .. } = record2 {
+        history.extend_drag_accumulator(runs);
+    }
+    history.finalize_drag_accumulator();
+
+    assert!(history.can_undo(), "drag should produce one undo record");
+    assert!(!history.can_redo(), "no redo yet");
+
+    // Undo should restore original transparent pixels
+    history.undo_step(&mut canvas, 1);
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        Color32::TRANSPARENT,
+        "undo restored original"
+    );
+    assert_eq!(
+        canvas.pixels[0].pixels[35],
+        Color32::TRANSPARENT,
+        "undo restored original"
+    );
+}
+
+// --- Clamping ---
+
+/// `undo_step` with steps_multiplier greater than available undo should clamp.
+#[test]
+fn undo_step_clamps_to_available() {
+    let mut history = UndoHistory::new(100);
+    let mut canvas = small_canvas();
+    let record = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
+    history.push_undo(record);
+    // Request 10 steps, only 1 available — should not panic
+    history.undo_step(&mut canvas, 10);
+    assert!(!history.can_undo(), "no more undo after clamping");
+}
+
+/// `redo_step` with steps_multiplier greater than available redo should clamp.
+#[test]
+fn redo_step_clamps_to_available() {
+    let mut history = UndoHistory::new(100);
+    let mut canvas = small_canvas();
+    let record = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
+    history.push_undo(record);
+    history.undo_step(&mut canvas, 1);
+    // Request 10 steps, only 1 available — should not panic
+    history.redo_step(&mut canvas, 10);
+    assert!(!history.can_redo(), "no more redo after clamping");
+}
+
+// --- MAX_STROKE_STACK eviction ---
+
+/// Pushing more than MAX_STROKE_STACK (1000) records should evict the oldest.
+#[test]
+fn max_stack_eviction_pops_oldest() {
+    let mut history = UndoHistory::new(100);
+    let mut canvas = small_canvas();
+    // Push 1001 records (1000 + 1)
+    for _ in 0..1001 {
+        let record = square_brush::draw_square(0, 0, 1, 1, &mut canvas, red(), 0, false);
+        history.push_undo(record);
+    }
+    assert_eq!(history.stroke_stack.len(), 1000, "stack capped at 1000");
+    assert!(history.can_undo(), "still has undo records");
 }
