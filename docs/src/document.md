@@ -207,3 +207,33 @@ pub fn add_layer(&mut self)
   layers on the next frame.
 - Does **not** change `current_layer` — the newly added layer is appended at the
   end; the UI is responsible for selecting it if desired.
+
+---
+
+## `Document::delete_layer(index)`
+
+Removes the layer at the given index and clamps `current_layer` to the new layer
+count. Does **not** guard against deleting the last remaining layer — that
+invariant is enforced by the UI layer (which should disable the delete button
+when only one layer exists).
+
+### Signature
+
+```rust
+pub fn delete_layer(&mut self, index: usize)
+```
+
+### Parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `index` | `usize` | Index of the layer to remove |
+
+### Behaviour
+
+1. Removes the entry from `self.canvas.pixels`.
+2. Adjusts `current_layer`:
+   - If the removed layer was below the active layer, `current_layer` is
+     decremented by 1 (via `saturating_sub(1)`).
+   - The result is clamped to `[0, layers.len() - 1]` with `min()`.
+3. Sets `render_next_frame = true`.
