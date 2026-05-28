@@ -1,3 +1,5 @@
+//! Top menu bar: file operations (new, open, save, save as, export, quit).
+
 use eframe::egui;
 
 use crate::app::MyApp;
