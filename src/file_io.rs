@@ -6,6 +6,8 @@ use std::sync::mpsc;
 
 use chrono::Local;
 
+use eframe::egui::Color32;
+
 use crate::app::{
     CANVAS_EXTENSION, EXPORT_FORMATS, FILE_FILTER_NAME, DEFAULT_CANVAS_NAME,
     IMPORT_EXTENSIONS,
@@ -32,6 +34,8 @@ pub enum PendingFileAction {
     /// Open a native "save" dialog for exporting to one of the supported image
     /// formats. The `usize` payload indexes into `EXPORT_FORMATS`.
     Export(usize),
+    /// Open a native "open" dialog to load an image as a stamp.
+    LoadStamp,
 }
 
 /// Message sent back from the file-dialog thread to the UI thread.
@@ -75,6 +79,8 @@ pub struct FileIO {
     pub save_result_receiver: mpsc::Receiver<SaveResult>,
     /// Base path for autosave directory (`{data_dir}/autosaves/`).
     pub app_local_data_directory: PathBuf,
+    /// Result of a stamp-image load, consumed by the app frame after polling.
+    pub loaded_stamp_result: Option<(Vec<Color32>, u32, u32)>,
 }
 
 impl FileIO {
@@ -105,6 +111,7 @@ impl FileIO {
             save_result_sender,
             save_result_receiver,
             app_local_data_directory,
+            loaded_stamp_result: None,
         }
     }
 
@@ -173,6 +180,19 @@ impl FileIO {
                             .add_filter(EXPORT_FORMATS[index].0, &extensions)
                             .set_file_name(&default_name)
                             .save_file()
+                    {
+                        let _ = sender.send(DialogResult::Picked(path));
+                    }
+                });
+            }
+            PendingFileAction::LoadStamp => {
+                self.pending_file_action = Some(PendingFileAction::LoadStamp);
+                std::thread::spawn(move || {
+                    if
+                        let Some(path) = rfd::FileDialog
+                            ::new()
+                            .add_filter("Images", IMPORT_EXTENSIONS)
+                            .pick_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
                     }
@@ -267,6 +287,27 @@ impl FileIO {
                                 error_list.push(
                                     format!("Export failed: {error}")
                                 );
+                            }
+                        }
+                        PendingFileAction::LoadStamp => {
+                            // Decode the image into premultiplied pixels for stamp use.
+                            match image::open(&path) {
+                                Ok(dynamic_image) => {
+                                    let rgba = dynamic_image.to_rgba8();
+                                    let (w, h) = rgba.dimensions();
+                                    let pixel_count = (w as usize) * (h as usize);
+                                    let mut pixels = Vec::with_capacity(pixel_count);
+                                    for pixel in rgba.pixels() {
+                                        let straight = Color32::from_rgba_unmultiplied(
+                                            pixel[0], pixel[1], pixel[2], pixel[3],
+                                        );
+                                        pixels.push(crate::pixel::premultiply(straight));
+                                    }
+                                    self.loaded_stamp_result = Some((pixels, w, h));
+                                }
+                                Err(error) => error_list.push(
+                                    format!("Failed to load stamp: {error}"),
+                                ),
                             }
                         }
                     }
