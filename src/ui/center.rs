@@ -1,3 +1,7 @@
+//! Central canvas panel: renders the composited texture, handles mouse
+//! interaction (brush strokes, eraser, bucket-fill), and applies strokes
+//! to the document.
+
 use std::time::Duration;
 
 use eframe::egui::{ self, Color32, Rect, Pos2 };
