@@ -144,6 +144,13 @@ impl MyApp {
     ///
     /// Falls back to the egui-managed texture path (full-buffer `tex.set()`)
     /// when wgpu render state is unavailable (e.g. Glow backend).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the platform-specific data directory cannot be resolved
+    /// (no home directory) or if the operating system refuses to create
+    /// either the data directory or the autosaves subdirectory (e.g.,
+    /// file-system permissions).
     pub fn new(creation_context: &eframe::CreationContext<'_>) -> Self {
         use std::sync::mpsc;
         let (dialog_sender, dialog_receiver) = mpsc::channel();
