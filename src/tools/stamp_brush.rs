@@ -23,8 +23,6 @@ fn sample_nearest(
 
 /// Bilinear interpolation: sample four surrounding pixels and blend.
 fn sample_bilinear(
-    _x: u32,
-    _y: u32,
     src_x_f: f64,
     src_y_f: f64,
     stamp_pixels: &[Color32],
@@ -167,7 +165,7 @@ fn stamp_at(
                 StampSampling::Bilinear => {
                     let src_x_f = ((x as i64) - out_left) as f64 * float_scale_x;
                     sample_bilinear(
-                        _x_idx as u32, 0, src_x_f, src_y_f, stamp_pixels, stamp_width, stamp_height,
+                        src_x_f, src_y_f, stamp_pixels, stamp_width, stamp_height,
                     )
                 }
             };
