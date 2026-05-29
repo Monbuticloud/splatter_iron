@@ -71,3 +71,7 @@ ABR v6 with zero subblocks should return an error.
 ## `parse_abr_computed_default_spacing`
 
 ABR computed brush without explicit spacing defaults to 25.
+
+## `parse_abr_computed_explicit_spacing`
+
+ABR computed brush with explicit spac subblock uses given spacing.
