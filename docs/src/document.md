@@ -232,12 +232,12 @@ pub fn delete_layer(&mut self, index: usize)
 
 ### Behaviour
 
-1. Removes the entry from `self.canvas.pixels`.
+1. Removes the entry via `self.canvas_mut().pixels.remove(index)`.
 2. Adjusts `current_layer`:
    - If the removed layer was below the active layer, `current_layer` is
      decremented by 1 (via `saturating_sub(1)`).
    - The result is clamped to `[0, layers.len() - 1]` with `min()`.
-3. Sets `render_next_frame = true`.
+3. Sets `self.canvas_mut().render_next_frame = true`.
 
 ---
 
