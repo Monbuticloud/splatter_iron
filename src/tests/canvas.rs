@@ -142,6 +142,7 @@ fn canvas_serde_multi_layer() {
     let mut canvas = Canvas::new(2, 2);
     canvas.pixels.push(crate::canvas::Layer {
         pixels: vec![Color32::RED; 4],
+        ..Default::default()
     });
 
     let json = serde_json::to_string(&canvas).expect("serialize");

@@ -75,6 +75,7 @@ fn small_white_canvas() -> Canvas {
     Canvas {
         pixels: vec![Layer {
             pixels: vec![Color32::from_rgba_premultiplied(255, 255, 255, 255); 100],
+            ..Default::default()
         }],
         height: 10,
         width: 10,

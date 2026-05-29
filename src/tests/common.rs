@@ -18,6 +18,7 @@ pub fn small_canvas() -> Canvas {
     Canvas {
         pixels: vec![Layer {
             pixels: vec![Color32::TRANSPARENT; 100],
+            ..Default::default()
         }],
         height: 10,
         width: 10,

@@ -92,9 +92,11 @@ fn draw_square_multi_layer() {
         pixels: vec![
             Layer {
                 pixels: vec![Color32::TRANSPARENT; 100],
+                ..Default::default()
             },
             Layer {
                 pixels: vec![Color32::TRANSPARENT; 100],
+                ..Default::default()
             },
         ],
         height: 10,

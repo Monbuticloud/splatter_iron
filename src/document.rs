@@ -231,8 +231,12 @@ impl Document {
     /// Append a new transparent layer to the canvas.
     pub fn add_layer(&mut self) {
         let canvas = self.canvas_mut();
+        let layer_index = canvas.pixels.len();
         canvas.pixels.push(Layer {
             pixels: vec![Color32::TRANSPARENT; (canvas.width * canvas.height) as usize],
+            name: format!("Layer {}", layer_index + 1),
+            visible: true,
+            opacity: 255,
         });
         canvas.dirty_rect.request_full_blend();
     }

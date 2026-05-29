@@ -389,7 +389,7 @@ pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
     let mut dirty_rect = DirtyRectList::new();
     dirty_rect.request_full_blend();
     Ok(Canvas {
-        pixels: vec![Layer { pixels }],
+        pixels: vec![Layer { pixels, ..Default::default() }],
         height: height_u32,
         width: width_u32,
         output_rgba: Vec::new(),

@@ -24,7 +24,7 @@ fn checkerboard_4x4() -> Canvas {
         }
     }
     Canvas {
-        pixels: vec![Layer { pixels }],
+        pixels: vec![Layer { pixels, ..Default::default() }],
         height: 4,
         width: 4,
         output_rgba: Vec::new(),
@@ -59,9 +59,11 @@ fn save_load_roundtrip_multi_layer() {
         pixels: vec![
             Layer {
                 pixels: vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); 9],
+                ..Default::default()
             },
             Layer {
                 pixels: vec![Color32::from_rgba_premultiplied(0, 0, 255, 255); 9],
+                ..Default::default()
             },
         ],
         height: 3,
@@ -101,6 +103,7 @@ fn save_load_roundtrip_transparent() {
                 Color32::from_rgba_premultiplied(255, 0, 0, 128),
                 Color32::TRANSPARENT,
             ],
+            ..Default::default()
         }],
         height: 1,
         width: 3,
@@ -407,7 +410,7 @@ fn export_tiff_roundtrip() {
 #[test]
 fn load_zero_width_canvas_rejected() {
     let canvas = Canvas {
-        pixels: vec![Layer { pixels: vec![Color32::TRANSPARENT; 1] }],
+        pixels: vec![Layer { pixels: vec![Color32::TRANSPARENT; 1], ..Default::default() }],
         height: 1,
         width: 0,
         output_rgba: Vec::new(),
@@ -425,7 +428,7 @@ fn load_zero_width_canvas_rejected() {
 #[test]
 fn load_zero_height_canvas_rejected() {
     let canvas = Canvas {
-        pixels: vec![Layer { pixels: vec![] }],
+        pixels: vec![Layer { pixels: vec![], ..Default::default() }],
         height: 0,
         width: 1,
         output_rgba: Vec::new(),
@@ -446,10 +449,12 @@ fn load_wrong_layer_size_rejected() {
         pixels: vec![
             Layer {
                 pixels: vec![Color32::TRANSPARENT; 4],
+                ..Default::default()
             },
             Layer {
                 // Second layer has wrong size (2 instead of 4)
                 pixels: vec![Color32::TRANSPARENT; 2],
+                ..Default::default()
             },
         ],
         height: 2,

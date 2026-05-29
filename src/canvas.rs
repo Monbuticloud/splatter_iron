@@ -12,10 +12,40 @@ const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
 
 /// A single layer of pixels in the canvas.
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Layer {
     /// Premultiplied-alpha RGBA pixels in row-major order.
     pub pixels: Vec<Color32>,
+    /// Human-readable layer name shown in the layer panel.
+    #[serde(default)]
+    pub name: String,
+    /// Whether the layer is visible in the composite output.
+    #[serde(default = "default_visible")]
+    pub visible: bool,
+    /// Opacity multiplier (0–255) applied during compositing.
+    #[serde(default = "default_opacity")]
+    pub opacity: u8,
+}
+
+/// Default visibility for new layers.
+const fn default_visible() -> bool {
+    true
+}
+
+/// Default opacity for new layers (fully opaque).
+const fn default_opacity() -> u8 {
+    255
+}
+
+impl Default for Layer {
+    fn default() -> Self {
+        Self {
+            pixels: Vec::new(),
+            name: String::new(),
+            visible: true,
+            opacity: 255,
+        }
+    }
 }
 
 /// Axis-aligned bounding box of a modified region on the canvas.
@@ -239,6 +269,9 @@ impl Default for Canvas {
         let pixel_count = (DEFAULT_WIDTH * DEFAULT_HEIGHT) as usize;
         let layers: Vec<Layer> = vec![Layer {
             pixels: vec![Color32::TRANSPARENT; pixel_count],
+            name: "Layer 1".to_string(),
+            visible: true,
+            opacity: 255,
         }];
         Self {
             pixels: layers,
@@ -271,6 +304,9 @@ impl Canvas {
         Self {
             pixels: vec![Layer {
                 pixels: vec![Color32::TRANSPARENT; pixel_count],
+                name: "Layer 1".to_string(),
+                visible: true,
+                opacity: 255,
             }],
             width,
             height,

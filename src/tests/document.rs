@@ -17,6 +17,7 @@ fn small_document() -> Document {
     let canvas = Canvas {
         pixels: vec![Layer {
             pixels: vec![Color32::TRANSPARENT; 100],
+            ..Default::default()
         }],
         height: 10,
         width: 10,
@@ -135,9 +136,11 @@ fn replace_canvas_resets_state() {
         pixels: vec![
             Layer {
                 pixels: vec![Color32::TRANSPARENT; 4],
+                ..Default::default()
             },
             Layer {
                 pixels: vec![Color32::TRANSPARENT; 4],
+                ..Default::default()
             },
         ],
         height: 2,
