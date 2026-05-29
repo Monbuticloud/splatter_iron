@@ -67,3 +67,7 @@ Two consecutive strokes can be undone in reverse order and redone in original or
 ## `undo_apply_corrupt_run_panics`
 
 undo_apply on an UndoRecord with mismatched run lengths panics (invariant violation).
+
+## `redo_apply_corrupt_run_panics`
+
+redo_apply on a corrupted record panics.
