@@ -88,3 +88,23 @@ be called after loading or when the egui context is available.
 | Parameter | Type             | Purpose                              |
 | --------- | ---------------- | ------------------------------------ |
 | `ctx`     | `&egui::Context` | The egui context for texture creation |
+
+## `StampLibrary::add`
+
+```rust
+pub fn add(&mut self, name: String, pixels: Vec<Color32>, width: u32, height: u32, ctx: &egui::Context)
+```
+
+Add a new stamp to the library and persist it to disk. Creates a PNG file in
+the stamps directory and updates `index.json`. A cached texture handle is
+created for preview rendering.
+
+### Parameters
+
+| Parameter | Type             | Purpose                    |
+| --------- | ---------------- | -------------------------- |
+| `name`    | `String`         | Display name for the stamp |
+| `pixels`  | `Vec<Color32>`   | Premultiplied-alpha pixels |
+| `width`   | `u32`            | Image width in pixels      |
+| `height`  | `u32`            | Image height in pixels     |
+| `ctx`     | `&egui::Context` | Egui context for texture   |
