@@ -23,3 +23,7 @@ Parse a GBR v1 file (no spacing) and verify default spacing of 25.
 ## `parse_gbr_invalid_magic`
 
 Invalid GBR magic bytes should return an error.
+
+## `parse_gbr_truncated`
+
+Truncated GBR file should return an error.
