@@ -90,6 +90,58 @@ pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Strategy for exporting a premultiplied RGBA buffer to an image file.
+///
+/// This trait decouples image encoding from [`FileIO`](crate::file_io::FileIO),
+/// allowing the export implementation to be injected from the application
+/// layer. The default implementation [`DefaultExportStrategy`] handles all
+/// 13 supported image formats.
+pub trait ExportStrategy {
+    /// Write `premultiplied_rgba` to the file at `path`.
+    ///
+    /// `premultiplied_rgba` is the already-blended premultiplied buffer
+    /// (e.g. from `Canvas::output_rgba`).
+    ///
+    /// # Parameters
+    ///
+    /// * `premultiplied_rgba` — Flattened premultiplied RGBA pixel data.
+    /// * `width` — Image width in pixels.
+    /// * `height` — Image height in pixels.
+    /// * `path` — Destination file path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be created or the image encoder fails.
+    fn export(
+        &self,
+        premultiplied_rgba: &[u8],
+        width: u32,
+        height: u32,
+        path: &Path,
+    ) -> anyhow::Result<()>;
+}
+
+/// Default export strategy supporting all 13 formats by detecting the
+/// target format from the file path extension.
+pub struct DefaultExportStrategy;
+
+impl ExportStrategy for DefaultExportStrategy {
+    fn export(
+        &self,
+        premultiplied_rgba: &[u8],
+        width: u32,
+        height: u32,
+        path: &Path,
+    ) -> anyhow::Result<()> {
+        let Some(format) = image::ImageFormat::from_extension(
+            path.extension().and_then(|ext| ext.to_str()).unwrap_or(""),
+        ) else {
+            anyhow::bail!("Cannot determine image format from path: {}", path.display());
+        };
+        export_as_image(premultiplied_rgba, width, height, path, format)
+    }
+}
+
 /// Export a flattened premultiplied RGBA buffer to an image file.
 ///
 /// `premultiplied_rgba` is the already-blended premultiplied buffer
