@@ -252,3 +252,7 @@ A stamp image awaiting a user-provided name before being added to StampLibrary. 
 ## `UIState.max_texture_dimension`
 
 Maximum 2D texture dimension reported by the GPU device (glmax texture size). Used to clamp new-canvas width/height sliders so the user cannot create a canvas larger than what the GPU supports.
+
+## `UIState.pending_large_canvas`
+
+Dimensions of a canvas pending user confirmation when the pixel count exceeds MEMORY_WARN_THRESHOLD. When set, a confirmation dialog is shown before the canvas is replaced.
