@@ -81,3 +81,7 @@ Export as PNM produces a non-empty file.
 ## `export_qoi_creates_file`
 
 Export as QOI produces a non-empty file.
+
+## `export_exr_unsupported_color_type`
+
+Export as EXR returns Err(UnsupportedColorType) because EXR requires float pixels.
