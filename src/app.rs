@@ -780,7 +780,13 @@ impl MyApp {
             .canvas
             .pixels
             .get(index)
-            .map(|_| format!("Layer {index}"))
+            .map(|l| {
+                if l.name.is_empty() {
+                    format!("Layer {index}")
+                } else {
+                    l.name.clone()
+                }
+            })
             .unwrap_or_default();
         let mut open = true;
         egui::Window::new("Delete Layer")
