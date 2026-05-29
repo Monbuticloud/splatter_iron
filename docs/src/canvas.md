@@ -234,7 +234,7 @@ Panics if `width as usize * height as usize` overflows `usize`. This is an invar
 ## `enum CurrentTool`
 
 ```rust
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CurrentTool { ... }
 ```
 
@@ -251,6 +251,8 @@ Each variant selects a different drawing primitive or operation:
 | `SquareEraser` | Erase by dragging a rectangular region. Sets affected pixels to `Color32::TRANSPARENT` with a square mask. Dispatches to [`square_brush::fill_rect`] with the eraser color.  |
 | `CircleEraser` | Erase by dragging a circular region. Sets affected pixels to `Color32::TRANSPARENT` with a circular mask. Dispatches to [`circle_brush::fill_circle`] with the eraser color. |
 | `BucketFill`   | Flood-fill a contiguous region of similar color using a scanline algorithm. Dispatches to [`bucket_fill::flood_fill`].                                                       |
+| `Stamp`        | Stamp an external image onto the canvas. Dispatches to [`stamp_brush::draw_stamp_line`] which stamps the selected image from the [`StampLibrary`].                           |
+| `CustomBrush`  | Paint using a custom brush tip from the brush library. Dispatches to [`custom_brush::draw_custom_brush_line`] with the selected tip.                                         |
 
 ### Matching
 
@@ -261,6 +263,8 @@ match tool_config.current_tool {
     CurrentTool::Square | CurrentTool::SquareEraser => { /* square brush dispatch */ }
     CurrentTool::Circle | CurrentTool::CircleEraser => { /* circle brush dispatch */ }
     CurrentTool::BucketFill => { /* flood fill dispatch */ }
+    CurrentTool::Stamp => { /* stamp brush dispatch */ }
+    CurrentTool::CustomBrush => { /* custom brush dispatch */ }
 }
 ```
 
