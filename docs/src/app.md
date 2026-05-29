@@ -244,3 +244,7 @@ lifecycle:
     been modified since the last autosave (`dirty_since_last_autosave`),
     triggers an async autosave via `file_io.trigger_async_save` with
     `SaveKind::Autosave`.
+
+## `PendingStamp`
+
+A stamp image awaiting a user-provided name before being added to StampLibrary. Used in the stamp import workflow where the image is decoded on a background thread and the user is prompted for a name in a modal dialog.
