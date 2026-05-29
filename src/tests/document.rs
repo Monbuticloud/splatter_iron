@@ -42,7 +42,7 @@ fn new_document_has_one_layer() {
 #[test]
 fn add_layer_increases_count() {
     let mut document = small_document();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
     assert_eq!(document.canvas.pixels.len(), 2);
     assert!(document.canvas_mut().dirty_rect.needs_reblend());
 }
@@ -51,7 +51,7 @@ fn add_layer_increases_count() {
 #[test]
 fn add_layer_has_correct_size() {
     let mut document = small_document();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
     let expected = (document.canvas.width * document.canvas.height) as usize;
     assert_eq!(document.canvas.pixels[1].pixels.len(), expected);
 }
@@ -60,10 +60,10 @@ fn add_layer_has_correct_size() {
 #[test]
 fn delete_layer_removes_correct_index() {
     let mut document = small_document();
-    document.add_layer();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
     assert_eq!(document.canvas.pixels.len(), 3);
-    document.delete_layer(1);
+    document.delete_layer(1, &mut UndoHistory::new(100));
     assert_eq!(document.canvas.pixels.len(), 2);
     // The remaining layers should be index 0 and 2 from the original set
 }
@@ -72,7 +72,7 @@ fn delete_layer_removes_correct_index() {
 #[test]
 fn delete_last_layer_removes_it() {
     let mut document = small_document();
-    document.delete_layer(0);
+    document.delete_layer(0, &mut UndoHistory::new(100));
     // Document model does not guard against removing the last layer;
     // that check is in the UI layer (ui/right.rs).
     assert_eq!(document.canvas.pixels.len(), 0);
@@ -84,10 +84,10 @@ fn delete_last_layer_removes_it() {
 #[test]
 fn delete_layer_adjusts_current_layer_down() {
     let mut document = small_document();
-    document.add_layer();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
     document.current_layer = 2;
-    document.delete_layer(2);
+    document.delete_layer(2, &mut UndoHistory::new(100));
     // current_layer should go from 2 → min(1, 1) = 1
     assert_eq!(document.current_layer, 1);
 }
@@ -96,10 +96,10 @@ fn delete_layer_adjusts_current_layer_down() {
 #[test]
 fn move_layer_up_swaps() {
     let mut document = small_document();
-    document.add_layer();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
     // Initially: layers [0, 1, 2]
-    document.move_layer_up(1); // swap 1 and 0 → [1, 0, 2]
+    document.move_layer_up(1, &mut UndoHistory::new(100)); // swap 1 and 0 → [1, 0, 2]
     assert_eq!(document.current_layer, 0);
 }
 
@@ -107,11 +107,11 @@ fn move_layer_up_swaps() {
 #[test]
 fn move_layer_down_swaps() {
     let mut document = small_document();
-    document.add_layer();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
     // Initially: layers [0, 1, 2]
     document.current_layer = 0;
-    document.move_layer_down(0); // swap 0 and 1 → [1, 0, 2]
+    document.move_layer_down(0, &mut UndoHistory::new(100)); // swap 0 and 1 → [1, 0, 2]
     assert_eq!(document.current_layer, 1);
 }
 
@@ -119,7 +119,7 @@ fn move_layer_down_swaps() {
 #[test]
 fn select_layer_updates_current() {
     let mut document = small_document();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
     document.select_layer(1);
     assert_eq!(document.current_layer, 1);
 }
@@ -229,11 +229,11 @@ fn blend_to_output_empty_dirty_rect_triggers_full_blend() {
 #[test]
 fn delete_layer_preserves_current_when_above() {
     let mut document = small_document();
-    document.add_layer();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
     document.current_layer = 0;
     // Delete layer at index 2 (above current_layer 0)
-    document.delete_layer(2);
+    document.delete_layer(2, &mut UndoHistory::new(100));
     assert_eq!(document.current_layer, 0, "unchanged when deleting above");
     assert_eq!(document.canvas.pixels.len(), 2);
 }
@@ -242,11 +242,11 @@ fn delete_layer_preserves_current_when_above() {
 #[test]
 fn delete_layer_decrements_current_when_below() {
     let mut document = small_document();
-    document.add_layer();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
     document.current_layer = 2;
     // Delete layer at index 0 (below current_layer 2)
-    document.delete_layer(0);
+    document.delete_layer(0, &mut UndoHistory::new(100));
     assert_eq!(document.current_layer, 1, "decremented when deleting below");
     assert_eq!(document.canvas.pixels.len(), 2);
 }
@@ -256,7 +256,7 @@ fn delete_layer_decrements_current_when_below() {
 fn add_layer_triggers_full_blend() {
     let mut document = small_document();
     document.canvas_mut().dirty_rect.clear();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
     assert!(
         document.canvas_mut().dirty_rect.needs_reblend(),
         "add_layer triggers re-render"
@@ -268,8 +268,8 @@ fn add_layer_triggers_full_blend() {
 fn delete_layer_triggers_full_blend() {
     let mut document = small_document();
     document.canvas_mut().dirty_rect.clear();
-    document.add_layer();
-    document.delete_layer(1);
+    document.add_layer(&mut UndoHistory::new(100));
+    document.delete_layer(1, &mut UndoHistory::new(100));
     assert!(
         document.canvas_mut().dirty_rect.needs_reblend(),
         "delete_layer triggers re-render"
@@ -280,9 +280,9 @@ fn delete_layer_triggers_full_blend() {
 #[test]
 fn move_layer_up_triggers_full_blend() {
     let mut document = small_document();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
     document.canvas_mut().dirty_rect.clear();
-    document.move_layer_up(1);
+    document.move_layer_up(1, &mut UndoHistory::new(100));
     assert!(
         document.canvas_mut().dirty_rect.needs_reblend(),
         "move_layer_up triggers re-render"
@@ -293,9 +293,9 @@ fn move_layer_up_triggers_full_blend() {
 #[test]
 fn move_layer_down_triggers_full_blend() {
     let mut document = small_document();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
     document.canvas_mut().dirty_rect.clear();
-    document.move_layer_down(0);
+    document.move_layer_down(0, &mut UndoHistory::new(100));
     assert!(
         document.canvas_mut().dirty_rect.needs_reblend(),
         "move_layer_down triggers re-render"
@@ -308,7 +308,7 @@ fn move_layer_down_triggers_full_blend() {
 fn move_layer_up_on_top_layer_panics() {
     let mut document = small_document();
     // Only one layer at index 0; moving it up is impossible
-    document.move_layer_up(0);
+    document.move_layer_up(0, &mut UndoHistory::new(100));
 }
 
 /// `move_layer_down` on the bottom layer should panic because there is
@@ -318,7 +318,7 @@ fn move_layer_up_on_top_layer_panics() {
 fn move_layer_down_on_bottom_layer_panics() {
     let mut document = small_document();
     // Only one layer at index 0; moving it down is impossible
-    document.move_layer_down(0);
+    document.move_layer_down(0, &mut UndoHistory::new(100));
 }
 
 /// `delete_layer` with an out-of-bounds index should panic.
@@ -326,7 +326,8 @@ fn move_layer_down_on_bottom_layer_panics() {
 #[should_panic(expected = "removal index")]
 fn delete_layer_out_of_bounds_panics() {
     let mut document = small_document();
-    document.delete_layer(5);
+    let mut undo = UndoHistory::new(100);
+    document.delete_layer(5, &mut undo);
 }
 
 /// `select_layer` with any valid index works. Out-of-bounds doesn't panic
@@ -364,7 +365,7 @@ fn blend_to_output_twice_resets_state() {
 #[test]
 fn add_layer_pixels_are_transparent() {
     let mut document = small_document();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
     let new_layer = &document.canvas.pixels[1];
     assert!(new_layer.pixels.iter().all(|p| *p == Color32::TRANSPARENT));
 }
@@ -373,12 +374,12 @@ fn add_layer_pixels_are_transparent() {
 #[test]
 fn move_layer_up_swaps_ordering() {
     let mut document = small_document();
-    document.add_layer();
-    document.add_layer();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
     // Layers: [0: transparent, 1: transparent, 2: transparent]
     // Mark layer 0 with a pixel change to track it
     document.canvas_mut().pixels[0].pixels[0] = Color32::from_rgba_premultiplied(255, 0, 0, 255);
-    document.move_layer_up(1);
+    document.move_layer_up(1, &mut UndoHistory::new(100));
     // After swap: [1: transparent, 0: has red pixel, 2: transparent]
     assert_eq!(document.canvas.pixels[0].pixels[0], Color32::TRANSPARENT);
     assert_eq!(
@@ -391,9 +392,9 @@ fn move_layer_up_swaps_ordering() {
 #[test]
 fn delete_layer_first() {
     let mut document = small_document();
-    document.add_layer();
-    document.add_layer();
-    document.delete_layer(0);
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
+    document.delete_layer(0, &mut UndoHistory::new(100));
     assert_eq!(document.canvas.pixels.len(), 2);
     // Original layers: [0, 1, 2] -> after delete 0: [1, 2]
 }
