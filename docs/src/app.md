@@ -248,3 +248,7 @@ lifecycle:
 ## `PendingStamp`
 
 A stamp image awaiting a user-provided name before being added to StampLibrary. Used in the stamp import workflow where the image is decoded on a background thread and the user is prompted for a name in a modal dialog.
+
+## `UIState.max_texture_dimension`
+
+Maximum 2D texture dimension reported by the GPU device (glmax texture size). Used to clamp new-canvas width/height sliders so the user cannot create a canvas larger than what the GPU supports.
