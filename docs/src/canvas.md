@@ -323,3 +323,7 @@ A collection of DirtyRect values with proximity-based merging. When adding a rec
 ## `DirtyRectList::new`
 
 Creates an empty DirtyRectList with no rects.
+
+## `DirtyRectList::add`
+
+Adds a DirtyRect to the list. If the new rect overlaps or is within MAX_PROXIMITY (8 pixels) of an existing rect, they are merged rather than appended. When the list exceeds MAX_RECTS (8), all rects are merged into one.
