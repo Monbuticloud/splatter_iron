@@ -14,6 +14,7 @@ use crate::app::EXPORT_FORMATS;
 use crate::app::FILE_FILTER_NAME;
 use crate::app::IMPORT_EXTENSIONS;
 use crate::document::Document;
+use crate::files::ExportStrategy;
 use crate::tools::brush_parsers::BrushTip;
 use crate::undo_history::UndoHistory;
 
@@ -98,6 +99,11 @@ pub struct FileIO {
     /// Result of a brush-file load, consumed by the app frame after polling.
     /// Contains parsed brush tips.
     pub loaded_brush_data: Option<Vec<BrushTip>>,
+    /// Injected export strategy for writing image files.
+    ///
+    /// Defaults to [`DefaultExportStrategy`](crate::files::DefaultExportStrategy)
+    /// which handles all 13 supported formats.
+    pub export_strategy: Box<dyn ExportStrategy>,
 }
 
 impl FileIO {
@@ -119,6 +125,7 @@ impl FileIO {
         save_result_sender: mpsc::Sender<SaveResult>,
         save_result_receiver: mpsc::Receiver<SaveResult>,
         app_local_data_directory: PathBuf,
+        export_strategy: Box<dyn ExportStrategy>,
     ) -> Self {
         Self {
             pending_file_action: None,
@@ -129,6 +136,7 @@ impl FileIO {
             app_local_data_directory,
             loaded_stamp_data: None,
             loaded_brush_data: None,
+            export_strategy,
         }
     }
 
@@ -358,12 +366,11 @@ impl FileIO {
                             } else {
                                 format!("{path_string}.{default_extension}")
                             };
-                            if let Err(error) = crate::files::export_as_image(
+                            if let Err(error) = self.export_strategy.export(
                                 &document.canvas.output_rgba,
                                 document.canvas.width,
                                 document.canvas.height,
                                 Path::new(&path_string),
-                                information.fmt,
                             ) {
                                 error_list.push(format!("Export failed: {error}"));
                             }

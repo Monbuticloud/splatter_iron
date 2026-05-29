@@ -77,6 +77,7 @@ pub const IMPORT_EXTENSIONS: &[&str] = &[
 /// File extension list and image format for an export target.
 pub struct ExportInformation {
     pub extensions: &'static [&'static str],
+    #[allow(dead_code)]
     pub fmt: image::ImageFormat,
 }
 
@@ -410,6 +411,7 @@ impl MyApp {
                 save_result_sender,
                 save_result_receiver,
                 data_dir,
+                Box::new(crate::files::DefaultExportStrategy),
             ),
             ui: UIState {
                 max_texture_dimension,
