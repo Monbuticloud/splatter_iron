@@ -83,3 +83,7 @@ A 20-pixel uniform run compresses as BeforePixels::All with the correct color.
 ## `undo_apply_empty_run_noop`
 
 undo_apply with empty runs is a no-op (no pixels changed).
+
+## `redo_apply_empty_run_noop`
+
+redo_apply with empty runs is a no-op.
