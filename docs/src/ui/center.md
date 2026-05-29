@@ -141,3 +141,7 @@ When tool is CustomBrush and show_brush_preview is true, the preview renders a r
 ## `Canvas border`
 
 The canvas area is rendered with a dashed purple border (Stroke::new(2.0, Color32::from_rgba_premultiplied(180, 100, 255, 200))) to visually distinguish the canvas from the background.
+
+## `Tool dispatch: Stamp`
+
+First frame: calls draw_stamp_line with identical start/end (single stamp). Subsequent frames: calls draw_stamp_line from previous to current position with interpolation.
