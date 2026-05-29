@@ -2,6 +2,7 @@
 
 /// `.abr`, `.gbr`, and `.brush` file format parsers.
 pub mod brush_parsers;
+/// Scanline flood-fill tool implementation.
 pub mod bucket_fill;
 pub mod circle_brush;
 pub mod custom_brush;
