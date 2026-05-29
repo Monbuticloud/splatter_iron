@@ -349,8 +349,17 @@ impl Document {
     /// * `index` — Index of the layer to modify.
     /// * `undo` — Undo history to push the record onto.
     pub fn toggle_layer_visible(&mut self, index: usize, undo: &mut UndoHistory) {
+        let visible_before = self
+            .canvas
+            .pixels
+            .iter()
+            .filter(|p| p.visible)
+            .count();
         let canvas = self.canvas_mut();
         if let Some(l) = canvas.pixels.get_mut(index) {
+            if l.visible && visible_before == 1 {
+                return;
+            }
             let old_visible = l.visible;
             let new_visible = !old_visible;
             l.visible = new_visible;
