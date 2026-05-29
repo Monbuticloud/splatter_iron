@@ -204,4 +204,10 @@ Return `true` if the library is empty.
 pub fn get(&self, index: usize) -> Option<&StampEntry>
 ```
 
-Return a reference to the stamp at `index`, or `None`. |
+Return a reference to the stamp at `index`, or `None`.
+
+### Parameters
+
+| Parameter | Type     | Purpose                          |
+| --------- | -------- | -------------------------------- |
+| `index`   | `usize`  | Index of the stamp to retrieve   |
