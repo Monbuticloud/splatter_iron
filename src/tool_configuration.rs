@@ -28,6 +28,10 @@ pub struct ToolConfiguration {
     pub stamp_sampling: StampSampling,
     /// Whether stamp pixels are tinted by `current_color`.
     pub stamp_tint_mode: StampTintMode,
+    /// Sampling strategy when scaling a custom brush tip to canvas size.
+    pub brush_sampling: StampSampling,
+    /// Whether custom brush tip pixels are tinted by `current_color`.
+    pub brush_tint_mode: StampTintMode,
 }
 
 impl Default for ToolConfiguration {
@@ -46,6 +50,8 @@ impl Default for ToolConfiguration {
             undo_redo_steps_multiplier: 1,
             stamp_sampling: StampSampling::Nearest,
             stamp_tint_mode: StampTintMode::Original,
+            brush_sampling: StampSampling::Nearest,
+            brush_tint_mode: StampTintMode::Original,
         }
     }
 }
