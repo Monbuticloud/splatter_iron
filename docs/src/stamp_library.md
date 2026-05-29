@@ -163,4 +163,12 @@ Return a mutable reference to the currently selected stamp entry, if any.
 pub fn entries(&self) -> &[StampEntry]
 ```
 
-Return a slice of all stamp entries. |
+Return a slice of all stamp entries.
+
+## `StampLibrary::len`
+
+```rust
+pub fn len(&self) -> usize
+```
+
+Return the number of stamps in the library. |
