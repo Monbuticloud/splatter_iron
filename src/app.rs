@@ -280,6 +280,10 @@ impl MyApp {
     /// Uses `update_egui_texture_from_wgpu_texture` to keep the same
     /// `egui::TextureId`, avoiding stale entries in the renderer's map.
     ///
+    /// If the canvas dimensions exceed the device's `max_texture_dimension_2d`,
+    /// an error is pushed to `displayed_error_list` and the texture is not
+    /// recreated (the old texture remains, now stale).
+    ///
     /// # Panics
     ///
     /// Panics in debug builds if the renderer lock cannot be acquired within
@@ -290,6 +294,14 @@ impl MyApp {
         let Some(gpu) = &mut self.gpu_texture else { return };
         let width = self.document.canvas.width;
         let height = self.document.canvas.height;
+        let max_dim = render_state.device.limits().max_texture_dimension_2d;
+        if width > max_dim || height > max_dim {
+            self.ui.displayed_error_list.push(format!(
+                "Canvas too large for GPU: {width}×{height} exceeds device max \
+                 texture dimension of {max_dim}. The display may be incomplete."
+            ));
+            return;
+        }
         let size = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
         gpu.texture = render_state.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("splatter_iron_canvas"),
