@@ -35,3 +35,7 @@ GBR with zero width or height should return an error.
 ## `parse_gbr_unsupported_bpp`
 
 GBR with unsupported bytes-per-pixel should return an error.
+
+## `parse_abr_invalid_magic`
+
+Invalid ABR magic bytes should return an error.
