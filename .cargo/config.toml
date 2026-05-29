@@ -1,11 +1,2 @@
-[build]
-rustflags = [
-  "-C",
-  "opt-level=3",
-  "-C",
-  "debuginfo=0",
-  "-C",
-  "target-feature=+crt-static",
-]
-[unstable]
-build-std = ["std"]
+# Intentionally empty — all profile-level flags moved to Cargo.toml [profile.*]
+# Nightly build-std removed; toolchain pinned via rust-toolchain.toml
