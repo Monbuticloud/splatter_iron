@@ -35,3 +35,7 @@ Application-level constants, UIState defaults, export format metadata, and Pendi
 ## `brush_library`
 
 BrushLibrary add/remove/select/persistence round-trip tests.
+
+## `brush_parsers`
+
+GBR and ABR brush format file parser tests with synthetic byte buffers.
