@@ -42,3 +42,7 @@ The Undo/Redo buttons and keyboard shortcuts are guarded by
 - Save and Load trigger `ui.ctx().request_repaint()` to ensure the file dialog
   appears promptly.
 - Undo/Redo set `canvas.render_next_frame = true` to force a texture re-render.
+
+## `Cmd+N (New)`
+
+Opens the new-canvas dialog (sets show_new_canvas_dialog = true).
