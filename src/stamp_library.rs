@@ -12,23 +12,8 @@ use serde::Serialize;
 const STAMPS_DIR_NAME: &str = "stamps";
 const INDEX_FILE_NAME: &str = "index.json";
 
-/// Tint mode for stamp rendering.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum StampTintMode {
-    /// Use the stamp's original colours.
-    Original,
-    /// Multiply stamp pixels by the current tool colour.
-    Tinted,
-}
-
-/// Pixel-sampling strategy when scaling the stamp to canvas size.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum StampSampling {
-    /// Nearest-neighbour (sharp edges, pixel-art friendly).
-    Nearest,
-    /// Bilinear interpolation (smooth scaling for photographs).
-    Bilinear,
-}
+use crate::tool_configuration::StampSampling;
+use crate::tool_configuration::StampTintMode;
 
 /// A single stamp entry in the library.
 pub struct StampEntry {

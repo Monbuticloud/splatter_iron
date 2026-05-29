@@ -7,8 +7,8 @@ use eframe::egui;
 use crate::app::MyApp;
 use crate::canvas::CurrentTool;
 use crate::file_io::PendingFileAction;
-use crate::stamp_library::StampSampling;
-use crate::stamp_library::StampTintMode;
+use crate::tool_configuration::StampSampling;
+use crate::tool_configuration::StampTintMode;
 
 /// Selection highlight color for active tool buttons.
 const SELECTED_TOOL_COLOR: egui::Color32 = egui::Color32::from_rgb(128, 0, 128);

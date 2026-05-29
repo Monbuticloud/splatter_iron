@@ -5,7 +5,7 @@
 
 use eframe::egui::Color32;
 
-use crate::stamp_library::StampSampling;
+use crate::tool_configuration::StampSampling;
 use crate::tests::common::red;
 use crate::tests::common::small_canvas;
 use crate::tools::custom_brush;

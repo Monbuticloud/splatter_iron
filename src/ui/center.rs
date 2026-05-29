@@ -21,6 +21,7 @@ use crate::tools::circle_brush::draw_circle_line;
 use crate::tools::custom_brush::draw_custom_brush_line;
 use crate::tools::square_brush::draw_square;
 use crate::tools::square_brush::draw_square_line;
+use crate::tool_configuration::StampTintMode;
 use crate::tools::stamp_brush::draw_stamp_line;
 use crate::undo::UndoRecord;
 
@@ -328,7 +329,7 @@ impl MyApp {
                     Arc::make_mut(&mut self.document.canvas).render_next_frame = true;
                     if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
                         self.document.dirty_since_last_autosave = true;
-                        if self.tool_configuration.previous_cursor_position.is_none() {
+                        if self.ui.previous_cursor_position.is_none() {
                             let UndoRecord::Run {
                                 layer_index,
                                 color_after,
@@ -349,13 +350,13 @@ impl MyApp {
                     }
                 }
 
-                self.tool_configuration.previous_tool = Some(self.tool_configuration.current_tool);
-                self.tool_configuration.previous_cursor_position = Some((pixel_x, pixel_y));
+                self.ui.previous_tool = Some(self.tool_configuration.current_tool);
+                self.ui.previous_cursor_position = Some((pixel_x, pixel_y));
             }
         } else {
             self.undo.finalize_drag_accumulator();
-            self.tool_configuration.previous_tool = None;
-            self.tool_configuration.previous_cursor_position = None;
+            self.ui.previous_tool = None;
+            self.ui.previous_cursor_position = None;
         }
     }
 
@@ -382,8 +383,8 @@ impl MyApp {
             CurrentTool::BucketFill => None,
 
             CurrentTool::Square | CurrentTool::SquareEraser => {
-                let first_frame = self.tool_configuration.previous_cursor_position.is_none();
-                let previous_position = self.tool_configuration.previous_cursor_position;
+                let first_frame = self.ui.previous_cursor_position.is_none();
+                let previous_position = self.ui.previous_cursor_position;
 
                 if first_frame {
                     if alpha_overlay {
@@ -444,8 +445,8 @@ impl MyApp {
             }
 
             CurrentTool::Circle | CurrentTool::CircleEraser => {
-                let first_frame = self.tool_configuration.previous_cursor_position.is_none();
-                let previous_position = self.tool_configuration.previous_cursor_position;
+                let first_frame = self.ui.previous_cursor_position.is_none();
+                let previous_position = self.ui.previous_cursor_position;
 
                 if first_frame {
                     if alpha_overlay {
@@ -500,8 +501,8 @@ impl MyApp {
             }
 
             CurrentTool::Stamp => {
-                let first_frame = self.tool_configuration.previous_cursor_position.is_none();
-                let previous_position = self.tool_configuration.previous_cursor_position;
+                let first_frame = self.ui.previous_cursor_position.is_none();
+                let previous_position = self.ui.previous_cursor_position;
 
                 if first_frame && alpha_overlay {
                     self.undo.advance_drag_stamp();
@@ -534,7 +535,7 @@ impl MyApp {
                         stamp,
                         alpha_overlay,
                         self.tool_configuration.stamp_tint_mode
-                            == crate::stamp_library::StampTintMode::Tinted,
+                            == StampTintMode::Tinted,
                         self.tool_configuration.stamp_sampling,
                         &mut self.undo.drag_processed,
                         self.undo.drag_stamp_value,
@@ -543,8 +544,8 @@ impl MyApp {
             }
 
             CurrentTool::CustomBrush => {
-                let first_frame = self.tool_configuration.previous_cursor_position.is_none();
-                let previous_position = self.tool_configuration.previous_cursor_position;
+                let first_frame = self.ui.previous_cursor_position.is_none();
+                let previous_position = self.ui.previous_cursor_position;
 
                 if first_frame && alpha_overlay {
                     self.undo.advance_drag_stamp();
@@ -578,7 +579,7 @@ impl MyApp {
                         stamp,
                         alpha_overlay,
                         self.tool_configuration.brush_tint_mode
-                            == crate::stamp_library::StampTintMode::Tinted,
+                            == StampTintMode::Tinted,
                         self.tool_configuration.brush_sampling,
                         &mut self.undo.drag_processed,
                         self.undo.drag_stamp_value,

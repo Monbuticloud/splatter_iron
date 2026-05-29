@@ -6,8 +6,9 @@
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
-use crate::stamp_library::StampSampling;
+use crate::tool_configuration::StampSampling;
 use crate::tools::stamp_brush::draw_stamp_line;
+use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
 
 /// Draw a custom brush tip (or interpolated tip line) onto a canvas layer.

@@ -106,7 +106,7 @@ impl MyApp {
             {
                 self.undo.undo_step(
                     self.document.canvas_mut(),
-                    self.tool_configuration.undo_redo_steps_multiplier,
+                    self.ui.undo_redo_steps_multiplier,
                 );
                 self.document.canvas_mut().render_next_frame = true;
             }
@@ -123,7 +123,7 @@ impl MyApp {
             {
                 self.undo.redo_step(
                     self.document.canvas_mut(),
-                    self.tool_configuration.undo_redo_steps_multiplier,
+                    self.ui.undo_redo_steps_multiplier,
                 );
                 self.document.canvas_mut().render_next_frame = true;
             }

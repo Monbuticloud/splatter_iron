@@ -47,7 +47,7 @@ impl MyApp {
 
         ui.label("Undo/Redo Strength");
         ui.add(
-            egui::DragValue::new(&mut self.tool_configuration.undo_redo_steps_multiplier)
+            egui::DragValue::new(&mut self.ui.undo_redo_steps_multiplier)
                 .range(UNDO_REDO_RANGE),
         )
         .on_hover_text("Number of paint strokes per undo or redo step");

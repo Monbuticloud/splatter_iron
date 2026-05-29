@@ -6,12 +6,11 @@
 use eframe::egui::Color32;
 
 use crate::canvas::CurrentTool;
-use crate::stamp_library::StampTintMode;
+use crate::tool_configuration::StampTintMode;
 use crate::tool_configuration::ToolConfiguration;
 
 /// The default tool configuration should use the Square tool, white color,
-/// radius 100, alpha_overlay disabled, brush preview enabled, and
-/// undo_redo_steps_multiplier of 1.
+/// radius 100, alpha_overlay disabled, and brush preview enabled.
 #[test]
 fn default_values_match_expected() {
     let config = ToolConfiguration::default();
@@ -24,18 +23,12 @@ fn default_values_match_expected() {
     assert_eq!(config.radius, 100, "default radius");
     assert!(!config.alpha_overlay, "alpha overlay defaults to false");
     assert!(config.show_brush_preview, "brush preview defaults to true");
-    assert_eq!(config.undo_redo_steps_multiplier, 1, "undo/redo multiplier");
 }
 
-/// The default configuration should have no previous tool and no cursor position.
+/// Default stamp/brush tint mode should be Original.
 #[test]
-fn default_optional_fields_are_none() {
+fn default_tint_mode_is_original() {
     let config = ToolConfiguration::default();
-    assert!(config.previous_tool.is_none(), "no previous tool");
-    assert!(
-        config.previous_cursor_position.is_none(),
-        "no cursor position"
-    );
     assert_eq!(
         config.stamp_tint_mode,
         StampTintMode::Original,

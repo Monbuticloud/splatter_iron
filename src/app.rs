@@ -11,6 +11,7 @@ use eframe::egui::{self};
 use eframe::egui_wgpu::wgpu;
 
 use crate::canvas::Canvas;
+use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
 use crate::document::Document;
 use crate::file_io::FileIO;
@@ -201,6 +202,12 @@ pub struct UIState {
     pub new_canvas_width: u32,
     /// Height input for the new canvas dialog (in pixels).
     pub new_canvas_height: u32,
+    /// Tool selected before the current one (used for eraser toggle-back).
+    pub previous_tool: Option<CurrentTool>,
+    /// Cursor position from the previous frame (used for brush preview).
+    pub previous_cursor_position: Option<(u32, u32)>,
+    /// Multiplier applied to undo/redo step count during fast-scroll.
+    pub undo_redo_steps_multiplier: usize,
     /// Maximum 2D texture dimension supported by the GPU device.
     /// Queried from `device.limits().max_texture_dimension_2d`; falls back
     /// to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
@@ -231,6 +238,9 @@ impl Default for UIState {
             new_canvas_width: 2000,
             new_canvas_height: 1500,
             max_texture_dimension: 8192,
+            previous_tool: None,
+            previous_cursor_position: None,
+            undo_redo_steps_multiplier: 1,
             pending_large_canvas: None,
             pending_stamp_name: None,
             pending_brushes: None,
@@ -606,8 +616,8 @@ impl eframe::App for MyApp {
                         if ui.button("Yes, create").clicked() {
                             let canvas = Canvas::new(w, h);
                             self.document.replace_canvas(canvas, &mut self.undo);
-                            self.tool_configuration.previous_tool = None;
-                            self.tool_configuration.previous_cursor_position = None;
+                            self.ui.previous_tool = None;
+                            self.ui.previous_cursor_position = None;
                             self.ui.show_new_canvas_dialog = false;
                             self.ui.pending_large_canvas = None;
                         }
@@ -669,8 +679,8 @@ impl eframe::App for MyApp {
                                     self.ui.new_canvas_height,
                                 );
                                 self.document.replace_canvas(canvas, &mut self.undo);
-                                self.tool_configuration.previous_tool = None;
-                                self.tool_configuration.previous_cursor_position = None;
+                                self.ui.previous_tool = None;
+                                self.ui.previous_cursor_position = None;
                                 self.ui.show_new_canvas_dialog = false;
                             }
                         }
