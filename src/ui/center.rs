@@ -30,9 +30,6 @@ use crate::tools::stamp_brush::draw_stamp_line;
 use crate::undo::UndoRecord;
 
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
-const ZOOM_SENSITIVITY: f32 = 0.003;
-const MIN_ZOOM: f32 = 0.05;
-const MAX_ZOOM: f32 = 20.0;
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
 const ACTIVE_DURATION_MILLISECONDS: u64 = 550;
 const CANVAS_BORDER_WIDTH: f32 = 2.0;
@@ -78,77 +75,28 @@ impl MyApp {
 
         let available = ui.available_size();
         let scale = (available.x / canvas_pixel_size.x).min(available.y / canvas_pixel_size.y);
-        let base_size = canvas_pixel_size * scale;
-        let draw_size = base_size * self.ui.zoom;
+        let draw_size = canvas_pixel_size * scale;
 
-        // Compute the screen rect for the canvas image, centered then
-        // shifted by the pan offset.
         let canvas_pos = egui::pos2(
             (available.x - draw_size.x) / 2.0 + self.ui.pan_offset.x,
             (available.y - draw_size.y) / 2.0 + self.ui.pan_offset.y,
         );
         let canvas_rect = Rect::from_min_size(canvas_pos, draw_size);
 
-        // Place the image widget at the zoomed/panned rect.  This gives us a
-        // proper `Response` whose `.rect` matches the canvas, so all
-        // downstream coordinate math works without changes.
-        let image = egui::Image::new((texture_id, canvas_pixel_size))
-            .fit_to_exact_size(draw_size)
-            .sense(egui::Sense::click_and_drag());
-        let response = ui.put(canvas_rect, image).on_hover_cursor(egui::CursorIcon::Crosshair);
+        let cursor = if self.tool_configuration.current_tool == CurrentTool::Pan {
+            egui::CursorIcon::Grab
+        } else {
+            egui::CursorIcon::Crosshair
+        };
 
-        // Handle zoom via scroll while hovering the canvas.
-        if response.hovered() {
-            // egui separates pinch-zoom from scroll.
-            let pinch = ui.input(|i| i.zoom_delta());
-            if pinch != 1.0 {
-                let old_zoom = self.ui.zoom;
-                self.ui.zoom = (old_zoom * pinch).clamp(MIN_ZOOM, MAX_ZOOM);
-                if let Some(hover) = response.hover_pos() {
-                    let frac_x = (hover.x - canvas_pos.x) / draw_size.x;
-                    let frac_y = (hover.y - canvas_pos.y) / draw_size.y;
-                    let new_w = base_size.x * self.ui.zoom;
-                    let new_h = base_size.y * self.ui.zoom;
-                    let nx = (available.x - new_w) / 2.0 + self.ui.pan_offset.x;
-                    let ny = (available.y - new_h) / 2.0 + self.ui.pan_offset.y;
-                    self.ui.pan_offset.x += hover.x - (nx + frac_x * new_w);
-                    self.ui.pan_offset.y += hover.y - (ny + frac_y * new_h);
-                }
-                ui.ctx().request_repaint();
-            }
-
-            // Scroll wheel (non-pinch) for zoom too.
-            let scroll = ui.input(|i| i.smooth_scroll_delta());
-            if scroll.y != 0.0 {
-                let old_zoom = self.ui.zoom;
-                let zoom_factor = 1.0 + scroll.y * ZOOM_SENSITIVITY;
-                self.ui.zoom = (old_zoom * zoom_factor).clamp(MIN_ZOOM, MAX_ZOOM);
-                if let Some(hover) = response.hover_pos() {
-                    let frac_x = (hover.x - canvas_pos.x) / draw_size.x;
-                    let frac_y = (hover.y - canvas_pos.y) / draw_size.y;
-                    let new_w = base_size.x * self.ui.zoom;
-                    let new_h = base_size.y * self.ui.zoom;
-                    let nx = (available.x - new_w) / 2.0 + self.ui.pan_offset.x;
-                    let ny = (available.y - new_h) / 2.0 + self.ui.pan_offset.y;
-                    self.ui.pan_offset.x += hover.x - (nx + frac_x * new_w);
-                    self.ui.pan_offset.y += hover.y - (ny + frac_y * new_h);
-                }
-                ui.ctx().request_repaint();
-            }
-        }
-
-        // Handle pan via middle-click drag.
-        if response.dragged_by(egui::PointerButton::Middle) {
-            self.ui.pan_offset += response.drag_delta();
-            ui.ctx().request_repaint();
-        }
-
-        // Reset zoom/pan on double-click.
-        if response.double_clicked() {
-            self.ui.zoom = 1.0;
-            self.ui.pan_offset = egui::Vec2::ZERO;
-            ui.ctx().request_repaint();
-        }
+        let response = ui
+            .put(
+                canvas_rect,
+                egui::Image::new((texture_id, canvas_pixel_size))
+                    .fit_to_exact_size(draw_size)
+                    .sense(egui::Sense::click_and_drag()),
+            )
+            .on_hover_cursor(cursor);
 
         // Draw a dashed purple border around the canvas.
         for dash in egui::Shape::dashed_line(
@@ -333,6 +281,7 @@ impl MyApp {
                 }
                 CurrentTool::BucketFill => {}
                 CurrentTool::Eyedropper => {}
+                CurrentTool::Pan => {}
                 CurrentTool::Stamp => {
                     if let Some(entry) = self.stamp_library.selected() {
                         stamp_tip_preview(
@@ -446,6 +395,11 @@ impl MyApp {
             }
         }
 
+        if response.dragged() && self.tool_configuration.current_tool == CurrentTool::Pan {
+            self.ui.pan_offset += response.drag_delta();
+            ui.ctx().request_repaint();
+        }
+
         if response.dragged() {
             if let Some(position) = response.interact_pointer_pos() {
                 let local_position = position - response.rect.min;
@@ -459,7 +413,7 @@ impl MyApp {
 
                 if !matches!(
                     self.tool_configuration.current_tool,
-                    CurrentTool::BucketFill | CurrentTool::Eyedropper
+                    CurrentTool::BucketFill | CurrentTool::Eyedropper | CurrentTool::Pan
                 ) {
                     if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
                         self.document.dirty_since_last_autosave = true;
@@ -518,6 +472,7 @@ impl MyApp {
         match self.tool_configuration.current_tool {
             CurrentTool::BucketFill => None,
             CurrentTool::Eyedropper => None,
+            CurrentTool::Pan => None,
 
             CurrentTool::Pencil => {
                 let first_frame = self.ui.previous_cursor_position.is_none();
