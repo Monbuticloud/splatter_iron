@@ -20,3 +20,7 @@ All EXPORT_FORMATS entries should have at least one extension.
 ## `export_formats_formats_are_distinct`
 
 EXPORT_FORMATS should reference distinct image::ImageFormat variants.
+
+## `export_information_extensions`
+
+Each ExportInformation should have a valid image::ImageFormat with at least one non-empty extension string.
