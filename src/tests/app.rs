@@ -23,7 +23,7 @@ fn ui_state_default_values() {
     assert_eq!(state.times_autosaved, 0);
     assert!(state.last_autosave_time.is_zero());
     assert!(state.errors.list.is_empty());
-    assert!(state.dialogs.pending_layer_for_deletion.is_none());
+    assert!(state.dialogs.show_delete_layer_dialog.is_none());
     assert!(!state.dialogs.show_new_canvas_dialog);
     assert_eq!(state.dialogs.new_canvas_width, 2000);
     assert_eq!(state.dialogs.new_canvas_height, 1500);
