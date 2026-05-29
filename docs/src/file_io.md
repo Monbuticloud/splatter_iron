@@ -206,3 +206,7 @@ Error message from bg file operation, pushed to UI error list.
 ## `FileIO.loaded_stamp_data`
 
 Holds decoded stamp image data after poll_dialog_results processing, consumed by app frame for naming dialog.
+
+## `FileIO.loaded_brush_data`
+
+Holds parsed brush tips after poll_dialog_results processing, consumed by app frame for naming dialog.
