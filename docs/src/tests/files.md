@@ -113,3 +113,7 @@ Decompress on corrupted zstd data returns an error.
 ## `decompress_partially_corrupted_zstd_errors`
 
 Partially corrupted zstd-compressed data returns an error.
+
+## `export_tiff_roundtrip`
+
+Export and re-import TIFF round-trips correctly.
