@@ -38,3 +38,7 @@ return value or side effects beyond updating the tool selection.
 ## `Stamp Tool button`
 
 Selects CurrentTool::Stamp. When active, displays the stamp gallery below the tool buttons showing all entries from StampLibrary with thumbnails.
+
+## `CustomBrush Tool button`
+
+Selects CurrentTool::CustomBrush. When active, displays the brush gallery below the tool buttons showing all entries from BrushLibrary with thumbnails.
