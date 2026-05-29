@@ -56,6 +56,16 @@ pub struct Library<T: AssetEntry> {
     dir: std::path::PathBuf,
 }
 
+impl<T: AssetEntry + std::fmt::Debug> std::fmt::Debug for Library<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Library")
+            .field("entries", &self.entries)
+            .field("selected_index", &self.selected_index)
+            .field("dir", &self.dir)
+            .finish()
+    }
+}
+
 impl<T: AssetEntry> Library<T> {
     /// Load or create a library rooted at `data_dir / T::dir_name()`.
     ///

@@ -17,6 +17,18 @@ pub struct StampEntry {
     pub texture_handle: Option<TextureHandle>,
 }
 
+impl std::fmt::Debug for StampEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StampEntry")
+            .field("name", &self.name)
+            .field("filename", &self.filename)
+            .field("pixels.len", &self.pixels.len())
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .finish()
+    }
+}
+
 impl StampEntry {
     pub fn texture_id(&self) -> Option<egui::TextureId> {
         self.texture_handle.as_ref().map(|h| h.id())

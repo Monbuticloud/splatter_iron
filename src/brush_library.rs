@@ -19,6 +19,19 @@ pub struct BrushEntry {
     pub texture_handle: Option<TextureHandle>,
 }
 
+impl std::fmt::Debug for BrushEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BrushEntry")
+            .field("name", &self.name)
+            .field("filename", &self.filename)
+            .field("pixels.len", &self.pixels.len())
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .field("spacing", &self.spacing)
+            .finish()
+    }
+}
+
 impl BrushEntry {
     pub fn texture_id(&self) -> Option<egui::TextureId> {
         self.texture_handle.as_ref().map(|h| h.id())

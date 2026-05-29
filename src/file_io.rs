@@ -96,6 +96,7 @@ pub enum SaveResult {
 /// Holds channel pairs for receiving dialog results and save outcomes,
 /// plus the app's local data directory path for autosaves.
 pub struct FileIO {
+
     /// File action queued for the next background thread iteration.
     pub pending_file_action: Option<PendingFileAction>,
     /// Channel sender for dispatching dialog requests to the background thread.
@@ -133,6 +134,20 @@ pub struct FileIO {
     pub load_in_flight: bool,
     /// `true` while an async import thread is running.
     pub import_in_flight: bool,
+}
+
+impl std::fmt::Debug for FileIO {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FileIO")
+            .field("pending_file_action", &self.pending_file_action)
+            .field("app_local_data_directory", &self.app_local_data_directory)
+            .field("loaded_stamp_data", &self.loaded_stamp_data)
+            .field("loaded_brush_data", &self.loaded_brush_data)
+            .field("export_in_flight", &self.export_in_flight)
+            .field("load_in_flight", &self.load_in_flight)
+            .field("import_in_flight", &self.import_in_flight)
+            .finish()
+    }
 }
 
 impl FileIO {

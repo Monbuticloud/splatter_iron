@@ -263,6 +263,18 @@ pub struct Canvas {
 
 }
 
+impl std::fmt::Debug for Canvas {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Canvas")
+            .field("pixels", &self.pixels)
+            .field("height", &self.height)
+            .field("width", &self.width)
+            .field("output_rgba.len", &self.output_rgba.len())
+            .field("dirty_rect", &self.dirty_rect)
+            .finish()
+    }
+}
+
 impl Default for Canvas {
     /// Create a default 2000×1500 canvas with a single transparent layer.
     fn default() -> Self {
