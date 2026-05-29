@@ -89,3 +89,7 @@ Documents the bug pattern: calling `premultiply` on an already-premultiplied `Co
 ## `blend_layers_empty_layers_panics`
 
 Calling blend_layers with an empty layer vec panics (invariant violation).
+
+## `blend_layers_mismatched_lengths_panics`
+
+blend_layers with layers of different pixel counts panics.
