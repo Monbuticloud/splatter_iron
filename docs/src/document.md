@@ -2,14 +2,15 @@
 
 ## `struct Document`
 
-Central state wrapper that owns a [`Canvas`], tracks the active layer index and
+Central state wrapper that owns a canvas (behind an `Arc<Canvas>` for
+clone-on-write during async saves), tracks the active layer index and
 save path, and coordinates GPU texture uploads.
 
 ### Fields
 
 | Field                       | Type     | Purpose                                             |
 | --------------------------- | -------- | --------------------------------------------------- |
-| `canvas`                    | `Canvas` | The backing canvas (layers, pixel data, dimensions) |
+| `canvas`                    | `Arc<Canvas>` | The backing canvas behind an `Arc` for clone-on-write during async saves |
 | `savefile_path`             | `String` | Filesystem path for the last save/load operation    |
 | `current_layer`             | `usize`  | Index into `canvas.pixels` for the active layer     |
 | `dirty_since_last_autosave` | `bool`   | Whether unsaved changes exist                       |
@@ -45,7 +46,7 @@ pub fn new(canvas: Canvas) -> Self
 
 ### Behaviour
 
-- Stores the canvas as-is; no copy or clone is made.
+- Wraps the canvas in `Arc::new(canvas)` for clone-on-write semantics during async saves.
 - All other fields are set to their default initial values.
 
 ---
