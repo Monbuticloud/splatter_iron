@@ -27,3 +27,7 @@ The test suite is organised as one `#[cfg(test)]` module per source module, plus
 - Edge cases: zero-area brushes, bounding-box clamping, inverted coordinates, empty layer lists, wrapping stamp counters, off-screen stamps, `MAX_STROKE_STACK` eviction.
 - Round-trip tests verify serialisation symmetry for zstd/JSON, PNG, WebP, GIF, and TIFF image formats.
 - Asynchronous file-IO tests exercise the mpsc channel plumbing without spawning real UI dialogs.
+
+## `app`
+
+Application-level constants, UIState defaults, export format metadata, and PendingStamp construction.
