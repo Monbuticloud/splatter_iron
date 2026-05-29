@@ -110,6 +110,7 @@ impl MyApp {
             ui.menu_button("Export As", |ui| {
                 for (format_index, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                     if ui.button(label).clicked() {
+                        self.ui.last_export_format = format_index;
                         self.file_io
                             .queue_file_action(PendingFileAction::Export(format_index));
                         ui.ctx().request_repaint();

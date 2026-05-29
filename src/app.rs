@@ -262,6 +262,8 @@ pub struct UIState {
     /// Queried from `device.limits().max_texture_dimension_2d`; falls back
     /// to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
     pub max_texture_dimension: u32,
+    /// Index of the last-used export format in [`EXPORT_FORMATS`].
+    pub last_export_format: usize,
     /// Cached window title — updated when dirty flag changes.
     pub current_title: String,
     /// Dialog-related state.
@@ -285,6 +287,7 @@ impl Default for UIState {
             previous_tool: None,
             previous_cursor_position: None,
             undo_redo_steps_multiplier: 1,
+            last_export_format: 1,
             current_title: crate::app::APP_NAME.to_string(),
             dialogs: DialogState::default(),
             errors: ErrorState::default(),

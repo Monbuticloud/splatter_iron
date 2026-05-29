@@ -102,8 +102,8 @@ impl MyApp {
             ui.ctx().request_repaint();
         }
         if ui.input(|i| i.key_pressed(egui::Key::E) && i.modifiers.command && !i.modifiers.shift) {
-            // Default export: PNG (index 1).
-            self.file_io.queue_file_action(PendingFileAction::Export(1));
+            self.file_io
+                .queue_file_action(PendingFileAction::Export(self.ui.last_export_format));
             ui.ctx().request_repaint();
         }
 
@@ -133,6 +133,7 @@ impl MyApp {
             ui.menu_button("Export", |ui| {
                 for (format_index, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                     if ui.button(label).clicked() {
+                        self.ui.last_export_format = format_index;
                         self.file_io
                             .queue_file_action(PendingFileAction::Export(format_index));
                         ui.ctx().request_repaint();
