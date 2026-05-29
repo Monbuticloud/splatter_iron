@@ -30,6 +30,7 @@ fn test_file_io() -> (FileIO, mpsc::Sender<DialogResult>, mpsc::Sender<SaveResul
         save_sender,
         save_receiver,
         PathBuf::from("/tmp"),
+        Box::new(crate::files::DefaultExportStrategy),
     );
     (file_io, dialog_sender_clone, save_sender_clone)
 }
@@ -104,6 +105,7 @@ fn poll_dialog_results_save_triggers_async_save() {
         save_sender,
         save_receiver,
         PathBuf::from("/tmp"),
+        Box::new(crate::files::DefaultExportStrategy),
     );
     file_io.pending_file_action = Some(PendingFileAction::Save);
     let mut document = Document::new(Canvas::new(10, 10));
@@ -306,6 +308,7 @@ fn save_to_current_path_non_empty_triggers_save() {
         save_sender,
         save_receiver,
         PathBuf::from("/tmp"),
+        Box::new(crate::files::DefaultExportStrategy),
     );
     let mut document = Document::new(Canvas::new(1, 1));
     document.savefile_path = "/tmp/test_save_non_empty.splattercanvas".to_string();
