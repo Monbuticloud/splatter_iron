@@ -66,3 +66,7 @@ A DirtyRect with inverted bounds (min > max) reports is_empty.
 ## `dirty_rect_extend_fixes_inverted`
 
 Extending an inverted DirtyRect corrects the bounds.
+
+## `dirty_rect_union_with_empty`
+
+Unioning a valid rect with an empty rect produces the valid rect.
