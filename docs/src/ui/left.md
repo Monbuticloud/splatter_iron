@@ -45,15 +45,13 @@ Selects CurrentTool::CustomBrush. When active, displays the brush gallery below 
 
 ## `Stamp gallery`
 
-When Stamp tool is selected, renders a vertical gallery of stamp thumbnails. Each entry shows the stamp image and name. Clicking selects that stamp. Above the gallery are tint mode and sampling mode combo selectors.
+When Stamp tool is selected, renders a vertical gallery of stamp thumbnails. Each entry shows the stamp image and name. Clicking selects that stamp. Above the gallery are tint mode radio buttons and a sampling mode combo selector.
 
-## `Brush gallery`
-
-When CustomBrush tool is selected, renders a vertical gallery of brush tip thumbnails. Each entry shows the tip image and name. Clicking selects that brush. Above the gallery are tint mode and sampling mode combo selectors.
+When CustomBrush tool is selected, renders a vertical gallery of brush tip thumbnails. Each entry shows the tip image and name. Clicking selects that brush. Above the gallery are tint mode radio buttons and a sampling mode combo selector.
 
 ## `Stamp/brush tint mode selector`
 
-A combo box selecting between Original and Tinted modes. Affects how stamp/brush colours are composited onto the canvas.
+A pair of radio buttons (Original / Tinted) exposed via `egui::selectable_value`. Affects how stamp/brush colours are composited onto the canvas.
 
 ## `Stamp/brush sampling selector`
 
