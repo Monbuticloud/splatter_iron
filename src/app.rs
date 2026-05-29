@@ -330,6 +330,8 @@ pub struct UIState {
     pub should_close: bool,
     /// Pan offset from center, in screen pixels.
     pub pan_offset: egui::Vec2,
+    /// Current zoom level (1.0 = fit to screen).
+    pub zoom: f32,
 }
 
 impl Default for UIState {
@@ -354,6 +356,7 @@ impl Default for UIState {
             progress: ProgressState::Idle,
             should_close: false,
             pan_offset: egui::Vec2::ZERO,
+            zoom: 1.0,
         }
     }
 }
