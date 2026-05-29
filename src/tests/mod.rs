@@ -10,6 +10,7 @@ pub mod bucket_fill;
 pub mod canvas;
 pub mod circle_brush;
 pub mod common;
+pub mod custom_brush;
 pub mod document;
 pub mod file_io;
 pub mod files;
