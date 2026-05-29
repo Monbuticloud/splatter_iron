@@ -259,6 +259,8 @@ impl Default for ToastState {
 pub enum ProgressState {
     /// No operation in progress.
     Idle,
+    /// Exporting an image file.
+    Exporting,
 }
 
 /// UI-level state that doesn't belong to any domain module.
@@ -458,7 +460,7 @@ impl MyApp {
                 save_result_sender,
                 save_result_receiver,
                 data_dir,
-                Box::new(crate::files::DefaultExportStrategy),
+                std::sync::Arc::new(crate::files::DefaultExportStrategy),
             ),
             ui: UIState {
                 max_texture_dimension,
@@ -545,6 +547,14 @@ impl MyApp {
         );
         self.file_io
             .poll_save_results(&mut self.document, &mut self.ui.errors.list);
+
+        // Track export progress.
+        if self.file_io.export_in_flight {
+            self.ui.progress = ProgressState::Exporting;
+        }
+        if self.file_io.poll_export_results(&mut self.ui.errors.list) {
+            self.ui.progress = ProgressState::Idle;
+        }
 
         if let Some((pixels, w, h, name)) = self.file_io.loaded_stamp_data.take() {
             self.ui.dialogs.pending_stamp_name = Some(crate::app::PendingStamp {
@@ -994,10 +1004,10 @@ impl MyApp {
     /// Show a progress indicator in the bottom-right corner when an async
     /// operation is in-flight.
     fn show_progress_indicator(&mut self, ui: &mut egui::Ui) {
-        if self.ui.progress == ProgressState::Idle {
-            return;
-        }
-        let label = "Working…";
+        let label = match self.ui.progress {
+            ProgressState::Idle => return,
+            ProgressState::Exporting => "Exporting…",
+        };
         egui::Area::new(egui::Id::new("progress_indicator"))
             .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
             .show(ui, |ui| {
