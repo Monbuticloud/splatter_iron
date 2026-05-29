@@ -179,4 +179,12 @@ Return the number of stamps in the library.
 pub fn is_empty(&self) -> bool
 ```
 
-Return `true` if the library is empty. |
+Return `true` if the library is empty.
+
+## `StampLibrary::get`
+
+```rust
+pub fn get(&self, index: usize) -> Option<&StampEntry>
+```
+
+Return a reference to the stamp at `index`, or `None`. |
