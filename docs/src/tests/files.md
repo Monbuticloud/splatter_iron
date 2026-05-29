@@ -61,3 +61,7 @@ Exporting a 2×2 uniform-color buffer as TIFF produces a non-empty file on disk.
 ## `save_bytes_to_file_roundtrip`
 
 `save_bytes_to_file` followed by `load_data_from_file` recovers the identical byte slice.
+
+## `export_avif_creates_file`
+
+Export as AVIF produces a non-empty file.
