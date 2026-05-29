@@ -12,6 +12,7 @@ use crate::canvas::DirtyRect;
 use crate::canvas::Layer;
 use crate::pixel::BYTES_PER_PIXEL as RGBA_CHANNELS;
 use crate::pixel::{self};
+use crate::undo::UndoRecord;
 use crate::undo_history::UndoHistory;
 
 const TEXTURE_NAME: &str = "rendered_layers";
@@ -234,15 +235,26 @@ impl Document {
     }
 
     /// Append a new transparent layer to the canvas.
-    pub fn add_layer(&mut self) {
+    ///
+    /// Pushes an [`UndoRecord::AddLayer`] so that the addition can be undone.
+    ///
+    /// # Parameters
+    ///
+    /// * `undo` — Undo history to push the record onto.
+    pub fn add_layer(&mut self, undo: &mut UndoHistory) {
         let canvas = self.canvas_mut();
         let layer_index = canvas.pixels.len();
-        canvas.pixels.push(Layer {
+        let layer = Layer {
             pixels: vec![Color32::TRANSPARENT; (canvas.width * canvas.height) as usize],
             name: format!("Layer {}", layer_index + 1),
             visible: true,
             opacity: 255,
+        };
+        undo.push_undo(UndoRecord::AddLayer {
+            index: layer_index,
+            layer: Box::new(layer.clone()),
         });
+        canvas.pixels.push(layer);
         canvas.dirty_rect.request_full_blend();
     }
 
@@ -250,12 +262,18 @@ impl Document {
     ///
     /// `current_layer` is clamped to `[0, layers.len() - 1]` after removal.
     /// Does NOT guard against deleting the last layer — the UI layer handles that.
+    /// Pushes an [`UndoRecord::DeleteLayer`] so the deletion can be undone.
     ///
     /// # Parameters
     ///
     /// * `index` — Index of the layer to remove.
-    pub fn delete_layer(&mut self, index: usize) {
-        self.canvas_mut().pixels.remove(index);
+    /// * `undo` — Undo history to push the record onto.
+    pub fn delete_layer(&mut self, index: usize, undo: &mut UndoHistory) {
+        let removed = self.canvas_mut().pixels.remove(index);
+        undo.push_undo(UndoRecord::DeleteLayer {
+            index,
+            layer: Box::new(removed),
+        });
         self.current_layer = self
             .current_layer
             .saturating_sub(1)
@@ -265,33 +283,47 @@ impl Document {
 
     /// Swap the layer at `index` with the one above it (`index - 1`).
     ///
+    /// Pushes an [`UndoRecord::MoveLayer`] so the reorder can be undone.
+    ///
     /// # Parameters
     ///
     /// * `index` — Index of the layer to move up.
+    /// * `undo` — Undo history to push the record onto.
     ///
     /// # Panics
     ///
     /// Panics if `index == 0` because there is no layer above to swap with.
-    pub fn move_layer_up(&mut self, index: usize) {
+    pub fn move_layer_up(&mut self, index: usize, undo: &mut UndoHistory) {
         self.current_layer = index - 1;
         let canvas = self.canvas_mut();
         canvas.pixels.swap(index, index - 1);
+        undo.push_undo(UndoRecord::MoveLayer {
+            from_index: index,
+            to_index: index - 1,
+        });
         canvas.dirty_rect.request_full_blend();
     }
 
     /// Swap the layer at `index` with the one below it (`index + 1`).
     ///
+    /// Pushes an [`UndoRecord::MoveLayer`] so the reorder can be undone.
+    ///
     /// # Parameters
     ///
     /// * `index` — Index of the layer to move down.
+    /// * `undo` — Undo history to push the record onto.
     ///
     /// # Panics
     ///
     /// Panics if `index >= pixels.len() - 1` because there is no layer below.
-    pub fn move_layer_down(&mut self, index: usize) {
+    pub fn move_layer_down(&mut self, index: usize, undo: &mut UndoHistory) {
         self.current_layer = index + 1;
         let canvas = self.canvas_mut();
         canvas.pixels.swap(index, index + 1);
+        undo.push_undo(UndoRecord::MoveLayer {
+            from_index: index,
+            to_index: index + 1,
+        });
         canvas.dirty_rect.request_full_blend();
     }
 
@@ -302,5 +334,85 @@ impl Document {
     /// * `index` — Index of the layer to select.
     pub fn select_layer(&mut self, index: usize) {
         self.current_layer = index;
+    }
+
+    /// Toggle the visibility of a layer.
+    ///
+    /// Pushes an [`UndoRecord::ModifyLayer`] so the change can be undone.
+    ///
+    /// # Parameters
+    ///
+    /// * `index` — Index of the layer to modify.
+    /// * `undo` — Undo history to push the record onto.
+    pub fn toggle_layer_visible(&mut self, index: usize, undo: &mut UndoHistory) {
+        let canvas = self.canvas_mut();
+        if let Some(l) = canvas.pixels.get_mut(index) {
+            let old_visible = l.visible;
+            let new_visible = !old_visible;
+            l.visible = new_visible;
+            undo.push_undo(UndoRecord::ModifyLayer {
+                index,
+                old_visible,
+                old_opacity: l.opacity,
+                old_name: l.name.clone(),
+                new_visible,
+                new_opacity: l.opacity,
+                new_name: l.name.clone(),
+            });
+            canvas.dirty_rect.request_full_blend();
+        }
+    }
+
+    /// Set the opacity (0–255) of a layer.
+    ///
+    /// Pushes an [`UndoRecord::ModifyLayer`] so the change can be undone.
+    ///
+    /// # Parameters
+    ///
+    /// * `index` — Index of the layer to modify.
+    /// * `opacity` — New opacity value (0 = transparent, 255 = opaque).
+    /// * `undo` — Undo history to push the record onto.
+    pub fn set_layer_opacity(&mut self, index: usize, opacity: u8, undo: &mut UndoHistory) {
+        let canvas = self.canvas_mut();
+        if let Some(l) = canvas.pixels.get_mut(index) {
+            let old_opacity = l.opacity;
+            l.opacity = opacity;
+            undo.push_undo(UndoRecord::ModifyLayer {
+                index,
+                old_visible: l.visible,
+                old_opacity,
+                old_name: l.name.clone(),
+                new_visible: l.visible,
+                new_opacity: opacity,
+                new_name: l.name.clone(),
+            });
+            canvas.dirty_rect.request_full_blend();
+        }
+    }
+
+    /// Rename a layer.
+    ///
+    /// Pushes an [`UndoRecord::ModifyLayer`] so the name change can be undone.
+    ///
+    /// # Parameters
+    ///
+    /// * `index` — Index of the layer to rename.
+    /// * `name` — The new name for the layer.
+    /// * `undo` — Undo history to push the record onto.
+    pub fn rename_layer(&mut self, index: usize, name: String, undo: &mut UndoHistory) {
+        let canvas = self.canvas_mut();
+        if let Some(l) = canvas.pixels.get_mut(index) {
+            let old_name = l.name.clone();
+            l.name.clone_from(&name);
+            undo.push_undo(UndoRecord::ModifyLayer {
+                index,
+                old_visible: l.visible,
+                old_opacity: l.opacity,
+                old_name,
+                new_visible: l.visible,
+                new_opacity: l.opacity,
+                new_name: name,
+            });
+        }
     }
 }
