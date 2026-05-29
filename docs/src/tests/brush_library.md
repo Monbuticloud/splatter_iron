@@ -25,3 +25,7 @@ Remove the last brush clears selection to None.
 ## `remove_out_of_bounds_noop`
 
 Remove with out-of-bounds index is a no-op.
+
+## `select_out_of_bounds_noop`
+
+Select with out-of-bounds index is a no-op.
