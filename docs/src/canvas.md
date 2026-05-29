@@ -183,7 +183,7 @@ The type derives `Clone` for undo/redo snapshotting and `Serialize`/`Deserialize
 - All layers in `pixels` have exactly `width * height` pixels.
 - After construction, `width * height` does not overflow `usize` (enforced by checked arithmetic in the constructor).
 - `output_rgba` is either empty (before first render) or has exactly `(width * height * 4)` bytes.
-- When `dirty_rect` is `Some(rect)` and `!rect.is_empty()`, only the sub-region within the rect needs a texture upload; when `None`, the entire composite must be regenerated.
+- When `dirty_rect` contains at least one non-empty rect, only the union of those rects needs a texture upload; an empty list triggers a full-canvas re-blend.
 
 ## `impl Default for Canvas`
 
