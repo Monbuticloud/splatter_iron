@@ -79,3 +79,7 @@ undo_apply with BeforePixels::Many data that does not match pixel count panics.
 ## `compress_run_identical_long`
 
 A 20-pixel uniform run compresses as BeforePixels::All with the correct color.
+
+## `undo_apply_empty_run_noop`
+
+undo_apply with empty runs is a no-op (no pixels changed).
