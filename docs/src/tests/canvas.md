@@ -58,3 +58,7 @@ Canvas serializes and deserializes with identical pixels via serde_json.
 ## `canvas_serde_multi_layer`
 
 A multi-layer canvas round-trips correctly through serde.
+
+## `dirty_rect_inverted_is_empty`
+
+A DirtyRect with inverted bounds (min > max) reports is_empty.
