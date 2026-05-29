@@ -5,7 +5,7 @@ use eframe::egui;
 
 use crate::app::MyApp;
 
-const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=1000;
+const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=100;
 const BRUSH_RADIUS_RANGE: std::ops::RangeInclusive<u32> = 0..=1000;
 
 /// Internal message enum for deferring layer UI actions.
@@ -50,7 +50,7 @@ impl MyApp {
             egui::DragValue::new(&mut self.ui.undo_redo_steps_multiplier)
                 .range(UNDO_REDO_RANGE),
         )
-        .on_hover_text("Number of paint strokes per undo or redo step");
+        .on_hover_text("Number of paint strokes per undo or redo step (max 100)");
 
         ui.label("::Brush Settings::");
         ui.separator();
