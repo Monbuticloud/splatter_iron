@@ -27,3 +27,7 @@ Invalid GBR magic bytes should return an error.
 ## `parse_gbr_truncated`
 
 Truncated GBR file should return an error.
+
+## `parse_gbr_zero_dimensions`
+
+GBR with zero width or height should return an error.
