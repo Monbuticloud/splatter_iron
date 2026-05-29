@@ -68,6 +68,11 @@ impl MyApp {
             CurrentTool::Eyedropper,
             "Eyedropper",
         );
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
+            CurrentTool::Pan,
+            "Pan (H)",
+        );
 
         ui.visuals_mut().selection.bg_fill = old_selection_color;
 
