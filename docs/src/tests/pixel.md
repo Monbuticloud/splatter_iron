@@ -105,3 +105,7 @@ blend_region with zero width panics.
 ## `blend_region_zero_height_noop`
 
 blend_region with zero height is a no-op (no panics, no writes).
+
+## `blend_region_out_of_bounds_panics`
+
+blend_region with coordinates outside canvas bounds panics.
