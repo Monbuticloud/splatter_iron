@@ -97,3 +97,7 @@ Export as Farbfeld produces a non-empty file.
 ## `export_unsupported_format_errors`
 
 An unrecognised ImageFormat returns an error on export.
+
+## `export_zero_width_fails`
+
+Exporting a zero-width canvas returns an error.
