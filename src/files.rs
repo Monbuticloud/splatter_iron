@@ -2,6 +2,7 @@
 //! `.splattercanvas` format), plus image export to 13 formats.
 
 use std::io::BufWriter;
+use std::io::Read;
 use std::path::Path;
 
 use bytemuck::cast_slice;
@@ -16,6 +17,7 @@ use crate::pixel::premultiply;
 use crate::pixel::unpremultiply;
 
 const COMPRESSION_LEVEL: i32 = 10;
+const MAX_DECOMPRESSED_BYTES: u64 = 512 * 1024 * 1024;
 const JPEG_QUALITY: u8 = 100;
 
 /// Read the raw bytes of a file from disk.
@@ -39,9 +41,25 @@ pub fn load_bytes_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
 ///
 /// # Errors
 ///
-/// Returns an error if zstd decompression or JSON deserialization fails.
+/// Returns an error if zstd decompression or JSON deserialization fails,
+/// or if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`].
 pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
-    let decompressed = zstd::decode_all(data)?;
+    let mut decompressed = Vec::new();
+    let mut decoder = zstd::Decoder::new(data)?;
+    let mut buf = [0u8; 8192];
+    loop {
+        let n = decoder.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        if decompressed.len() + n > MAX_DECOMPRESSED_BYTES as usize {
+            anyhow::bail!(
+                "decompressed data exceeds {} bytes",
+                MAX_DECOMPRESSED_BYTES,
+            );
+        }
+        decompressed.extend_from_slice(&buf[..n]);
+    }
     let mut canvas: Canvas = serde_json::from_slice(&decompressed)?;
     canvas.dirty_rect.request_full_blend();
     Ok(canvas)
