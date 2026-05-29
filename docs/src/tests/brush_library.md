@@ -29,3 +29,7 @@ Remove with out-of-bounds index is a no-op.
 ## `select_out_of_bounds_noop`
 
 Select with out-of-bounds index is a no-op.
+
+## `remove_middle_preserves_order`
+
+Multiple brushes — remove middle, verify ordering preserved.
