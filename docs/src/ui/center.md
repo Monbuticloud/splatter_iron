@@ -125,3 +125,7 @@ blended again by later overlapping segments.
 ## `Context menu: Replace Stamp Image`
 
 When the Stamp tool is active, right-clicking the canvas shows a Replace Stamp Image option that queues PendingFileAction::LoadStamp.
+
+## `Context menu: Replace Brush`
+
+When the CustomBrush tool is active, right-clicking the canvas shows a Replace Brush option that queues PendingFileAction::LoadBrush.
