@@ -47,11 +47,15 @@ fn fill_circle_impl(
         return;
     }
 
-    let radius_squared = (radius as u64) * (radius as u64);
+    let rsq = (radius as u64) * (radius as u64);
+    let mut delta_x = radius;
 
     for delta_y in 0..=radius {
-        let delta_y_squared = (delta_y as u64) * (delta_y as u64);
-        let delta_x = ((radius_squared - delta_y_squared) as f64).sqrt() as u32;
+        while delta_x > 0
+            && (delta_x as u64) * (delta_x as u64) + (delta_y as u64) * (delta_y as u64) > rsq
+        {
+            delta_x -= 1;
+        }
         let span_start = center_x.saturating_sub(delta_x).min(canvas_width - 1);
         let span_end = (center_x + delta_x).min(canvas_width - 1);
         if span_start > span_end {
@@ -133,11 +137,15 @@ pub fn draw_circle(
     let pixels = &mut canvas.pixels[layer].pixels;
     let mut runs: Vec<RunSegment> = Vec::new();
 
-    let radius_squared = (radius as u64) * (radius as u64);
+    let rsq = (radius as u64) * (radius as u64);
+    let mut delta_x = radius;
 
     for delta_y in 0..=radius {
-        let delta_y_squared = (delta_y as u64) * (delta_y as u64);
-        let delta_x = ((radius_squared - delta_y_squared) as f64).sqrt() as u32;
+        while delta_x > 0
+            && (delta_x as u64) * (delta_x as u64) + (delta_y as u64) * (delta_y as u64) > rsq
+        {
+            delta_x -= 1;
+        }
         let span_start = center_x.saturating_sub(delta_x).min(canvas.width - 1);
         let span_end = (center_x + delta_x).min(canvas.width - 1);
 
