@@ -33,3 +33,7 @@ Select with out-of-bounds index is a no-op.
 ## `remove_middle_preserves_order`
 
 Multiple brushes — remove middle, verify ordering preserved.
+
+## `entries_empty_library`
+
+Entries on an empty library returns an empty slice.
