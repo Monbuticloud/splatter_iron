@@ -11,3 +11,7 @@ Parse a valid GBR v2 RGBA brush and verify dimensions + pixel count.
 ## `parse_gbr_v2_rgba_pixels`
 
 Verify RGBA pixel values, premultiplied format, and per-pixel channel constraints.
+
+## `parse_gbr_v2_grayscale`
+
+Parse a grayscale GBR brush and verify correct alpha-derived premultiplied values.
