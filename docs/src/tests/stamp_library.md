@@ -17,3 +17,7 @@ Select a specific stamp by index; verify selected_index and name update.
 ## `persistence_round_trip`
 
 Persist to temp dir, reload, and verify entries survive.
+
+## `remove_last_stamp_clears_selection`
+
+Remove the last stamp clears selection to None.
