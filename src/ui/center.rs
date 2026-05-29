@@ -390,6 +390,7 @@ impl MyApp {
                     if alpha_overlay {
                         self.undo.advance_drag_stamp();
                         let stamp = self.undo.next_stamp();
+                        let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_square_line(
                             pixel_x,
                             pixel_y,
@@ -399,11 +400,11 @@ impl MyApp {
                             Arc::make_mut(&mut self.document.canvas),
                             color,
                             self.document.current_layer,
-                            &mut self.undo.visited,
+                            visited,
                             stamp,
                             true,
-                            &mut self.undo.drag_processed,
-                            self.undo.drag_stamp_value,
+                            drag_processed,
+                            ds_val,
                         ))
                     } else {
                         let half_radius = self.tool_configuration.radius;
@@ -424,6 +425,7 @@ impl MyApp {
                     }
                 } else if let Some((previous_x, previous_y)) = previous_position {
                     let stamp = self.undo.next_stamp();
+                    let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_square_line(
                         previous_x,
                         previous_y,
@@ -433,11 +435,11 @@ impl MyApp {
                         Arc::make_mut(&mut self.document.canvas),
                         color,
                         self.document.current_layer,
-                        &mut self.undo.visited,
+                        visited,
                         stamp,
                         alpha_overlay,
-                        &mut self.undo.drag_processed,
-                        self.undo.drag_stamp_value,
+                        drag_processed,
+                        ds_val,
                     ))
                 } else {
                     None
@@ -452,6 +454,7 @@ impl MyApp {
                     if alpha_overlay {
                         self.undo.advance_drag_stamp();
                         let stamp = self.undo.next_stamp();
+                        let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_circle_line(
                             pixel_x,
                             pixel_y,
@@ -461,11 +464,11 @@ impl MyApp {
                             Arc::make_mut(&mut self.document.canvas),
                             color,
                             self.document.current_layer,
-                            &mut self.undo.visited,
+                            visited,
                             stamp,
                             true,
-                            &mut self.undo.drag_processed,
-                            self.undo.drag_stamp_value,
+                            drag_processed,
+                            ds_val,
                         ))
                     } else {
                         Some(draw_circle(
@@ -480,6 +483,7 @@ impl MyApp {
                     }
                 } else if let Some((previous_x, previous_y)) = previous_position {
                     let stamp = self.undo.next_stamp();
+                    let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_circle_line(
                         previous_x,
                         previous_y,
@@ -489,11 +493,11 @@ impl MyApp {
                         Arc::make_mut(&mut self.document.canvas),
                         color,
                         self.document.current_layer,
-                        &mut self.undo.visited,
+                        visited,
                         stamp,
                         alpha_overlay,
-                        &mut self.undo.drag_processed,
-                        self.undo.drag_stamp_value,
+                        drag_processed,
+                        ds_val,
                     ))
                 } else {
                     None
@@ -519,6 +523,7 @@ impl MyApp {
                 let stamp = self.undo.next_stamp();
 
                 self.stamp_library.selected().map(|entry| {
+                    let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_stamp_line(
                         start_x,
                         start_y,
@@ -531,14 +536,14 @@ impl MyApp {
                         Arc::make_mut(&mut self.document.canvas),
                         color,
                         self.document.current_layer,
-                        &mut self.undo.visited,
+                        visited,
                         stamp,
                         alpha_overlay,
                         self.tool_configuration.stamp_tint_mode
                             == StampTintMode::Tinted,
                         self.tool_configuration.stamp_sampling,
-                        &mut self.undo.drag_processed,
-                        self.undo.drag_stamp_value,
+                        drag_processed,
+                        ds_val,
                     )
                 })
             }
@@ -562,6 +567,7 @@ impl MyApp {
                 let stamp = self.undo.next_stamp();
 
                 self.brush_library.selected().map(|entry| {
+                    let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_custom_brush_line(
                         start_x,
                         start_y,
@@ -575,14 +581,14 @@ impl MyApp {
                         Arc::make_mut(&mut self.document.canvas),
                         color,
                         self.document.current_layer,
-                        &mut self.undo.visited,
+                        visited,
                         stamp,
                         alpha_overlay,
                         self.tool_configuration.brush_tint_mode
                             == StampTintMode::Tinted,
                         self.tool_configuration.brush_sampling,
-                        &mut self.undo.drag_processed,
-                        self.undo.drag_stamp_value,
+                        drag_processed,
+                        ds_val,
                     )
                 })
             }

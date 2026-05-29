@@ -24,18 +24,18 @@ struct DragAccumulator {
 /// brush-stroke deduplication.
 pub struct UndoHistory {
     /// Stack of undo records, most recent at the back.
-    pub stroke_stack: VecDeque<UndoRecord>,
+    stroke_stack: VecDeque<UndoRecord>,
     /// Index within `stroke_stack` delimiting redo entries (entries >= this
     /// index are redoable).
-    pub redo_index: usize,
+    redo_index: usize,
     /// Per-pixel stamp counters for deduplication during drag strokes.
-    pub visited: Vec<u32>,
+    visited: Vec<u32>,
     /// Global stamp counter incremented per stroke.
-    pub visited_stamp: u32,
+    visited_stamp: u32,
     /// Per-pixel drag stamps for the current drag gesture.
-    pub drag_processed: Vec<u32>,
+    drag_processed: Vec<u32>,
     /// Stamp value for the current drag gesture.
-    pub drag_stamp_value: u32,
+    drag_stamp_value: u32,
     drag_accumulator: Option<DragAccumulator>,
 }
 
@@ -105,6 +105,18 @@ impl UndoHistory {
         }
         self.visited_stamp = 1;
         self.drag_stamp_value = 1;
+    }
+
+    /// Return the visited buffer, drag-processed buffer, and current drag stamp
+    /// value in one call so callers can pass all three to tool functions without
+    /// fighting the borrow checker.
+    #[inline]
+    pub fn scratch_buffers(&mut self) -> (&mut [u32], &mut [u32], u32) {
+        (
+            &mut self.visited,
+            &mut self.drag_processed,
+            self.drag_stamp_value,
+        )
     }
 
     /// Advance and return the drag-scoped processed stamp.
@@ -180,6 +192,62 @@ impl UndoHistory {
             };
             self.push_undo(record);
         }
+    }
+
+    // --- Accessors used by tests ---
+
+    /// Number of entries in the stroke stack.
+    #[inline]
+    pub fn stroke_stack_len(&self) -> usize {
+        self.stroke_stack.len()
+    }
+
+    /// Length of the visited buffer (number of canvas pixels).
+    #[inline]
+    pub fn visited_len(&self) -> usize {
+        self.visited.len()
+    }
+
+    /// Length of the drag-processed buffer.
+    #[inline]
+    pub fn drag_processed_len(&self) -> usize {
+        self.drag_processed.len()
+    }
+
+    /// Current visited stamp value.
+    #[inline]
+    pub fn visited_stamp(&self) -> u32 {
+        self.visited_stamp
+    }
+
+    /// Set the visited stamp value directly (for testing wrap behaviour).
+    #[inline]
+    pub fn set_visited_stamp(&mut self, val: u32) {
+        self.visited_stamp = val;
+    }
+
+    /// Current drag stamp value.
+    #[inline]
+    pub fn drag_stamp_value(&self) -> u32 {
+        self.drag_stamp_value
+    }
+
+    /// Set the drag stamp value directly (for testing wrap behaviour).
+    #[inline]
+    pub fn set_drag_stamp_value(&mut self, val: u32) {
+        self.drag_stamp_value = val;
+    }
+
+    /// `true` if every entry in the visited buffer is 0.
+    #[inline]
+    pub fn visited_all_zero(&self) -> bool {
+        self.visited.iter().all(|&v| v == 0)
+    }
+
+    /// Mutable reference to the drag-processed buffer (used by tests).
+    #[inline]
+    pub fn drag_processed_mut(&mut self) -> &mut [u32] {
+        &mut self.drag_processed
     }
 
     /// Clear the entire stroke stack and reset the redo index.

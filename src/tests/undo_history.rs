@@ -146,11 +146,11 @@ fn next_stamp_increments() {
 fn stamp_wrapping_overflow_resets() {
     // Force stamp near wrapping point by setting visited_stamp directly
     let mut history = UndoHistory::new(100);
-    history.visited_stamp = u32::MAX;
+    history.set_visited_stamp(u32::MAX);
     let stamp = history.next_stamp();
     // wraps to 0, which triggers reset to 1
     assert_eq!(stamp, 1, "wrapping should reset to 1");
-    assert_eq!(history.visited.iter().all(|&v| v == 0), true);
+    assert!(history.visited_all_zero(), "all entries cleared");
 }
 
 // --- resize_visited ---
@@ -159,13 +159,13 @@ fn stamp_wrapping_overflow_resets() {
 #[test]
 fn resize_visited_grows_buffer() {
     let mut history = UndoHistory::new(100);
-    assert_eq!(history.visited.len(), 100);
-    assert_eq!(history.drag_processed.len(), 100);
+    assert_eq!(history.visited_len(), 100);
+    assert_eq!(history.drag_processed_len(), 100);
     history.resize_visited(250);
-    assert_eq!(history.visited.len(), 250);
-    assert_eq!(history.drag_processed.len(), 250);
-    assert_eq!(history.visited_stamp, 1);
-    assert_eq!(history.drag_stamp_value, 1);
+    assert_eq!(history.visited_len(), 250);
+    assert_eq!(history.drag_processed_len(), 250);
+    assert_eq!(history.visited_stamp(), 1);
+    assert_eq!(history.drag_stamp_value(), 1);
 }
 
 /// `resize_visited` should not shrink the buffer.
@@ -173,8 +173,8 @@ fn resize_visited_grows_buffer() {
 fn resize_visited_does_not_shrink() {
     let mut history = UndoHistory::new(100);
     history.resize_visited(50);
-    assert_eq!(history.visited.len(), 100, "should not shrink");
-    assert_eq!(history.drag_processed.len(), 100, "should not shrink");
+    assert_eq!(history.visited_len(), 100, "should not shrink");
+    assert_eq!(history.drag_processed_len(), 100, "should not shrink");
 }
 
 // --- advance_drag_stamp ---
@@ -183,10 +183,10 @@ fn resize_visited_does_not_shrink() {
 #[test]
 fn advance_drag_stamp_increments() {
     let mut history = UndoHistory::new(100);
-    let before = history.drag_stamp_value;
+    let before = history.drag_stamp_value();
     history.advance_drag_stamp();
     assert_eq!(
-        history.drag_stamp_value,
+        history.drag_stamp_value(),
         before.wrapping_add(1),
         "drag stamp incremented"
     );
@@ -196,13 +196,12 @@ fn advance_drag_stamp_increments() {
 #[test]
 fn advance_drag_stamp_wrapping_resets() {
     let mut history = UndoHistory::new(100);
-    history.drag_processed[42] = 1;
-    history.drag_stamp_value = u32::MAX;
+    history.drag_processed_mut()[42] = 1;
+    history.set_drag_stamp_value(u32::MAX);
     history.advance_drag_stamp();
-    assert_eq!(history.drag_stamp_value, 1, "wrapping resets to 1");
-    assert_eq!(
-        history.drag_processed.iter().all(|&v| v == 0),
-        true,
+    assert_eq!(history.drag_stamp_value(), 1, "wrapping resets to 1");
+    assert!(
+        history.drag_processed_mut().iter().all(|&v| v == 0),
         "buffer cleared on wrap"
     );
 }
@@ -282,7 +281,7 @@ fn max_stack_eviction_pops_oldest() {
         let record = square_brush::draw_square(0, 0, 1, 1, &mut canvas, red(), 0, false);
         history.push_undo(record);
     }
-    assert_eq!(history.stroke_stack.len(), 1000, "stack capped at 1000");
+    assert_eq!(history.stroke_stack_len(), 1000, "stack capped at 1000");
     assert!(history.can_undo(), "still has undo records");
 }
 
@@ -358,6 +357,6 @@ fn push_undo_empty_record() {
 fn resize_visited_same_size_noop() {
     let mut history = UndoHistory::new(100);
     history.resize_visited(100);
-    assert_eq!(history.visited.len(), 100);
-    assert_eq!(history.drag_processed.len(), 100);
+    assert_eq!(history.visited_len(), 100);
+    assert_eq!(history.drag_processed_len(), 100);
 }
