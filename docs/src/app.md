@@ -272,3 +272,7 @@ A transient toast notification message displayed briefly in the UI. Set by the f
 ## `MyApp.stamp_library`
 
 Persistent StampLibrary instance holding all imported stamp images. Initialised in MyApp::new via StampLibrary::load_from_disk.
+
+## `MyApp.brush_library`
+
+Persistent BrushLibrary instance holding all imported custom brush tips. Initialised in MyApp::new via BrushLibrary::load_from_disk.
