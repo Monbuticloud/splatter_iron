@@ -64,7 +64,7 @@ fn main() -> eframe::Result {
                         device_descriptor: Arc::new(|_adapter: &wgpu::Adapter| wgpu::DeviceDescriptor {
                             label: Some("splatter_iron_device"),
                             required_limits: wgpu::Limits {
-                                max_texture_dimension_2d: 32768,
+                                max_texture_dimension_2d: 16384,
                                 ..wgpu::Limits::default()
                             },
                             ..Default::default()
