@@ -93,3 +93,7 @@ Export as HDR produces a non-empty file.
 ## `export_farbfeld_creates_file`
 
 Export as Farbfeld produces a non-empty file.
+
+## `export_unsupported_format_errors`
+
+An unrecognised ImageFormat returns an error on export.
