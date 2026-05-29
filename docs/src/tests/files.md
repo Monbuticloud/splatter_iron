@@ -85,3 +85,7 @@ Export as QOI produces a non-empty file.
 ## `export_exr_unsupported_color_type`
 
 Export as EXR returns Err(UnsupportedColorType) because EXR requires float pixels.
+
+## `export_hdr_creates_file`
+
+Export as HDR produces a non-empty file.
