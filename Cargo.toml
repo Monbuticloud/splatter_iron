@@ -25,19 +25,8 @@ mimalloc = { version = "0.1.51", features = ["local_dynamic_tls"] }
 # target = "2.1.0"
 bytemuck = "1.25"
 image = { version = "0.25.10", features = [
-    "avif",
-    "png",
-    "jpeg",
-    "webp",
-    "gif",
-    "tiff",
-    "tga",
-    "ico",
-    "pnm",
-    "qoi",
-    "exr",
-    "hdr",
-    "ff",
+    "avif", "png", "jpeg", "webp", "gif", "tiff", "tga", "ico",
+    "pnm", "qoi", "exr", "hdr", "ff",
 ] }
 # type-layout = "0.2"
 
