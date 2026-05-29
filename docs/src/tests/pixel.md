@@ -117,3 +117,7 @@ Premultiply with alpha=1 and nonzero RGB zeros out RGB (correct premultiplied ma
 ## `unpremultiply_opaque_max_values`
 
 Unpremultiply on opaque max values stays within valid range.
+
+## `alpha_blend_transparent_over_opaque_no_change`
+
+Blending transparent over opaque leaves destination within +-1 per channel.
