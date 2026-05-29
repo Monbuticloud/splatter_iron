@@ -5,6 +5,7 @@
 
 use eframe::egui::Color32;
 
+use crate::brush_params::BrushStrokeParams;
 use crate::tool_configuration::StampSampling;
 use crate::tests::common::red;
 use crate::tests::common::small_canvas;
@@ -29,25 +30,27 @@ fn single_tip_at_center() {
     let mut drag_processed = vec![0u32; 100];
 
     custom_brush::draw_custom_brush_line(
-        5,
-        5,
-        5,
-        5,
+        BrushStrokeParams {
+            start_x: 5,
+            start_y: 5,
+            end_x: 5,
+            end_y: 5,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 1,
+        },
         &tip,
         2,
         2,
         2,
         25,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
         false,
         StampSampling::Nearest,
-        &mut drag_processed,
-        1,
     );
 
     // Output rect = [4,6] × [4,6] → 2×2 white pixels at canvas center
@@ -72,25 +75,27 @@ fn line_interpolates_with_spacing() {
     let mut drag_processed = vec![0u32; 100];
 
     custom_brush::draw_custom_brush_line(
-        0,
-        0,
-        10,
-        10,
+        BrushStrokeParams {
+            start_x: 0,
+            start_y: 0,
+            end_x: 10,
+            end_y: 10,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 1,
+        },
         &tip,
         2,
         2,
         4,
         50,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
         false,
         StampSampling::Nearest,
-        &mut drag_processed,
-        1,
     );
 
     let center_idx = 5 * 10 + 5;
@@ -110,25 +115,27 @@ fn spacing_zero_clamps_to_minimum_step() {
     let mut drag_processed = vec![0u32; 100];
 
     custom_brush::draw_custom_brush_line(
-        2,
-        2,
-        2,
-        2,
+        BrushStrokeParams {
+            start_x: 2,
+            start_y: 2,
+            end_x: 2,
+            end_y: 2,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 1,
+        },
         &tip,
         2,
         2,
         2,
         0,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
         false,
         StampSampling::Nearest,
-        &mut drag_processed,
-        1,
     );
 
     let painted = canvas.pixels[0].pixels[2 * 10 + 2];
@@ -146,25 +153,27 @@ fn aspect_scaling_rectangular_tip() {
     // radius=2 → output_w=2, output_h = 4 * 2 / 2 = 4
     // Centred at (5,5): output = [4,6] × [3,7]
     custom_brush::draw_custom_brush_line(
-        5,
-        5,
-        5,
-        5,
+        BrushStrokeParams {
+            start_x: 5,
+            start_y: 5,
+            end_x: 5,
+            end_y: 5,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 1,
+        },
         &tip,
         2,
         4,
         2,
         25,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
         false,
         StampSampling::Nearest,
-        &mut drag_processed,
-        1,
     );
 
     // Middle pixel should be painted

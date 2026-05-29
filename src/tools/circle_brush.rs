@@ -5,6 +5,7 @@
 use eframe::egui::Color32;
 use eframe::egui::{self};
 
+use crate::brush_params::BrushStrokeParams;
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
 use crate::undo::RunSegment;
@@ -331,39 +332,33 @@ fn stamp_circle_positions(
 ///
 /// # Parameters
 ///
-/// * `start_x` — Column of the line start point.
-/// * `start_y` — Row of the line start point.
-/// * `end_x` — Column of the line end point.
-/// * `end_y` — Row of the line end point.
+/// * `params` — Common brush-stroke parameters (coordinates, canvas,
+///   colour, layer, visited/drag stamps).
 /// * `geo_radius` — Brush radius in pixels.
-/// * `canvas` — The canvas whose pixels will be modified.
-/// * `color` — Stroke colour (premultiplied-alpha).
-/// * `layer` — Index of the target layer.
-/// * `visited` — Stamp buffer for pixel deduplication.
-/// * `stamp` — Current stamp value for this stroke.
-/// * `alpha_overlay` — Whether to alpha-blend instead of overwriting.
-/// * `drag_processed` — Drag-scoped deduplication buffer.
-/// * `drag_stamp_value` — Current drag stamp value.
 ///
 /// # Panics
 ///
-/// Panics if `layer >= canvas.pixels.len()`.
+/// Panics if `params.layer >= params.canvas.pixels.len()`.
 #[inline]
 pub fn draw_circle_line(
-    start_x: u32,
-    start_y: u32,
-    end_x: u32,
-    end_y: u32,
+    params: BrushStrokeParams<'_>,
     geo_radius: u32,
-    canvas: &mut Canvas,
-    color: egui::Color32,
-    layer: usize,
-    visited: &mut [u32],
-    stamp: u32,
-    alpha_overlay: bool,
-    drag_processed: &mut [u32],
-    drag_stamp_value: u32,
 ) -> UndoRecord {
+    let BrushStrokeParams {
+        start_x,
+        start_y,
+        end_x,
+        end_y,
+        canvas,
+        color,
+        layer,
+        visited,
+        stamp,
+        alpha_overlay,
+        drag_processed,
+        drag_stamp_value,
+    } = params;
+
     let width = canvas.width as usize;
     let height = canvas.height;
 

@@ -12,6 +12,7 @@ use eframe::egui::{self};
 use egui::epaint::StrokeKind;
 
 use crate::app::MyApp;
+use crate::brush_params::BrushStrokeParams;
 use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
 use crate::file_io::PendingFileAction;
@@ -392,19 +393,21 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_square_line(
-                            pixel_x,
-                            pixel_y,
-                            pixel_x,
-                            pixel_y,
+                            BrushStrokeParams {
+                                start_x: pixel_x,
+                                start_y: pixel_y,
+                                end_x: pixel_x,
+                                end_y: pixel_y,
+                                canvas: Arc::make_mut(&mut self.document.canvas),
+                                color,
+                                layer: self.document.current_layer,
+                                visited,
+                                stamp,
+                                alpha_overlay: true,
+                                drag_processed,
+                                drag_stamp_value: ds_val,
+                            },
                             self.tool_configuration.radius,
-                            Arc::make_mut(&mut self.document.canvas),
-                            color,
-                            self.document.current_layer,
-                            visited,
-                            stamp,
-                            true,
-                            drag_processed,
-                            ds_val,
                         ))
                     } else {
                         let half_radius = self.tool_configuration.radius;
@@ -427,19 +430,21 @@ impl MyApp {
                     let stamp = self.undo.next_stamp();
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_square_line(
-                        previous_x,
-                        previous_y,
-                        pixel_x,
-                        pixel_y,
+                        BrushStrokeParams {
+                            start_x: previous_x,
+                            start_y: previous_y,
+                            end_x: pixel_x,
+                            end_y: pixel_y,
+                            canvas: Arc::make_mut(&mut self.document.canvas),
+                            color,
+                            layer: self.document.current_layer,
+                            visited,
+                            stamp,
+                            alpha_overlay,
+                            drag_processed,
+                            drag_stamp_value: ds_val,
+                        },
                         self.tool_configuration.radius,
-                        Arc::make_mut(&mut self.document.canvas),
-                        color,
-                        self.document.current_layer,
-                        visited,
-                        stamp,
-                        alpha_overlay,
-                        drag_processed,
-                        ds_val,
                     ))
                 } else {
                     None
@@ -456,19 +461,21 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_circle_line(
-                            pixel_x,
-                            pixel_y,
-                            pixel_x,
-                            pixel_y,
+                            BrushStrokeParams {
+                                start_x: pixel_x,
+                                start_y: pixel_y,
+                                end_x: pixel_x,
+                                end_y: pixel_y,
+                                canvas: Arc::make_mut(&mut self.document.canvas),
+                                color,
+                                layer: self.document.current_layer,
+                                visited,
+                                stamp,
+                                alpha_overlay: true,
+                                drag_processed,
+                                drag_stamp_value: ds_val,
+                            },
                             self.tool_configuration.radius,
-                            Arc::make_mut(&mut self.document.canvas),
-                            color,
-                            self.document.current_layer,
-                            visited,
-                            stamp,
-                            true,
-                            drag_processed,
-                            ds_val,
                         ))
                     } else {
                         Some(draw_circle(
@@ -485,19 +492,21 @@ impl MyApp {
                     let stamp = self.undo.next_stamp();
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_circle_line(
-                        previous_x,
-                        previous_y,
-                        pixel_x,
-                        pixel_y,
+                        BrushStrokeParams {
+                            start_x: previous_x,
+                            start_y: previous_y,
+                            end_x: pixel_x,
+                            end_y: pixel_y,
+                            canvas: Arc::make_mut(&mut self.document.canvas),
+                            color,
+                            layer: self.document.current_layer,
+                            visited,
+                            stamp,
+                            alpha_overlay,
+                            drag_processed,
+                            drag_stamp_value: ds_val,
+                        },
                         self.tool_configuration.radius,
-                        Arc::make_mut(&mut self.document.canvas),
-                        color,
-                        self.document.current_layer,
-                        visited,
-                        stamp,
-                        alpha_overlay,
-                        drag_processed,
-                        ds_val,
                     ))
                 } else {
                     None
@@ -525,25 +534,27 @@ impl MyApp {
                 self.stamp_library.selected().map(|entry| {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_stamp_line(
-                        start_x,
-                        start_y,
-                        pixel_x,
-                        pixel_y,
+                        BrushStrokeParams {
+                            start_x,
+                            start_y,
+                            end_x: pixel_x,
+                            end_y: pixel_y,
+                            canvas: Arc::make_mut(&mut self.document.canvas),
+                            color,
+                            layer: self.document.current_layer,
+                            visited,
+                            stamp,
+                            alpha_overlay,
+                            drag_processed,
+                            drag_stamp_value: ds_val,
+                        },
                         &entry.pixels,
                         entry.width,
                         entry.height,
                         self.tool_configuration.radius,
-                        Arc::make_mut(&mut self.document.canvas),
-                        color,
-                        self.document.current_layer,
-                        visited,
-                        stamp,
-                        alpha_overlay,
                         self.tool_configuration.stamp_tint_mode
                             == StampTintMode::Tinted,
                         self.tool_configuration.stamp_sampling,
-                        drag_processed,
-                        ds_val,
                     )
                 })
             }
@@ -569,26 +580,28 @@ impl MyApp {
                 self.brush_library.selected().map(|entry| {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_custom_brush_line(
-                        start_x,
-                        start_y,
-                        pixel_x,
-                        pixel_y,
+                        BrushStrokeParams {
+                            start_x,
+                            start_y,
+                            end_x: pixel_x,
+                            end_y: pixel_y,
+                            canvas: Arc::make_mut(&mut self.document.canvas),
+                            color,
+                            layer: self.document.current_layer,
+                            visited,
+                            stamp,
+                            alpha_overlay,
+                            drag_processed,
+                            drag_stamp_value: ds_val,
+                        },
                         &entry.pixels,
                         entry.width,
                         entry.height,
                         self.tool_configuration.radius,
                         entry.spacing,
-                        Arc::make_mut(&mut self.document.canvas),
-                        color,
-                        self.document.current_layer,
-                        visited,
-                        stamp,
-                        alpha_overlay,
                         self.tool_configuration.brush_tint_mode
                             == StampTintMode::Tinted,
                         self.tool_configuration.brush_sampling,
-                        drag_processed,
-                        ds_val,
                     )
                 })
             }

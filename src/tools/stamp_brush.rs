@@ -5,9 +5,9 @@
 
 use eframe::egui::Color32;
 
+use crate::brush_params::BrushStrokeParams;
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
-use crate::pixel;
 use crate::tool_configuration::StampSampling;
 use crate::tool_configuration::StampTintMode;
 use crate::undo::RunSegment;
@@ -258,49 +258,43 @@ fn stamp_at(
 ///
 /// # Parameters
 ///
-/// * `start_x` — Column of the line start.
-/// * `start_y` — Row of the line start.
-/// * `end_x` — Column of the line end.
-/// * `end_y` — Row of the line end.
+/// * `params` — Common brush-stroke parameters (coordinates, canvas,
+///   colour, layer, visited/drag stamps).
 /// * `stamp_pixels` — Premultiplied stamp-image pixels (row-major).
 /// * `stamp_width` — Native width of the stamp image.
 /// * `stamp_height` — Native height of the stamp image.
 /// * `radius` — Output stamp width in canvas pixels.
-/// * `canvas` — The canvas to draw on.
-/// * `color` — Tool colour (premultiplied); used for tinting.
-/// * `layer` — Index of the target layer.
-/// * `visited` — Per-stroke pixel dedup buffer.
-/// * `stamp` — Stroke-scoped stamp value for the visited buffer.
-/// * `alpha_overlay` — Alpha-blend instead of overwriting.
 /// * `tinted` — Multiply stamp pixels by `color`.
 /// * `sampling` — Pixel-sampling strategy (nearest or bilinear).
-/// * `drag_processed` — Per-pixel drag-scoped dedup buffer.
-/// * `drag_stamp_value` — Current drag-scoped stamp value.
 ///
 /// # Panics
 ///
-/// Panics if `layer >= canvas.pixels.len()`.
+/// Panics if `params.layer >= params.canvas.pixels.len()`.
 #[inline]
 pub fn draw_stamp_line(
-    start_x: u32,
-    start_y: u32,
-    end_x: u32,
-    end_y: u32,
+    params: BrushStrokeParams<'_>,
     stamp_pixels: &[Color32],
     stamp_width: u32,
     stamp_height: u32,
     radius: u32,
-    canvas: &mut Canvas,
-    color: Color32,
-    layer: usize,
-    visited: &mut [u32],
-    stamp: u32,
-    alpha_overlay: bool,
     tinted: bool,
     sampling: StampSampling,
-    drag_processed: &mut [u32],
-    drag_stamp_value: u32,
 ) -> UndoRecord {
+    let BrushStrokeParams {
+        start_x,
+        start_y,
+        end_x,
+        end_y,
+        canvas,
+        color,
+        layer,
+        visited,
+        stamp,
+        alpha_overlay,
+        drag_processed,
+        drag_stamp_value,
+    } = params;
+
     let canvas_width = canvas.width;
     let canvas_height = canvas.height;
     let layer_pixels = &mut canvas.pixels[layer].pixels;

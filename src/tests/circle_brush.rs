@@ -6,6 +6,7 @@
 
 use eframe::egui::Color32;
 
+use crate::brush_params::BrushStrokeParams;
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
 use crate::canvas::Layer;
@@ -105,18 +106,20 @@ fn draw_circle_line_horizontal() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
     circle_brush::draw_circle_line(
-        1,
-        5,
-        8,
-        5,
-        0,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
-        &mut drag_processed,
+        BrushStrokeParams {
+            start_x: 1,
+            start_y: 5,
+            end_x: 8,
+            end_y: 5,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 0,
+        },
         0,
     );
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 1], red(), "start");
@@ -130,18 +133,20 @@ fn draw_circle_line_vertical() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
     circle_brush::draw_circle_line(
-        5,
-        1,
-        5,
-        8,
-        0,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
-        &mut drag_processed,
+        BrushStrokeParams {
+            start_x: 5,
+            start_y: 1,
+            end_x: 5,
+            end_y: 8,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 0,
+        },
         0,
     );
     assert_eq!(canvas.pixels[0].pixels[1 * 10 + 5], red(), "start");
@@ -155,18 +160,20 @@ fn draw_circle_line_diagonal() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
     circle_brush::draw_circle_line(
-        1,
-        1,
-        8,
-        8,
-        0,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
-        &mut drag_processed,
+        BrushStrokeParams {
+            start_x: 1,
+            start_y: 1,
+            end_x: 8,
+            end_y: 8,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 0,
+        },
         0,
     );
     assert_eq!(canvas.pixels[0].pixels[1 * 10 + 1], red(), "start");
@@ -180,33 +187,37 @@ fn draw_circle_line_different_stamps_dont_interfere() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
     circle_brush::draw_circle_line(
-        1,
-        1,
-        3,
-        1,
-        0,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
-        &mut drag_processed,
+        BrushStrokeParams {
+            start_x: 1,
+            start_y: 1,
+            end_x: 3,
+            end_y: 1,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 0,
+        },
         0,
     );
     circle_brush::draw_circle_line(
-        6,
-        6,
-        8,
-        6,
-        0,
-        &mut canvas,
-        blue(),
-        0,
-        &mut visited,
-        2,
-        false,
-        &mut drag_processed,
+        BrushStrokeParams {
+            start_x: 6,
+            start_y: 6,
+            end_x: 8,
+            end_y: 6,
+            canvas: &mut canvas,
+            color: blue(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 2,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 0,
+        },
         0,
     );
     assert_eq!(canvas.pixels[0].pixels[1 * 10 + 1], red(), "stamp 1");
@@ -220,19 +231,21 @@ fn draw_circle_line_brush_radius() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
     circle_brush::draw_circle_line(
-        5,
-        5,
-        5,
-        5,
+        BrushStrokeParams {
+            start_x: 5,
+            start_y: 5,
+            end_x: 5,
+            end_y: 5,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 0,
+        },
         3,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
-        &mut drag_processed,
-        0,
     );
     // Center and nearby should be colored
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 5], red(), "center");
@@ -247,19 +260,21 @@ fn draw_circle_line_clamps_to_canvas() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
     circle_brush::draw_circle_line(
-        0,
-        0,
-        0,
-        0,
+        BrushStrokeParams {
+            start_x: 0,
+            start_y: 0,
+            end_x: 0,
+            end_y: 0,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 0,
+        },
         5,
-        &mut canvas,
-        red(),
-        0,
-        &mut visited,
-        1,
-        false,
-        &mut drag_processed,
-        0,
     );
     assert_eq!(canvas.pixels[0].pixels[0], red(), "corner colored");
 }
@@ -293,19 +308,21 @@ fn draw_circle_line_alpha_overlay_blends() {
     let mut drag_processed = vec![0u32; 100];
     let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
     circle_brush::draw_circle_line(
-        1,
-        5,
-        1,
-        5,
+        BrushStrokeParams {
+            start_x: 1,
+            start_y: 5,
+            end_x: 1,
+            end_y: 5,
+            canvas: &mut canvas,
+            color: semi_red,
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: true,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 1,
+        },
         0,
-        &mut canvas,
-        semi_red,
-        0,
-        &mut visited,
-        1,
-        true,
-        &mut drag_processed,
-        1,
     );
     let blended = canvas.pixels[0].pixels[5 * 10 + 1];
     assert_ne!(
@@ -356,18 +373,20 @@ fn draw_circle_line_preserves_premultiplied_semi_transparent() {
     let mut drag_processed = Vec::new();
     let semi = Color32::from_rgba_premultiplied(128, 64, 32, 128);
     circle_brush::draw_circle_line(
-        2,
-        5,
-        7,
-        5,
-        0,
-        &mut canvas,
-        semi,
-        0,
-        &mut visited,
-        1,
-        false,
-        &mut drag_processed,
+        BrushStrokeParams {
+            start_x: 2,
+            start_y: 5,
+            end_x: 7,
+            end_y: 5,
+            canvas: &mut canvas,
+            color: semi,
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 0,
+        },
         0,
     );
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 2], semi);

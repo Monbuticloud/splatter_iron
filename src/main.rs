@@ -8,6 +8,7 @@
 mod app;
 mod asset_library;
 mod brush_library;
+mod brush_params;
 mod canvas;
 mod document;
 mod file_io;

@@ -5,10 +5,10 @@
 
 use eframe::egui::Color32;
 
+use crate::brush_params::BrushStrokeParams;
 use crate::canvas::Canvas;
 use crate::tool_configuration::StampSampling;
 use crate::tools::stamp_brush::draw_stamp_line;
-use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
 
 /// Draw a custom brush tip (or interpolated tip line) onto a canvas layer.
@@ -24,50 +24,44 @@ use crate::undo::UndoRecord;
 ///
 /// # Parameters
 ///
-/// * `start_x` — Column of the line start.
-/// * `start_y` — Row of the line start.
-/// * `end_x` — Column of the line end.
-/// * `end_y` — Row of the line end.
+/// * `params` — Common brush-stroke parameters (coordinates, canvas,
+///   colour, layer, visited/drag stamps).
 /// * `tip_pixels` — Premultiplied brush-tip pixels (row-major).
 /// * `tip_width` — Native width of the tip image.
 /// * `tip_height` — Native height of the tip image.
 /// * `radius` — Output tip width in canvas pixels.
 /// * `spacing_pct` — Spacing percentage (0–100) from the brush metadata.
-/// * `canvas` — The canvas to draw on.
-/// * `color` — Tool colour (premultiplied); used for tinting.
-/// * `layer` — Index of the target layer.
-/// * `visited` — Per-stroke pixel dedup buffer.
-/// * `stamp` — Stroke-scoped stamp value for the visited buffer.
-/// * `alpha_overlay` — Alpha-blend instead of overwriting.
 /// * `tinted` — Multiply tip pixels by `color`.
 /// * `sampling` — Pixel-sampling strategy (nearest or bilinear).
-/// * `drag_processed` — Per-pixel drag-scoped dedup buffer.
-/// * `drag_stamp_value` — Current drag-scoped stamp value.
 ///
 /// # Panics
 ///
-/// Panics if `layer >= canvas.pixels.len()`.
+/// Panics if `params.layer >= params.canvas.pixels.len()`.
 pub fn draw_custom_brush_line(
-    start_x: u32,
-    start_y: u32,
-    end_x: u32,
-    end_y: u32,
+    params: BrushStrokeParams<'_>,
     tip_pixels: &[Color32],
     tip_width: u32,
     tip_height: u32,
     radius: u32,
     spacing_pct: u8,
-    canvas: &mut Canvas,
-    color: Color32,
-    layer: usize,
-    visited: &mut [u32],
-    stamp: u32,
-    alpha_overlay: bool,
     tinted: bool,
     sampling: StampSampling,
-    drag_processed: &mut [u32],
-    drag_stamp_value: u32,
 ) -> UndoRecord {
+    let BrushStrokeParams {
+        start_x,
+        start_y,
+        end_x,
+        end_y,
+        canvas,
+        color,
+        layer,
+        visited,
+        stamp,
+        alpha_overlay,
+        drag_processed,
+        drag_stamp_value,
+    } = params;
+
     let output_w = radius.max(1);
     let spacing_multiplier = (spacing_pct as f64 / 100.0).max(0.01);
     let step = ((output_w as f64 * spacing_multiplier).round() as u32).max(1);
@@ -93,25 +87,28 @@ pub fn draw_custom_brush_line(
         let cx = (start_x as f64 + dx as f64 * t).round() as u32;
         let cy = (start_y as f64 + dy as f64 * t).round() as u32;
 
-        let record = draw_stamp_line(
-            cx,
-            cy,
-            cx,
-            cy,
-            tip_pixels,
-            tip_width,
-            tip_height,
-            radius,
+        let inner_params = BrushStrokeParams {
+            start_x: cx,
+            start_y: cy,
+            end_x: cx,
+            end_y: cy,
             canvas,
             color,
             layer,
             visited,
             stamp,
             alpha_overlay,
-            tinted,
-            sampling,
             drag_processed,
             drag_stamp_value,
+        };
+        let record = draw_stamp_line(
+            inner_params,
+            tip_pixels,
+            tip_width,
+            tip_height,
+            radius,
+            tinted,
+            sampling,
         );
         let UndoRecord::Run {
             runs: step_runs, ..
