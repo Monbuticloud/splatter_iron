@@ -46,6 +46,10 @@ pub struct ToolConfiguration {
     pub brush_sampling: StampSampling,
     /// Whether custom brush tip pixels are tinted by `current_color`.
     pub brush_tint_mode: StampTintMode,
+    /// Whether the pixel-grid overlay is visible on the canvas.
+    pub show_grid: bool,
+    /// Spacing of grid lines in canvas pixels.
+    pub grid_size: u32,
 }
 
 impl Default for ToolConfiguration {
@@ -62,6 +66,8 @@ impl Default for ToolConfiguration {
             stamp_tint_mode: StampTintMode::Original,
             brush_sampling: StampSampling::Nearest,
             brush_tint_mode: StampTintMode::Original,
+            show_grid: false,
+            grid_size: 50,
         }
     }
 }
