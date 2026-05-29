@@ -75,3 +75,7 @@ redo_apply on a corrupted record panics.
 ## `undo_apply_before_pixels_many_wrong_length_panics`
 
 undo_apply with BeforePixels::Many data that does not match pixel count panics.
+
+## `compress_run_identical_long`
+
+A 20-pixel uniform run compresses as BeforePixels::All with the correct color.
