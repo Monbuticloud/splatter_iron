@@ -402,3 +402,65 @@ fn export_tiff_roundtrip() {
     assert_eq!(imported.width, 2);
     assert_eq!(imported.height, 2);
 }
+
+/// Loading a canvas with zero width should be rejected.
+#[test]
+fn load_zero_width_canvas_rejected() {
+    let canvas = Canvas {
+        pixels: vec![Layer { pixels: vec![Color32::TRANSPARENT; 1] }],
+        height: 1,
+        width: 0,
+        output_rgba: Vec::new(),
+        rendered_layers: None,
+        dirty_rect: DirtyRectList::new(),
+    };
+    let data = files::save_canvas_to_bytes(&canvas).expect("save");
+    assert!(
+        files::load_canvas_from_bytes(&data).is_err(),
+        "zero-width canvas should be rejected"
+    );
+}
+
+/// Loading a canvas with zero height should be rejected.
+#[test]
+fn load_zero_height_canvas_rejected() {
+    let canvas = Canvas {
+        pixels: vec![Layer { pixels: vec![] }],
+        height: 0,
+        width: 1,
+        output_rgba: Vec::new(),
+        rendered_layers: None,
+        dirty_rect: DirtyRectList::new(),
+    };
+    let data = files::save_canvas_to_bytes(&canvas).expect("save");
+    assert!(
+        files::load_canvas_from_bytes(&data).is_err(),
+        "zero-height canvas should be rejected"
+    );
+}
+
+/// Loading a canvas with a layer that has the wrong pixel count should be rejected.
+#[test]
+fn load_wrong_layer_size_rejected() {
+    let canvas = Canvas {
+        pixels: vec![
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 4],
+            },
+            Layer {
+                // Second layer has wrong size (2 instead of 4)
+                pixels: vec![Color32::TRANSPARENT; 2],
+            },
+        ],
+        height: 2,
+        width: 2,
+        output_rgba: Vec::new(),
+        rendered_layers: None,
+        dirty_rect: DirtyRectList::new(),
+    };
+    let data = files::save_canvas_to_bytes(&canvas).expect("save");
+    assert!(
+        files::load_canvas_from_bytes(&data).is_err(),
+        "mismatched layer pixel count should be rejected"
+    );
+}
