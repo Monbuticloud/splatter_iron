@@ -260,3 +260,7 @@ Dimensions of a canvas pending user confirmation when the pixel count exceeds ME
 ## `UIState.pending_stamp_name`
 
 The name of a stamp image awaiting user confirmation in a name-entry dialog. Set when loaded_stamp_data is processed in the frame loop.
+
+## `UIState.pending_brushes`
+
+Brush tips awaiting user confirmation in a name-entry dialog. Set when loaded_brush_data is processed in the frame loop.
