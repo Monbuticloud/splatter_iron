@@ -48,3 +48,7 @@ Calling `save_to_current_path` with an empty save path does nothing.
 ## `poll_dialog_results_stamp_pixels_sets_loaded`
 
 Receiving DialogResult::StampPixels with LoadStamp pending sets loaded_stamp_data for the frame loop.
+
+## `poll_dialog_results_error_appends`
+
+Receiving DialogResult::Error appends the error string to the error list.
