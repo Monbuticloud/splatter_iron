@@ -103,3 +103,7 @@ move_layer_down on the bottom layer panics as documented.
 ## `delete_layer_out_of_bounds_panics`
 
 Deleting a layer with out-of-bounds index panics.
+
+## `select_layer_out_of_bounds_sets_index`
+
+select_layer with out-of-bounds index still sets current_layer (no validation).
