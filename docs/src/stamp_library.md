@@ -50,7 +50,7 @@ Persistent collection of stamp images with on-disk storage.
 
 | Field            | Type                  | Purpose                                          |
 | ---------------- | --------------------- | ------------------------------------------------ |
-| `stamps`         | `Vec<StampEntry>`     | Stored stamp entries                             |
+| `stamps`         | `Vec<StampEntry>`     | Stored stamp entries (private)                   |
 | `selected_index` | `Option<usize>`       | Index of the currently selected stamp, if any    |
 | `stamps_dir`     | `std::path::PathBuf`  | Absolute path to the stamps directory on disk     |
 
