@@ -37,6 +37,7 @@ fn pending_stamp_construction() {
         width: 2,
         height: 2,
         name: "test_stamp".to_string(),
+        spacing: 25,
     };
     assert_eq!(stamp.width, 2);
     assert_eq!(stamp.height, 2);
