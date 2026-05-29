@@ -85,3 +85,7 @@ Documents the bug pattern: calling `premultiply` on an already-premultiplied `Co
 ## Regression: `premultiply_on_premul_storage_darkens`
 
 `Color32` always stores premultiplied bytes internally. Calling `premultiply` on a value from `from_rgba_unmultiplied` (which already performed the conversion) darkens it further — the same class of bug that affected the original brush code.
+
+## `blend_layers_empty_layers_panics`
+
+Calling blend_layers with an empty layer vec panics (invariant violation).
