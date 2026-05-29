@@ -5,7 +5,7 @@ Tests for `ToolConfiguration` — default values and field consistency.
 ## Test strategy
 
 - Confirm that the default configuration matches the documented initial state for the application.
-- Verify that optional fields (`previous_tool`, `previous_cursor_position`, `stamp_image`) are `None` by default.
+- Verify that optional fields (`previous_tool`, `previous_cursor_position`) are `None` by default and that tint/sampling fields use their documented enums.
 
 ## `default_values_match_expected`
 
