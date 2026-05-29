@@ -69,3 +69,7 @@ Export as AVIF produces a non-empty file.
 ## `export_tga_creates_file`
 
 Export as TGA produces a non-empty file.
+
+## `export_ico_creates_file`
+
+Export as ICO produces a non-empty file.
