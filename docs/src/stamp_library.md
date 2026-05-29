@@ -108,3 +108,19 @@ created for preview rendering.
 | `width`   | `u32`            | Image width in pixels      |
 | `height`  | `u32`            | Image height in pixels     |
 | `ctx`     | `&egui::Context` | Egui context for texture   |
+
+## `StampLibrary::remove`
+
+```rust
+pub fn remove(&mut self, index: usize)
+```
+
+Remove the stamp at `index` from the library, delete its PNG file, and
+persist the updated index. If `index` matches the current selection,
+selection is cleared.
+
+### Parameters
+
+| Parameter | Type     | Purpose                  |
+| --------- | -------- | ------------------------ |
+| `index`   | `usize`  | Index of the entry to remove |
