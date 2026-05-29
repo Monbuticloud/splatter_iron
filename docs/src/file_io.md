@@ -27,6 +27,7 @@ Message sent from the file-dialog background thread to the UI thread after the u
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Picked(PathBuf)`             | User selected a file path via the native dialog. Sent through `dialog_sender` and received by `poll_dialog_results` on the next frame.                           |
 | `StampPixels(Vec, u32, u32, String)` | Decoded stamp image pixels + dimensions + suggested name stem, sent from the background thread after a `LoadStamp` action.                                |
+| `BrushTips(Vec<BrushTip>)`    | Parsed brush tips from an ABR/GBR file, sent from the background thread after a `LoadBrush` action.                                                              |
 
 ### `SaveKind`
 
