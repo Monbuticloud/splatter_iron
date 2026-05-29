@@ -101,3 +101,7 @@ An unrecognised ImageFormat returns an error on export.
 ## `export_zero_width_fails`
 
 Exporting a zero-width canvas returns an error.
+
+## `import_jpeg_as_canvas`
+
+Import a JPEG file via import_image_as_canvas produces a valid canvas.
