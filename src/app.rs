@@ -262,6 +262,8 @@ pub struct UIState {
     /// Queried from `device.limits().max_texture_dimension_2d`; falls back
     /// to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
     pub max_texture_dimension: u32,
+    /// Cached window title — updated when dirty flag changes.
+    pub current_title: String,
     /// Dialog-related state.
     pub dialogs: DialogState,
     /// Error messages displayed in the error overlay.
@@ -283,6 +285,7 @@ impl Default for UIState {
             previous_tool: None,
             previous_cursor_position: None,
             undo_redo_steps_multiplier: 1,
+            current_title: crate::app::APP_NAME.to_string(),
             dialogs: DialogState::default(),
             errors: ErrorState::default(),
             toasts: ToastState::default(),
@@ -924,6 +927,25 @@ impl eframe::App for MyApp {
         self.show_stamp_naming_dialog(ui);
         self.show_brush_naming_dialog(ui);
         self.show_toast(ui);
+
+        // Update window title to reflect unsaved changes.
+        let filename = if self.document.savefile_path.is_empty() {
+            "Untitled"
+        } else {
+            std::path::Path::new(&self.document.savefile_path)
+                .file_name()
+                .and_then(std::ffi::OsStr::to_str)
+                .unwrap_or("Untitled")
+        };
+        let new_title = if self.document.dirty_since_last_autosave {
+            format!("{APP_NAME} — {filename} (unsaved)")
+        } else {
+            APP_NAME.to_string()
+        };
+        if self.ui.current_title != new_title {
+            self.ui.current_title.clone_from(&new_title);
+            ui.send_viewport_cmd(egui::ViewportCommand::Title(new_title));
+        }
 
         if is_quitting {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);

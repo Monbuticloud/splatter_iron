@@ -474,6 +474,7 @@ impl FileIO {
                 }
                 SaveResult::ManualSave(path) => {
                     document.savefile_path = path.display().to_string();
+                    document.dirty_since_last_autosave = false;
                     document.canvas_mut().dirty_rect.request_full_blend();
                 }
                 SaveResult::Failed(message) => {
