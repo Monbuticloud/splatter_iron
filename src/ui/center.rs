@@ -29,6 +29,9 @@ use crate::undo::UndoRecord;
 
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
+const ZOOM_SENSITIVITY: f32 = 0.003;
+const MIN_ZOOM: f32 = 0.05;
+const MAX_ZOOM: f32 = 20.0;
 const ACTIVE_DURATION_MILLISECONDS: u64 = 550;
 const CANVAS_BORDER_WIDTH: f32 = 2.0;
 const CANVAS_BORDER_COLOR: Color32 = Color32::from_rgb(128, 0, 128);
@@ -73,7 +76,8 @@ impl MyApp {
 
         let available = ui.available_size();
         let scale = (available.x / canvas_pixel_size.x).min(available.y / canvas_pixel_size.y);
-        let draw_size = canvas_pixel_size * scale;
+        let base_size = canvas_pixel_size * scale;
+        let draw_size = base_size * self.ui.zoom;
 
         let canvas_pos = egui::pos2(
             (available.x - draw_size.x) / 2.0 + self.ui.pan_offset.x,
@@ -189,6 +193,42 @@ impl MyApp {
                 }
             }
         });
+
+        // Zoom via scroll/pinch while hovering the canvas.
+        if response.hovered() {
+            let pinch = ui.input(|i| i.zoom_delta());
+            let scroll = ui.input(|i| i.smooth_scroll_delta());
+            let zoom_input = if pinch != 1.0 {
+                pinch
+            } else if scroll.y != 0.0 {
+                1.0 + scroll.y * ZOOM_SENSITIVITY
+            } else {
+                1.0
+            };
+            if zoom_input != 1.0 {
+                let old_zoom = self.ui.zoom;
+                self.ui.zoom = (old_zoom * zoom_input).clamp(MIN_ZOOM, MAX_ZOOM);
+                if self.ui.zoom != old_zoom {
+                    if let Some(hover) = response.hover_pos() {
+                        let old_draw = base_size * old_zoom;
+                        let frac_x = (hover.x - canvas_pos.x) / old_draw.x;
+                        let frac_y = (hover.y - canvas_pos.y) / old_draw.y;
+                        let new_draw = base_size * self.ui.zoom;
+                        let nx = (available.x - new_draw.x) / 2.0;
+                        let ny = (available.y - new_draw.y) / 2.0;
+                        self.ui.pan_offset.x = hover.x - nx - frac_x * new_draw.x;
+                        self.ui.pan_offset.y = hover.y - ny - frac_y * new_draw.y;
+                    }
+                    ui.ctx().request_repaint();
+                }
+            }
+        }
+
+        // Reset zoom on double-click.
+        if response.double_clicked() {
+            self.ui.zoom = 1.0;
+            ui.ctx().request_repaint();
+        }
 
         if self.tool_configuration.show_brush_preview
             && let Some(hover_pos) = response.hover_pos()
