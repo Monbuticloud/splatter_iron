@@ -52,3 +52,7 @@ Provides sensible defaults for the initial application state. Rust's `#[derive(D
 ### Why manual `Default` instead of derive
 
 The `Color32` type's default is transparent black (`rgba(0, 0, 0, 0)`), which would make the first brush stroke invisible. The `radius` of 0 (default for `u32`) would create a zero-size brush that effectively does nothing. A manual `Default` implementation ensures the application starts in a usable state.
+
+## `stamp_sampling`
+
+StampSampling strategy when scaling stamp images to canvas size. Defaults to Nearest (sharp edges, pixel-art friendly). Can be set to Bilinear for smooth scaling of photographs.
