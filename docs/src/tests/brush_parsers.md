@@ -51,3 +51,7 @@ ABR with unsupported version number should return an error.
 ## `parse_abr_sampled_bgra`
 
 Parse ABR v6 sampled BGRA brush; verify pixel values and premultiplied constraint.
+
+## `parse_abr_computed_round`
+
+Parse ABR v6 computed round brush; verify diameter and opaque center.
