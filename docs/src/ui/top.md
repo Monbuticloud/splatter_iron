@@ -58,3 +58,7 @@ If savefile_path is empty, queues a Save dialog. Otherwise writes directly to cu
 ## `Cmd+Shift+S (Save As)`
 
 Queues PendingFileAction::Save regardless of current savefile_path, forcing a save dialog.
+
+## `Cmd+I (Import)`
+
+Queues PendingFileAction::Import to import an image file.
