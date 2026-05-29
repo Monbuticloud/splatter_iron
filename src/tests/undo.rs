@@ -133,7 +133,10 @@ fn undo_record_is_runs_variant() {
 fn empty_square_produces_empty_runs() {
     let mut canvas = small_white_canvas();
     let record = square_brush::draw_square(5, 5, 5, 5, &mut canvas, red(), 0, false);
-    let UndoRecord::Run { runs, .. } = &record;
+    let runs = match &record {
+        UndoRecord::Run { runs, .. } => runs,
+        _ => unreachable!("draw_square always produces Run"),
+    };
     assert!(runs.is_empty(), "zero-area rect should produce no runs");
 }
 
@@ -173,7 +176,10 @@ fn undo_apply_before_pixels_all_restores() {
     let mut canvas = small_white_canvas();
     // Draw a large enough square (all 100 pixels) to trigger RLE → `All` compression
     let record = square_brush::draw_square(0, 0, 10, 10, &mut canvas, red(), 0, false);
-    let UndoRecord::Run { runs, .. } = &record;
+    let runs = match &record {
+        UndoRecord::Run { runs, .. } => runs,
+        _ => unreachable!("draw_square always produces Run"),
+    };
     for run in runs {
         assert!(
             matches!(run.before, BeforePixels::All(_)),

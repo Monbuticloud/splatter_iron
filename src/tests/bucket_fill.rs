@@ -146,7 +146,10 @@ fn bucket_fill_corner_seed() {
 fn bucket_fill_returns_undo() {
     let mut canvas = canvas_with_red_square();
     let record = bucket_fill::draw_bucket_fill(2, 2, &mut canvas, blue(), 0, false);
-    let crate::undo::UndoRecord::Run { runs, .. } = &record;
+    let runs = match &record {
+        crate::undo::UndoRecord::Run { runs, .. } => runs,
+        _ => unreachable!("bucket_fill always produces Run"),
+    };
     assert!(!runs.is_empty(), "undo should contain run segments");
 }
 

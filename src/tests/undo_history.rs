@@ -218,10 +218,16 @@ fn drag_accumulator_full_lifecycle() {
     // Simulate a two-frame drag
     history.init_drag_accumulator(0, 10, red(), false);
     let record1 = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
-    let UndoRecord::Run { runs, .. } = record1;
+    let runs = match record1 {
+        UndoRecord::Run { runs, .. } => runs,
+        _ => unreachable!("draw_square always produces Run"),
+    };
     history.extend_drag_accumulator(runs);
     let record2 = square_brush::draw_square(3, 3, 6, 6, &mut canvas, red(), 0, false);
-    let UndoRecord::Run { runs, .. } = record2;
+    let runs = match record2 {
+        UndoRecord::Run { runs, .. } => runs,
+        _ => unreachable!("draw_square always produces Run"),
+    };
     history.extend_drag_accumulator(runs);
     history.finalize_drag_accumulator();
 

@@ -369,9 +369,12 @@ fn stamp_produces_valid_undo_record() {
         StampSampling::Nearest,
     );
 
-    let crate::undo::UndoRecord::Run {
-        layer_index, runs, ..
-    } = &record;
+    let (layer_index, runs) = match &record {
+        crate::undo::UndoRecord::Run {
+            layer_index, runs, ..
+        } => (layer_index, runs),
+        _ => unreachable!("stamp always produces Run"),
+    };
     assert_eq!(*layer_index, 0, "undo record should target layer 0");
     assert!(!runs.is_empty(), "undo record should have runs");
 }
@@ -579,7 +582,10 @@ fn zero_width_stamp_returns_empty_undo() {
         false,
         StampSampling::Nearest,
     );
-    let crate::undo::UndoRecord::Run { runs, .. } = &record;
+    let runs = match &record {
+        crate::undo::UndoRecord::Run { runs, .. } => runs,
+        _ => unreachable!("stamp always produces Run"),
+    };
     assert!(
         runs.is_empty(),
         "zero-width stamp should have no runs"
@@ -614,7 +620,10 @@ fn zero_height_stamp_returns_empty_undo() {
         false,
         StampSampling::Nearest,
     );
-    let crate::undo::UndoRecord::Run { runs, .. } = &record;
+    let runs = match &record {
+        crate::undo::UndoRecord::Run { runs, .. } => runs,
+        _ => unreachable!("stamp always produces Run"),
+    };
     assert!(
         runs.is_empty(),
         "zero-height stamp should have no runs"

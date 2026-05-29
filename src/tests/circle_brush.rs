@@ -341,7 +341,10 @@ fn draw_circle_clamped_to_edge_produces_runs() {
     let mut canvas = small_canvas();
     // Center at (100, 100) — well outside the 10x10 canvas, clamped to (9, 9)
     let record = circle_brush::draw_circle(100, 100, 5, &mut canvas, red(), 0, false);
-    let crate::undo::UndoRecord::Run { runs, .. } = &record;
+    let runs = match &record {
+        crate::undo::UndoRecord::Run { runs, .. } => runs,
+        _ => unreachable!("draw_circle always produces Run"),
+    };
     assert!(!runs.is_empty(), "clamped circle should produce runs");
 }
 
