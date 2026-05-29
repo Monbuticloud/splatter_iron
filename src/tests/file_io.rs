@@ -242,6 +242,14 @@ fn poll_dialog_results_load_replaces_canvas() {
     file_io.pending_file_action = Some(PendingFileAction::Load);
     dialog_sender.send(DialogResult::Picked(file_path)).unwrap();
     file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+    // Wait for the async load thread to complete.
+    for _ in 0..100 {
+        file_io.poll_load_import_results(&mut document, &mut undo, &mut errors);
+        if document.canvas.width == 3 {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
 
     assert!(errors.is_empty(), "errors: {errors:?}");
     assert_eq!(document.canvas.width, 3);
@@ -269,6 +277,14 @@ fn poll_dialog_results_import_replaces_canvas() {
     file_io.pending_file_action = Some(PendingFileAction::Import);
     dialog_sender.send(DialogResult::Picked(img_path)).unwrap();
     file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+    // Wait for the async import thread to complete.
+    for _ in 0..100 {
+        file_io.poll_load_import_results(&mut document, &mut undo, &mut errors);
+        if document.canvas.width == 2 {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
 
     assert!(errors.is_empty(), "errors: {errors:?}");
     assert_eq!(document.canvas.width, 2);
