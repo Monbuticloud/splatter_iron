@@ -137,3 +137,7 @@ When tool is Stamp and show_brush_preview is true, the preview renders a rectang
 ## `Brush preview: CustomBrush`
 
 When tool is CustomBrush and show_brush_preview is true, the preview renders a rectangular outline matching the brush tip dimensions scaled to brush radius.
+
+## `Canvas border`
+
+The canvas area is rendered with a dashed purple border (Stroke::new(2.0, Color32::from_rgba_premultiplied(180, 100, 255, 200))) to visually distinguish the canvas from the background.
