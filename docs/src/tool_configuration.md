@@ -56,3 +56,7 @@ The `Color32` type's default is transparent black (`rgba(0, 0, 0, 0)`), which wo
 ## `stamp_sampling`
 
 StampSampling strategy when scaling stamp images to canvas size. Defaults to Nearest (sharp edges, pixel-art friendly). Can be set to Bilinear for smooth scaling of photographs.
+
+## `stamp_tint_mode`
+
+StampTintMode controlling whether stamp pixels are multiplied by current_color. Defaults to Original (use stamp's own colours). Can be set to Tinted to apply the current tool colour.
