@@ -60,10 +60,6 @@ Blending the full canvas returns `Some((0, 0, width, height))`, clears `render_n
 
 With a dirty rect set, `blend_to_output` returns the dirty-rect bounds (translated to width/height) and clears render state.
 
-## `blend_to_output_empty_dirty_rect_returns_none`
-
-With an empty `DirtyRect`, `blend_to_output` returns `None` and clears render state.
-
 ## `delete_layer_preserves_current_when_above`
 
 Deleting a layer at index 2 when `current_layer = 0` leaves `current_layer` unchanged at 0.
