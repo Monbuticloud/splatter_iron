@@ -6,6 +6,7 @@
 //! the platform data directory, and launches the eframe GUI event loop.
 
 mod app;
+mod asset_library;
 mod brush_library;
 mod canvas;
 mod document;
