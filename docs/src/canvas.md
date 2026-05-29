@@ -347,3 +347,7 @@ Removes all rects from the list.
 ## `CurrentTool::Stamp`
 
 Stamp brush tool. When selected, clicking the canvas stamps an image from the StampLibrary. Drag draws a line of stamped impressions interpolated between start and end points.
+
+## `CurrentTool::CustomBrush`
+
+Custom brush tool. When selected, uses a loaded brush tip from BrushLibrary to paint. Supports tinting and alpha overlay.
