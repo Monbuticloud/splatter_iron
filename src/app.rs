@@ -254,6 +254,13 @@ impl Default for ToastState {
     }
 }
 
+/// Progress state for long-running operations.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ProgressState {
+    /// No operation in progress.
+    Idle,
+}
+
 /// UI-level state that doesn't belong to any domain module.
 pub struct UIState {
     /// Current rendering cadence (active, throttled, or frozen).
@@ -286,6 +293,8 @@ pub struct UIState {
     pub errors: ErrorState,
     /// Transient toast notification.
     pub toasts: ToastState,
+    /// Long-running operation progress.
+    pub progress: ProgressState,
 }
 
 impl Default for UIState {
@@ -307,6 +316,7 @@ impl Default for UIState {
             dialogs: DialogState::default(),
             errors: ErrorState::default(),
             toasts: ToastState::default(),
+            progress: ProgressState::Idle,
         }
     }
 }
@@ -981,6 +991,23 @@ impl MyApp {
         }
     }
 
+    /// Show a progress indicator in the bottom-right corner when an async
+    /// operation is in-flight.
+    fn show_progress_indicator(&mut self, ui: &mut egui::Ui) {
+        if self.ui.progress == ProgressState::Idle {
+            return;
+        }
+        let label = "Working…";
+        egui::Area::new(egui::Id::new("progress_indicator"))
+            .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Spinner::new());
+                    ui.label(label);
+                });
+            });
+    }
+
     /// Add a file path to the recent-files list (dedup, max 10, most recent first).
     fn push_recent_file(&mut self, path: PathBuf) {
         if path.as_os_str().is_empty() {
@@ -1065,6 +1092,7 @@ impl eframe::App for MyApp {
         self.show_stamp_naming_dialog(ui);
         self.show_brush_naming_dialog(ui);
         self.show_toast(ui);
+        self.show_progress_indicator(ui);
 
         // Update window title to reflect unsaved changes.
         let filename = if self.document.savefile_path.is_empty() {
