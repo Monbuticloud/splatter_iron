@@ -42,3 +42,7 @@ Selects CurrentTool::Stamp. When active, displays the stamp gallery below the to
 ## `CustomBrush Tool button`
 
 Selects CurrentTool::CustomBrush. When active, displays the brush gallery below the tool buttons showing all entries from BrushLibrary with thumbnails.
+
+## `Stamp gallery`
+
+When Stamp tool is selected, renders a vertical gallery of stamp thumbnails. Each entry shows the stamp image and name. Clicking selects that stamp. Above the gallery are tint mode and sampling mode combo selectors.
