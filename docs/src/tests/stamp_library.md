@@ -41,3 +41,7 @@ Entries on an empty library returns an empty slice.
 ## `selected_mut_allows_mutation`
 
 Selected_mut allows mutation of the selected stamp's fields.
+
+## `selected_mut_empty_library`
+
+Selected_mut on an empty library returns None.
