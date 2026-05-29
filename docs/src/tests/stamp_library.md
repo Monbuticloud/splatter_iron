@@ -49,3 +49,7 @@ Selected_mut on an empty library returns None.
 ## `remove_out_of_bounds_noop`
 
 Remove with out-of-bounds index is a no-op (count unchanged).
+
+## `select_out_of_bounds_noop`
+
+Select with out-of-bounds index is a no-op (selection unchanged).
