@@ -102,6 +102,11 @@ Tracks transient UI concerns that don't belong to any domain module:
 | `show_new_canvas_dialog`     | `bool`          | Whether the "New Canvas" size picker is open                            |
 | `new_canvas_width`           | `u32`           | Width slider value for the new-canvas dialog (pixels, clamped 4–8192)   |
 | `new_canvas_height`          | `u32`           | Height slider value for the new-canvas dialog (pixels, clamped 4–8192)  |
+| `max_texture_dimension`      | `u32`           | Max 2D texture dimension from GPU; used to clamp new-canvas sliders     |
+| `pending_large_canvas`       | `Option<(u32, u32)>` | Canvas dimensions awaiting user confirmation (memory warning)      |
+| `pending_stamp_name`         | `Option<PendingStamp>` | Stamp image awaiting a name from the user                          |
+| `pending_brushes`            | `Option<Vec<PendingStamp>>` | Brush tips awaiting user-confirmed names                       |
+| `toast_message`              | `Option<(String, Instant)>` | Transient toast notification message + trigger instant               |
 
 The `time_elapsed` field drives the 2-minute autosave interval check in the
 main frame loop. `displayed_error_list` is populated by `FileIO::poll_*`
@@ -111,7 +116,9 @@ used by the "New Canvas" dialog modal and reset on dialog close.
 ### `impl Default for UIState`
 
 Initialises with `IdleThrottled` rendering, zero elapsed time, no autosaves,
-no pending layer deletion, dialog closed, and default dimensions of
+no pending layer deletion, dialog closed, `max_texture_dimension = 8192`,
+`pending_large_canvas = None`, `pending_stamp_name = None`,
+`pending_brushes = None`, `toast_message = None`, and default dimensions of
 2000×1500. This matches the "M" preset in the new-canvas dialog.
 
 ## GPU Texture
@@ -145,6 +152,8 @@ The top-level application struct owned by eframe, composing every subsystem:
 | `file_io`            | `FileIO`             | Async file-dialog and save-operation manager (mpsc channels)             |
 | `ui`                 | `UIState`            | Render state, autosave counters, dialog flags                            |
 | `gpu_texture`        | `Option<GpuTexture>` | WGPU texture for partial-upload rendering; `None` under Glow backend     |
+| `stamp_library`      | `StampLibrary`       | Persistent stamp library (images, naming, disk storage)                   |
+| `brush_library`      | `BrushLibrary`       | Persistent custom brush library (imported tips, naming, disk storage)    |
 
 All fields are `pub` to give panel methods (`show_top_panel`, `show_left_panel`,
 etc.) direct access without getter boilerplate.
@@ -245,34 +254,18 @@ lifecycle:
     triggers an async autosave via `file_io.trigger_async_save` with
     `SaveKind::Autosave`.
 
-## `PendingStamp`
+## `struct PendingStamp`
 
-A stamp image awaiting a user-provided name before being added to StampLibrary. Used in the stamp import workflow where the image is decoded on a background thread and the user is prompted for a name in a modal dialog.
+A stamp image awaiting a user-provided name before being added to the stamp or brush library. Used in the import workflow where the image is decoded on a background thread and the user is prompted for a name in a modal dialog.
 
-## `UIState.max_texture_dimension`
+| Field    | Type              | Purpose                                             |
+| -------- | ----------------- | --------------------------------------------------- |
+| `pixels` | `Vec<Color32>`    | Premultiplied-alpha pixel data (row-major)          |
+| `width`  | `u32`             | Image width in pixels                               |
+| `height` | `u32`             | Image height in pixels                              |
+| `name`   | `String`          | Suggested display name from the source filename      |
+| `spacing`| `u8`              | Spacing percentage (0–100); used for brush tips, ignored for stamps |
 
-Maximum 2D texture dimension reported by the GPU device (glmax texture size). Used to clamp new-canvas width/height sliders so the user cannot create a canvas larger than what the GPU supports.
 
-## `UIState.pending_large_canvas`
 
-Dimensions of a canvas pending user confirmation when the pixel count exceeds MEMORY_WARN_THRESHOLD. When set, a confirmation dialog is shown before the canvas is replaced.
 
-## `UIState.pending_stamp_name`
-
-The name of a stamp image awaiting user confirmation in a name-entry dialog. Set when loaded_stamp_data is processed in the frame loop.
-
-## `UIState.pending_brushes`
-
-Brush tips awaiting user confirmation in a name-entry dialog. Set when loaded_brush_data is processed in the frame loop.
-
-## `UIState.toast_message`
-
-A transient toast notification message displayed briefly in the UI. Set by the frame loop for non-blocking feedback.
-
-## `MyApp.stamp_library`
-
-Persistent StampLibrary instance holding all imported stamp images. Initialised in MyApp::new via StampLibrary::load_from_disk.
-
-## `MyApp.brush_library`
-
-Persistent BrushLibrary instance holding all imported custom brush tips. Initialised in MyApp::new via BrushLibrary::load_from_disk.
