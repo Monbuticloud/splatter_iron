@@ -335,3 +335,7 @@ Merges all rects in the list into a single bounding box covering the union of al
 ## `DirtyRectList::take_all`
 
 Replaces the internal list with an empty vec and returns the drained rects. Used by the renderer to consume dirty rects for texture upload.
+
+## `DirtyRectList::is_empty`
+
+Returns true if there are no rects in the list.
