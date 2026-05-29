@@ -331,3 +331,7 @@ Adds a DirtyRect to the list. If the new rect overlaps or is within MAX_PROXIMIT
 ## `DirtyRectList::merge_all`
 
 Merges all rects in the list into a single bounding box covering the union of all entries. Returns an empty DirtyRect if the list is empty.
+
+## `DirtyRectList::take_all`
+
+Replaces the internal list with an empty vec and returns the drained rects. Used by the renderer to consume dirty rects for texture upload.
