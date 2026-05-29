@@ -114,3 +114,7 @@ Adding an empty DirtyRect to the list is a no-op.
 ## `dirty_rect_list_clear`
 
 Clearing DirtyRectList removes all rects.
+
+## `dirty_rect_list_take_all_drains`
+
+take_all() drains the list and returns all rects.
