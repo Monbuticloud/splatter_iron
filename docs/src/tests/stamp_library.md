@@ -9,3 +9,7 @@ Add one stamp and verify it is selected and count increments to 1.
 ## `remove_stamp_decrements_count`
 
 Remove a stamp and verify count decreases and selection clears.
+
+## `select_switches_active_stamp`
+
+Select a specific stamp by index; verify selected_index and name update.
