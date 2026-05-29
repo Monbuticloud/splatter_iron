@@ -45,3 +45,7 @@ Selected_mut allows mutation of the selected stamp's fields.
 ## `selected_mut_empty_library`
 
 Selected_mut on an empty library returns None.
+
+## `remove_out_of_bounds_noop`
+
+Remove with out-of-bounds index is a no-op (count unchanged).
