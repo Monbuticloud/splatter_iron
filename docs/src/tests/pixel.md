@@ -121,3 +121,7 @@ Unpremultiply on opaque max values stays within valid range.
 ## `alpha_blend_transparent_over_opaque_no_change`
 
 Blending transparent over opaque leaves destination within +-1 per channel.
+
+## `blend_layers_exactly_one_simd_chunk`
+
+blend_layers with exactly one SIMD chunk (4 pixels) works correctly.
