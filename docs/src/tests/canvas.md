@@ -90,3 +90,7 @@ Adding one DirtyRect to DirtyRectList stores it.
 ## `dirty_rect_list_non_overlapping_separate`
 
 Non-overlapping rects remain separate in DirtyRectList.
+
+## `dirty_rect_list_overlapping_merges`
+
+Overlapping rects are merged in DirtyRectList.
