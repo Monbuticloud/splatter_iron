@@ -4,6 +4,7 @@
 //! correctness, edge cases, and invariants under controlled conditions.
 
 pub mod app;
+pub mod brush_common;
 pub mod brush_library;
 pub mod brush_parsers;
 pub mod bucket_fill;
