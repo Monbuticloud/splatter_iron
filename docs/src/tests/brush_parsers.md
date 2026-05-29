@@ -67,3 +67,7 @@ Parse ABR v6 with two computed subblocks; verify count and widths.
 ## `parse_abr_empty_no_tips`
 
 ABR v6 with zero subblocks should return an error.
+
+## `parse_abr_computed_default_spacing`
+
+ABR computed brush without explicit spacing defaults to 25.
