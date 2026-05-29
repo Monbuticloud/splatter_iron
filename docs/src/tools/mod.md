@@ -10,8 +10,8 @@ return an `UndoRecord` for undo support.
 | -------------- | --------------------------------- | ----------------------------------------------------------- |
 | `bucket_fill`  | `draw_bucket_fill`                | Scanline flood-fill from a seed point                       |
 | `circle_brush` | `draw_circle`, `draw_circle_line` | Midpoint-circle span fill (single stamp + Bresenham stroke) |
-| `square_brush` | `draw_square`, `draw_square_line` | Rectangular fill (single stamp + Bresenham stroke)          |
 
+| `square_brush` | `draw_square`, `draw_square_line` | Rectangular fill (single stamp + Bresenham stroke)          |
 ### Common contract
 
 Every public drawing function:
@@ -29,7 +29,7 @@ Parsers for .gbr (GIMP brush) and .abr (Photoshop brush) file formats. Exports p
 
 ## `custom_brush`
 
-Custom brush line drawing from loaded brush tips. Exports draw_custom_brush_line which interpolates tip placements along a Bresenham line respecting spacing, tint, and aspect ratio.
+Custom brush line drawing from loaded brush tips. Exports `draw_custom_brush_line` which interpolates tip placements along a linear-interpolated drag path with spacing derived from the brush's `spacing_pct`.
 
 ## `stamp_brush`
 
