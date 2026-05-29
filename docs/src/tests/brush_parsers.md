@@ -43,3 +43,7 @@ Invalid ABR magic bytes should return an error.
 ## `parse_abr_truncated`
 
 Truncated ABR file should return an error.
+
+## `parse_abr_unsupported_version`
+
+ABR with unsupported version number should return an error.
