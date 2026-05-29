@@ -50,3 +50,7 @@ The default canvas sets `render_next_frame` to `true` (initial full re-render ne
 ## `canvas_dirty_rect_default_empty`
 
 A freshly constructed Canvas has dirty_rect.is_empty() (DirtyRectList starts empty). Renamed from canvas_dirty_rect_default_none to reflect the DirtyRectList type.
+
+## `canvas_serde_roundtrip`
+
+Canvas serializes and deserializes with identical pixels via serde_json.
