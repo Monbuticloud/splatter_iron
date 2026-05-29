@@ -6,6 +6,7 @@ pub mod brush_parsers;
 pub mod bucket_fill;
 /// Midpoint-circle brush tool implementation.
 pub mod circle_brush;
+/// Custom brush line drawing from loaded brush tips.
 pub mod custom_brush;
 pub mod square_brush;
 pub mod stamp_brush;
