@@ -77,7 +77,7 @@ impl MyApp {
         ui.separator();
         let add_layer_button = ui.button("Add Layer");
         if add_layer_button.clicked() {
-            self.document.add_layer();
+            self.document.add_layer(&mut self.undo);
         }
 
         egui::ScrollArea::vertical().show(ui, |ui| {
@@ -158,9 +158,7 @@ impl MyApp {
 
             // Apply opacity change (needs mutable access to canvas).
             if let Some((index, opacity)) = pending_opacity {
-                let canvas = self.document.canvas_mut();
-                canvas.pixels[index].opacity = opacity;
-                canvas.dirty_rect.request_full_blend();
+                self.document.set_layer_opacity(index, opacity, &mut self.undo);
             }
 
             // Apply deferred layer actions.
@@ -173,28 +171,22 @@ impl MyApp {
                     }
                     LayerAction::MoveUp(index) => {
                         if index > 0 {
-                            self.document.move_layer_up(index);
+                            self.document.move_layer_up(index, &mut self.undo);
                         }
                     }
                     LayerAction::MoveDown(index) => {
                         if index < self.document.canvas.pixels.len() - 1 {
-                            self.document.move_layer_down(index);
+                            self.document.move_layer_down(index, &mut self.undo);
                         }
                     }
                     LayerAction::Select(index) => {
                         self.document.select_layer(index);
                     }
                     LayerAction::ToggleVisible(index) => {
-                        let canvas = self.document.canvas_mut();
-                        if let Some(l) = canvas.pixels.get_mut(index) {
-                            l.visible = !l.visible;
-                            canvas.dirty_rect.request_full_blend();
-                        }
+                        self.document.toggle_layer_visible(index, &mut self.undo);
                     }
                     LayerAction::Rename(index, new_name) => {
-                        if let Some(l) = self.document.canvas_mut().pixels.get_mut(index) {
-                            l.name = new_name;
-                        }
+                        self.document.rename_layer(index, new_name, &mut self.undo);
                     }
                 }
             }

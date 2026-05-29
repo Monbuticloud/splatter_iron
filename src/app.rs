@@ -833,7 +833,7 @@ impl MyApp {
                 ui.label(format!("Delete \"{layer_name}\"? This cannot be undone."));
                 ui.horizontal(|ui| {
                     if ui.button("Delete").clicked() {
-                        self.document.delete_layer(index);
+                        self.document.delete_layer(index, &mut self.undo);
                         self.ui.dialogs.show_delete_layer_dialog = None;
                     }
                     if ui.button("Cancel").clicked() {
