@@ -20,6 +20,8 @@ use crate::tools::bucket_fill::draw_bucket_fill;
 use crate::tools::circle_brush::draw_circle;
 use crate::tools::circle_brush::draw_circle_line;
 use crate::tools::custom_brush::draw_custom_brush_line;
+use crate::tools::pencil::draw_pencil;
+use crate::tools::pencil::draw_pencil_line;
 use crate::tools::square_brush::draw_square;
 use crate::tools::square_brush::draw_square_line;
 use crate::tool_configuration::StampTintMode;
@@ -156,7 +158,7 @@ impl MyApp {
             let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
             match self.tool_configuration.current_tool {
-                CurrentTool::Circle | CurrentTool::CircleEraser => {
+                CurrentTool::Pencil | CurrentTool::Circle | CurrentTool::CircleEraser => {
                     let center_screen_x = response.rect.min.x
                         + (pixel_x as f32) * (draw_size.x / (self.document.canvas.width as f32));
                     let center_screen_y = response.rect.min.y
@@ -173,7 +175,8 @@ impl MyApp {
                         ),
                     );
                 }
-                CurrentTool::Square | CurrentTool::SquareEraser => {
+
+            CurrentTool::Square | CurrentTool::SquareEraser => {
                     let half_radius = self.tool_configuration.radius;
 
                     let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
@@ -383,6 +386,68 @@ impl MyApp {
 
         match self.tool_configuration.current_tool {
             CurrentTool::BucketFill => None,
+
+            CurrentTool::Pencil => {
+                let first_frame = self.ui.previous_cursor_position.is_none();
+                let previous_position = self.ui.previous_cursor_position;
+
+                if first_frame {
+                    if alpha_overlay {
+                        self.undo.advance_drag_stamp();
+                        let stamp = self.undo.next_stamp();
+                        let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
+                        Some(draw_pencil_line(
+                            BrushStrokeParams {
+                                start_x: pixel_x,
+                                start_y: pixel_y,
+                                end_x: pixel_x,
+                                end_y: pixel_y,
+                                canvas,
+                                color,
+                                layer: self.document.current_layer,
+                                visited,
+                                stamp,
+                                alpha_overlay: true,
+                                drag_processed,
+                                drag_stamp_value: ds_val,
+                            },
+                            self.tool_configuration.radius,
+                        ))
+                    } else {
+                        Some(draw_pencil(
+                            pixel_x,
+                            pixel_y,
+                            self.tool_configuration.radius,
+                            canvas,
+                            color,
+                            self.document.current_layer,
+                            false,
+                        ))
+                    }
+                } else if let Some((previous_x, previous_y)) = previous_position {
+                    let stamp = self.undo.next_stamp();
+                    let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
+                    Some(draw_pencil_line(
+                        BrushStrokeParams {
+                            start_x: previous_x,
+                            start_y: previous_y,
+                            end_x: pixel_x,
+                            end_y: pixel_y,
+                            canvas,
+                            color,
+                            layer: self.document.current_layer,
+                            visited,
+                            stamp,
+                            alpha_overlay,
+                            drag_processed,
+                            drag_stamp_value: ds_val,
+                        },
+                        self.tool_configuration.radius,
+                    ))
+                } else {
+                    None
+                }
+            }
 
             CurrentTool::Square | CurrentTool::SquareEraser => {
                 let first_frame = self.ui.previous_cursor_position.is_none();

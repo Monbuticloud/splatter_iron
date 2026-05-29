@@ -25,6 +25,11 @@ impl MyApp {
 
         ui.selectable_value(
             &mut self.tool_configuration.current_tool,
+            CurrentTool::Pencil,
+            "Pencil",
+        );
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
             CurrentTool::Square,
             "Square Tool",
         );

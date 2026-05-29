@@ -32,6 +32,9 @@ impl MyApp {
         });
         if !is_in_text_field {
             use crate::canvas::CurrentTool;
+            if ui.input(|i| i.key_pressed(egui::Key::P) && !i.modifiers.command) {
+                self.tool_configuration.current_tool = CurrentTool::Pencil;
+            }
             if ui.input(|i| i.key_pressed(egui::Key::S) && !i.modifiers.command) {
                 self.tool_configuration.current_tool = CurrentTool::Square;
             }
