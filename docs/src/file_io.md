@@ -186,3 +186,7 @@ Non-blocking: uses `try_recv()` so it will not stall the frame if no save has co
 ## `PendingFileAction::LoadStamp`
 
 Opens native open dialog filtered for image files; decodes into pixels and sends StampPixels result.
+
+## `PendingFileAction::LoadBrush`
+
+Opens native open dialog for .abr/.gbr files; parses and sends BrushTips result.
