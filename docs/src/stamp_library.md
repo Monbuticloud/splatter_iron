@@ -34,3 +34,12 @@ A single stamp entry in the library.
 | `width`           | `u32`                   | Stamp image width in pixels                          |
 | `height`          | `u32`                   | Stamp image height in pixels                         |
 | `texture_handle`  | `Option<TextureHandle>` | Cached egui texture for preview rendering            |
+
+### `StampEntry::texture_id`
+
+```rust
+pub fn texture_id(&self) -> Option<egui::TextureId>
+```
+
+Returns the cached texture ID if a texture has been created, or `None`
+otherwise. Used during rendering to display the stamp in the gallery. |
