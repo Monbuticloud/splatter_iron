@@ -338,6 +338,8 @@ pub enum CurrentTool {
     CustomBrush,
     /// Pick a color from the canvas.
     Eyedropper,
+    /// Pan the canvas viewport by dragging.
+    Pan,
 }
 
 /// Desired rendering cadence: active wake for fast repaints,
