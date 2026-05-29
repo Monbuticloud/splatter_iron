@@ -339,3 +339,7 @@ Replaces the internal list with an empty vec and returns the drained rects. Used
 ## `DirtyRectList::is_empty`
 
 Returns true if there are no rects in the list.
+
+## `DirtyRectList::clear`
+
+Removes all rects from the list.
