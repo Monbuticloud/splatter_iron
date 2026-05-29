@@ -33,3 +33,7 @@ Get with out-of-bounds index returns None.
 ## `entries_returns_all`
 
 Entries returns a slice matching internal state with correct ordering.
+
+## `entries_empty_library`
+
+Entries on an empty library returns an empty slice.
