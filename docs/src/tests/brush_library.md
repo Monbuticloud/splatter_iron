@@ -21,3 +21,7 @@ Persist to temp dir, reload, and verify entries survive.
 ## `remove_last_brush_clears_selection`
 
 Remove the last brush clears selection to None.
+
+## `remove_out_of_bounds_noop`
+
+Remove with out-of-bounds index is a no-op.
