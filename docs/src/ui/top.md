@@ -46,3 +46,7 @@ The Undo/Redo buttons and keyboard shortcuts are guarded by
 ## `Cmd+N (New)`
 
 Opens the new-canvas dialog (sets show_new_canvas_dialog = true).
+
+## `Cmd+O (Open)`
+
+Queues PendingFileAction::Load to open a .splattercanvas file.
