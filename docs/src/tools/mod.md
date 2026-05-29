@@ -26,3 +26,7 @@ Every public drawing function:
 ## `brush_parsers`
 
 Parsers for .gbr (GIMP brush) and .abr (Photoshop brush) file formats. Exports parse_brush_file public API and parse_gbr/parse_abr internal helpers.
+
+## `custom_brush`
+
+Custom brush line drawing from loaded brush tips. Exports draw_custom_brush_line which interpolates tip placements along a Bresenham line respecting spacing, tint, and aspect ratio.
