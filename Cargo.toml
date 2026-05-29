@@ -41,6 +41,7 @@ codegen-units = 512
 opt-level = 1
 
 [profile.release]
+overflow-checks = true
 strip = true
 lto = "fat"
 build-override.strip = true
