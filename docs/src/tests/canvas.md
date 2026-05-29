@@ -94,3 +94,7 @@ Non-overlapping rects remain separate in DirtyRectList.
 ## `dirty_rect_list_overlapping_merges`
 
 Overlapping rects are merged in DirtyRectList.
+
+## `dirty_rect_list_proximity_merges`
+
+Rects within MAX_PROXIMITY are merged.
