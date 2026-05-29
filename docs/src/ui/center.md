@@ -133,3 +133,7 @@ When the CustomBrush tool is active, right-clicking the canvas shows a Replace B
 ## `Brush preview: Stamp`
 
 When tool is Stamp and show_brush_preview is true, the preview renders a rectangular outline matching the stamp dimensions scaled to brush radius.
+
+## `Brush preview: CustomBrush`
+
+When tool is CustomBrush and show_brush_preview is true, the preview renders a rectangular outline matching the brush tip dimensions scaled to brush radius.
