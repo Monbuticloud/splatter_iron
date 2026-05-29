@@ -75,3 +75,7 @@ Requesting 10 redo steps when only 1 is available does not panic and fully consu
 ## `max_stack_eviction_pops_oldest`
 
 Pushing 1001 records (one past `MAX_STROKE_STACK = 1000`) evicts the oldest; the stack remains at 1000 entries.
+
+## `extend_drag_without_init_noop`
+
+Calling extend_drag_accumulator without init is a no-op.
