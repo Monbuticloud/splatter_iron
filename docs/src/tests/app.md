@@ -12,4 +12,8 @@ message, and default canvas size 2000×1500.
 ## `pending_stamp_construction`
 
 `PendingStamp` can be constructed with pixel data and dimensions; verifies
-width, height, name, and pixel count. |
+width, height, name, and pixel count.
+
+## `export_formats_all_have_extensions`
+
+All `EXPORT_FORMATS` entries should have at least one extension. |
