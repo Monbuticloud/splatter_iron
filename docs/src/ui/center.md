@@ -145,3 +145,7 @@ The canvas area is rendered with a dashed purple border (Stroke::new(2.0, Color3
 ## `Tool dispatch: Stamp`
 
 First frame: calls draw_stamp_line with identical start/end (single stamp). Subsequent frames: calls draw_stamp_line from previous to current position with interpolation.
+
+## `Tool dispatch: CustomBrush`
+
+First frame: calls draw_custom_brush_line with identical start/end (single tip). Subsequent frames: calls draw_custom_brush_line from previous to current position with spacing-based interpolation.
