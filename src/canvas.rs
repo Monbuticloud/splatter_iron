@@ -284,6 +284,8 @@ impl Canvas {
 /// The drawing tool currently selected in the UI.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CurrentTool {
+    /// Freehand pencil brush — draw filled circles along a path.
+    Pencil,
     /// Draw solid rectangles by dragging.
     Square,
     /// Draw solid circles by dragging.
