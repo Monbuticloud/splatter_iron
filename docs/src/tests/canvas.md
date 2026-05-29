@@ -70,3 +70,7 @@ Extending an inverted DirtyRect corrects the bounds.
 ## `dirty_rect_union_with_empty`
 
 Unioning a valid rect with an empty rect produces the valid rect.
+
+## `dirty_rect_single_pixel`
+
+A DirtyRect created via new with identical min/max is a 1x1 rect.
