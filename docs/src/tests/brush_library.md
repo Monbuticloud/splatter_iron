@@ -17,3 +17,7 @@ Select a specific brush by index; verify selected_index and name update.
 ## `persistence_round_trip`
 
 Persist to temp dir, reload, and verify entries survive.
+
+## `remove_last_brush_clears_selection`
+
+Remove the last brush clears selection to None.
