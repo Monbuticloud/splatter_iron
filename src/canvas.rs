@@ -19,7 +19,7 @@ pub struct Layer {
 }
 
 /// Axis-aligned bounding box of a modified region on the canvas.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug, PartialEq)]
 pub struct DirtyRect {
     /// Minimum column index (inclusive) of the dirty region.
     pub min_x: u32,

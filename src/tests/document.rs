@@ -181,7 +181,7 @@ fn blend_to_output_full_canvas_sets_render_state() {
 
     let result = document.blend_to_output();
 
-    assert_eq!(result, Some((0, 0, 10, 10)));
+    assert_eq!(result, Some(DirtyRect::new(0, 0, 9, 9)));
     assert!(!document.canvas_mut().render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
     assert_eq!(document.canvas.output_rgba.len(), 100 * 4);
@@ -201,7 +201,7 @@ fn blend_to_output_dirty_rect_returns_bounds() {
     let result = document.blend_to_output();
 
     // DirtyRect(2,3,5,7) -> width=4, height=5
-    assert_eq!(result, Some((2, 3, 4, 5)));
+    assert_eq!(result, Some(DirtyRect::new(2, 3, 5, 7)));
     assert!(!document.canvas_mut().render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
 }
@@ -219,7 +219,7 @@ fn blend_to_output_empty_dirty_rect_triggers_full_blend() {
 
     let result = document.blend_to_output();
 
-    assert_eq!(result, Some((0, 0, 10, 10)));
+    assert_eq!(result, Some(DirtyRect::new(0, 0, 9, 9)));
     assert!(!document.canvas_mut().render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
 }
@@ -347,14 +347,14 @@ fn blend_to_output_twice_resets_state() {
 
     // First blend — full canvas (no dirty rects)
     let result1 = document.blend_to_output();
-    assert_eq!(result1, Some((0, 0, 10, 10)));
+    assert_eq!(result1, Some(DirtyRect::new(0, 0, 9, 9)));
     assert!(!document.canvas_mut().render_next_frame);
     assert!(document.canvas.dirty_rect.is_empty());
 
     // Second blend — still no dirty rects, full blend again
     document.canvas_mut().render_next_frame = true; // force flag back on
     let result2 = document.blend_to_output();
-    assert_eq!(result2, Some((0, 0, 10, 10)));
+    assert_eq!(result2, Some(DirtyRect::new(0, 0, 9, 9)));
     assert!(!document.canvas_mut().render_next_frame);
 }
 

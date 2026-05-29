@@ -77,7 +77,7 @@ impl Document {
 
     /// Blend all layers into `output_rgba` (only the dirty regions if known).
     ///
-    /// Returns `Some((x, y, width, height))` of the union of all blended regions,
+    /// Returns `Some(DirtyRect)` covering the union of all blended regions,
     /// or `None` if nothing was blended. When no dirty rects are tracked but a
     /// re-blend was requested (e.g. after undo/redo), the full canvas is blended.
     ///
@@ -85,7 +85,7 @@ impl Document {
     ///
     /// Panics if the underlying `blend_layers` or `blend_region` encounters
     /// mismatched layer lengths or insufficient output buffer capacity.
-    pub fn blend_to_output(&mut self) -> Option<(u32, u32, u32, u32)> {
+    pub fn blend_to_output(&mut self) -> Option<DirtyRect> {
         let canvas = self.canvas_mut();
         let pixel_count = (canvas.width as usize) * (canvas.height as usize);
 
@@ -104,7 +104,7 @@ impl Document {
 
         let result = if rects.is_empty() {
             pixel::blend_layers(&layer_slices, output);
-            Some((0, 0, width, height))
+            Some(DirtyRect::new(0, 0, width - 1, height - 1))
         } else {
             let mut union_rect: Option<DirtyRect> = None;
             for rect in &rects {
@@ -125,7 +125,7 @@ impl Document {
                     None => union_rect = Some(*rect),
                 }
             }
-            union_rect.map(|r| (r.min_x, r.min_y, r.width(), r.height()))
+            union_rect
         };
 
         result
@@ -139,7 +139,7 @@ impl Document {
     ///
     /// * `queue` — The wgpu queue for submitting write commands.
     /// * `texture` — The destination GPU texture.
-    /// * `dirty` — Optional sub-region `(x, y, width, height)` to upload.
+    /// * `dirty` — Optional dirty rect to upload.
     ///
     /// # Panics
     ///
@@ -149,11 +149,14 @@ impl Document {
         &self,
         queue: &wgpu::Queue,
         texture: &wgpu::Texture,
-        dirty: &Option<(u32, u32, u32, u32)>,
+        dirty: &Option<DirtyRect>,
     ) {
         let canvas_width = self.canvas.width;
         let canvas_height = self.canvas.height;
-        let (x, y, width, height) = dirty.unwrap_or((0, 0, canvas_width, canvas_height));
+        let (x, y, width, height) = match dirty {
+            Some(r) => (r.min_x, r.min_y, r.width(), r.height()),
+            None => (0, 0, canvas_width, canvas_height),
+        };
 
         if width == 0 || height == 0 {
             return;
