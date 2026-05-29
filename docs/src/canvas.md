@@ -351,3 +351,7 @@ Stamp brush tool. When selected, clicking the canvas stamps an image from the St
 ## `CurrentTool::CustomBrush`
 
 Custom brush tool. When selected, uses a loaded brush tip from BrushLibrary to paint. Supports tinting and alpha overlay.
+
+## `Canvas.dirty_rect field type update`
+
+The dirty_rect field is now DirtyRectList, not Option<DirtyRect>. It holds zero or more dirty rectangles that can be consumed individually for partial texture uploads.
