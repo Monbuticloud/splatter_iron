@@ -29,3 +29,7 @@ Retrieve a stamp by valid index returns Some with correct name.
 ## `get_out_of_bounds_returns_none`
 
 Get with out-of-bounds index returns None.
+
+## `entries_returns_all`
+
+Entries returns a slice matching internal state with correct ordering.
