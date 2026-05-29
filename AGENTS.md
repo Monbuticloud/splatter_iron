@@ -2,9 +2,7 @@
 
 ## Build & Dev
 
-- **Requires nightly Rust** — `edition = "2024"` + `build-std = ["std"]`.
-  Switch: `rustup override set nightly`.
-- `.cargo/config.toml` overrides global build flags (`+crt-static`, `opt-level=3`, `debuginfo=0`).
+- **Requires Rust ≥1.96.0** (stable) — commit `rust-toolchain.toml` pins the channel.
 - Build: `cargo build` / Run: `cargo run` / Test: `cargo test`.
 - Prefix shell commands with `rtk` for token compression (per `.clinerules`).
 
@@ -13,7 +11,7 @@
 - Clippy in `Cargo.toml`: `all`, `pedantic`, `nursery`, `unwrap_used` → `warn`.
 - Rust lints: `unused`, `dead_code`, `unused_imports`, `unused_variables` → `warn`.
 - Check: `cargo clippy`.
-- `clippy.toml`: `msrv = "1.85.0"`, `too-many-arguments-threshold = 9`, custom `disallowed-names`.
+- `clippy.toml`: `msrv = "1.96.0"`, `too-many-arguments-threshold = 9`, custom `disallowed-names`.
 - `rustfmt.toml`: `edition = "2024"`, `max_width = 100`, `imports_granularity = "Item"`, `group_imports = "StdExternalCrate"`.
 
 ## Source Layout
@@ -51,11 +49,11 @@
 
 | Value                            | How codebase reflects it                                                                                                                            |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Performance first**            | SIMD (`wide::u32x4`) + rayon parallel blend, `MiMalloc` with `TrackingAllocator`, release `lto="fat"`, `opt-level=3`, zstdmt compression            |
+| **Performance first**            | SIMD (`wide::u32x4`) + rayon parallel blend, `MiMalloc` with `TrackingAllocator`, release `lto="fat"`, zstdmt compression                           |
 | **Correctness over convenience** | `unwrap_used` = `warn`, `overflow-checks = true`, exhaustive `match` on `CurrentTool`/`RenderState`, no `unwrap()`/`expect()` without justification |
 | **UX polish**                    | Brush preview with alpha overlay, `RenderState` (ActiveWake/IdleThrottled/UnfocusedFrozen), 2-min autosave, 13 export formats                       |
-| **Cross-platform**               | `egui`/`eframe` UI, `rfd` native dialogs, `directories` for paths, Zig `compiler_rt` in `lib/` for cross-compilation                                |
-| **Deterministic builds**         | Nightly pinned via `rustup override`, `build-std = ["std"]`, `Cargo.lock` committed                                                                 |
+| **Cross-platform**               | `egui`/`eframe` UI, `rfd` native dialogs, `directories` for paths                                                                                  |
+| **Deterministic builds**         | Stable pinned via `rust-toolchain.toml`, `Cargo.lock` committed                                                                                     |
 | **Accessibility**                | `egui` accessible by default (OS theme, keyboard nav, screen reader), thoughtful contrast in tool icons                                             |
 | **Layering & composability**     | `Document` owns layer stack, `UndoHistory` per-pixel visited-stamp dedup, `blend_layers()` premultiplied-alpha compositing                          |
 
