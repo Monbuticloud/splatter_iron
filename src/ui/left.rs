@@ -219,7 +219,7 @@ impl MyApp {
                                             .fit_to_exact_size(thumbnail_size)
                                             .sense(egui::Sense::click()),
                                     );
-                                    if response.clicked() {
+                                    if response.clicked() && !response.double_clicked() {
                                         *cmd_select = Some(index);
                                     }
                                     if response.double_clicked() {
@@ -232,6 +232,9 @@ impl MyApp {
                                 ui.vertical(|ui| {
                                     ui.label(&name);
                                     ui.label(format!("{w}×{h}"));
+                                    if ui.button("Delete").clicked() {
+                                        *cmd_delete = Some(index);
+                                    }
                                 });
                             });
                         });
