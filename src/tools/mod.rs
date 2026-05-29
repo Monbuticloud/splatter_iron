@@ -8,5 +8,6 @@ pub mod bucket_fill;
 pub mod circle_brush;
 /// Custom brush line drawing from loaded brush tips.
 pub mod custom_brush;
+/// Rectangular brush tool implementation.
 pub mod square_brush;
 pub mod stamp_brush;
