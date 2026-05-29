@@ -15,6 +15,7 @@ use crate::file_io::PendingFileAction;
 use crate::tools::{
     bucket_fill::draw_bucket_fill,
     circle_brush::{ draw_circle, draw_circle_line },
+    custom_brush::draw_custom_brush_line,
     square_brush::{ draw_square, draw_square_line },
     stamp_brush::draw_stamp_line,
 };
@@ -124,6 +125,14 @@ impl MyApp {
                         ui.close();
                     }
                 }
+                if self.tool_configuration.current_tool == CurrentTool::CustomBrush {
+                    ui.separator();
+                    if ui.button("Replace Brush...").clicked() {
+                        self.file_io.queue_file_action(PendingFileAction::LoadBrush);
+                        ui.ctx().request_repaint();
+                        ui.close();
+                    }
+                }
             });
 
             if self.tool_configuration.show_brush_preview && let Some(hover_pos) = response.hover_pos() {
@@ -211,53 +220,25 @@ impl MyApp {
                         CurrentTool::BucketFill => {}
                         CurrentTool::Stamp => {
                             if let Some(entry) = self.stamp_library.selected() {
-                                let output_w = self.tool_configuration.radius.max(1);
-                                let output_h = ((entry.height as f64 * output_w as f64 / entry.width as f64).round() as u32).max(1);
-                                let half_w = output_w / 2;
-                                let half_h = output_h / 2;
-
-                                let preview_start_x = (pixel_x.saturating_sub(half_w)).min(self.document.canvas.width - 1) as f32;
-                                let preview_end_x = ((pixel_x + half_w).min(self.document.canvas.width - 1) as f32) + 1.0;
-                                let preview_start_y = (pixel_y.saturating_sub(half_h)).min(self.document.canvas.height - 1) as f32;
-                                let preview_end_y = ((pixel_y + half_h).min(self.document.canvas.height - 1) as f32) + 1.0;
-
-                                let screen_x =
-                                    response.rect.min.x +
-                                    preview_start_x * (draw_size.x / (self.document.canvas.width as f32));
-                                let screen_y =
-                                    response.rect.min.y +
-                                    preview_start_y * (draw_size.y / (self.document.canvas.height as f32));
-                                let screen_w =
-                                    (preview_end_x - preview_start_x) *
-                                    (draw_size.x / (self.document.canvas.width as f32));
-                                let screen_h =
-                                    (preview_end_y - preview_start_y) *
-                                    (draw_size.y / (self.document.canvas.height as f32));
-
-                                let preview_rect = Rect::from_min_size(
-                                    Pos2::new(screen_x, screen_y),
-                                    egui::vec2(screen_w, screen_h),
+                                stamp_tip_preview(
+                                    ui, &response, pixel_x, pixel_y, draw_size,
+                                    entry.texture_id(), entry.width, entry.height,
+                                    self.tool_configuration.radius,
+                                    self.document.canvas.width,
+                                    self.document.canvas.height,
+                                    self.tool_configuration.current_color,
                                 );
-
-                                // Draw the actual stamp image as the preview
-                                if let Some(tex_id) = entry.texture_id() {
-                                    ui.painter().image(
-                                        tex_id,
-                                        preview_rect,
-                                        egui::Rect::from_min_max(
-                                            egui::pos2(0.0, 0.0),
-                                            egui::pos2(1.0, 1.0),
-                                        ),
-                                        Color32::WHITE,
-                                    );
-                                }
-
-                                // Draw a semi-transparent border
-                                ui.painter().rect_stroke(
-                                    preview_rect,
-                                    0.0,
-                                    egui::Stroke::new(PREVIEW_STROKE_WIDTH, self.tool_configuration.current_color),
-                                    StrokeKind::Middle,
+                            }
+                        }
+                        CurrentTool::CustomBrush => {
+                            if let Some(entry) = self.brush_library.selected() {
+                                stamp_tip_preview(
+                                    ui, &response, pixel_x, pixel_y, draw_size,
+                                    entry.texture_id(), entry.width, entry.height,
+                                    self.tool_configuration.radius,
+                                    self.document.canvas.width,
+                                    self.document.canvas.height,
+                                    self.tool_configuration.current_color,
                                 );
                             }
                         }
@@ -273,6 +254,10 @@ impl MyApp {
 
             if response.clicked() && self.tool_configuration.current_tool == CurrentTool::Stamp && self.stamp_library.is_empty() {
                 self.file_io.queue_file_action(PendingFileAction::LoadStamp);
+                ui.ctx().request_repaint();
+            }
+            if response.clicked() && self.tool_configuration.current_tool == CurrentTool::CustomBrush && self.brush_library.is_empty() {
+                self.file_io.queue_file_action(PendingFileAction::LoadBrush);
                 ui.ctx().request_repaint();
             }
 
@@ -462,6 +447,104 @@ impl MyApp {
                     )
                 })
             }
+
+            CurrentTool::CustomBrush => {
+                let first_frame = self.tool_configuration.previous_cursor_position.is_none();
+                let previous_position = self.tool_configuration.previous_cursor_position;
+
+                if first_frame && alpha_overlay {
+                    self.undo.advance_drag_stamp();
+                }
+
+                let (start_x, start_y) = if first_frame {
+                    (pixel_x, pixel_y)
+                } else if let Some((px, py)) = previous_position {
+                    (px, py)
+                } else {
+                    (pixel_x, pixel_y)
+                };
+
+                let stamp = self.undo.next_stamp();
+
+                self.brush_library.selected().map(|entry| {
+                    draw_custom_brush_line(
+                        start_x, start_y, pixel_x, pixel_y,
+                        &entry.pixels, entry.width, entry.height,
+                        self.tool_configuration.radius, entry.spacing,
+                        Arc::make_mut(&mut self.document.canvas),
+                        color, self.document.current_layer,
+                        &mut self.undo.visited, stamp,
+                        alpha_overlay, self.tool_configuration.brush_tint_mode == crate::stamp_library::StampTintMode::Tinted,
+                        self.tool_configuration.brush_sampling,
+                        &mut self.undo.drag_processed,
+                        self.undo.drag_stamp_value,
+                    )
+                })
+            }
         }
     }
+}
+
+/// Draw a stamp/brush-tip preview: renders the tip image at the cursor
+/// position scaled to `radius` width, with a border in `border_color`.
+fn stamp_tip_preview(
+    ui: &egui::Ui,
+    response: &egui::Response,
+    pixel_x: u32,
+    pixel_y: u32,
+    draw_size: egui::Vec2,
+    tex_id: Option<egui::TextureId>,
+    tip_width: u32,
+    tip_height: u32,
+    radius: u32,
+    canvas_width: u32,
+    canvas_height: u32,
+    border_color: Color32,
+) {
+    let output_w = radius.max(1);
+    let output_h = ((tip_height as f64 * output_w as f64 / tip_width as f64).round() as u32).max(1);
+    let half_w = output_w / 2;
+    let half_h = output_h / 2;
+
+    let preview_start_x = (pixel_x.saturating_sub(half_w)).min(canvas_width - 1) as f32;
+    let preview_end_x = ((pixel_x + half_w).min(canvas_width - 1) as f32) + 1.0;
+    let preview_start_y = (pixel_y.saturating_sub(half_h)).min(canvas_height - 1) as f32;
+    let preview_end_y = ((pixel_y + half_h).min(canvas_height - 1) as f32) + 1.0;
+
+    let screen_x =
+        response.rect.min.x +
+        preview_start_x * (draw_size.x / (canvas_width as f32));
+    let screen_y =
+        response.rect.min.y +
+        preview_start_y * (draw_size.y / (canvas_height as f32));
+    let screen_w =
+        (preview_end_x - preview_start_x) *
+        (draw_size.x / (canvas_width as f32));
+    let screen_h =
+        (preview_end_y - preview_start_y) *
+        (draw_size.y / (canvas_height as f32));
+
+    let preview_rect = Rect::from_min_size(
+        Pos2::new(screen_x, screen_y),
+        egui::vec2(screen_w, screen_h),
+    );
+
+    if let Some(tid) = tex_id {
+        ui.painter().image(
+            tid,
+            preview_rect,
+            egui::Rect::from_min_max(
+                egui::pos2(0.0, 0.0),
+                egui::pos2(1.0, 1.0),
+            ),
+            Color32::WHITE,
+        );
+    }
+
+    ui.painter().rect_stroke(
+        preview_rect,
+        0.0,
+        egui::Stroke::new(PREVIEW_STROKE_WIDTH, border_color),
+        StrokeKind::Middle,
+    );
 }

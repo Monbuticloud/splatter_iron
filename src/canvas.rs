@@ -250,6 +250,8 @@ pub enum CurrentTool {
     BucketFill,
     /// Stamp an external image onto the canvas.
     Stamp,
+    /// Draw using a custom brush tip from the brush library.
+    CustomBrush,
 }
 
 /// Desired rendering cadence: active wake for fast repaints,

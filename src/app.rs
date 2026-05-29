@@ -101,6 +101,8 @@ pub struct PendingStamp {
     pub width: u32,
     pub height: u32,
     pub name: String,
+    /// Spacing percentage (0–100) — used when this is a brush tip, ignored for stamps.
+    pub spacing: u8,
 }
 
 /// UI-level state that doesn't belong to any domain module.
@@ -132,6 +134,8 @@ pub struct UIState {
     pub pending_large_canvas: Option<(u32, u32)>,
     /// A stamp image awaiting a name from the user before being added to the library.
     pub pending_stamp_name: Option<PendingStamp>,
+    /// Brush tips awaiting user-confirmed names before being added to the library.
+    pub pending_brushes: Option<Vec<PendingStamp>>,
     /// Transient toast message and the instant it was triggered.
     pub toast_message: Option<(String, Instant)>,
 }
@@ -153,6 +157,7 @@ impl Default for UIState {
             max_texture_dimension: 8192,
             pending_large_canvas: None,
             pending_stamp_name: None,
+            pending_brushes: None,
             toast_message: None,
         }
     }
@@ -192,6 +197,8 @@ pub struct MyApp {
     pub gpu_texture: Option<GpuTexture>,
     /// Persistent stamp library (images, naming, disk storage).
     pub stamp_library: crate::stamp_library::StampLibrary,
+    /// Persistent custom brush library (imported tips, naming, disk storage).
+    pub brush_library: crate::brush_library::BrushLibrary,
 }
 
 impl MyApp {
@@ -229,6 +236,7 @@ impl MyApp {
             .unwrap_or(8192);
 
         let stamp_library = crate::stamp_library::StampLibrary::load_from_disk(&data_dir);
+        let brush_library = crate::brush_library::BrushLibrary::load_from_disk(&data_dir);
 
         let gpu_texture = creation_context.wgpu_render_state.as_ref().map(|render_state| {
             let width = canvas.width;
@@ -272,6 +280,7 @@ impl MyApp {
             ui: UIState { max_texture_dimension, ..UIState::default() },
             gpu_texture,
             stamp_library,
+            brush_library,
         }
     }
 
@@ -344,11 +353,30 @@ impl eframe::App for MyApp {
                 width: w,
                 height: h,
                 name,
+                spacing: 25,
             });
+        }
+
+        // Transfer newly loaded brush tips into the pending-dialog state.
+        if let Some(tips) = self.file_io.loaded_brush_data.take() {
+            let pending: Vec<PendingStamp> = tips
+                .into_iter()
+                .map(|tip| PendingStamp {
+                    pixels: tip.pixels,
+                    width: tip.width,
+                    height: tip.height,
+                    name: tip.name,
+                    spacing: tip.spacing,
+                })
+                .collect();
+            self.ui.pending_brushes = Some(pending);
         }
 
         // Create egui textures for stamps (needs ctx — available once per frame).
         self.stamp_library.create_textures(ui.ctx());
+
+        // Create egui textures for custom brushes.
+        self.brush_library.create_textures(ui.ctx());
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
@@ -580,6 +608,73 @@ impl eframe::App for MyApp {
                 });
             if open {
                 self.ui.pending_stamp_name = Some(pending);
+            }
+        }
+
+        // --- Brush import naming dialog ---
+        if let Some(brushes) = &mut self.ui.pending_brushes {
+            let mut open = true;
+            let mut confirmed = false;
+            egui::Window::new("Name Your Brushes")
+                .collapsible(false)
+                .resizable(true)
+                .default_size([400.0, 300.0])
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .open(&mut open)
+                .show(ui, |ui| {
+                    ui.label(format!("{} brush(es) imported — edit names below:", brushes.len()));
+                    ui.separator();
+
+                    let mut names_to_remove: Vec<usize> = Vec::new();
+                    egui::ScrollArea::vertical()
+                        .max_height(ui.available_height() - 40.0)
+                        .show(ui, |ui| {
+                            for (i, brush) in brushes.iter_mut().enumerate() {
+                                ui.horizontal(|ui| {
+                                    ui.add(
+                                        egui::TextEdit::singleline(&mut brush.name)
+                                            .desired_width(150.0),
+                                    );
+                                    ui.label(format!("{}×{}", brush.width, brush.height));
+                                    if ui.button("Remove").clicked() {
+                                        names_to_remove.push(i);
+                                    }
+                                });
+                            }
+                        });
+
+                    // Remove brushes the user marked for deletion
+                    names_to_remove.sort_unstable_by(|a, b| b.cmp(a));
+                    for i in names_to_remove {
+                        brushes.remove(i);
+                    }
+
+                    ui.separator();
+                    if ui.button("Import All").clicked() && !brushes.is_empty() {
+                        confirmed = true;
+                    }
+                });
+            if confirmed {
+                let all_brushes = self.ui.pending_brushes.take().unwrap();
+                let count = all_brushes.len();
+                for brush in all_brushes {
+                    if !brush.name.is_empty() {
+                        self.brush_library.add(
+                            brush.name,
+                            brush.pixels,
+                            brush.width,
+                            brush.height,
+                            brush.spacing,
+                            ui.ctx(),
+                        );
+                    }
+                }
+                self.ui.toast_message = Some((
+                    format!("Imported {count} brush(es)"),
+                    Instant::now(),
+                ));
+            } else if !open {
+                self.ui.pending_brushes = None;
             }
         }
 
