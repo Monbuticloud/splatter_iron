@@ -37,3 +37,7 @@ Entries returns a slice matching internal state with correct ordering.
 ## `entries_empty_library`
 
 Entries on an empty library returns an empty slice.
+
+## `selected_mut_allows_mutation`
+
+Selected_mut allows mutation of the selected stamp's fields.
