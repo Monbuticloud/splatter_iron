@@ -2,11 +2,13 @@
 //! sampling configuration.
 
 use eframe::egui::Color32;
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::canvas::CurrentTool;
 
 /// Pixel-sampling strategy when scaling a stamp or brush tip to canvas size.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum StampSampling {
     /// Nearest-neighbour (sharp edges, pixel-art friendly).
     Nearest,
@@ -15,7 +17,7 @@ pub enum StampSampling {
 }
 
 /// Tint mode for stamp and brush-tip rendering.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum StampTintMode {
     /// Use the tip's original colours.
     Original,
@@ -24,6 +26,7 @@ pub enum StampTintMode {
 }
 
 /// Current tool selection, color, brush radius, and stamp/brush sampling config.
+#[derive(Serialize, Deserialize)]
 pub struct ToolConfiguration {
     /// The currently selected drawing tool.
     pub current_tool: CurrentTool,
