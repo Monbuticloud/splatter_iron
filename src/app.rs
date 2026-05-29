@@ -832,7 +832,7 @@ impl eframe::App for MyApp {
             self.ui.last_autosave_time = self.ui.time_elapsed;
             self.ui.times_autosaved += 1;
             self.file_io
-                .trigger_async_save(&self.document, SaveKind::Autosave);
+                .trigger_async_save(&mut self.document, SaveKind::Autosave);
         }
     }
 }

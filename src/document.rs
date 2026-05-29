@@ -16,6 +16,19 @@ use crate::undo_history::UndoHistory;
 
 const TEXTURE_NAME: &str = "rendered_layers";
 
+/// Whether an async save operation is currently in flight.
+///
+/// When `InFlight`, the `Arc<Canvas>` is shared with the save thread and
+/// `Arc::make_mut` would trigger an expensive clone. UI code that only needs
+/// to read the canvas should skip writes when this flag is set.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SaveState {
+    /// No async save is running — safe to mutate the canvas via `Arc::make_mut`.
+    Idle,
+    /// An async save thread holds a clone of `Arc<Canvas>`.
+    InFlight,
+}
+
 /// Wraps a canvas (behind `Arc` for COW during async saves) with its save
 /// path, current layer, and dirty-tracking state.
 pub struct Document {
@@ -29,6 +42,8 @@ pub struct Document {
     pub current_layer: usize,
     /// Whether unsaved changes exist since the last autosave.
     pub dirty_since_last_autosave: bool,
+    /// Current save state — `InFlight` while an async save is running.
+    pub save_state: SaveState,
 }
 
 impl Document {
@@ -46,6 +61,7 @@ impl Document {
             savefile_path: String::new(),
             current_layer: 0,
             dirty_since_last_autosave: false,
+            save_state: SaveState::Idle,
         }
     }
 

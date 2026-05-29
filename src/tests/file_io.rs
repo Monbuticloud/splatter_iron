@@ -148,9 +148,9 @@ fn poll_dialog_results_mismatched_pending_skips() {
 #[test]
 fn save_to_current_path_empty_path_noop() {
     let (file_io, _, _) = test_file_io();
-    let document = Document::new(Canvas::new(10, 10));
+    let mut document = Document::new(Canvas::new(10, 10));
     // Should not panic or spawn thread
-    file_io.save_to_current_path(&document);
+    file_io.save_to_current_path(&mut document);
 }
 
 // --- trigger_async_save ---
@@ -162,7 +162,8 @@ fn trigger_async_save_writes_file() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("test.splattercanvas");
 
-    file_io.trigger_async_save(&Document::new(canvas), SaveKind::ManualSave(path.clone()));
+    let mut doc = Document::new(canvas);
+    file_io.trigger_async_save(&mut doc, SaveKind::ManualSave(path.clone()));
 
     // Wait a bit for the async thread to finish
     std::thread::sleep(std::time::Duration::from_millis(100));
@@ -308,7 +309,7 @@ fn save_to_current_path_non_empty_triggers_save() {
     );
     let mut document = Document::new(Canvas::new(1, 1));
     document.savefile_path = "/tmp/test_save_non_empty.splattercanvas".to_string();
-    file_io.save_to_current_path(&document);
+    file_io.save_to_current_path(&mut document);
     // Should have sent a save result eventually (may complete after a delay)
     std::thread::sleep(std::time::Duration::from_millis(200));
     // We can't easily check the channel without consuming the receiver,

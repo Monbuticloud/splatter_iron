@@ -365,13 +365,16 @@ impl FileIO {
     /// The thread clones the current canvas to avoid blocking the UI.
     /// For autosaves, the file name is a timestamp under `AUTOSAVE_DIRECTORY`.
     /// For manual saves, the provided path is used. Results are sent back
-    /// via `save_result_sender`.
+    /// via `save_result_sender`. Sets [`SaveState::InFlight`] on the document
+    /// while the save thread runs.
     ///
     /// # Parameters
     ///
     /// * `document` — The document whose canvas will be saved.
     /// * `kind` — Whether this is an autosave or a manual save to a specific path.
-    pub fn trigger_async_save(&self, document: &Document, kind: SaveKind) {
+    pub fn trigger_async_save(&self, document: &mut Document, kind: SaveKind) {
+        use crate::document::SaveState;
+        document.save_state = SaveState::InFlight;
         let canvas = document.canvas.clone();
         let path = match &kind {
             SaveKind::Autosave => {
@@ -407,7 +410,7 @@ impl FileIO {
     /// # Parameters
     ///
     /// * `document` — The document whose canvas will be saved.
-    pub fn save_to_current_path(&self, document: &Document) {
+    pub fn save_to_current_path(&self, document: &mut Document) {
         if !document.savefile_path.is_empty() {
             self.trigger_async_save(
                 document,
@@ -419,14 +422,17 @@ impl FileIO {
     /// Poll for completed async save results and update state accordingly.
     ///
     /// Marks the document as clean after autosave, sets the save path
-    /// after manual save, and pushes errors to the error list.
+    /// after manual save, pushes errors to the error list, and
+    /// resets [`SaveState`] to `Idle` when results are consumed.
     ///
     /// # Parameters
     ///
     /// * `document` — The document to update save-path / dirty-flag on.
     /// * `error_list` — Error list to push failure messages into.
     pub fn poll_save_results(&self, document: &mut Document, error_list: &mut Vec<String>) {
+        let mut had_result = false;
         while let Ok(result) = self.save_result_receiver.try_recv() {
+            had_result = true;
             match result {
                 SaveResult::Autosave => {
                     document.dirty_since_last_autosave = false;
@@ -439,6 +445,9 @@ impl FileIO {
                     error_list.push(format!("Save failed: {message}"));
                 }
             }
+        }
+        if had_result {
+            document.save_state = crate::document::SaveState::Idle;
         }
     }
 }
