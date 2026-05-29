@@ -13,6 +13,7 @@ use crate::app::DEFAULT_CANVAS_NAME;
 use crate::app::EXPORT_FORMATS;
 use crate::app::FILE_FILTER_NAME;
 use crate::app::IMPORT_EXTENSIONS;
+use crate::canvas::Layer;
 use crate::document::Document;
 use crate::files::ExportStrategy;
 use crate::tools::brush_parsers::BrushTip;
@@ -65,6 +66,20 @@ pub enum SaveKind {
     ManualSave(PathBuf),
 }
 
+/// Result of an async load or import operation sent via channel.
+///
+/// Uses `Vec<Layer>` + dimensions instead of `Canvas` directly so the data
+/// is [`Send`] (avoids `Canvas`'s non-Send `TextureHandle` field). The UI
+/// thread reconstructs a `Canvas` from the layers when the result is polled.
+pub enum LoadImportResult {
+    /// Canvas loaded from a `.splattercanvas` file.
+    Loaded(Vec<Layer>, u32, u32, String),
+    /// Image imported as a new canvas.
+    Imported(Vec<Layer>, u32, u32),
+    /// Operation failed with an error message.
+    Failed(String),
+}
+
 /// Result sent back via channel when an async save completes.
 #[derive(Debug)]
 pub enum SaveResult {
@@ -110,6 +125,14 @@ pub struct FileIO {
     pub export_result_receiver: mpsc::Receiver<anyhow::Result<()>>,
     /// `true` while an async export thread is running.
     pub export_in_flight: bool,
+    /// Channel sender for load/import results from background thread.
+    pub load_import_sender: mpsc::Sender<LoadImportResult>,
+    /// Channel receiver for load/import results on the UI thread.
+    pub load_import_receiver: mpsc::Receiver<LoadImportResult>,
+    /// `true` while an async load thread is running.
+    pub load_in_flight: bool,
+    /// `true` while an async import thread is running.
+    pub import_in_flight: bool,
 }
 
 impl FileIO {
@@ -135,6 +158,7 @@ impl FileIO {
         export_strategy: std::sync::Arc<dyn ExportStrategy + Send + Sync>,
     ) -> Self {
         let (export_result_sender, export_result_receiver) = mpsc::channel();
+        let (load_import_sender, load_import_receiver) = mpsc::channel();
         Self {
             pending_file_action: None,
             dialog_sender,
@@ -144,6 +168,10 @@ impl FileIO {
             export_result_sender,
             export_result_receiver,
             export_in_flight: false,
+            load_import_sender,
+            load_import_receiver,
+            load_in_flight: false,
+            import_in_flight: false,
             app_local_data_directory,
             loaded_stamp_data: None,
             loaded_brush_data: None,
@@ -363,24 +391,11 @@ impl FileIO {
                             };
                             self.trigger_async_save(document, SaveKind::ManualSave(save_path));
                         }
-                        PendingFileAction::Load => match crate::files::load_bytes_from_file(&path) {
-                            Ok(data) => match crate::files::load_canvas_from_bytes(&data) {
-                                Ok(canvas) => {
-                                    let save_path = path.display().to_string();
-                                    document.replace_canvas(canvas, undo);
-                                    document.savefile_path = save_path;
-                                }
-                                Err(error) => {
-                                    error_list.push(format!("Failed to load canvas: {error}"))
-                                }
-                            },
-                            Err(error) => error_list.push(format!("Failed to read file: {error}")),
-                        },
+                        PendingFileAction::Load => {
+                            self.trigger_async_load(path);
+                        }
                         PendingFileAction::Import => {
-                            match crate::files::import_image_as_canvas(&path) {
-                                Ok(canvas) => document.replace_canvas(canvas, undo),
-                                Err(error) => error_list.push(format!("Import failed: {error}")),
-                            }
+                            self.trigger_async_import(path);
                         }
                         PendingFileAction::Export(index) => {
                             if document.canvas.output_rgba.is_empty() {
@@ -502,6 +517,110 @@ impl FileIO {
             let result = strategy.export(&premultiplied_rgba, width, height, &path);
             let _ = sender.send(result);
         });
+    }
+
+    /// Spawn a background thread to read and deserialize a `.splattercanvas` file.
+    ///
+    /// Sends the result (layers, dimensions, path) via the load/import channel.
+    ///
+    /// # Parameters
+    ///
+    /// * `path` — The file path to load.
+    pub fn trigger_async_load(&mut self, path: PathBuf) {
+        self.load_in_flight = true;
+        let sender = self.load_import_sender.clone();
+        std::thread::spawn(move || {
+            let result = match crate::files::load_bytes_from_file(&path) {
+                Ok(data) => match crate::files::load_canvas_from_bytes(&data) {
+                    Ok(canvas) => {
+                        let save_path = path.display().to_string();
+                        LoadImportResult::Loaded(canvas.pixels, canvas.width, canvas.height, save_path)
+                    }
+                    Err(error) => LoadImportResult::Failed(format!("Failed to load canvas: {error}")),
+                },
+                Err(error) => LoadImportResult::Failed(format!("Failed to read file: {error}")),
+            };
+            let _ = sender.send(result);
+        });
+    }
+
+    /// Spawn a background thread to decode and import an image file as a new canvas.
+    ///
+    /// Sends the result (layers, dimensions) via the load/import channel.
+    ///
+    /// # Parameters
+    ///
+    /// * `path` — The image file path to import.
+    pub fn trigger_async_import(&mut self, path: PathBuf) {
+        self.import_in_flight = true;
+        let sender = self.load_import_sender.clone();
+        std::thread::spawn(move || {
+            let result = match crate::files::import_image_as_canvas(&path) {
+                Ok(canvas) => {
+                    LoadImportResult::Imported(canvas.pixels, canvas.width, canvas.height)
+                }
+                Err(error) => LoadImportResult::Failed(format!("Import failed: {error}")),
+            };
+            let _ = sender.send(result);
+        });
+    }
+
+    /// Poll for completed async load or import results and apply them.
+    ///
+    /// For a loaded canvas, replaces the document canvas and sets the save path.
+    /// For an imported image, replaces the document canvas. Pushes errors
+    /// to `error_list`.
+    ///
+    /// # Parameters
+    ///
+    /// * `document` — The document to modify on load/import.
+    /// * `undo` — Undo history to reset on load/import.
+    /// * `error_list` — Error list to push failure messages into.
+    pub fn poll_load_import_results(
+        &mut self,
+        document: &mut Document,
+        undo: &mut UndoHistory,
+        error_list: &mut Vec<String>,
+    ) {
+        while let Ok(result) = self.load_import_receiver.try_recv() {
+            match result {
+                LoadImportResult::Loaded(layers, width, height, save_path) => {
+                    self.load_in_flight = false;
+                    let mut dirty_rect = crate::canvas::DirtyRectList::new();
+                    dirty_rect.request_full_blend();
+                    let canvas = crate::canvas::Canvas {
+                        pixels: layers,
+                        width,
+                        height,
+                        output_rgba: Vec::new(),
+                        rendered_layers: None,
+                        dirty_rect,
+                    };
+                    document.replace_canvas(canvas, undo);
+                    document.savefile_path = save_path;
+                }
+                LoadImportResult::Imported(layers, width, height) => {
+                    self.import_in_flight = false;
+                    let mut dirty_rect = crate::canvas::DirtyRectList::new();
+                    dirty_rect.request_full_blend();
+                    let canvas = crate::canvas::Canvas {
+                        pixels: layers,
+                        width,
+                        height,
+                        output_rgba: Vec::new(),
+                        rendered_layers: None,
+                        dirty_rect,
+                    };
+                    document.replace_canvas(canvas, undo);
+                }
+                LoadImportResult::Failed(message) => {
+                    // Don't know if this was load or import; clear both flags.
+                    self.load_in_flight = false;
+                    self.import_in_flight = false;
+                    error_list.push(message);
+                }
+            }
+        }
     }
 
     /// Poll for completed async export results.
