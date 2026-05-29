@@ -326,3 +326,7 @@ self.canvas.pixels.len()`.
 ## `Document::canvas_mut`
 
 Returns a mutable reference to the underlying Canvas. Uses Arc::make_mut to clone-on-write, ensuring that if the Arc is shared (e.g. during async save) a fresh copy is created before mutation.
+
+## `canvas field type Arc<Canvas>`
+
+The canvas field is now Arc<Canvas> rather than Canvas directly. This enables clone-on-write semantics: during async save the canvas Arc is cloned cheaply (refcount bump), and the background thread gets a snapshot while the UI thread continues to mutate via make_mut.
