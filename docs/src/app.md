@@ -256,3 +256,7 @@ Maximum 2D texture dimension reported by the GPU device (glmax texture size). Us
 ## `UIState.pending_large_canvas`
 
 Dimensions of a canvas pending user confirmation when the pixel count exceeds MEMORY_WARN_THRESHOLD. When set, a confirmation dialog is shown before the canvas is replaced.
+
+## `UIState.pending_stamp_name`
+
+The name of a stamp image awaiting user confirmation in a name-entry dialog. Set when loaded_stamp_data is processed in the frame loop.
