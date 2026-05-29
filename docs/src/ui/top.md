@@ -62,3 +62,7 @@ Queues PendingFileAction::Save regardless of current savefile_path, forcing a sa
 ## `Cmd+I (Import)`
 
 Queues PendingFileAction::Import to import an image file.
+
+## `Cmd+E (Export PNG)`
+
+Queues PendingFileAction::Export(1) for PNG export as a quick-save shortcut.
