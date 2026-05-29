@@ -63,3 +63,7 @@ Parse ABR v6 computed square brush from multi-subblock; verify dimensions.
 ## `parse_abr_multi_subblock`
 
 Parse ABR v6 with two computed subblocks; verify count and widths.
+
+## `parse_abr_empty_no_tips`
+
+ABR v6 with zero subblocks should return an error.
