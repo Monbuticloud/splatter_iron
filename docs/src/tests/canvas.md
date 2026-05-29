@@ -86,3 +86,7 @@ DirtyRectList::new creates an empty list; is_empty returns true.
 ## `dirty_rect_list_add_single`
 
 Adding one DirtyRect to DirtyRectList stores it.
+
+## `dirty_rect_list_non_overlapping_separate`
+
+Non-overlapping rects remain separate in DirtyRectList.
