@@ -148,7 +148,7 @@ pub(crate) fn parse_gbr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
 /// image data) and rasterises common computed/parametric brush shapes
 /// (round, capped-round, square, diamond). Unknown subblock types are
 /// skipped with a logged warning.
-fn parse_abr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
+pub(crate) fn parse_abr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
     if data.len() < 14 {
         return Err("ABR file too short".into());
     }
