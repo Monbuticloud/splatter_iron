@@ -315,3 +315,7 @@ Layers are composited bottom-to-top by [`blend_layers()`] — later layers overl
 
 - `pixels.len()` must equal `width * height` of the parent `Canvas`. This invariant is maintained by `Canvas`'s constructors and resize operations.
 - Pixel colors are stored in premultiplied-alpha form: each channel has already been multiplied by the alpha value. This avoids dark fringing during blending and is the native format for the compositing engine in [`pixel`].
+
+## `struct DirtyRectList`
+
+A collection of DirtyRect values with proximity-based merging. When adding a rect via add(), if it overlaps or is within MAX_PROXIMITY of an existing rect they are merged. This reduces the number of partial texture uploads without requiring a full-canvas blend.
