@@ -10,12 +10,15 @@ use eframe::egui::Panel;
 use eframe::egui::{self};
 use eframe::egui_wgpu::wgpu;
 
+use crate::asset_library::Library;
+use crate::brush_library::BrushEntry;
 use crate::canvas::Canvas;
 use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
 use crate::document::Document;
 use crate::file_io::FileIO;
 use crate::file_io::SaveKind;
+use crate::stamp_library::StampEntry;
 use crate::tool_configuration::ToolConfiguration;
 use crate::undo_history::UndoHistory;
 
@@ -282,9 +285,9 @@ pub struct MyApp {
     /// the egui-managed texture path (full-buffer `tex.set()`).
     pub gpu_texture: Option<GpuTexture>,
     /// Persistent stamp library (images, naming, disk storage).
-    pub stamp_library: crate::stamp_library::StampLibrary,
+    pub stamp_library: Library<StampEntry>,
     /// Persistent custom brush library (imported tips, naming, disk storage).
-    pub brush_library: crate::brush_library::BrushLibrary,
+    pub brush_library: Library<BrushEntry>,
 }
 
 impl MyApp {
@@ -320,8 +323,8 @@ impl MyApp {
             .map(|rs| rs.device.limits().max_texture_dimension_2d)
             .unwrap_or(8192);
 
-        let stamp_library = crate::stamp_library::StampLibrary::load_from_disk(&data_dir);
-        let brush_library = crate::brush_library::BrushLibrary::load_from_disk(&data_dir);
+        let stamp_library: Library<StampEntry> = Library::load_from_disk(&data_dir);
+        let brush_library: Library<BrushEntry> = Library::load_from_disk(&data_dir);
 
         let gpu_texture = creation_context
             .wgpu_render_state
@@ -728,7 +731,8 @@ impl MyApp {
                     let stamp_pixels = std::mem::take(&mut pending.pixels);
                     let stamp_w = pending.width;
                     let stamp_h = pending.height;
-                    self.stamp_library.add(
+                    crate::stamp_library::add_stamp(
+                        &mut self.stamp_library,
                         stamp_name.clone(),
                         stamp_pixels,
                         stamp_w,
@@ -797,7 +801,8 @@ impl MyApp {
             let count = all_brushes.len();
             for brush in all_brushes {
                 if !brush.name.is_empty() {
-                    self.brush_library.add(
+                    crate::brush_library::add_brush(
+                        &mut self.brush_library,
                         brush.name,
                         brush.pixels,
                         brush.width,

@@ -6,10 +6,8 @@
 use eframe::egui::Color32;
 
 use crate::brush_params::BrushStrokeParams;
-use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
 use crate::tool_configuration::StampSampling;
-use crate::tool_configuration::StampTintMode;
 use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
 use crate::undo::compress_run;

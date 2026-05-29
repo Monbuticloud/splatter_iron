@@ -1,6 +1,4 @@
-//! Brush library — thin wrapper around [`Library<BrushEntry>`].
-
-use std::path::Path;
+//! Brush library — alias for [`Library<BrushEntry>`].
 
 use eframe::egui::Color32;
 use eframe::egui::TextureHandle;
@@ -71,44 +69,26 @@ impl AssetEntry for BrushEntry {
 }
 
 /// Persistent collection of brush tips.
-pub struct BrushLibrary(pub Library<BrushEntry>);
+pub type BrushLibrary = Library<BrushEntry>;
 
-impl BrushLibrary {
-    pub fn load_from_disk(data_dir: &Path) -> Self {
-        Self(Library::load_from_disk(data_dir))
-    }
-
-    pub fn create_textures(&mut self, ctx: &egui::Context) {
-        self.0.create_textures(ctx);
-    }
-
-    pub fn add(
-        &mut self,
-        name: String,
-        pixels: Vec<Color32>,
-        width: u32,
-        height: u32,
-        spacing: u8,
-        ctx: &egui::Context,
-    ) {
-        let entry = BrushEntry {
-            name,
-            filename: String::new(),
-            pixels,
-            width,
-            height,
-            spacing,
-            texture_handle: None,
-        };
-        self.0.add_entry(entry, ctx);
-    }
-
-    pub fn remove(&mut self, index: usize) { self.0.remove(index); }
-    pub fn select(&mut self, index: usize) { self.0.select(index); }
-    pub fn selected_index(&self) -> Option<usize> { self.0.selected_index() }
-    pub fn selected(&self) -> Option<&BrushEntry> { self.0.selected() }
-    pub fn entries(&self) -> &[BrushEntry] { self.0.entries() }
-    pub fn len(&self) -> usize { self.0.len() }
-    pub fn is_empty(&self) -> bool { self.0.is_empty() }
-    pub fn get(&self, index: usize) -> Option<&BrushEntry> { self.0.get(index) }
+/// Create and add a brush entry to the library.
+pub fn add_brush(
+    lib: &mut BrushLibrary,
+    name: String,
+    pixels: Vec<Color32>,
+    width: u32,
+    height: u32,
+    spacing: u8,
+    ctx: &egui::Context,
+) {
+    let entry = BrushEntry {
+        name,
+        filename: String::new(),
+        pixels,
+        width,
+        height,
+        spacing,
+        texture_handle: None,
+    };
+    lib.add_entry(entry, ctx);
 }

@@ -1,10 +1,12 @@
-//! Tests for `BrushLibrary` — add, remove, select, persistence round-trip.
+//! Tests for `Library<BrushEntry>` — add, remove, select, persistence round-trip.
 //!
 //! Mirrors the `stamp_library` test patterns.
 
 use eframe::egui::Context;
 
-use crate::brush_library::BrushLibrary;
+use crate::asset_library::Library;
+use crate::brush_library::add_brush;
+use crate::brush_library::BrushEntry;
 use crate::tests::common::red;
 
 fn tempdir() -> std::path::PathBuf {
@@ -21,13 +23,14 @@ fn tempdir() -> std::path::PathBuf {
 #[test]
 fn add_brush_increments_count() {
     let dir = tempdir();
-    let mut lib = BrushLibrary::load_from_disk(&dir);
+    let mut lib = Library::<BrushEntry>::load_from_disk(&dir);
 
     assert!(lib.is_empty());
     assert_eq!(lib.len(), 0);
     assert!(lib.selected().is_none());
 
-    lib.add(
+    add_brush(
+        &mut lib,
         "test".to_string(),
         vec![red(); 4],
         2,
@@ -48,9 +51,9 @@ fn add_brush_increments_count() {
 #[test]
 fn remove_brush_decrements_count() {
     let dir = tempdir();
-    let mut lib = BrushLibrary::load_from_disk(&dir);
+    let mut lib = Library::<BrushEntry>::load_from_disk(&dir);
 
-    lib.add(
+    add_brush(&mut lib,
         "to_remove".to_string(),
         vec![red(); 4],
         2,
@@ -69,9 +72,9 @@ fn remove_brush_decrements_count() {
 #[test]
 fn select_switches_active_brush() {
     let dir = tempdir();
-    let mut lib = BrushLibrary::load_from_disk(&dir);
+    let mut lib = Library::<BrushEntry>::load_from_disk(&dir);
 
-    lib.add(
+    add_brush(&mut lib,
         "first".to_string(),
         vec![red(); 4],
         2,
@@ -79,7 +82,7 @@ fn select_switches_active_brush() {
         25,
         &Context::default(),
     );
-    lib.add(
+    add_brush(&mut lib,
         "second".to_string(),
         vec![red(); 4],
         2,
@@ -103,8 +106,8 @@ fn persistence_round_trip() {
     let dir = tempdir();
 
     {
-        let mut lib = BrushLibrary::load_from_disk(&dir);
-        lib.add(
+        let mut lib = Library::<BrushEntry>::load_from_disk(&dir);
+        add_brush(&mut lib,
             "persist".to_string(),
             vec![red(); 4],
             2,
@@ -115,7 +118,7 @@ fn persistence_round_trip() {
     }
 
     {
-        let lib = BrushLibrary::load_from_disk(&dir);
+        let lib = Library::<BrushEntry>::load_from_disk(&dir);
         assert_eq!(lib.len(), 1);
         assert_eq!(lib.selected().unwrap().name, "persist");
         assert_eq!(lib.selected().unwrap().spacing, 15);
@@ -126,9 +129,9 @@ fn persistence_round_trip() {
 #[test]
 fn remove_last_brush_clears_selection() {
     let dir = tempdir();
-    let mut lib = BrushLibrary::load_from_disk(&dir);
+    let mut lib = Library::<BrushEntry>::load_from_disk(&dir);
 
-    lib.add(
+    add_brush(&mut lib,
         "only".to_string(),
         vec![red(); 4],
         2,
@@ -146,9 +149,9 @@ fn remove_last_brush_clears_selection() {
 #[test]
 fn remove_out_of_bounds_noop() {
     let dir = tempdir();
-    let mut lib = BrushLibrary::load_from_disk(&dir);
+    let mut lib = Library::<BrushEntry>::load_from_disk(&dir);
 
-    lib.add(
+    add_brush(&mut lib,
         "survivor".to_string(),
         vec![red(); 4],
         2,
@@ -166,9 +169,9 @@ fn remove_out_of_bounds_noop() {
 #[test]
 fn select_out_of_bounds_noop() {
     let dir = tempdir();
-    let mut lib = BrushLibrary::load_from_disk(&dir);
+    let mut lib = Library::<BrushEntry>::load_from_disk(&dir);
 
-    lib.add(
+    add_brush(&mut lib,
         "pickme".to_string(),
         vec![red(); 4],
         2,
@@ -186,9 +189,9 @@ fn select_out_of_bounds_noop() {
 #[test]
 fn remove_middle_preserves_order() {
     let dir = tempdir();
-    let mut lib = BrushLibrary::load_from_disk(&dir);
+    let mut lib = Library::<BrushEntry>::load_from_disk(&dir);
 
-    lib.add(
+    add_brush(&mut lib,
         "first".to_string(),
         vec![red(); 4],
         2,
@@ -196,7 +199,7 @@ fn remove_middle_preserves_order() {
         10,
         &Context::default(),
     );
-    lib.add(
+    add_brush(&mut lib,
         "second".to_string(),
         vec![red(); 4],
         2,
@@ -204,7 +207,7 @@ fn remove_middle_preserves_order() {
         20,
         &Context::default(),
     );
-    lib.add(
+    add_brush(&mut lib,
         "third".to_string(),
         vec![red(); 4],
         2,
@@ -223,6 +226,6 @@ fn remove_middle_preserves_order() {
 #[test]
 fn entries_empty_library() {
     let dir = tempdir();
-    let lib = BrushLibrary::load_from_disk(&dir);
+    let lib = Library::<BrushEntry>::load_from_disk(&dir);
     assert!(lib.entries().is_empty());
 }

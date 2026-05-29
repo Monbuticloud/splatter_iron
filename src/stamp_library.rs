@@ -1,16 +1,8 @@
-//! Stamp library — thin wrapper around [`Library<StampEntry>`].
-//!
-//! Re-exports [`StampSampling`] and [`StampTintMode`] from
-//! `tool_configuration` for callers that previously imported them here.
-
-use std::path::Path;
+//! Stamp library — alias for [`Library<StampEntry>`].
 
 use eframe::egui::Color32;
 use eframe::egui::TextureHandle;
 use eframe::egui::{self};
-
-pub use crate::tool_configuration::StampSampling;
-pub use crate::tool_configuration::StampTintMode;
 
 use crate::asset_library::AssetEntry;
 use crate::asset_library::Library;
@@ -70,43 +62,24 @@ impl AssetEntry for StampEntry {
 }
 
 /// Persistent collection of stamp images.
-pub struct StampLibrary(pub Library<StampEntry>);
+pub type StampLibrary = Library<StampEntry>;
 
-impl StampLibrary {
-    pub fn load_from_disk(data_dir: &Path) -> Self {
-        Self(Library::load_from_disk(data_dir))
-    }
-
-    pub fn create_textures(&mut self, ctx: &egui::Context) {
-        self.0.create_textures(ctx);
-    }
-
-    pub fn add(
-        &mut self,
-        name: String,
-        pixels: Vec<Color32>,
-        width: u32,
-        height: u32,
-        ctx: &egui::Context,
-    ) {
-        let entry = StampEntry {
-            name,
-            filename: String::new(),
-            pixels,
-            width,
-            height,
-            texture_handle: None,
-        };
-        self.0.add_entry(entry, ctx);
-    }
-
-    pub fn remove(&mut self, index: usize) { self.0.remove(index); }
-    pub fn select(&mut self, index: usize) { self.0.select(index); }
-    pub fn selected_index(&self) -> Option<usize> { self.0.selected_index() }
-    pub fn selected(&self) -> Option<&StampEntry> { self.0.selected() }
-    pub fn selected_mut(&mut self) -> Option<&mut StampEntry> { self.0.selected_mut() }
-    pub fn entries(&self) -> &[StampEntry] { self.0.entries() }
-    pub fn len(&self) -> usize { self.0.len() }
-    pub fn is_empty(&self) -> bool { self.0.is_empty() }
-    pub fn get(&self, index: usize) -> Option<&StampEntry> { self.0.get(index) }
+/// Create and add a stamp entry to the library.
+pub fn add_stamp(
+    lib: &mut StampLibrary,
+    name: String,
+    pixels: Vec<Color32>,
+    width: u32,
+    height: u32,
+    ctx: &egui::Context,
+) {
+    let entry = StampEntry {
+        name,
+        filename: String::new(),
+        pixels,
+        width,
+        height,
+        texture_handle: None,
+    };
+    lib.add_entry(entry, ctx);
 }
