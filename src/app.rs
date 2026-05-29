@@ -756,6 +756,7 @@ impl MyApp {
             return;
         };
         let mut open = true;
+        let mut cancelled = false;
         let label = format!("Size: {}×{}", pending.width, pending.height);
         egui::Window::new("Name Your Stamp")
             .collapsible(false)
@@ -771,6 +772,9 @@ impl MyApp {
                     );
                 });
                 ui.label(&label);
+                if ui.button("Cancel").clicked() {
+                    cancelled = true;
+                }
                 if ui.button("Add Stamp").clicked() && !pending.name.is_empty() {
                     let stamp_name = pending.name.clone();
                     let stamp_pixels = std::mem::take(&mut pending.pixels);
@@ -788,7 +792,7 @@ impl MyApp {
                         Some((format!("Stamp \"{stamp_name}\" added"), Instant::now()));
                 }
             });
-        if open {
+        if open && !cancelled {
             self.ui.dialogs.pending_stamp_name = Some(pending);
         }
     }
@@ -800,6 +804,7 @@ impl MyApp {
         };
         let mut open = true;
         let mut confirmed = false;
+        let mut cancelled = false;
         egui::Window::new("Name Your Brushes")
             .collapsible(false)
             .resizable(true)
@@ -838,11 +843,18 @@ impl MyApp {
                 }
 
                 ui.separator();
-                if ui.button("Import All").clicked() && !brushes.is_empty() {
-                    confirmed = true;
-                }
+                ui.horizontal(|ui| {
+                    if ui.button("Cancel").clicked() {
+                        cancelled = true;
+                    }
+                    if ui.button("Import All").clicked() && !brushes.is_empty() {
+                        confirmed = true;
+                    }
+                });
             });
-        if confirmed {
+        if cancelled {
+            self.ui.dialogs.pending_brushes = None;
+        } else if confirmed {
             let all_brushes = self.ui.dialogs.pending_brushes.take().unwrap();
             let count = all_brushes.len();
             for brush in all_brushes {
