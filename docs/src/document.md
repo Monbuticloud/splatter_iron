@@ -78,7 +78,7 @@ pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory)
 - `undo.clear()` is called, discarding all saved undo/redo records.
 - `undo.resize_visited(...)` reallocates the visited buffer to `width × height`
   of the new canvas.
-- `self.canvas.render_next_frame` is set to `true` to force a re-render.
+- `self.canvas_mut().render_next_frame` is set to `true` to force a re-render.
 
 ---
 
