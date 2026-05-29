@@ -72,3 +72,7 @@ queue_file_action with LoadStamp sets pending_file_action.
 ## `save_to_current_path_non_empty_triggers_save`
 
 save_to_current_path with a non-empty savefile_path triggers an async save.
+
+## `poll_save_results_manual_save_empty_path`
+
+Receiving ManualSave result with an empty path updates the savefile_path.
