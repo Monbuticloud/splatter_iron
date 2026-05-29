@@ -110,3 +110,7 @@ When exceeding MAX_RECTS, all rects merge into one.
 ## `dirty_rect_list_add_empty_noop`
 
 Adding an empty DirtyRect to the list is a no-op.
+
+## `dirty_rect_list_clear`
+
+Clearing DirtyRectList removes all rects.
