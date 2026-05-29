@@ -110,10 +110,12 @@ pub fn draw_custom_brush_line(
             tinted,
             sampling,
         );
-        let UndoRecord::Run {
+        if let UndoRecord::Run {
             runs: step_runs, ..
-        } = record;
-        all_runs.extend(step_runs);
+        } = record
+        {
+            all_runs.extend(step_runs);
+        }
     }
 
     UndoRecord::Run {

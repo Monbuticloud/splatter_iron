@@ -5,6 +5,7 @@
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
+use crate::canvas::Layer;
 use crate::pixel::alpha_blend;
 
 /// Compressed storage for a run of before-pixels: either all the same color
@@ -51,10 +52,11 @@ pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
     }
 }
 
-/// A record of a single drawing stroke, used for undo/redo.
+/// A record of a single change in the undo/redo stack.
 ///
-/// `Run` stores runs of contiguous pixels, compressed for efficiency.
+/// Variants cover both drawing strokes and layer-structural operations.
 pub enum UndoRecord {
+    /// Per-pixel before/after state for a brush stroke.
     Run {
         /// Index of the layer that was modified.
         layer_index: usize,
@@ -65,74 +67,164 @@ pub enum UndoRecord {
         /// Whether this stroke was drawn as an alpha overlay (vs. opaque).
         is_alpha_overlay: bool,
     },
+    /// A new layer was created.
+    AddLayer {
+        /// Index at which the layer was inserted.
+        index: usize,
+        /// The new layer's full state.
+        layer: Box<Layer>,
+    },
+    /// An existing layer was deleted.
+    DeleteLayer {
+        /// Former index of the deleted layer.
+        index: usize,
+        /// The deleted layer's full state (for restoration).
+        layer: Box<Layer>,
+    },
+    /// A layer was moved up or down in the stack.
+    MoveLayer {
+        /// Original index before the move.
+        from_index: usize,
+        /// Target index after the move.
+        to_index: usize,
+    },
+    /// A layer's non-pixel properties (visibility, opacity, name) changed.
+    ModifyLayer {
+        /// Index of the modified layer.
+        index: usize,
+        /// Layer properties before the change.
+        old_visible: bool,
+        old_opacity: u8,
+        old_name: String,
+        /// Layer properties after the change.
+        new_visible: bool,
+        new_opacity: u8,
+        new_name: String,
+    },
 }
 
-/// Restore canvas state that was changed by a stroke, using its undo record.
-///
-/// Restores the saved before-pixels in each run segment.
+/// Restore canvas state to before the operation recorded by `record`.
 ///
 /// # Parameters
 ///
-/// * `canvas` — The canvas whose layer pixels will be restored.
-/// * `record` — The undo record containing before-pixel data.
+/// * `canvas` — The canvas to modify.
+/// * `record` — The undo record describing the operation to reverse.
 ///
 /// # Panics
 ///
-/// Panics if any run segment extends past the end of the target layer's
-/// pixel buffer. This indicates a corrupt or mismatched undo record.
+/// Panics if a layer index in the record is out of bounds, indicating a
+/// corrupt or mismatched undo record.
 #[inline]
 pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
-    let UndoRecord::Run {
-        layer_index,
-        color_after: _,
-        runs,
-        is_alpha_overlay: _,
-    } = record;
-    let layer = &mut canvas.pixels[*layer_index];
-    for run in runs {
-        let end = (run.start as usize) + run.length as usize;
-        match &run.before {
-            BeforePixels::All(color) => layer.pixels[run.start as usize..end].fill(*color),
-            BeforePixels::Many(pixels) => {
-                layer.pixels[run.start as usize..end].copy_from_slice(pixels);
+    match record {
+        UndoRecord::Run {
+            layer_index,
+            color_after: _,
+            runs,
+            is_alpha_overlay: _,
+        } => {
+            let layer = &mut canvas.pixels[*layer_index];
+            for run in runs {
+                let end = (run.start as usize) + run.length as usize;
+                match &run.before {
+                    BeforePixels::All(color) => {
+                        layer.pixels[run.start as usize..end].fill(*color);
+                    }
+                    BeforePixels::Many(pixels) => {
+                        layer.pixels[run.start as usize..end].copy_from_slice(pixels);
+                    }
+                }
             }
+        }
+        UndoRecord::AddLayer { index, layer: _ } => {
+            canvas.pixels.remove(*index);
+        }
+        UndoRecord::DeleteLayer { index, layer } => {
+            canvas.pixels.insert(*index, *layer.clone());
+        }
+        UndoRecord::MoveLayer {
+            from_index,
+            to_index,
+        } => {
+            canvas.pixels.swap(*to_index, *from_index);
+        }
+        UndoRecord::ModifyLayer {
+            index,
+            old_visible,
+            old_opacity,
+            old_name,
+            new_visible: _,
+            new_opacity: _,
+            new_name: _,
+        } => {
+            let layer = &mut canvas.pixels[*index];
+            layer.visible = *old_visible;
+            layer.opacity = *old_opacity;
+            layer.name.clone_from(old_name);
         }
     }
 }
 
-/// Reapply a previously undone stroke from its undo record.
-///
-/// Fills the segment range with `color_after`.
+/// Reapply a previously undone operation from its undo record.
 ///
 /// # Parameters
 ///
-/// * `canvas` — The canvas whose layer pixels will be re-stroked.
-/// * `record` — The undo record containing after-pixel data.
+/// * `canvas` — The canvas to modify.
+/// * `record` — The undo record containing the operation to reapply.
 ///
 /// # Panics
 ///
-/// Panics if any run segment extends past the end of the target layer's
-/// pixel buffer. This indicates a corrupt or mismatched undo record.
+/// Panics if a layer index in the record is out of bounds, indicating a
+/// corrupt or mismatched undo record.
 #[inline]
 pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
-    let UndoRecord::Run {
-        layer_index,
-        color_after,
-        runs,
-        is_alpha_overlay,
-    } = record;
-    let layer = &mut canvas.pixels[*layer_index];
-    if *is_alpha_overlay {
-        for run in runs {
-            let end = (run.start as usize) + run.length as usize;
-            for pixel in layer.pixels[run.start as usize..end].iter_mut() {
-                *pixel = alpha_blend(*pixel, *color_after);
+    match record {
+        UndoRecord::Run {
+            layer_index,
+            color_after,
+            runs,
+            is_alpha_overlay,
+        } => {
+            let layer = &mut canvas.pixels[*layer_index];
+            if *is_alpha_overlay {
+                for run in runs {
+                    let end = (run.start as usize) + run.length as usize;
+                    for pixel in layer.pixels[run.start as usize..end].iter_mut() {
+                        *pixel = alpha_blend(*pixel, *color_after);
+                    }
+                }
+            } else {
+                for run in runs {
+                    let end = (run.start as usize) + run.length as usize;
+                    layer.pixels[run.start as usize..end].fill(*color_after);
+                }
             }
         }
-    } else {
-        for run in runs {
-            let end = (run.start as usize) + run.length as usize;
-            layer.pixels[run.start as usize..end].fill(*color_after);
+        UndoRecord::AddLayer { index, layer } => {
+            canvas.pixels.insert(*index, *layer.clone());
+        }
+        UndoRecord::DeleteLayer { index, layer: _ } => {
+            canvas.pixels.remove(*index);
+        }
+        UndoRecord::MoveLayer {
+            from_index,
+            to_index,
+        } => {
+            canvas.pixels.swap(*from_index, *to_index);
+        }
+        UndoRecord::ModifyLayer {
+            index,
+            old_visible: _,
+            old_opacity: _,
+            old_name: _,
+            new_visible,
+            new_opacity,
+            new_name,
+        } => {
+            let layer = &mut canvas.pixels[*index];
+            layer.visible = *new_visible;
+            layer.opacity = *new_opacity;
+            layer.name.clone_from(new_name);
         }
     }
 }

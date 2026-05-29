@@ -334,21 +334,22 @@ impl MyApp {
                     if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
                         self.document.dirty_since_last_autosave = true;
                         if self.ui.previous_cursor_position.is_none() {
-                            let UndoRecord::Run {
+                            if let UndoRecord::Run {
                                 layer_index,
                                 color_after,
                                 runs,
                                 is_alpha_overlay,
-                            } = stroke;
-                            self.undo.init_drag_accumulator(
-                                layer_index,
-                                self.document.canvas.width,
-                                color_after,
-                                is_alpha_overlay,
-                            );
-                            self.undo.extend_drag_accumulator(runs);
-                        } else {
-                            let UndoRecord::Run { runs, .. } = stroke;
+                            } = stroke
+                            {
+                                self.undo.init_drag_accumulator(
+                                    layer_index,
+                                    self.document.canvas.width,
+                                    color_after,
+                                    is_alpha_overlay,
+                                );
+                                self.undo.extend_drag_accumulator(runs);
+                            }
+                        } else if let UndoRecord::Run { runs, .. } = stroke {
                             self.undo.extend_drag_accumulator(runs);
                         }
                     }
