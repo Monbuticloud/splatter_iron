@@ -107,3 +107,7 @@ Deleting a layer with out-of-bounds index panics.
 ## `select_layer_out_of_bounds_sets_index`
 
 select_layer with out-of-bounds index still sets current_layer (no validation).
+
+## `blend_to_output_twice_resets_state`
+
+Calling blend_to_output twice resets render state; second call returns None.
