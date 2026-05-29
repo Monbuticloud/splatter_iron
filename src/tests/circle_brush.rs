@@ -332,14 +332,15 @@ fn draw_circle_line_alpha_overlay_blends() {
     assert_ne!(blended, semi_red, "alpha overlay blended");
 }
 
-/// A circle drawn fully outside the canvas bounds should return an empty undo record.
+/// A circle center clamped to the canvas edge should still produce runs
+/// (drawn at the nearest valid pixel).
 #[test]
-fn draw_circle_fully_off_screen_returns_empty_undo() {
+fn draw_circle_clamped_to_edge_produces_runs() {
     let mut canvas = small_canvas();
-    // Center at (100, 100) — well outside the 10x10 canvas
+    // Center at (100, 100) — well outside the 10x10 canvas, clamped to (9, 9)
     let record = circle_brush::draw_circle(100, 100, 5, &mut canvas, red(), 0, false);
     let crate::undo::UndoRecord::Run { runs, .. } = &record;
-    assert!(runs.is_empty(), "off-screen circle should produce no runs");
+    assert!(!runs.is_empty(), "clamped circle should produce runs");
 }
 
 // --------------------------------------------------
