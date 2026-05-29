@@ -125,3 +125,7 @@ Blending transparent over opaque leaves destination within +-1 per channel.
 ## `blend_layers_exactly_one_simd_chunk`
 
 blend_layers with exactly one SIMD chunk (4 pixels) works correctly.
+
+## `blend_layers_simd_plus_tail`
+
+blend_layers with 7 pixels exercises the SIMD path plus 3-pixel tail.
