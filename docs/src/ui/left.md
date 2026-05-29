@@ -34,3 +34,7 @@ rendering the buttons.
 
 Sets `self.tool_configuration.current_tool` to the selected variant. No
 return value or side effects beyond updating the tool selection.
+
+## `Stamp Tool button`
+
+Selects CurrentTool::Stamp. When active, displays the stamp gallery below the tool buttons showing all entries from StampLibrary with thumbnails.
