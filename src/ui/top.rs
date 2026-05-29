@@ -142,6 +142,21 @@ impl MyApp {
                 }
             });
 
+            // Recent files
+            let has_recent = !self.ui.recent_files.is_empty();
+            let recent_response = ui.add_enabled(has_recent, egui::Button::new("Recent"));
+            if has_recent {
+                recent_response.context_menu(|ui| {
+                    for path in self.ui.recent_files.clone() {
+                        if ui.button(path.display().to_string()).clicked() {
+                            self.file_io.queue_load_direct(path);
+                            ui.ctx().request_repaint();
+                            ui.close();
+                        }
+                    }
+                });
+            }
+
             // Import
             if ui.button("Import").clicked() {
                 self.file_io.queue_file_action(PendingFileAction::Import);
