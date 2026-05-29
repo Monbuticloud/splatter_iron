@@ -60,3 +60,7 @@ Receiving DialogResult::Picked with Load pending replaces the document canvas vi
 ## `poll_dialog_results_import_replaces_canvas`
 
 Receiving DialogResult::Picked with Import pending replaces the canvas via import_image_as_canvas.
+
+## `queue_file_action_save_sets_pending`
+
+queue_file_action with PendingFileAction::Save sets pending_file_action and spawns a thread.
