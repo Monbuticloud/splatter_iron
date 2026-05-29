@@ -53,3 +53,23 @@ Persistent collection of stamp images with on-disk storage.
 | `stamps`         | `Vec<StampEntry>`     | Stored stamp entries                             |
 | `selected_index` | `Option<usize>`       | Index of the currently selected stamp, if any    |
 | `stamps_dir`     | `std::path::PathBuf`  | Absolute path to the stamps directory on disk     |
+
+## `StampLibrary::load_from_disk`
+
+```rust
+pub fn load_from_disk(data_dir: &Path) -> Self
+```
+
+Load or create a stamp library rooted at `data_dir/stamps/`. If the directory
+does not exist it is created. Entries are loaded from `index.json`; missing
+or corrupt PNG files are silently skipped.
+
+### Parameters
+
+| Parameter  | Type     | Purpose                                          |
+| ---------- | -------- | ------------------------------------------------ |
+| `data_dir` | `&Path`  | Application data directory (parent of `stamps/`) |
+
+### Panics
+
+Panics if the stamps directory cannot be created. |
