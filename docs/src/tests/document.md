@@ -119,3 +119,7 @@ Newly added layers are fully transparent.
 ## `move_layer_up_swaps_ordering`
 
 move_layer_up changes layer ordering by swapping with layer above.
+
+## `delete_layer_first`
+
+Deleting the first layer (index 0) removes it and adjusts current_layer.
