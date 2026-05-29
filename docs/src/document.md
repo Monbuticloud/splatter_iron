@@ -203,8 +203,8 @@ pub fn add_layer(&mut self)
 ### Behaviour
 
 - Pushes a `Layer` containing `width × height` transparent pixels onto
-  `self.canvas.pixels`.
-- Sets `self.canvas.render_next_frame = true` so the compositor re-blends all
+  `self.canvas_mut().pixels`.
+- Sets `self.canvas_mut().render_next_frame = true` so the compositor re-blends all
   layers on the next frame.
 - Does **not** change `current_layer` — the newly added layer is appended at the
   end; the UI is responsible for selecting it if desired.
