@@ -101,3 +101,7 @@ blend_layers with an undersized output buffer panics.
 ## `blend_region_zero_width_panics`
 
 blend_region with zero width panics.
+
+## `blend_region_zero_height_noop`
+
+blend_region with zero height is a no-op (no panics, no writes).
