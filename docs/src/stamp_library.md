@@ -72,4 +72,19 @@ or corrupt PNG files are silently skipped.
 
 ### Panics
 
-Panics if the stamps directory cannot be created. |
+Panics if the stamps directory cannot be created.
+
+## `StampLibrary::create_textures`
+
+```rust
+pub fn create_textures(&mut self, ctx: &egui::Context)
+```
+
+Create egui textures for all stamp entries that don't have one yet. Should
+be called after loading or when the egui context is available.
+
+### Parameters
+
+| Parameter | Type             | Purpose                              |
+| --------- | ---------------- | ------------------------------------ |
+| `ctx`     | `&egui::Context` | The egui context for texture creation |
