@@ -42,4 +42,14 @@ pub fn texture_id(&self) -> Option<egui::TextureId>
 ```
 
 Returns the cached texture ID if a texture has been created, or `None`
-otherwise. Used during rendering to display the stamp in the gallery. |
+otherwise. Used during rendering to display the stamp in the gallery.
+
+## `struct StampLibrary`
+
+Persistent collection of stamp images with on-disk storage.
+
+| Field            | Type                  | Purpose                                          |
+| ---------------- | --------------------- | ------------------------------------------------ |
+| `stamps`         | `Vec<StampEntry>`     | Stored stamp entries                             |
+| `selected_index` | `Option<usize>`       | Index of the currently selected stamp, if any    |
+| `stamps_dir`     | `std::path::PathBuf`  | Absolute path to the stamps directory on disk     |
