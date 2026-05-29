@@ -535,17 +535,17 @@ impl MyApp {
             }
         }
 
+        let needs_blend = self.document.canvas.dirty_rect.needs_reblend();
+
         if self.gpu_texture.is_some() {
-            if self.document.canvas.render_next_frame {
+            if needs_blend {
                 let dirty = self.document.blend_to_output();
                 if let Some(ref gpu) = self.gpu_texture {
                     self.document
                         .upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
                 }
             }
-        } else if self.document.canvas.render_next_frame
-            || self.document.canvas.rendered_layers.is_none()
-        {
+        } else if needs_blend || self.document.canvas.rendered_layers.is_none() {
             self.document.render_to_texture(ui);
         }
     }

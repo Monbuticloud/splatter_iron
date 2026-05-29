@@ -108,7 +108,7 @@ impl MyApp {
                     self.document.canvas_mut(),
                     self.ui.undo_redo_steps_multiplier,
                 );
-                self.document.canvas_mut().render_next_frame = true;
+                self.document.canvas_mut().dirty_rect.request_full_blend();
             }
 
             // Redo: button, cmd+shift+Z, or cmd+Y
@@ -125,7 +125,7 @@ impl MyApp {
                     self.document.canvas_mut(),
                     self.ui.undo_redo_steps_multiplier,
                 );
-                self.document.canvas_mut().render_next_frame = true;
+                self.document.canvas_mut().dirty_rect.request_full_blend();
             }
 
             ui.separator();

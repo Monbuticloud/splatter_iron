@@ -103,15 +103,28 @@ const DIRTY_RECT_MAX_COUNT: usize = 8;
 /// A list of dirty rectangles that tracks each dirty region individually,
 /// merging overlapping or proximate rects. When the count exceeds
 /// [`DIRTY_RECT_MAX_COUNT`], all rects are merged into a single bounding box.
+///
+/// Also tracks whether a full-canvas re-blend has been requested (e.g. after
+/// layer add/delete/move). [`take_all`] returns a single full-canvas rect when
+/// a full blend was requested.
 #[derive(Clone, Default)]
 pub struct DirtyRectList {
     rects: Vec<DirtyRect>,
+    needs_full_blend: bool,
 }
 
 impl DirtyRectList {
     /// Create an empty list.
     pub fn new() -> Self {
-        Self { rects: Vec::new() }
+        Self {
+            rects: Vec::new(),
+            needs_full_blend: false,
+        }
+    }
+
+    /// Request a full-canvas re-blend on the next frame.
+    pub fn request_full_blend(&mut self) {
+        self.needs_full_blend = true;
     }
 
     /// Add a dirty rect, merging with overlapping or proximate rects.
@@ -119,10 +132,12 @@ impl DirtyRectList {
     /// Two rects are merged when they overlap or when the gap between them
     /// is ≤ [`DIRTY_RECT_PROXIMITY`] pixels. If the total exceeds
     /// [`DIRTY_RECT_MAX_COUNT`], all rects are merged into one.
+    /// Clears the full-blend request since an incremental rect is being added.
     pub fn add(&mut self, rect: DirtyRect) {
         if rect.is_empty() {
             return;
         }
+        self.needs_full_blend = false;
 
         let mut merged = rect;
         let mut i = 0;
@@ -156,18 +171,30 @@ impl DirtyRectList {
     }
 
     /// Take all tracked rects and reset the list to empty.
+    ///
+    /// If a full-blend was requested (via [`request_full_blend`]), returns
+    /// an empty list — the caller should blend the full canvas instead.
+    /// Also clears the full-blend flag.
     pub fn take_all(&mut self) -> Vec<DirtyRect> {
-        std::mem::take(&mut self.rects)
+        let rects = std::mem::take(&mut self.rects);
+        self.needs_full_blend = false;
+        rects
     }
 
-    /// Returns `true` when no rects are tracked.
+    /// Returns `true` when no rects are tracked and no full blend is requested.
     pub fn is_empty(&self) -> bool {
-        self.rects.is_empty()
+        self.rects.is_empty() && !self.needs_full_blend
     }
 
-    /// Clear all tracked rects.
+    /// Returns `true` if any rects are tracked or a full blend was requested.
+    pub fn needs_reblend(&self) -> bool {
+        !self.rects.is_empty() || self.needs_full_blend
+    }
+
+    /// Clear all tracked rects and reset the full-blend flag.
     pub fn clear(&mut self) {
         self.rects.clear();
+        self.needs_full_blend = false;
     }
 }
 
@@ -204,8 +231,6 @@ pub struct Canvas {
     #[serde(skip)]
     pub dirty_rect: DirtyRectList,
 
-    /// Flag to request a full re-render on the next frame.
-    pub render_next_frame: bool,
 }
 
 impl Default for Canvas {
@@ -221,9 +246,7 @@ impl Default for Canvas {
             width: DEFAULT_WIDTH,
             output_rgba: Vec::new(),
             rendered_layers: None,
-            // placeholder_texture: None,
             dirty_rect: DirtyRectList::new(),
-            render_next_frame: true,
         }
     }
 }
@@ -243,6 +266,8 @@ impl Canvas {
         let pixel_count = (width as usize)
             .checked_mul(height as usize)
             .expect("Canvas dimensions overflow usize");
+        let mut dirty_rect = DirtyRectList::new();
+        dirty_rect.request_full_blend();
         Self {
             pixels: vec![Layer {
                 pixels: vec![Color32::TRANSPARENT; pixel_count],
@@ -251,8 +276,7 @@ impl Canvas {
             height,
             output_rgba: Vec::new(),
             rendered_layers: None,
-            dirty_rect: DirtyRectList::new(),
-            render_next_frame: true,
+            dirty_rect,
         }
     }
 }

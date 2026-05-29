@@ -459,7 +459,7 @@ impl FileIO {
                 }
                 SaveResult::ManualSave(path) => {
                     document.savefile_path = path.display().to_string();
-                    document.canvas_mut().render_next_frame = true;
+                    document.canvas_mut().dirty_rect.request_full_blend();
                 }
                 SaveResult::Failed(message) => {
                     error_list.push(format!("Save failed: {message}"));

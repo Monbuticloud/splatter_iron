@@ -301,7 +301,7 @@ impl MyApp {
                 let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
                 let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
-                Arc::make_mut(&mut self.document.canvas).render_next_frame = true;
+                Arc::make_mut(&mut self.document.canvas).dirty_rect.request_full_blend();
                 let stroke = draw_bucket_fill(
                     pixel_x,
                     pixel_y,
@@ -327,7 +327,7 @@ impl MyApp {
                 let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
                 if self.tool_configuration.current_tool != CurrentTool::BucketFill {
-                    Arc::make_mut(&mut self.document.canvas).render_next_frame = true;
+                    Arc::make_mut(&mut self.document.canvas).dirty_rect.request_full_blend();
                     if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
                         self.document.dirty_since_last_autosave = true;
                         if self.ui.previous_cursor_position.is_none() {

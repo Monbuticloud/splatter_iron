@@ -80,7 +80,7 @@ impl Document {
         self.dirty_since_last_autosave = false;
         undo.clear();
         undo.resize_visited((self.canvas.width * self.canvas.height) as usize);
-        self.canvas_mut().render_next_frame = true;
+        self.canvas_mut().dirty_rect.request_full_blend();
     }
 
     /// Get a mutable reference to the canvas, cloning-on-write if needed.
@@ -108,8 +108,6 @@ impl Document {
         if canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
             canvas.output_rgba = vec![0; pixel_count * RGBA_CHANNELS];
         }
-        canvas.render_next_frame = false;
-
         let layer_slices: Vec<&[Color32]> =
             canvas.pixels.iter().map(|l| l.pixels.as_slice()).collect();
 
@@ -231,14 +229,12 @@ impl Document {
     }
 
     /// Append a new transparent layer to the canvas.
-    ///
-    /// Sets `render_next_frame` to `true` so the composite is re-blended.
     pub fn add_layer(&mut self) {
         let canvas = self.canvas_mut();
         canvas.pixels.push(Layer {
             pixels: vec![Color32::TRANSPARENT; (canvas.width * canvas.height) as usize],
         });
-        canvas.render_next_frame = true;
+        canvas.dirty_rect.request_full_blend();
     }
 
     /// Remove the layer at `index` and adjust `current_layer` if needed.
@@ -255,7 +251,7 @@ impl Document {
             .current_layer
             .saturating_sub(1)
             .min(self.canvas.pixels.len().saturating_sub(1));
-        self.canvas_mut().render_next_frame = true;
+        self.canvas_mut().dirty_rect.request_full_blend();
     }
 
     /// Swap the layer at `index` with the one above it (`index - 1`).
@@ -271,7 +267,7 @@ impl Document {
         self.current_layer = index - 1;
         let canvas = self.canvas_mut();
         canvas.pixels.swap(index, index - 1);
-        canvas.render_next_frame = true;
+        canvas.dirty_rect.request_full_blend();
     }
 
     /// Swap the layer at `index` with the one below it (`index + 1`).
@@ -287,7 +283,7 @@ impl Document {
         self.current_layer = index + 1;
         let canvas = self.canvas_mut();
         canvas.pixels.swap(index, index + 1);
-        canvas.render_next_frame = true;
+        canvas.dirty_rect.request_full_blend();
     }
 
     /// Set the current (active) layer index.

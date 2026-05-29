@@ -42,7 +42,8 @@ pub fn load_bytes_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
 /// Returns an error if zstd decompression or JSON deserialization fails.
 pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
     let decompressed = zstd::decode_all(data)?;
-    let canvas = serde_json::from_slice(&decompressed)?;
+    let mut canvas: Canvas = serde_json::from_slice(&decompressed)?;
+    canvas.dirty_rect.request_full_blend();
     Ok(canvas)
 }
 
@@ -293,13 +294,14 @@ pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
         pixels.push(premultiply(straight));
     }
 
+    let mut dirty_rect = DirtyRectList::new();
+    dirty_rect.request_full_blend();
     Ok(Canvas {
         pixels: vec![Layer { pixels }],
         height: height_u32,
         width: width_u32,
         output_rgba: Vec::new(),
         rendered_layers: None,
-        dirty_rect: DirtyRectList::new(),
-        render_next_frame: true,
+        dirty_rect,
     })
 }

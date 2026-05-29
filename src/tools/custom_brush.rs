@@ -116,8 +116,6 @@ pub fn draw_custom_brush_line(
         all_runs.extend(step_runs);
     }
 
-    canvas.render_next_frame = true;
-
     UndoRecord::Run {
         layer_index: layer,
         color_after: color,
