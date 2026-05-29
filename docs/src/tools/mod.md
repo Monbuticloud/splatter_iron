@@ -22,3 +22,7 @@ Every public drawing function:
 - Captures before-pixel data for all modified pixels and returns it in the
   `UndoRecord` so that strokes can be undone.
 - Updates `canvas.dirty_rect` by unioning the bounding box of affected pixels.
+
+## `brush_parsers`
+
+Parsers for .gbr (GIMP brush) and .abr (Photoshop brush) file formats. Exports parse_brush_file public API and parse_gbr/parse_abr internal helpers.
