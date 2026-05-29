@@ -60,3 +60,7 @@ The delete action requires a two-click confirmation: the first click sets
 `ui.pending_layer_for_deletion = Some(index)`; the second click (with the
 same index) performs the deletion. Any other click (tool selection, drag,
 another layer's button) resets `pending_layer_for_deletion` to `None`.
+
+## `Brush radius range update`
+
+The radius DragValue range is now 0..=1000 (updated from 0-350 to support larger stamps and brush tips).
