@@ -14,5 +14,3 @@ pub mod custom_brush;
 pub mod square_brush;
 /// External-image stamp brush tool implementation.
 pub mod stamp_brush;
-/// Freehand pencil brush tool implementation.
-pub mod pencil;
