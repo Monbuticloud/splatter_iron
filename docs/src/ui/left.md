@@ -54,3 +54,7 @@ When CustomBrush tool is selected, renders a vertical gallery of brush tip thumb
 ## `Stamp/brush tint mode selector`
 
 A combo box selecting between Original and Tinted modes. Affects how stamp/brush colours are composited onto the canvas.
+
+## `Stamp/brush sampling selector`
+
+A combo box selecting between Nearest and Bilinear sampling. Controls how stamps/brush tips are scaled.
