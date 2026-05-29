@@ -108,8 +108,13 @@ impl Document {
         if canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
             canvas.output_rgba = vec![0; pixel_count * RGBA_CHANNELS];
         }
-        let layer_slices: Vec<&[Color32]> =
-            canvas.pixels.iter().map(|l| l.pixels.as_slice()).collect();
+        // Collect pixel slices + opacity for visible layers only.
+        let layer_data: Vec<(&[Color32], u8)> = canvas
+            .pixels
+            .iter()
+            .filter(|l| l.visible)
+            .map(|l| (l.pixels.as_slice(), l.opacity))
+            .collect();
 
         let rects = canvas.dirty_rect.take_all();
         let output = &mut canvas.output_rgba;
@@ -117,7 +122,7 @@ impl Document {
         let height = canvas.height;
 
         let result = if rects.is_empty() {
-            pixel::blend_layers(&layer_slices, output);
+            pixel::blend_layers(&layer_data, output);
             Some(DirtyRect::new(0, 0, width - 1, height - 1))
         } else {
             let mut union_rect: Option<DirtyRect> = None;
@@ -126,7 +131,7 @@ impl Document {
                     continue;
                 }
                 pixel::blend_region(
-                    &layer_slices,
+                    &layer_data,
                     output,
                     width,
                     rect.min_x,

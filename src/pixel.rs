@@ -114,8 +114,8 @@ const PARALLEL_BLEND_THRESHOLD: usize = 64;
 
 /// SIMD blend of 4 pixels (one 16-byte chunk).
 #[inline]
-fn blend_simd_chunk(output_chunk: &mut [u8], layers: &[&[Color32]], pixel_base: usize) {
-    let bottom_layer = layers[0];
+fn blend_simd_chunk(output_chunk: &mut [u8], layers: &[(&[Color32], u8)], pixel_base: usize) {
+    let (bottom_layer, _) = layers[0];
     let bottom_pixel_0 = bottom_layer[pixel_base].to_array();
     let bottom_pixel_1 = bottom_layer[pixel_base + 1].to_array();
     let bottom_pixel_2 = bottom_layer[pixel_base + 2].to_array();
@@ -146,36 +146,45 @@ fn blend_simd_chunk(output_chunk: &mut [u8], layers: &[&[Color32]], pixel_base: 
         bottom_pixel_3[3] as u32,
     ]);
 
-    for &layer_slice in &layers[1..] {
+    for &(layer_slice, layer_opacity) in &layers[1..] {
         let top_pixel_0 = layer_slice[pixel_base].to_array();
         let top_pixel_1 = layer_slice[pixel_base + 1].to_array();
         let top_pixel_2 = layer_slice[pixel_base + 2].to_array();
         let top_pixel_3 = layer_slice[pixel_base + 3].to_array();
 
-        let top_r = u32x4::new([
+        let mut top_r = u32x4::new([
             top_pixel_0[0] as u32,
             top_pixel_1[0] as u32,
             top_pixel_2[0] as u32,
             top_pixel_3[0] as u32,
         ]);
-        let top_g = u32x4::new([
+        let mut top_g = u32x4::new([
             top_pixel_0[1] as u32,
             top_pixel_1[1] as u32,
             top_pixel_2[1] as u32,
             top_pixel_3[1] as u32,
         ]);
-        let top_b = u32x4::new([
+        let mut top_b = u32x4::new([
             top_pixel_0[2] as u32,
             top_pixel_1[2] as u32,
             top_pixel_2[2] as u32,
             top_pixel_3[2] as u32,
         ]);
-        let top_a = u32x4::new([
+        let mut top_a = u32x4::new([
             top_pixel_0[3] as u32,
             top_pixel_1[3] as u32,
             top_pixel_2[3] as u32,
             top_pixel_3[3] as u32,
         ]);
+
+        // Apply per-layer opacity by scaling premultiplied channels
+        if layer_opacity != 255 {
+            let factor = u32x4::splat(layer_opacity as u32);
+            top_r = (top_r * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
+            top_g = (top_g * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
+            top_b = (top_b * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
+            top_a = (top_a * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
+        }
 
         let inverse_alpha = u32x4::splat(255) - top_a;
 
@@ -211,7 +220,7 @@ fn blend_simd_chunk(output_chunk: &mut [u8], layers: &[&[Color32]], pixel_base: 
 /// `(pixel_start + pixel_count) * BYTES_PER_PIXEL`.
 #[inline]
 fn blend_pixel_range(
-    layers: &[&[Color32]],
+    layers: &[(&[Color32], u8)],
     output: &mut [u8],
     pixel_start: usize,
     pixel_count: usize,
@@ -219,21 +228,38 @@ fn blend_pixel_range(
 ) {
     let pixel_end = pixel_start + pixel_count;
 
-    // Fast path: single layer — memcpy RGBA bytes
-    if layers.len() == 1 {
-        let source: &[u8] = cast_slice(&layers[0][pixel_start..pixel_end]);
+    // Fast path: single fully-opaque layer — memcpy RGBA bytes
+    if layers.len() == 1 && layers[0].1 == 255 {
+        let source: &[u8] = cast_slice(&layers[0].0[pixel_start..pixel_end]);
         let destination = &mut output[pixel_start * BYTES_PER_PIXEL..pixel_end * BYTES_PER_PIXEL];
         destination.copy_from_slice(source);
         return;
     }
 
+    // Helper: scale a premultiplied pixel by layer opacity (0–255).
+    let scale_pixel = |pixel: Color32, opacity: u8| -> Color32 {
+        if opacity == 255 {
+            return pixel;
+        }
+        let f = opacity as u32;
+        Color32::from_rgba_premultiplied(
+            ((pixel.r() as u32 * f + 128) * 257 >> 16) as u8,
+            ((pixel.g() as u32 * f + 128) * 257 >> 16) as u8,
+            ((pixel.b() as u32 * f + 128) * 257 >> 16) as u8,
+            ((pixel.a() as u32 * f + 128) * 257 >> 16) as u8,
+        )
+    };
+
     // Scalar head: pixels before the first 4-aligned boundary
     let aligned_start = (pixel_start + 3) & !3;
     let head_end = aligned_start.min(pixel_end);
     for pixel_index in pixel_start..head_end {
-        let mut pixel = layers[0][pixel_index];
-        for &layer_slice in &layers[1..] {
-            pixel = alpha_blend(pixel, layer_slice[pixel_index]);
+        let mut pixel = layers[0].0[pixel_index];
+        pixel = scale_pixel(pixel, layers[0].1);
+        for &(layer_slice, layer_opacity) in &layers[1..] {
+            let mut top = layer_slice[pixel_index];
+            top = scale_pixel(top, layer_opacity);
+            pixel = alpha_blend(pixel, top);
         }
         let rgba = pixel.to_array();
         let byte_index = pixel_index * BYTES_PER_PIXEL;
@@ -266,9 +292,12 @@ fn blend_pixel_range(
     // Scalar tail
     let tail_start = aligned_end.max(pixel_start);
     for pixel_index in tail_start..pixel_end {
-        let mut pixel = layers[0][pixel_index];
-        for &layer_slice in &layers[1..] {
-            pixel = alpha_blend(pixel, layer_slice[pixel_index]);
+        let mut pixel = layers[0].0[pixel_index];
+        pixel = scale_pixel(pixel, layers[0].1);
+        for &(layer_slice, layer_opacity) in &layers[1..] {
+            let mut top = layer_slice[pixel_index];
+            top = scale_pixel(top, layer_opacity);
+            pixel = alpha_blend(pixel, top);
         }
         let rgba = pixel.to_array();
         let byte_index = pixel_index * BYTES_PER_PIXEL;
@@ -279,29 +308,30 @@ fn blend_pixel_range(
 /// Composite multiple premultiplied layers into an RGBA byte buffer.
 ///
 /// Layers are blended bottom-to-top (index 0 = bottommost).
+/// Each layer has a per-layer opacity (0–255) applied during compositing.
 /// Uses SIMD (`wide::u32x4`) via rayon for parallel processing of 4-pixel chunks;
 /// remaining pixels are handled with scalar `alpha_blend`.
 ///
 /// # Parameters
 ///
-/// * `layers` — Slice of layer pixel slices, ordered bottom-to-top.
-/// * `output` — RGBA output buffer (`len = layers[0].len() * 4`).
+/// * `layers` — Slice of (pixel slice, opacity) tuples, ordered bottom-to-top.
+/// * `output` — RGBA output buffer (`len = layers[0].0.len() * 4`).
 ///
 /// # Panics
 ///
 /// - If `layers` is empty.
-/// - If any layer has a different length from `layers[0]`.
-/// - If `output.len() != layers[0].len() * 4`.
+/// - If any layer has a different length from `layers[0].0`.
+/// - If `output.len() != layers[0].0.len() * 4`.
 #[inline]
-pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
+pub fn blend_layers(layers: &[(&[Color32], u8)], output: &mut [u8]) {
     assert!(
         !layers.is_empty(),
         "blend_layers: at least one layer required"
     );
 
-    let pixel_count = layers[0].len();
+    let pixel_count = layers[0].0.len();
     #[cfg(debug_assertions)]
-    for (layer_index, layer) in layers.iter().enumerate() {
+    for (layer_index, (layer, _)) in layers.iter().enumerate() {
         assert_eq!(
             layer.len(),
             pixel_count,
@@ -325,7 +355,7 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
 ///
 /// # Parameters
 ///
-/// * `layers` — Slice of layer pixel slices, ordered bottom-to-top.
+/// * `layers` — Slice of (pixel slice, opacity) tuples, ordered bottom-to-top.
 /// * `output` — RGBA output buffer (full-canvas length).
 /// * `canvas_width` — Width of the canvas in pixels (for row stride computation).
 /// * `min_x` — Leftmost column of the region to blend (inclusive).
@@ -339,7 +369,7 @@ pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
 /// or if `output` is too small for the required byte range.
 #[inline]
 pub fn blend_region(
-    layers: &[&[Color32]],
+    layers: &[(&[Color32], u8)],
     output: &mut [u8],
     canvas_width: u32,
     min_x: u32,
