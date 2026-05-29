@@ -54,3 +54,7 @@ A freshly constructed Canvas has dirty_rect.is_empty() (DirtyRectList starts emp
 ## `canvas_serde_roundtrip`
 
 Canvas serializes and deserializes with identical pixels via serde_json.
+
+## `canvas_serde_multi_layer`
+
+A multi-layer canvas round-trips correctly through serde.
