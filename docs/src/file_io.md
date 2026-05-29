@@ -65,6 +65,7 @@ Manages async file dialogs and save operations via background threads. Holds cha
 | `save_result_sender`       | `mpsc::Sender<SaveResult>`     | Channel sender for dispatching save outcomes from the background save thread to the UI thread. Cloned into each save-spawned thread.                                                             |
 | `save_result_receiver`     | `mpsc::Receiver<SaveResult>`   | Channel receiver for polling save results on the UI thread. Polled once per frame in `poll_save_results`.                                                                                        |
 | `app_local_data_directory` | `PathBuf`                      | Base path for the autosave directory. Autosaves are written to `{app_local_data_directory}/autosaves/{timestamp}.splattercanvas`.                                                                |
+| `loaded_stamp_data`        | `Option<(Vec<Color32>, u32, u32, String)>` | Decoded stamp image data, set when `poll_dialog_results` receives `StampPixels`. Consumed by the app frame loop.                                    |
 
 ## Methods
 
