@@ -322,3 +322,7 @@ pub fn select_layer(&mut self, index: usize)
 - Sets `self.current_layer = index`.
 - No validation of the index is performed; the caller must ensure `index <
 self.canvas.pixels.len()`.
+
+## `Document::canvas_mut`
+
+Returns a mutable reference to the underlying Canvas. Uses Arc::make_mut to clone-on-write, ensuring that if the Arc is shared (e.g. during async save) a fresh copy is created before mutation.
