@@ -66,6 +66,13 @@ impl MyApp {
             "Brush Preview",
         );
         ui.checkbox(&mut self.tool_configuration.alpha_overlay, "Alpha Overlay");
+        ui.checkbox(&mut self.tool_configuration.show_grid, "Show Grid");
+        ui.add_enabled(
+            self.tool_configuration.show_grid,
+            egui::DragValue::new(&mut self.tool_configuration.grid_size)
+                .range(1..=500)
+                .prefix("Grid: "),
+        );
 
         ui.separator();
         ui.label("Save Path:");
