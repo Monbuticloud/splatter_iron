@@ -58,11 +58,8 @@ impl MyApp {
             CurrentTool::CustomBrush,
             "Custom Brush",
         );
-        ui.selectable_value(
-            &mut self.tool_configuration.current_tool,
-            CurrentTool::Eyedropper,
-            "Eyedropper",
-        );
+
+        ui.separator();
         ui.selectable_value(
             &mut self.tool_configuration.current_tool,
             CurrentTool::Pan,
