@@ -87,3 +87,7 @@ Extending drag with runs but without init is a no-op.
 ## `finalize_drag_without_init_noop`
 
 Finalizing drag without init is a no-op (returns None).
+
+## `undo_step_on_empty_history_noop`
+
+Undo on an empty history is a no-op (no panic).
