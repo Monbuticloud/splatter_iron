@@ -4,3 +4,4 @@ lib/*
 zig
 profile.json.gz
 .DS_Store
+docs/deps
