@@ -328,6 +328,10 @@ pub struct UIState {
     /// Set to `true` when the app should close (e.g., after unsaved-changes
     /// resolution chooses Quit).
     pub should_close: bool,
+    /// Current zoom level (1.0 = fit to screen).
+    pub zoom: f32,
+    /// Pan offset from center, in screen pixels.
+    pub pan_offset: egui::Vec2,
 }
 
 impl Default for UIState {
@@ -351,6 +355,8 @@ impl Default for UIState {
             toasts: ToastState::default(),
             progress: ProgressState::Idle,
             should_close: false,
+            zoom: 1.0,
+            pan_offset: egui::Vec2::ZERO,
         }
     }
 }
