@@ -31,10 +31,6 @@ Extending a rect with multiple points expands the bounding box to cover all of t
 
 The union of two overlapping rects produces the minimum bounding box covering both.
 
-## `canvas_dirty_rect_default_none`
-
-A freshly constructed `Canvas` has `dirty_rect: None`.
-
 ## `canvas_new_sets_dimensions`
 
 `Canvas::new(42, 24)` creates a canvas with `width=42`, `height=24`, one transparent layer, and the correct pixel count.
@@ -49,7 +45,7 @@ The default canvas sets `render_next_frame` to `true` (initial full re-render ne
 
 ## `canvas_dirty_rect_default_empty`
 
-A freshly constructed Canvas has dirty_rect.is_empty() (DirtyRectList starts empty). Renamed from canvas_dirty_rect_default_none to reflect the DirtyRectList type.
+A freshly constructed Canvas has dirty_rect.is_empty() (DirtyRectList starts empty).
 
 ## `canvas_serde_roundtrip`
 
