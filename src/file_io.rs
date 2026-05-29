@@ -323,8 +323,8 @@ impl FileIO {
                             };
                             self.trigger_async_save(document, SaveKind::ManualSave(save_path));
                         }
-                        PendingFileAction::Load => match crate::files::load_data_from_file(&path) {
-                            Ok(data) => match crate::files::load_app_from_data(&data) {
+                        PendingFileAction::Load => match crate::files::load_bytes_from_file(&path) {
+                            Ok(data) => match crate::files::load_canvas_from_bytes(&data) {
                                 Ok(canvas) => {
                                     let save_path = path.display().to_string();
                                     document.replace_canvas(canvas, undo);

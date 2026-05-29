@@ -27,7 +27,7 @@ const JPEG_QUALITY: u8 = 100;
 /// # Errors
 ///
 /// Returns `std::io::Error` if the file cannot be read (e.g. not found, permission denied).
-pub fn load_data_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
+pub fn load_bytes_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
     std::fs::read(path)
 }
 
@@ -40,7 +40,7 @@ pub fn load_data_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
 /// # Errors
 ///
 /// Returns an error if zstd decompression or JSON deserialization fails.
-pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
+pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
     let decompressed = zstd::decode_all(data)?;
     let canvas = serde_json::from_slice(&decompressed)?;
     Ok(canvas)

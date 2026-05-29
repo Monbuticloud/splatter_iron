@@ -1,6 +1,6 @@
 //! Tests for serialization — canvas save/load round-trips, export, import.
 //!
-//! Validates that `save_canvas_to_bytes` / `load_app_from_data` produce
+//! Validates that `save_canvas_to_bytes` / `load_canvas_from_bytes` produce
 //! identical output, that image export produces valid headers, and that
 //! zstd-compressed `.splattercanvas` files survive round-trip.
 
@@ -39,7 +39,7 @@ fn checkerboard_4x4() -> Canvas {
 fn save_load_roundtrip_identical_pixels() {
     let original = checkerboard_4x4();
     let data = files::save_canvas_to_bytes(&original).expect("save to bytes");
-    let loaded = files::load_app_from_data(&data).expect("load from bytes");
+    let loaded = files::load_canvas_from_bytes(&data).expect("load from bytes");
     assert_eq!(loaded.width, original.width);
     assert_eq!(loaded.height, original.height);
     assert_eq!(loaded.pixels.len(), original.pixels.len());
@@ -73,7 +73,7 @@ fn save_load_roundtrip_multi_layer() {
         render_next_frame: false,
     };
     let data = files::save_canvas_to_bytes(&canvas).expect("save");
-    let loaded = files::load_app_from_data(&data).expect("load");
+    let loaded = files::load_canvas_from_bytes(&data).expect("load");
     assert_eq!(loaded.pixels.len(), 2);
     for (i, (a, b)) in canvas.pixels[0]
         .pixels
@@ -112,7 +112,7 @@ fn save_load_roundtrip_transparent() {
         render_next_frame: false,
     };
     let data = files::save_canvas_to_bytes(&canvas).expect("save");
-    let loaded = files::load_app_from_data(&data).expect("load");
+    let loaded = files::load_canvas_from_bytes(&data).expect("load");
     assert_eq!(loaded.pixels[0].pixels.len(), 3);
 }
 
@@ -177,14 +177,14 @@ fn export_png_semi_transparent() {
 #[test]
 fn invalid_data_returns_error() {
     let bad = b"this is not zstd-compressed json";
-    let result = files::load_app_from_data(bad);
+    let result = files::load_canvas_from_bytes(bad);
     assert!(result.is_err());
 }
 
 /// Loading empty data should return an error.
 #[test]
 fn empty_data_returns_error() {
-    let result = files::load_app_from_data(&[]);
+    let result = files::load_canvas_from_bytes(&[]);
     assert!(result.is_err());
 }
 
@@ -235,16 +235,16 @@ fn export_tiff_creates_file() {
     assert!(metadata.len() > 0, "TIFF file should have content");
 }
 
-// --- save_bytes_to_file / load_data_from_file ---
+// --- save_bytes_to_file / load_bytes_from_file ---
 
-/// `save_bytes_to_file` and `load_data_from_file` should round-trip correctly.
+/// `save_bytes_to_file` and `load_bytes_from_file` should round-trip correctly.
 #[test]
 fn save_bytes_to_file_roundtrip() {
     let data = b"hello, splatter canvas test data!";
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("test.bin");
     files::save_bytes_to_file(data, &path).expect("save bytes");
-    let loaded = files::load_data_from_file(&path).expect("load bytes");
+    let loaded = files::load_bytes_from_file(&path).expect("load bytes");
     assert_eq!(loaded, data, "bytes round-trip");
 }
 
@@ -370,7 +370,7 @@ fn import_jpeg_as_canvas() {
 #[test]
 fn decompress_corrupted_data_errors() {
     let corrupted = b"this is not valid zstd compressed data at all!!!";
-    let result = files::load_app_from_data(corrupted);
+    let result = files::load_canvas_from_bytes(corrupted);
     assert!(result.is_err());
 }
 
@@ -386,7 +386,7 @@ fn decompress_partially_corrupted_zstd_errors() {
     buf.push(0x00);
     // Add some garbage as body
     buf.extend_from_slice(&[0xDE, 0xAD, 0xBE, 0xEF]);
-    let result = files::load_app_from_data(&buf);
+    let result = files::load_canvas_from_bytes(&buf);
     assert!(result.is_err());
 }
 
