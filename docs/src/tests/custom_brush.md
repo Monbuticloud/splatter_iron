@@ -16,3 +16,7 @@ Draw a line with spacing=50; verify stamps are placed along the path and center 
 ## `spacing_zero_clamps_to_minimum_step`
 
 Spacing of 0 should clamp to minimum step of 1 (no panic, still paints).
+
+## `aspect_scaling_rectangular_tip`
+
+Rectangular tip (2x4) paints multiple rows on canvas with aspect ratio preserved.
