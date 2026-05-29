@@ -116,8 +116,19 @@ pub fn remove(&mut self, index: usize)
 ```
 
 Remove the stamp at `index` from the library, delete its PNG file, and
-persist the updated index. If `index` matches the current selection,
-selection is cleared.
+persist the updated index.
+
+Selection adjusts as follows:
+- If the removed entry was the selected one: selects the first remaining
+  entry (index 0), or clears selection if the library becomes empty.
+- If the removed entry was before the selected one: decrements the selected
+  index by one.
+- Otherwise: selection is unchanged.
+
+The cached egui texture handle is freed automatically when the `StampEntry`
+is dropped.
+
+No-op if `index` is out of range.
 
 ### Parameters
 
