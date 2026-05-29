@@ -8,3 +8,8 @@ metadata.
 Default `UIState` should have `IdleThrottled` render state, zero elapsed time,
 no autosaves, no pending layer deletion, no pending stamp name, no toast
 message, and default canvas size 2000×1500.
+
+## `pending_stamp_construction`
+
+`PendingStamp` can be constructed with pixel data and dimensions; verifies
+width, height, name, and pixel count. |
