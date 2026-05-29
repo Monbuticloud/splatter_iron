@@ -121,3 +121,7 @@ When alpha overlay is active and a new drag begins (first frame),
 `undo.advance_drag_stamp()` is called to give this drag a unique stamp value.
 This ensures that pixels blended in earlier segments of the same drag are not
 blended again by later overlapping segments.
+
+## `Context menu: Replace Stamp Image`
+
+When the Stamp tool is active, right-clicking the canvas shows a Replace Stamp Image option that queues PendingFileAction::LoadStamp.
