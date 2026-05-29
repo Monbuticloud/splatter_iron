@@ -50,3 +50,7 @@ Opens the new-canvas dialog (sets show_new_canvas_dialog = true).
 ## `Cmd+O (Open)`
 
 Queues PendingFileAction::Load to open a .splattercanvas file.
+
+## `Cmd+S (Save)`
+
+If savefile_path is empty, queues a Save dialog. Otherwise writes directly to current path via save_to_current_path.
