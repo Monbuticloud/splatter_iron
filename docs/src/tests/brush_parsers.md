@@ -31,3 +31,7 @@ Truncated GBR file should return an error.
 ## `parse_gbr_zero_dimensions`
 
 GBR with zero width or height should return an error.
+
+## `parse_gbr_unsupported_bpp`
+
+GBR with unsupported bytes-per-pixel should return an error.
