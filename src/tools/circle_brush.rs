@@ -15,9 +15,10 @@ use crate::undo::compress_run;
 /// Fill a circular region without capturing undo data.
 ///
 /// Uses midpoint-circle span filling: for each dy in `0..=radius`, computes
-/// `dx = sqrt(r² − dy²)` and fills rows `center_y ± dy` from `center_x - dx`
-/// to `center_x + dx` as contiguous slices.  Rows that fall outside the canvas
-/// (due to the circle being near an edge) are silently skipped.
+/// `dx = floor(√(r² − dy²))` via integer decrement and fills rows
+/// `center_y ± dy` from `center_x - dx` to `center_x + dx` as contiguous
+/// slices.  Rows that fall outside the canvas (due to the circle being near
+/// an edge) are silently skipped.
 ///
 /// The caller is responsible for clamping `(center_x, center_y)` to canvas
 /// dimensions; out-of-bounds row/column indices are handled gracefully.
