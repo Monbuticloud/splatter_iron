@@ -65,3 +65,7 @@ Exporting a 2×2 uniform-color buffer as TIFF produces a non-empty file on disk.
 ## `export_avif_creates_file`
 
 Export as AVIF produces a non-empty file.
+
+## `export_tga_creates_file`
+
+Export as TGA produces a non-empty file.
