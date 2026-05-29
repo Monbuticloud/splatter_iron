@@ -243,7 +243,7 @@ impl FileIO {
                                     let straight = Color32::from_rgba_unmultiplied(
                                         pixel[0], pixel[1], pixel[2], pixel[3],
                                     );
-                                    pixels.push(crate::pixel::premultiply(straight));
+                                    pixels.push(straight);
                                 }
                                 let name = path
                                     .file_stem()
