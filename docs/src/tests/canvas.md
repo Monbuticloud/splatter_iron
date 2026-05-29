@@ -102,3 +102,7 @@ Rects within MAX_PROXIMITY are merged.
 ## `dirty_rect_list_beyond_proximity_separate`
 
 Rects beyond MAX_PROXIMITY remain separate.
+
+## `dirty_rect_list_exceeds_max_merges_all`
+
+When exceeding MAX_RECTS, all rects merge into one.
