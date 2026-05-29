@@ -128,4 +128,4 @@ blend_layers with exactly one SIMD chunk (4 pixels) works correctly.
 
 ## `blend_layers_simd_plus_tail`
 
-blend_layers with 7 pixels exercises the SIMD path plus 3-pixel tail.
+blend_layers with 5 pixels exercises the SIMD path (4-wide) plus 1-pixel tail.
