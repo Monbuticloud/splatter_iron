@@ -82,3 +82,7 @@ DirtyRect::empty() has inverted bounds covering the origin sentinel.
 ## `dirty_rect_list_empty`
 
 DirtyRectList::new creates an empty list; is_empty returns true.
+
+## `dirty_rect_list_add_single`
+
+Adding one DirtyRect to DirtyRectList stores it.
