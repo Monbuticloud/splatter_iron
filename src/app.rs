@@ -9,6 +9,8 @@ use std::time::Instant;
 use directories::ProjectDirs;
 use eframe::egui::Panel;
 use eframe::egui::{self};
+use serde::Deserialize;
+use serde::Serialize;
 use eframe::egui_wgpu::wgpu;
 
 use crate::asset_library::Library;
@@ -70,6 +72,15 @@ const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 
 // --- Image import extensions ---
 /// File-extension list accepted by the image-import dialog (19 formats).
+/// Serialization wrapper for tool config + recent files.
+#[derive(Serialize, Deserialize)]
+pub struct PersistedConfig {
+    /// Tool settings (current tool, color, radius, etc.).
+    pub tool_configuration: ToolConfiguration,
+    /// Recently opened/saved file paths.
+    pub recent_files: Vec<PathBuf>,
+}
+
 pub const IMPORT_EXTENSIONS: &[&str] = &[
     "avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif", "tga", "ico", "pnm", "pgm", "ppm",
     "pbm", "pam", "qoi", "exr", "hdr", "ff",
@@ -263,6 +274,8 @@ pub struct UIState {
     /// Queried from `device.limits().max_texture_dimension_2d`; falls back
     /// to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
     pub max_texture_dimension: u32,
+    /// Recently saved/loaded files (most recent first, max 10).
+    pub recent_files: Vec<PathBuf>,
     /// Index of the last-used export format in [`EXPORT_FORMATS`].
     pub last_export_format: usize,
     /// Cached window title — updated when dirty flag changes.
@@ -288,6 +301,7 @@ impl Default for UIState {
             previous_tool: None,
             previous_cursor_position: None,
             undo_redo_steps_multiplier: 1,
+            recent_files: Vec::new(),
             last_export_format: 1,
             current_title: crate::app::APP_NAME.to_string(),
             dialogs: DialogState::default(),
@@ -408,7 +422,7 @@ impl MyApp {
                 }
             });
 
-        let tool_configuration = data_dir
+        let (tool_configuration, recent_files) = data_dir
             .join("config.json")
             .as_path()
             .try_exists()
@@ -417,7 +431,10 @@ impl MyApp {
             .and_then(|_| {
                 std::fs::File::open(data_dir.join("config.json"))
                     .ok()
-                    .and_then(|file| serde_json::from_reader(file).ok())
+                    .and_then(|file| {
+                        let p: crate::app::PersistedConfig = serde_json::from_reader(file).ok()?;
+                        Some((p.tool_configuration, p.recent_files))
+                    })
             })
             .unwrap_or_default();
 
@@ -435,6 +452,7 @@ impl MyApp {
             ),
             ui: UIState {
                 max_texture_dimension,
+                recent_files,
                 ..UIState::default()
             },
             gpu_texture,
@@ -540,6 +558,20 @@ impl MyApp {
                 })
                 .collect();
             self.ui.dialogs.pending_brushes = Some(pending);
+        }
+
+        // Track recently saved/loaded files.
+        if !self.document.savefile_path.is_empty() {
+            let path = PathBuf::from(&self.document.savefile_path);
+            let is_already_tracked = self
+                .ui
+                .recent_files
+                .first()
+                .is_some_and(|p| p == &path);
+            if !is_already_tracked {
+                self.push_recent_file(path);
+                self.save_config();
+            }
         }
 
         self.stamp_library.create_textures(ctx);
@@ -949,6 +981,16 @@ impl MyApp {
         }
     }
 
+    /// Add a file path to the recent-files list (dedup, max 10, most recent first).
+    fn push_recent_file(&mut self, path: PathBuf) {
+        if path.as_os_str().is_empty() {
+            return;
+        }
+        self.ui.recent_files.retain(|p| p != &path);
+        self.ui.recent_files.insert(0, path);
+        self.ui.recent_files.truncate(10);
+    }
+
     /// Path to the user-config JSON file (tool settings, preferences).
     fn config_path(&self) -> PathBuf {
         self.file_io
@@ -956,10 +998,14 @@ impl MyApp {
             .join("config.json")
     }
 
-    /// Persist current tool configuration to disk.
+    /// Persist current tool configuration and recent files to disk.
     fn save_config(&self) {
+        let persisted = crate::app::PersistedConfig {
+            tool_configuration: self.tool_configuration.clone(),
+            recent_files: self.ui.recent_files.clone(),
+        };
         let path = self.config_path();
-        if let Ok(json) = serde_json::to_string(&self.tool_configuration) {
+        if let Ok(json) = serde_json::to_string(&persisted) {
             let _ = std::fs::write(&path, json);
         }
     }
