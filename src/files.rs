@@ -136,7 +136,7 @@ pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
 /// allowing the export implementation to be injected from the application
 /// layer. The default implementation [`DefaultExportStrategy`] handles all
 /// 13 supported image formats.
-pub trait ExportStrategy {
+pub trait ExportStrategy: Send + Sync {
     /// Write `premultiplied_rgba` to the file at `path`.
     ///
     /// `premultiplied_rgba` is the already-blended premultiplied buffer
