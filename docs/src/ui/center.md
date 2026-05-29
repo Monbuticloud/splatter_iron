@@ -129,3 +129,7 @@ When the Stamp tool is active, right-clicking the canvas shows a Replace Stamp I
 ## `Context menu: Replace Brush`
 
 When the CustomBrush tool is active, right-clicking the canvas shows a Replace Brush option that queues PendingFileAction::LoadBrush.
+
+## `Brush preview: Stamp`
+
+When tool is Stamp and show_brush_preview is true, the preview renders a rectangular outline matching the stamp dimensions scaled to brush radius.
