@@ -106,3 +106,7 @@ Rects beyond MAX_PROXIMITY remain separate.
 ## `dirty_rect_list_exceeds_max_merges_all`
 
 When exceeding MAX_RECTS, all rects merge into one.
+
+## `dirty_rect_list_add_empty_noop`
+
+Adding an empty DirtyRect to the list is a no-op.
