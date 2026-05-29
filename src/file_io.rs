@@ -44,6 +44,7 @@ pub enum PendingFileAction {
 
 /// Message sent back from the file-dialog thread to the UI thread.
 pub enum DialogResult {
+    /// A file path selected by the user in an open/save dialog.
     Picked(PathBuf),
     /// Decoded stamp image pixels + dimensions + suggested name (file stem).
     StampPixels(Vec<Color32>, u32, u32, String),
