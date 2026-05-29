@@ -16,3 +16,7 @@ PendingStamp can be constructed with pixel data and dimensions; verifies width, 
 ## `export_formats_all_have_extensions`
 
 All EXPORT_FORMATS entries should have at least one extension.
+
+## `export_formats_formats_are_distinct`
+
+EXPORT_FORMATS should reference distinct image::ImageFormat variants.
