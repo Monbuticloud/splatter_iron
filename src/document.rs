@@ -32,6 +32,7 @@ pub enum SaveState {
 
 /// Wraps a canvas (behind `Arc` for COW during async saves) with its save
 /// path, current layer, and dirty-tracking state.
+#[derive(Debug)]
 pub struct Document {
     /// The canvas being edited (layers, dimensions, pixel data).
     /// Wrapped in `Arc` so async save can hold a reference while the UI

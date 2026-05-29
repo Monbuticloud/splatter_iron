@@ -12,6 +12,7 @@ use crate::undo::undo_apply;
 const MAX_STROKE_STACK: usize = 1000;
 
 /// Holds accumulated run segments during an active drag gesture.
+#[derive(Debug)]
 struct DragAccumulator {
     runs: Vec<RunSegment>,
     layer_index: usize,
@@ -22,6 +23,7 @@ struct DragAccumulator {
 
 /// Manages the undo/redo history stack with a visited-stamp buffer for
 /// brush-stroke deduplication.
+#[derive(Debug)]
 pub struct UndoHistory {
     /// Stack of undo records, most recent at the back.
     stroke_stack: VecDeque<UndoRecord>,

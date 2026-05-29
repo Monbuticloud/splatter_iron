@@ -8,10 +8,11 @@ use std::time::Instant;
 
 use directories::ProjectDirs;
 use eframe::egui::Panel;
-use eframe::egui::{self};
+use eframe::egui::{ self };
 use serde::Deserialize;
 use serde::Serialize;
 use eframe::egui_wgpu::wgpu;
+use crate::debug::debug_snapshot;
 
 use crate::asset_library::Library;
 use crate::brush_library::BrushEntry;
@@ -74,7 +75,7 @@ const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 // --- Image import extensions ---
 /// File-extension list accepted by the image-import dialog (19 formats).
 /// Serialization wrapper for tool config + recent files.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PersistedConfig {
     /// Tool settings (current tool, color, radius, etc.).
     pub tool_configuration: ToolConfiguration,
@@ -83,11 +84,29 @@ pub struct PersistedConfig {
 }
 
 pub const IMPORT_EXTENSIONS: &[&str] = &[
-    "avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif", "tga", "ico", "pnm", "pgm", "ppm",
-    "pbm", "pam", "qoi", "exr", "hdr", "ff",
+    "avif",
+    "png",
+    "jpg",
+    "jpeg",
+    "webp",
+    "gif",
+    "tiff",
+    "tif",
+    "tga",
+    "ico",
+    "pnm",
+    "pgm",
+    "ppm",
+    "pbm",
+    "pam",
+    "qoi",
+    "exr",
+    "hdr",
+    "ff",
 ];
 
 /// File extension list and image format for an export target.
+#[derive(Debug)]
 pub struct ExportInformation {
     pub extensions: &'static [&'static str],
     #[allow(dead_code)]
@@ -190,6 +209,7 @@ pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
 ];
 
 /// A stamp image awaiting a user-provided name before being added to the library.
+#[derive(Debug)]
 pub struct PendingStamp {
     pub pixels: Vec<egui::Color32>,
     pub width: u32,
@@ -199,12 +219,13 @@ pub struct PendingStamp {
     pub spacing: u8,
 }
 
-    /// Dialog-related state: open/closed flags, input values, pending confirmations.
-    pub struct DialogState {
-        /// Layer index pending deletion confirmation via modal dialog.
-        pub show_delete_layer_dialog: Option<usize>,
-        /// Whether the "New Canvas" dialog is currently open.
-        pub show_new_canvas_dialog: bool,
+/// Dialog-related state: open/closed flags, input values, pending confirmations.
+#[derive(Debug)]
+pub struct DialogState {
+    /// Layer index pending deletion confirmation via modal dialog.
+    pub show_delete_layer_dialog: Option<usize>,
+    /// Whether the "New Canvas" dialog is currently open.
+    pub show_new_canvas_dialog: bool,
     /// Width input for the new canvas dialog (in pixels).
     pub new_canvas_width: u32,
     /// Height input for the new canvas dialog (in pixels).
@@ -239,6 +260,7 @@ impl Default for DialogState {
 }
 
 /// Error messages displayed in the error overlay.
+#[derive(Debug)]
 pub struct ErrorState {
     pub list: Vec<String>,
 }
@@ -250,6 +272,7 @@ impl Default for ErrorState {
 }
 
 /// Transient toast notification.
+#[derive(Debug)]
 pub struct ToastState {
     /// The message text and the instant it was triggered.
     pub message: Option<(String, Instant)>,
@@ -264,7 +287,7 @@ impl Default for ToastState {
 /// A destructive file action that was postponed because the canvas has
 /// unsaved changes. Stored until the user resolves the unsaved-changes
 /// warning dialog.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum UnsavedWarningAction {
     /// Close the application.
     Quit,
@@ -292,6 +315,7 @@ pub enum ProgressState {
 }
 
 /// UI-level state that doesn't belong to any domain module.
+#[derive(Debug)]
 pub struct UIState {
     /// Current rendering cadence (active, throttled, or frozen).
     pub render_state: RenderState,
@@ -366,6 +390,7 @@ impl Default for UIState {
 /// Created once during `MyApp` construction and updated on canvas resize.
 /// The `queue` is used each frame to upload only the dirty sub-region
 /// via `wgpu::Queue::write_texture`.
+#[derive(Debug)]
 pub struct GpuTexture {
     /// The wgpu texture storing the canvas composite on the GPU.
     pub texture: wgpu::Texture,
@@ -377,6 +402,7 @@ pub struct GpuTexture {
 
 /// Top-level application state owned by eframe: document, tools, undo history,
 /// file IO, UI state, and optional wgpu GPU texture.
+#[derive(Debug)]
 pub struct MyApp {
     /// The edited canvas document (layers, dimensions, save path).
     pub document: Document,
@@ -418,16 +444,16 @@ impl MyApp {
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
 
-        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME)
-            .expect("Couldn't resolve app dir");
+        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME).expect(
+            "Couldn't resolve app dir"
+        );
         let data_dir = project_dirs.data_dir().to_path_buf();
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
         std::fs::create_dir_all(&data_dir.join("autosaves")).expect("Couldn't create autosave dir");
 
         // Query the device's max 2D texture dimension for the new-canvas slider.
         // Falls back to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
-        let max_texture_dimension = creation_context
-            .wgpu_render_state
+        let max_texture_dimension = creation_context.wgpu_render_state
             .as_ref()
             .map(|rs| rs.device.limits().max_texture_dimension_2d)
             .unwrap_or(8192);
@@ -435,42 +461,39 @@ impl MyApp {
         let stamp_library: Library<StampEntry> = Library::load_from_disk(&data_dir);
         let brush_library: Library<BrushEntry> = Library::load_from_disk(&data_dir);
 
-        let gpu_texture = creation_context
-            .wgpu_render_state
-            .as_ref()
-            .map(|render_state| {
-                let width = canvas.width;
-                let height = canvas.height;
-                let size = wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                };
-                let texture = render_state
-                    .device
-                    .create_texture(&wgpu::TextureDescriptor {
-                        label: Some("splatter_iron_canvas"),
-                        size,
-                        mip_level_count: 1,
-                        sample_count: 1,
-                        dimension: wgpu::TextureDimension::D2,
-                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                        view_formats: &[],
-                    });
-                let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-                let mut renderer = render_state.renderer.write();
-                let texture_id = renderer.register_native_texture(
-                    &render_state.device,
-                    &view,
-                    wgpu::FilterMode::Linear,
-                );
-                GpuTexture {
-                    texture,
-                    texture_id,
-                    queue: Arc::new(render_state.queue.clone()),
-                }
-            });
+        let gpu_texture = creation_context.wgpu_render_state.as_ref().map(|render_state| {
+            let width = canvas.width;
+            let height = canvas.height;
+            let size = wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            };
+            let texture = render_state.device.create_texture(
+                &(wgpu::TextureDescriptor {
+                    label: Some("splatter_iron_canvas"),
+                    size,
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                    view_formats: &[],
+                })
+            );
+            let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let mut renderer = render_state.renderer.write();
+            let texture_id = renderer.register_native_texture(
+                &render_state.device,
+                &view,
+                wgpu::FilterMode::Linear
+            );
+            GpuTexture {
+                texture,
+                texture_id,
+                queue: Arc::new(render_state.queue.clone()),
+            }
+        });
 
         let (tool_configuration, recent_files) = data_dir
             .join("config.json")
@@ -479,7 +502,8 @@ impl MyApp {
             .ok()
             .filter(|&exists| exists)
             .and_then(|_| {
-                std::fs::File::open(data_dir.join("config.json"))
+                std::fs::File
+                    ::open(data_dir.join("config.json"))
                     .ok()
                     .and_then(|file| {
                         let p: crate::app::PersistedConfig = serde_json::from_reader(file).ok()?;
@@ -498,7 +522,7 @@ impl MyApp {
                 save_result_sender,
                 save_result_receiver,
                 data_dir,
-                std::sync::Arc::new(crate::files::DefaultExportStrategy),
+                std::sync::Arc::new(crate::files::DefaultExportStrategy)
             ),
             ui: UIState {
                 max_texture_dimension,
@@ -536,10 +560,12 @@ impl MyApp {
         let height = self.document.canvas.height;
         let max_dim = render_state.device.limits().max_texture_dimension_2d;
         if width > max_dim || height > max_dim {
-            self.ui.errors.list.push(format!(
-                "Canvas too large for GPU: {width}×{height} exceeds device max \
+            self.ui.errors.list.push(
+                format!(
+                    "Canvas too large for GPU: {width}×{height} exceeds device max \
                  texture dimension of {max_dim}. The display may be incomplete."
-            ));
+                )
+            );
             return;
         }
         let size = wgpu::Extent3d {
@@ -547,9 +573,8 @@ impl MyApp {
             height,
             depth_or_array_layers: 1,
         };
-        gpu.texture = render_state
-            .device
-            .create_texture(&wgpu::TextureDescriptor {
+        gpu.texture = render_state.device.create_texture(
+            &(wgpu::TextureDescriptor {
                 label: Some("splatter_iron_canvas"),
                 size,
                 mip_level_count: 1,
@@ -558,16 +583,15 @@ impl MyApp {
                 format: wgpu::TextureFormat::Rgba8UnormSrgb,
                 usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
                 view_formats: &[],
-            });
-        let view = gpu
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
+            })
+        );
+        let view = gpu.texture.create_view(&wgpu::TextureViewDescriptor::default());
         let mut renderer = render_state.renderer.write();
         renderer.update_egui_texture_from_wgpu_texture(
             &render_state.device,
             &view,
             wgpu::FilterMode::Linear,
-            gpu.texture_id,
+            gpu.texture_id
         );
     }
 }
@@ -581,10 +605,9 @@ impl MyApp {
         self.file_io.poll_dialog_results(
             &mut self.document,
             &mut self.undo,
-            &mut self.ui.errors.list,
+            &mut self.ui.errors.list
         );
-        self.file_io
-            .poll_save_results(&mut self.document, &mut self.ui.errors.list);
+        self.file_io.poll_save_results(&mut self.document, &mut self.ui.errors.list);
 
         // Execute deferred action after save completes.
         if self.document.save_state == crate::document::SaveState::Idle {
@@ -597,7 +620,7 @@ impl MyApp {
         self.file_io.poll_load_import_results(
             &mut self.document,
             &mut self.undo,
-            &mut self.ui.errors.list,
+            &mut self.ui.errors.list
         );
 
         // Track async operation progress.
@@ -641,11 +664,7 @@ impl MyApp {
         // Track recently saved/loaded files.
         if !self.document.savefile_path.is_empty() {
             let path = PathBuf::from(&self.document.savefile_path);
-            let is_already_tracked = self
-                .ui
-                .recent_files
-                .first()
-                .is_some_and(|p| p == &path);
+            let is_already_tracked = self.ui.recent_files.first().is_some_and(|p| p == &path);
             if !is_already_tracked {
                 self.push_recent_file(path);
                 self.save_config();
@@ -660,15 +679,22 @@ impl MyApp {
     /// be skipped (viewport unfocused or frozen).
     fn update_render_state(&mut self, ui: &mut egui::Ui) -> bool {
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
-            std::thread::sleep(std::time::Duration::from_millis(
-                UNFOCUSED_SLEEP_MILLISECONDS,
-            ));
+            std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
             self.ui.render_state = RenderState::UnfocusedFrozen;
             return true;
         }
-        let predicted_delta_time =
-            Duration::from_secs_f32(ui.ctx().input(|i| i.predicted_dt).max(0.0));
-        let real_delta_time = Duration::from_secs_f32(ui.ctx().input(|i| i.stable_dt).max(0.0));
+        let predicted_delta_time = Duration::from_secs_f32(
+            ui
+                .ctx()
+                .input(|i| i.predicted_dt)
+                .max(0.0)
+        );
+        let real_delta_time = Duration::from_secs_f32(
+            ui
+                .ctx()
+                .input(|i| i.stable_dt)
+                .max(0.0)
+        );
 
         self.ui.time_elapsed += real_delta_time;
 
@@ -697,8 +723,9 @@ impl MyApp {
     fn sync_gpu_texture(&mut self, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
         if let Some(gpu) = &self.gpu_texture {
             let texture_size = gpu.texture.size();
-            if texture_size.width != self.document.canvas.width
-                || texture_size.height != self.document.canvas.height
+            if
+                texture_size.width != self.document.canvas.width ||
+                texture_size.height != self.document.canvas.height
             {
                 self.recreate_gpu_texture(frame);
             }
@@ -710,8 +737,7 @@ impl MyApp {
             if needs_blend {
                 let dirty = self.document.blend_to_output();
                 if let Some(ref gpu) = self.gpu_texture {
-                    self.document
-                        .upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
+                    self.document.upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
                 }
             }
         } else if needs_blend || self.document.canvas.rendered_layers.is_none() {
@@ -722,9 +748,7 @@ impl MyApp {
     /// Render all four panels (top, left, right, centre) and return whether
     /// the user requested to quit (via the top panel).
     fn show_panels(&mut self, ui: &mut egui::Ui) -> bool {
-        let is_quitting = Panel::top("top")
-            .show_inside(ui, |ui| self.show_top_panel(ui))
-            .inner;
+        let is_quitting = Panel::top("top").show_inside(ui, |ui| self.show_top_panel(ui)).inner;
 
         Panel::left("side").show_inside(ui, |ui| self.show_left_panel(ui));
         Panel::right("right").show_inside(ui, |ui| self.show_right_panel(ui));
@@ -740,7 +764,8 @@ impl MyApp {
         }
         let mut open = true;
         let mut to_dismiss: Vec<usize> = Vec::new();
-        egui::Window::new("Error")
+        egui::Window
+            ::new("Error")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -782,16 +807,19 @@ impl MyApp {
         let mut open = true;
         let estimated = estimate_canvas_memory(w, h);
         let estimated_mb = estimated / (1024 * 1024);
-        egui::Window::new("Large Canvas Warning")
+        egui::Window
+            ::new("Large Canvas Warning")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .open(&mut open)
             .show(ui, |ui| {
-                ui.label(format!(
-                    "This canvas ({w}×{h}) may use up to ~{estimated_mb} MB of RAM.\n\
+                ui.label(
+                    format!(
+                        "This canvas ({w}×{h}) may use up to ~{estimated_mb} MB of RAM.\n\
                      Proceed? This cannot be undone."
-                ));
+                    )
+                );
                 ui.horizontal(|ui| {
                     if ui.button("Yes, create").clicked() {
                         let canvas = Canvas::new(w, h);
@@ -816,21 +844,15 @@ impl MyApp {
         let Some(index) = self.ui.dialogs.show_delete_layer_dialog else {
             return;
         };
-        let layer_name = self
-            .document
-            .canvas
-            .pixels
+        let layer_name = self.document.canvas.pixels
             .get(index)
             .map(|l| {
-                if l.name.is_empty() {
-                    format!("Layer {index}")
-                } else {
-                    l.name.clone()
-                }
+                if l.name.is_empty() { format!("Layer {index}") } else { l.name.clone() }
             })
             .unwrap_or_default();
         let mut open = true;
-        egui::Window::new("Delete Layer")
+        egui::Window
+            ::new("Delete Layer")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -858,7 +880,8 @@ impl MyApp {
             return;
         }
         let mut open = true;
-        egui::Window::new("New Canvas")
+        egui::Window
+            ::new("New Canvas")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -875,28 +898,31 @@ impl MyApp {
                 ui.separator();
                 ui.label("Custom:");
                 ui.add(
-                    egui::Slider::new(
-                        &mut self.ui.dialogs.new_canvas_width,
-                        4..=self.ui.max_texture_dimension,
-                    )
-                    .text("Width"),
+                    egui::Slider
+                        ::new(
+                            &mut self.ui.dialogs.new_canvas_width,
+                            4..=self.ui.max_texture_dimension
+                        )
+                        .text("Width")
                 );
                 ui.add(
-                    egui::Slider::new(
-                        &mut self.ui.dialogs.new_canvas_height,
-                        4..=self.ui.max_texture_dimension,
-                    )
-                    .text("Height"),
+                    egui::Slider
+                        ::new(
+                            &mut self.ui.dialogs.new_canvas_height,
+                            4..=self.ui.max_texture_dimension
+                        )
+                        .text("Height")
                 );
                 ui.horizontal(|ui| {
                     if ui.button("Create").clicked() {
                         if self.document.dirty_since_last_autosave {
-                            self.ui.dialogs.pending_unsaved_action =
-                                Some(UnsavedWarningAction::NewCanvas);
+                            self.ui.dialogs.pending_unsaved_action = Some(
+                                UnsavedWarningAction::NewCanvas
+                            );
                         } else {
                             let mem = estimate_canvas_memory(
                                 self.ui.dialogs.new_canvas_width,
-                                self.ui.dialogs.new_canvas_height,
+                                self.ui.dialogs.new_canvas_height
                             );
                             if mem > MEMORY_WARNING_THRESHOLD {
                                 self.ui.dialogs.pending_large_canvas = Some((
@@ -906,7 +932,7 @@ impl MyApp {
                             } else {
                                 let canvas = Canvas::new(
                                     self.ui.dialogs.new_canvas_width,
-                                    self.ui.dialogs.new_canvas_height,
+                                    self.ui.dialogs.new_canvas_height
                                 );
                                 self.document.replace_canvas(canvas, &mut self.undo);
                                 self.ui.previous_tool = None;
@@ -935,13 +961,7 @@ impl MyApp {
         if self.ui.dialogs.pending_unsaved_action.is_none() {
             return;
         }
-        let action = self
-            .ui
-            .dialogs
-            .pending_unsaved_action
-            .as_ref()
-            .unwrap()
-            .clone();
+        let action = self.ui.dialogs.pending_unsaved_action.as_ref().unwrap().clone();
         let mut open = true;
         let mut resolved = false;
         let label: String = if self.document.savefile_path.is_empty() {
@@ -949,13 +969,15 @@ impl MyApp {
         } else {
             format!(
                 "\"{}\" has unsaved changes. What would you like to do?",
-                std::path::Path::new(&self.document.savefile_path)
+                std::path::Path
+                    ::new(&self.document.savefile_path)
                     .file_name()
                     .map(|s| s.to_string_lossy())
                     .unwrap_or_default()
             )
         };
-        egui::Window::new("Unsaved Changes")
+        egui::Window
+            ::new("Unsaved Changes")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -966,11 +988,9 @@ impl MyApp {
                     if ui.button("Save").clicked() {
                         if self.document.savefile_path.is_empty() {
                             self.ui.dialogs.pending_after_save = Some(action.clone());
-                            self.file_io
-                                .queue_file_action(PendingFileAction::Save);
+                            self.file_io.queue_file_action(PendingFileAction::Save);
                         } else {
-                            self.file_io
-                                .save_to_current_path(&mut self.document);
+                            self.file_io.save_to_current_path(&mut self.document);
                             self.ui.dialogs.pending_after_save = Some(action.clone());
                         }
                         resolved = true;
@@ -1029,7 +1049,8 @@ impl MyApp {
         let mut open = true;
         let mut cancelled = false;
         let label = format!("Size: {}×{}", pending.width, pending.height);
-        egui::Window::new("Name Your Stamp")
+        egui::Window
+            ::new("Name Your Stamp")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -1038,8 +1059,7 @@ impl MyApp {
                 ui.horizontal(|ui| {
                     ui.label("Name:");
                     ui.add(
-                        egui::TextEdit::singleline(&mut pending.name)
-                            .id_source("stamp_name_text"),
+                        egui::TextEdit::singleline(&mut pending.name).id_source("stamp_name_text")
                     );
                 });
                 ui.label(&label);
@@ -1057,10 +1077,12 @@ impl MyApp {
                         stamp_pixels,
                         stamp_w,
                         stamp_h,
-                        ui.ctx(),
+                        ui.ctx()
                     );
-                    self.ui.toasts.message =
-                        Some((format!("Stamp \"{stamp_name}\" added"), Instant::now()));
+                    self.ui.toasts.message = Some((
+                        format!("Stamp \"{stamp_name}\" added"),
+                        Instant::now(),
+                    ));
                 }
             });
         if open && !cancelled {
@@ -1076,29 +1098,29 @@ impl MyApp {
         let mut open = true;
         let mut confirmed = false;
         let mut cancelled = false;
-        egui::Window::new("Name Your Brushes")
+        egui::Window
+            ::new("Name Your Brushes")
             .collapsible(false)
             .resizable(true)
             .default_size([400.0, 300.0])
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .open(&mut open)
             .show(ui, |ui| {
-                ui.label(format!(
-                    "{} brush(es) imported — edit names below:",
-                    brushes.len()
-                ));
+                ui.label(format!("{} brush(es) imported — edit names below:", brushes.len()));
                 ui.separator();
 
                 let mut names_to_remove: Vec<usize> = Vec::new();
-                egui::ScrollArea::vertical()
+                egui::ScrollArea
+                    ::vertical()
                     .max_height(ui.available_height() - 40.0)
                     .show(ui, |ui| {
                         for (i, brush) in brushes.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 ui.add(
-                                    egui::TextEdit::singleline(&mut brush.name)
+                                    egui::TextEdit
+                                        ::singleline(&mut brush.name)
                                         .desired_width(150.0)
-                                        .id_source(format!("brush_name_{i}")),
+                                        .id_source(format!("brush_name_{i}"))
                                 );
                                 ui.label(format!("{}×{}", brush.width, brush.height));
                                 if ui.button("Remove").clicked() {
@@ -1137,12 +1159,11 @@ impl MyApp {
                         brush.width,
                         brush.height,
                         brush.spacing,
-                        ui.ctx(),
+                        ui.ctx()
                     );
                 }
             }
-            self.ui.toasts.message =
-                Some((format!("Imported {count} brush(es)"), Instant::now()));
+            self.ui.toasts.message = Some((format!("Imported {count} brush(es)"), Instant::now()));
         } else if !open {
             self.ui.dialogs.pending_brushes = None;
         }
@@ -1154,13 +1175,15 @@ impl MyApp {
             return;
         };
         if triggered_at.elapsed() < std::time::Duration::from_secs(2) {
-            egui::Area::new(egui::Id::new("stamp_toast"))
+            egui::Area
+                ::new(egui::Id::new("stamp_toast"))
                 .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
                 .show(ui, |ui| {
                     ui.label(
-                        egui::RichText::new(message)
+                        egui::RichText
+                            ::new(message)
                             .color(egui::Color32::WHITE)
-                            .background_color(egui::Color32::from_black_alpha(180)),
+                            .background_color(egui::Color32::from_black_alpha(180))
                     );
                 });
         } else {
@@ -1172,12 +1195,15 @@ impl MyApp {
     /// operation is in-flight.
     fn show_progress_indicator(&mut self, ui: &mut egui::Ui) {
         let label = match self.ui.progress {
-            ProgressState::Idle => return,
+            ProgressState::Idle => {
+                return;
+            }
             ProgressState::Exporting => "Exporting…",
             ProgressState::Loading => "Loading…",
             ProgressState::Importing => "Importing…",
         };
-        egui::Area::new(egui::Id::new("progress_indicator"))
+        egui::Area
+            ::new(egui::Id::new("progress_indicator"))
             .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
@@ -1199,9 +1225,7 @@ impl MyApp {
 
     /// Path to the user-config JSON file (tool settings, preferences).
     fn config_path(&self) -> PathBuf {
-        self.file_io
-            .app_local_data_directory
-            .join("config.json")
+        self.file_io.app_local_data_directory.join("config.json")
     }
 
     /// Persist current tool configuration and recent files to disk.
@@ -1218,11 +1242,9 @@ impl MyApp {
 
     /// Persist tool configuration to disk (runs on the same cadence as autosave).
     fn handle_config_save(&mut self) {
-        if self
-            .ui
-            .time_elapsed
-            .saturating_sub(self.ui.last_autosave_time)
-            >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
+        if
+            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >=
+            Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
         {
             self.save_config();
         }
@@ -1230,17 +1252,14 @@ impl MyApp {
 
     /// Trigger an autosave if the canvas is dirty and enough time has elapsed.
     fn handle_autosave(&mut self) {
-        if self.document.dirty_since_last_autosave
-            && self
-                .ui
-                .time_elapsed
-                .saturating_sub(self.ui.last_autosave_time)
-                >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
+        if
+            self.document.dirty_since_last_autosave &&
+            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >=
+                Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
         {
             self.ui.last_autosave_time = self.ui.time_elapsed;
             self.ui.times_autosaved += 1;
-            self.file_io
-                .trigger_async_save(&mut self.document, SaveKind::Autosave);
+            self.file_io.trigger_async_save(&mut self.document, SaveKind::Autosave);
         }
     }
 }
@@ -1254,6 +1273,7 @@ impl eframe::App for MyApp {
     ///
     /// When the viewport is unfocused, sleeps to reduce CPU usage.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        debug_snapshot(&self);
         self.poll_file_results(ui.ctx());
 
         if self.update_render_state(ui) {
@@ -1278,7 +1298,8 @@ impl eframe::App for MyApp {
         let filename = if self.document.savefile_path.is_empty() {
             "Untitled"
         } else {
-            std::path::Path::new(&self.document.savefile_path)
+            std::path::Path
+                ::new(&self.document.savefile_path)
                 .file_name()
                 .and_then(std::ffi::OsStr::to_str)
                 .unwrap_or("Untitled")

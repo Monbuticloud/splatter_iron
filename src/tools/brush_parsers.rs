@@ -5,6 +5,7 @@ use std::path::Path;
 use eframe::egui::Color32;
 
 /// A parsed brush tip ready for use in the brush library.
+#[derive(Debug)]
 pub struct BrushTip {
     /// Display name (file stem or ABR internal name).
     pub name: String,

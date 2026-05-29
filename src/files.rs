@@ -163,6 +163,7 @@ pub trait ExportStrategy: Send + Sync {
 
 /// Default export strategy supporting all 13 formats by detecting the
 /// target format from the file path extension.
+#[derive(Debug)]
 pub struct DefaultExportStrategy;
 
 impl ExportStrategy for DefaultExportStrategy {

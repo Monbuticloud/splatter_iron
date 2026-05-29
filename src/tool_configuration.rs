@@ -26,7 +26,7 @@ pub enum StampTintMode {
 }
 
 /// Current tool selection, color, brush radius, and stamp/brush sampling config.
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ToolConfiguration {
     /// The currently selected drawing tool.
     pub current_tool: CurrentTool,

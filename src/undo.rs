@@ -10,7 +10,7 @@ use crate::pixel::alpha_blend;
 
 /// Compressed storage for a run of before-pixels: either all the same color
 /// (`All`) or a full `Vec` of distinct colors (`Many`).
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum BeforePixels {
     /// Every pixel in the run had the same original color.
     All(Color32),
@@ -19,6 +19,7 @@ pub enum BeforePixels {
 }
 
 /// A contiguous range of pixels in an undo `Run` record.
+#[derive(Debug)]
 pub struct RunSegment {
     /// Starting pixel index within the layer's flat pixel array.
     pub start: u32,
@@ -55,6 +56,7 @@ pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
 /// A record of a single change in the undo/redo stack.
 ///
 /// Variants cover both drawing strokes and layer-structural operations.
+#[derive(Debug)]
 pub enum UndoRecord {
     /// Per-pixel before/after state for a brush stroke.
     Run {

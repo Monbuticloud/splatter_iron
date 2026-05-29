@@ -12,7 +12,7 @@ const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
 
 /// A single layer of pixels in the canvas.
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Layer {
     /// Premultiplied-alpha RGBA pixels in row-major order.
     pub pixels: Vec<Color32>,
@@ -137,7 +137,7 @@ const DIRTY_RECT_MAX_COUNT: usize = 8;
 /// Also tracks whether a full-canvas re-blend has been requested (e.g. after
 /// layer add/delete/move). [`take_all`] returns a single full-canvas rect when
 /// a full blend was requested.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct DirtyRectList {
     rects: Vec<DirtyRect>,
     needs_full_blend: bool,
@@ -342,7 +342,7 @@ pub enum CurrentTool {
 
 /// Desired rendering cadence: active wake for fast repaints,
 /// idle throttled for slow repaints, or frozen when viewport is unfocused.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RenderState {
     /// Full rendering — canvas redraws every frame (active interaction).
     ActiveWake(Duration),

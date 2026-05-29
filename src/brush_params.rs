@@ -15,6 +15,7 @@ use crate::canvas::Canvas;
 /// Every `draw_*_line` function in `src/tools/` takes this bundle
 /// plus tool-specific arguments, reducing visible boilerplate and
 /// making signatures easier to read.
+#[derive(Debug)]
 pub struct BrushStrokeParams<'a> {
     /// Column of the line start point.
     pub start_x: u32,

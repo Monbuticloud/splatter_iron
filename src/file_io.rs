@@ -27,7 +27,7 @@ const AUTOSAVE_DATE_FORMAT: &str = "%Y-%m-%d_%H-%M-%S";
 
 /// A file-dialog action queued for execution on a background thread.
 /// The result is received via channel at the start of a future frame.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum PendingFileAction {
     /// Open a native "load" dialog and deserialize a `.splattercanvas` file.
     Load,
