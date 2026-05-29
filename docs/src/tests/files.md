@@ -89,3 +89,7 @@ Export as EXR returns Err(UnsupportedColorType) because EXR requires float pixel
 ## `export_hdr_creates_file`
 
 Export as HDR produces a non-empty file.
+
+## `export_farbfeld_creates_file`
+
+Export as Farbfeld produces a non-empty file.
