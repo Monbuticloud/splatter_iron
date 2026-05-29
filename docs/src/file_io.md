@@ -198,3 +198,7 @@ Decoded stamp image from bg thread: pix Vec<Color32>, width, height, name stem.
 ## `DialogResult::BrushTips`
 
 Parsed brush tips Vec<BrushTip> from ABR/GBR file.
+
+## `DialogResult::Error`
+
+Error message from bg file operation, pushed to UI error list.
