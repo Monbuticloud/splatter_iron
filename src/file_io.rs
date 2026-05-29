@@ -140,6 +140,14 @@ impl FileIO {
         }
     }
 
+    /// Return the path to the autosave directory (`{data_dir}/autosaves/`).
+    ///
+    /// The directory is created during app startup and may contain multiple
+    /// timestamped `.splattercanvas` files.
+    pub fn autosave_directory(&self) -> PathBuf {
+        self.app_local_data_directory.join(AUTOSAVE_DIRECTORY)
+    }
+
     /// Queue a file dialog action and spawn it on a background thread.
     ///
     /// The dialog is dispatched to the main thread via `rfd` to avoid macOS
