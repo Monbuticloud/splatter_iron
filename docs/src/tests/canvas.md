@@ -62,3 +62,7 @@ A multi-layer canvas round-trips correctly through serde.
 ## `dirty_rect_inverted_is_empty`
 
 A DirtyRect with inverted bounds (min > max) reports is_empty.
+
+## `dirty_rect_extend_fixes_inverted`
+
+Extending an inverted DirtyRect corrects the bounds.
