@@ -10,12 +10,21 @@ use crate::pixel::alpha_blend;
 
 /// Compressed storage for a run of before-pixels: either all the same color
 /// (`All`) or a full `Vec` of distinct colors (`Many`).
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum BeforePixels {
     /// Every pixel in the run had the same original color.
     All(Color32),
     /// Pixels had distinct colors (run was compressed from a non-uniform span).
     Many(Vec<Color32>),
+}
+
+impl std::fmt::Debug for BeforePixels {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::All(color) => f.debug_tuple("All").field(color).finish(),
+            Self::Many(pixels) => f.debug_tuple("Many").field(&pixels.len()).finish(),
+        }
+    }
 }
 
 /// A contiguous range of pixels in an undo `Run` record.

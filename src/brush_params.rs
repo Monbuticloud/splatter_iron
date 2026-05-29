@@ -15,7 +15,6 @@ use crate::canvas::Canvas;
 /// Every `draw_*_line` function in `src/tools/` takes this bundle
 /// plus tool-specific arguments, reducing visible boilerplate and
 /// making signatures easier to read.
-#[derive(Debug)]
 pub struct BrushStrokeParams<'a> {
     /// Column of the line start point.
     pub start_x: u32,
@@ -41,4 +40,22 @@ pub struct BrushStrokeParams<'a> {
     pub drag_processed: &'a mut [u32],
     /// Current drag-scoped stamp value.
     pub drag_stamp_value: u32,
+}
+
+impl std::fmt::Debug for BrushStrokeParams<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BrushStrokeParams")
+            .field("start_x", &self.start_x)
+            .field("start_y", &self.start_y)
+            .field("end_x", &self.end_x)
+            .field("end_y", &self.end_y)
+            .field("color", &self.color)
+            .field("layer", &self.layer)
+            .field("visited.len", &self.visited.len())
+            .field("stamp", &self.stamp)
+            .field("alpha_overlay", &self.alpha_overlay)
+            .field("drag_processed.len", &self.drag_processed.len())
+            .field("drag_stamp_value", &self.drag_stamp_value)
+            .finish()
+    }
 }

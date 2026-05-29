@@ -209,7 +209,6 @@ pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
 ];
 
 /// A stamp image awaiting a user-provided name before being added to the library.
-#[derive(Debug)]
 pub struct PendingStamp {
     pub pixels: Vec<egui::Color32>,
     pub width: u32,
@@ -217,6 +216,18 @@ pub struct PendingStamp {
     pub name: String,
     /// Spacing percentage (0–100) — used when this is a brush tip, ignored for stamps.
     pub spacing: u8,
+}
+
+impl std::fmt::Debug for PendingStamp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PendingStamp")
+            .field("pixels.len", &self.pixels.len())
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .field("name", &self.name)
+            .field("spacing", &self.spacing)
+            .finish()
+    }
 }
 
 /// Dialog-related state: open/closed flags, input values, pending confirmations.

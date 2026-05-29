@@ -12,7 +12,7 @@ const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
 
 /// A single layer of pixels in the canvas.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Layer {
     /// Premultiplied-alpha RGBA pixels in row-major order.
     pub pixels: Vec<Color32>,
@@ -25,6 +25,17 @@ pub struct Layer {
     /// Opacity multiplier (0–255) applied during compositing.
     #[serde(default = "default_opacity")]
     pub opacity: u8,
+}
+
+impl std::fmt::Debug for Layer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Layer")
+            .field("pixels.len", &self.pixels.len())
+            .field("name", &self.name)
+            .field("visible", &self.visible)
+            .field("opacity", &self.opacity)
+            .finish()
+    }
 }
 
 /// Default visibility for new layers.

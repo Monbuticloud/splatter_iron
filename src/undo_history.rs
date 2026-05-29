@@ -23,7 +23,6 @@ struct DragAccumulator {
 
 /// Manages the undo/redo history stack with a visited-stamp buffer for
 /// brush-stroke deduplication.
-#[derive(Debug)]
 pub struct UndoHistory {
     /// Stack of undo records, most recent at the back.
     stroke_stack: VecDeque<UndoRecord>,
@@ -39,6 +38,20 @@ pub struct UndoHistory {
     /// Stamp value for the current drag gesture.
     drag_stamp_value: u32,
     drag_accumulator: Option<DragAccumulator>,
+}
+
+impl std::fmt::Debug for UndoHistory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("UndoHistory")
+            .field("stroke_stack.len", &self.stroke_stack.len())
+            .field("redo_index", &self.redo_index)
+            .field("visited.len", &self.visited.len())
+            .field("visited_stamp", &self.visited_stamp)
+            .field("drag_processed.len", &self.drag_processed.len())
+            .field("drag_stamp_value", &self.drag_stamp_value)
+            .field("drag_accumulator", &self.drag_accumulator)
+            .finish()
+    }
 }
 
 impl UndoHistory {
