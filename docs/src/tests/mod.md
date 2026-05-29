@@ -31,3 +31,7 @@ The test suite is organised as one `#[cfg(test)]` module per source module, plus
 ## `app`
 
 Application-level constants, UIState defaults, export format metadata, and PendingStamp construction.
+
+## `brush_library`
+
+BrushLibrary add/remove/select/persistence round-trip tests.
