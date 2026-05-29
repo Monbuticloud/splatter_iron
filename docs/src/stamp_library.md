@@ -155,4 +155,12 @@ Return a reference to the currently selected stamp entry, if any.
 pub fn selected_mut(&mut self) -> Option<&mut StampEntry>
 ```
 
-Return a mutable reference to the currently selected stamp entry, if any. |
+Return a mutable reference to the currently selected stamp entry, if any.
+
+## `StampLibrary::entries`
+
+```rust
+pub fn entries(&self) -> &[StampEntry]
+```
+
+Return a slice of all stamp entries. |
