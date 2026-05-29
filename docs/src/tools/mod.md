@@ -30,3 +30,7 @@ Parsers for .gbr (GIMP brush) and .abr (Photoshop brush) file formats. Exports p
 ## `custom_brush`
 
 Custom brush line drawing from loaded brush tips. Exports draw_custom_brush_line which interpolates tip placements along a Bresenham line respecting spacing, tint, and aspect ratio.
+
+## `stamp_brush`
+
+External-image stamp brush tool. Exports draw_stamp_line which stamps a loaded image at interpolated positions along a drag line.
