@@ -205,7 +205,7 @@ impl FileIO {
                     if
                         let Some(path) = rfd::FileDialog
                             ::new()
-                            .add_filter("Brush Files", &["abr", "gbr", "brush"])
+                            .add_filter("Brush Files", &["abr", "gbr"])
                             .pick_file()
                     {
                         // Parse the brush file in the background thread
