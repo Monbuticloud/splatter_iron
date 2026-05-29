@@ -16,6 +16,7 @@ use crate::brush_params::BrushStrokeParams;
 use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
 use crate::file_io::PendingFileAction;
+use crate::pixel;
 use crate::tools::bucket_fill::draw_bucket_fill;
 use crate::tools::circle_brush::draw_circle;
 use crate::tools::circle_brush::draw_circle_line;
@@ -299,6 +300,7 @@ impl MyApp {
                     );
                 }
                 CurrentTool::BucketFill => {}
+                CurrentTool::Eyedropper => {}
                 CurrentTool::Stamp => {
                     if let Some(entry) = self.stamp_library.selected() {
                         stamp_tip_preview(
@@ -384,6 +386,34 @@ impl MyApp {
             }
         }
 
+        if response.clicked()
+            && self.tool_configuration.current_tool == CurrentTool::Eyedropper
+        {
+            if let Some(position) = response.interact_pointer_pos() {
+                let local_position = position - response.rect.min;
+                let uv = egui::vec2(
+                    local_position.x / response.rect.width(),
+                    local_position.y / response.rect.height(),
+                );
+                let pixel_x =
+                    (uv.x * (self.document.canvas.width as f32)).floor() as u32;
+                let pixel_y =
+                    (uv.y * (self.document.canvas.height as f32)).floor() as u32;
+                let w = self.document.canvas.width;
+                let index = ((pixel_y * w + pixel_x) as usize) * 4;
+                let rgba = &self.document.canvas.output_rgba;
+                if index + 3 < rgba.len() {
+                    let premul = Color32::from_rgba_premultiplied(
+                        rgba[index],
+                        rgba[index + 1],
+                        rgba[index + 2],
+                        rgba[index + 3],
+                    );
+                    self.tool_configuration.current_color = pixel::unpremultiply(premul);
+                }
+            }
+        }
+
         if response.dragged() {
             if let Some(position) = response.interact_pointer_pos() {
                 let local_position = position - response.rect.min;
@@ -395,7 +425,10 @@ impl MyApp {
                 let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
                 let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
-                if self.tool_configuration.current_tool != CurrentTool::BucketFill {
+                if !matches!(
+                    self.tool_configuration.current_tool,
+                    CurrentTool::BucketFill | CurrentTool::Eyedropper
+                ) {
                     if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
                         self.document.dirty_since_last_autosave = true;
                         if self.ui.previous_cursor_position.is_none() {
@@ -452,6 +485,7 @@ impl MyApp {
 
         match self.tool_configuration.current_tool {
             CurrentTool::BucketFill => None,
+            CurrentTool::Eyedropper => None,
 
             CurrentTool::Pencil => {
                 let first_frame = self.ui.previous_cursor_position.is_none();
