@@ -71,3 +71,7 @@ undo_apply on an UndoRecord with mismatched run lengths panics (invariant violat
 ## `redo_apply_corrupt_run_panics`
 
 redo_apply on a corrupted record panics.
+
+## `undo_apply_before_pixels_many_wrong_length_panics`
+
+undo_apply with BeforePixels::Many data that does not match pixel count panics.
