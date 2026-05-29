@@ -99,3 +99,7 @@ move_layer_up on the top layer (index 0) panics as documented.
 ## `move_layer_down_on_bottom_layer_panics`
 
 move_layer_down on the bottom layer panics as documented.
+
+## `delete_layer_out_of_bounds_panics`
+
+Deleting a layer with out-of-bounds index panics.
