@@ -343,3 +343,7 @@ Returns true if there are no rects in the list.
 ## `DirtyRectList::clear`
 
 Removes all rects from the list.
+
+## `CurrentTool::Stamp`
+
+Stamp brush tool. When selected, clicking the canvas stamps an image from the StampLibrary. Drag draws a line of stamped impressions interpolated between start and end points.
