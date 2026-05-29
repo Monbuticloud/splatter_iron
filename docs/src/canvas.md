@@ -4,7 +4,7 @@
 
 `DirtyRect` is an axis-aligned bounding box that tracks which region of the canvas has been modified since the last GPU texture upload. It enables partial texture updates: instead of re-uploading the full `output_rgba` buffer every frame, the renderer can upload only the pixels within the dirty rectangle.
 
-A value of `None` in `Canvas::dirty_rect` signals that the entire composite needs to be recalculated from scratch (e.g. after a layer reorder or deletion).
+An empty `DirtyRectList` in `Canvas::dirty_rect` signals that the entire composite needs to be recalculated from scratch (e.g. after a layer reorder or deletion).
 
 ### Fields
 
@@ -125,10 +125,9 @@ An empty rect is the initial state before any pixels are recorded (as produced b
 ### Usage in rendering
 
 ```rust
-if let Some(dirty) = &canvas.dirty_rect {
-    if !dirty.is_empty() {
-        // upload only the sub-region to the GPU
-    }
+if !canvas.dirty_rect.is_empty() {
+    let union_rect = canvas.dirty_rect.merge_all();
+    // upload only the union sub-region to the GPU
 }
 ```
 
@@ -198,7 +197,7 @@ The default canvas starts with:
 - One transparent layer (all pixels set to `Color32::TRANSPARENT`).
 - An empty `output_rgba` buffer (allocated lazily on first render).
 - No GPU texture handle (`rendered_layers: None`).
-- No pre-existing dirty region (`dirty_rect: None`).
+- An empty dirty region list (`dirty_rect: DirtyRectList::new()`).
 - `render_next_frame: true` to trigger immediate initial compositing.
 
 ### Panics
