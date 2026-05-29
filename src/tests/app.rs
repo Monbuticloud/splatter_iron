@@ -22,13 +22,13 @@ fn ui_state_default_values() {
     assert!(state.time_elapsed.is_zero());
     assert_eq!(state.times_autosaved, 0);
     assert!(state.last_autosave_time.is_zero());
-    assert!(state.displayed_error_list.is_empty());
-    assert!(state.pending_layer_for_deletion.is_none());
-    assert!(!state.show_new_canvas_dialog);
-    assert_eq!(state.new_canvas_width, 2000);
-    assert_eq!(state.new_canvas_height, 1500);
-    assert!(state.pending_stamp_name.is_none());
-    assert!(state.toast_message.is_none());
+    assert!(state.errors.list.is_empty());
+    assert!(state.dialogs.pending_layer_for_deletion.is_none());
+    assert!(!state.dialogs.show_new_canvas_dialog);
+    assert_eq!(state.dialogs.new_canvas_width, 2000);
+    assert_eq!(state.dialogs.new_canvas_height, 1500);
+    assert!(state.dialogs.pending_stamp_name.is_none());
+    assert!(state.toasts.message.is_none());
 }
 
 /// PendingStamp can be constructed with pixel data and dimensions.
