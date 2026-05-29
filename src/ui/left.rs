@@ -63,6 +63,11 @@ impl MyApp {
             CurrentTool::CustomBrush,
             "Custom Brush",
         );
+        ui.selectable_value(
+            &mut self.tool_configuration.current_tool,
+            CurrentTool::Eyedropper,
+            "Eyedropper",
+        );
 
         ui.visuals_mut().selection.bg_fill = old_selection_color;
 
