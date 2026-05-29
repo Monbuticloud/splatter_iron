@@ -24,3 +24,7 @@ EXPORT_FORMATS should reference distinct image::ImageFormat variants.
 ## `export_information_extensions`
 
 Each ExportInformation should have a valid image::ImageFormat with at least one non-empty extension string.
+
+## `import_extensions_non_empty`
+
+IMPORT_EXTENSIONS should contain common image file extensions (png, jpg, jpeg, webg, gif).
