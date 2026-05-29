@@ -239,8 +239,12 @@ impl MyApp {
                 local_position.y / response.rect.height(),
             );
 
-            let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
-            let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
+                let pixel_x = (uv.x * (self.document.canvas.width as f32))
+                    .floor()
+                    .min((self.document.canvas.width - 1) as f32) as u32;
+                let pixel_y = (uv.y * (self.document.canvas.height as f32))
+                    .floor()
+                    .min((self.document.canvas.height - 1) as f32) as u32;
 
             match self.tool_configuration.current_tool {
                 CurrentTool::Circle | CurrentTool::CircleEraser => {
@@ -387,8 +391,12 @@ impl MyApp {
                     local_position.y / response.rect.height(),
                 );
 
-                let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
-                let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
+                let pixel_x = (uv.x * (self.document.canvas.width as f32))
+                    .floor()
+                    .min((self.document.canvas.width - 1) as f32) as u32;
+                let pixel_y = (uv.y * (self.document.canvas.height as f32))
+                    .floor()
+                    .min((self.document.canvas.height - 1) as f32) as u32;
 
                 let canvas = Arc::make_mut(&mut self.document.canvas);
                 canvas.dirty_rect.request_full_blend();
@@ -414,10 +422,12 @@ impl MyApp {
                     local_position.x / response.rect.width(),
                     local_position.y / response.rect.height(),
                 );
-                let pixel_x =
-                    (uv.x * (self.document.canvas.width as f32)).floor() as u32;
-                let pixel_y =
-                    (uv.y * (self.document.canvas.height as f32)).floor() as u32;
+                let pixel_x = (uv.x * (self.document.canvas.width as f32))
+                    .floor()
+                    .min((self.document.canvas.width - 1) as f32) as u32;
+                let pixel_y = (uv.y * (self.document.canvas.height as f32))
+                    .floor()
+                    .min((self.document.canvas.height - 1) as f32) as u32;
                 let w = self.document.canvas.width;
                 let index = ((pixel_y * w + pixel_x) as usize) * 4;
                 let rgba = &self.document.canvas.output_rgba;
@@ -446,8 +456,12 @@ impl MyApp {
                     local_position.y / response.rect.height(),
                 );
 
-                let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
-                let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
+                let pixel_x = (uv.x * (self.document.canvas.width as f32))
+                    .floor()
+                    .min((self.document.canvas.width - 1) as f32) as u32;
+                let pixel_y = (uv.y * (self.document.canvas.height as f32))
+                    .floor()
+                    .min((self.document.canvas.height - 1) as f32) as u32;
 
                 if !matches!(
                     self.tool_configuration.current_tool,
