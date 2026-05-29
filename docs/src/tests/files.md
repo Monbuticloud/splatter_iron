@@ -73,3 +73,7 @@ Export as TGA produces a non-empty file.
 ## `export_ico_creates_file`
 
 Export as ICO produces a non-empty file.
+
+## `export_pnm_creates_file`
+
+Export as PNM produces a non-empty file.
