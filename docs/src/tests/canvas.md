@@ -78,3 +78,7 @@ A DirtyRect created via new with identical min/max is a 1x1 rect.
 ## `dirty_rect_default_covers_origin`
 
 DirtyRect::empty() has inverted bounds covering the origin sentinel.
+
+## `dirty_rect_list_empty`
+
+DirtyRectList::new creates an empty list; is_empty returns true.
