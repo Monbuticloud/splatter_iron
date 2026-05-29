@@ -60,3 +60,7 @@ A 4×1 non-square stamp preserves its aspect ratio when placed at radius 4; left
 ## `stamp_fully_off_screen_noop`
 
 A stamp centred at (100, 100) — far outside the canvas — leaves all pixels transparent and produces no visible effect.
+
+## `bilinear_sampling_produces_interpolated_output`
+
+Bilinear sampling on a stamp with radius 2 produces interpolated pixel values between source texels (tests the StampSampling::Bilinear path).
