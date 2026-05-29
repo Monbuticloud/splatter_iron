@@ -109,3 +109,7 @@ blend_region with zero height is a no-op (no panics, no writes).
 ## `blend_region_out_of_bounds_panics`
 
 blend_region with coordinates outside canvas bounds panics.
+
+## `premultiply_alpha_one_zeros_rgb`
+
+Premultiply with alpha=1 and nonzero RGB zeros out RGB (correct premultiplied math).
