@@ -56,3 +56,7 @@ Receiving DialogResult::Error appends the error string to the error list.
 ## `poll_dialog_results_load_replaces_canvas`
 
 Receiving DialogResult::Picked with Load pending replaces the document canvas via deserialization.
+
+## `poll_dialog_results_import_replaces_canvas`
+
+Receiving DialogResult::Picked with Import pending replaces the canvas via import_image_as_canvas.
