@@ -115,3 +115,7 @@ Calling blend_to_output twice resets render state; second call returns None.
 ## `add_layer_pixels_are_transparent`
 
 Newly added layers are fully transparent.
+
+## `move_layer_up_swaps_ordering`
+
+move_layer_up changes layer ordering by swapping with layer above.
