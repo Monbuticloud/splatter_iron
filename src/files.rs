@@ -61,6 +61,27 @@ pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
         decompressed.extend_from_slice(&buf[..n]);
     }
     let mut canvas: Canvas = serde_json::from_slice(&decompressed)?;
+
+    // Validate dimensions
+    if canvas.width == 0 || canvas.height == 0 {
+        anyhow::bail!(
+            "invalid canvas dimensions: {}x{}",
+            canvas.width,
+            canvas.height,
+        );
+    }
+
+    // Validate each layer has the correct number of pixels
+    let expected = (canvas.width as usize).saturating_mul(canvas.height as usize);
+    for (i, layer) in canvas.pixels.iter().enumerate() {
+        if layer.pixels.len() != expected {
+            anyhow::bail!(
+                "layer {i}: expected {expected} pixels, got {}",
+                layer.pixels.len(),
+            );
+        }
+    }
+
     canvas.dirty_rect.request_full_blend();
     Ok(canvas)
 }
