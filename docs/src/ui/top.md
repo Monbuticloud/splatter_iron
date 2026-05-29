@@ -54,3 +54,7 @@ Queues PendingFileAction::Load to open a .splattercanvas file.
 ## `Cmd+S (Save)`
 
 If savefile_path is empty, queues a Save dialog. Otherwise writes directly to current path via save_to_current_path.
+
+## `Cmd+Shift+S (Save As)`
+
+Queues PendingFileAction::Save regardless of current savefile_path, forcing a save dialog.
