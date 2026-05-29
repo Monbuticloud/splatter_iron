@@ -55,3 +55,7 @@ Parse ABR v6 sampled BGRA brush; verify pixel values and premultiplied constrain
 ## `parse_abr_computed_round`
 
 Parse ABR v6 computed round brush; verify diameter and opaque center.
+
+## `parse_abr_computed_square`
+
+Parse ABR v6 computed square brush from multi-subblock; verify dimensions.
