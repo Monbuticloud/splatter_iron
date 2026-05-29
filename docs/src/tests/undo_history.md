@@ -99,3 +99,7 @@ Redo on an empty history is a no-op.
 ## `push_undo_empty_record`
 
 Pushing an empty UndoRecord (no runs) adds it to the stack.
+
+## `resize_visited_same_size_noop`
+
+resize_visited with the same size as current is a no-op.
