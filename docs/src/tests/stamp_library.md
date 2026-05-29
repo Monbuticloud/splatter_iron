@@ -21,3 +21,7 @@ Persist to temp dir, reload, and verify entries survive.
 ## `remove_last_stamp_clears_selection`
 
 Remove the last stamp clears selection to None.
+
+## `get_valid_index`
+
+Retrieve a stamp by valid index returns Some with correct name.
