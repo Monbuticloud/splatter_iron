@@ -264,3 +264,7 @@ The name of a stamp image awaiting user confirmation in a name-entry dialog. Set
 ## `UIState.pending_brushes`
 
 Brush tips awaiting user confirmation in a name-entry dialog. Set when loaded_brush_data is processed in the frame loop.
+
+## `UIState.toast_message`
+
+A transient toast notification message displayed briefly in the UI. Set by the frame loop for non-blocking feedback.
