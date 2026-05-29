@@ -178,10 +178,10 @@ pub fn render_to_texture(&mut self, ui: &egui::Ui)
 
 1. Calls `blend_to_output()` to ensure `output_rgba` is up to date.
 2. Constructs a `ColorImage` from the premultiplied RGBA buffer.
-3. If `self.canvas.rendered_layers` already holds a texture, calls `set(...)` on
+3. If `self.canvas_mut().rendered_layers` already holds a texture, calls `set(...)` on
    it with the new image data.
 4. Otherwise, creates a new named texture via `ui.ctx().load_texture(...)` and
-   stores it in `self.canvas.rendered_layers`.
+   stores it in `self.canvas_mut().rendered_layers`.
 
 ### Texture options
 
