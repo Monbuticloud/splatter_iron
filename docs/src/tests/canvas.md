@@ -74,3 +74,7 @@ Unioning a valid rect with an empty rect produces the valid rect.
 ## `dirty_rect_single_pixel`
 
 A DirtyRect created via new with identical min/max is a 1x1 rect.
+
+## `dirty_rect_default_covers_origin`
+
+DirtyRect::empty() has inverted bounds covering the origin sentinel.
