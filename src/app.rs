@@ -20,6 +20,7 @@ use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
 use crate::document::Document;
 use crate::file_io::FileIO;
+use crate::file_io::PendingFileAction;
 use crate::file_io::SaveKind;
 use crate::stamp_library::StampEntry;
 use crate::tool_configuration::ToolConfiguration;
@@ -215,6 +216,10 @@ pub struct PendingStamp {
     pub pending_stamp_name: Option<PendingStamp>,
     /// Brush tips awaiting user-confirmed names before being added to the library.
     pub pending_brushes: Option<Vec<PendingStamp>>,
+    /// A destructive action waiting for the user to resolve unsaved changes.
+    pub pending_unsaved_action: Option<UnsavedWarningAction>,
+    /// A destructive action that was deferred until the current save completes.
+    pub pending_after_save: Option<UnsavedWarningAction>,
 }
 
 impl Default for DialogState {
@@ -227,6 +232,8 @@ impl Default for DialogState {
             pending_large_canvas: None,
             pending_stamp_name: None,
             pending_brushes: None,
+            pending_unsaved_action: None,
+            pending_after_save: None,
         }
     }
 }
@@ -252,6 +259,23 @@ impl Default for ToastState {
     fn default() -> Self {
         Self { message: None }
     }
+}
+
+/// A destructive file action that was postponed because the canvas has
+/// unsaved changes. Stored until the user resolves the unsaved-changes
+/// warning dialog.
+#[derive(Clone)]
+pub enum UnsavedWarningAction {
+    /// Close the application.
+    Quit,
+    /// Open the new-canvas dialog.
+    NewCanvas,
+    /// Load a `.splattercanvas` file (opens file dialog).
+    Load,
+    /// Import an image as a new canvas (opens file dialog).
+    Import,
+    /// Load a specific recent `.splattercanvas` file by path.
+    LoadPath(std::path::PathBuf),
 }
 
 /// Progress state for long-running operations.
@@ -301,6 +325,9 @@ pub struct UIState {
     pub toasts: ToastState,
     /// Long-running operation progress.
     pub progress: ProgressState,
+    /// Set to `true` when the app should close (e.g., after unsaved-changes
+    /// resolution chooses Quit).
+    pub should_close: bool,
 }
 
 impl Default for UIState {
@@ -323,6 +350,7 @@ impl Default for UIState {
             errors: ErrorState::default(),
             toasts: ToastState::default(),
             progress: ProgressState::Idle,
+            should_close: false,
         }
     }
 }
@@ -551,6 +579,13 @@ impl MyApp {
         );
         self.file_io
             .poll_save_results(&mut self.document, &mut self.ui.errors.list);
+
+        // Execute deferred action after save completes.
+        if self.document.save_state == crate::document::SaveState::Idle {
+            if let Some(action) = self.ui.dialogs.pending_after_save.take() {
+                self.execute_unsaved_action(action);
+            }
+        }
 
         // Poll load/import results (applies `Canvas` to document).
         self.file_io.poll_load_import_results(
@@ -849,22 +884,29 @@ impl MyApp {
                 );
                 ui.horizontal(|ui| {
                     if ui.button("Create").clicked() {
-                        let mem = estimate_canvas_memory(
-                            self.ui.dialogs.new_canvas_width,
-                            self.ui.dialogs.new_canvas_height,
-                        );
-                        if mem > MEMORY_WARNING_THRESHOLD {
-                            self.ui.dialogs.pending_large_canvas =
-                                Some((self.ui.dialogs.new_canvas_width, self.ui.dialogs.new_canvas_height));
+                        if self.document.dirty_since_last_autosave {
+                            self.ui.dialogs.pending_unsaved_action =
+                                Some(UnsavedWarningAction::NewCanvas);
                         } else {
-                            let canvas = Canvas::new(
+                            let mem = estimate_canvas_memory(
                                 self.ui.dialogs.new_canvas_width,
                                 self.ui.dialogs.new_canvas_height,
                             );
-                            self.document.replace_canvas(canvas, &mut self.undo);
-                            self.ui.previous_tool = None;
-                            self.ui.previous_cursor_position = None;
-                            self.ui.dialogs.show_new_canvas_dialog = false;
+                            if mem > MEMORY_WARNING_THRESHOLD {
+                                self.ui.dialogs.pending_large_canvas = Some((
+                                    self.ui.dialogs.new_canvas_width,
+                                    self.ui.dialogs.new_canvas_height,
+                                ));
+                            } else {
+                                let canvas = Canvas::new(
+                                    self.ui.dialogs.new_canvas_width,
+                                    self.ui.dialogs.new_canvas_height,
+                                );
+                                self.document.replace_canvas(canvas, &mut self.undo);
+                                self.ui.previous_tool = None;
+                                self.ui.previous_cursor_position = None;
+                                self.ui.dialogs.show_new_canvas_dialog = false;
+                            }
                         }
                     }
                     if ui.button("Cancel").clicked() {
@@ -874,6 +916,102 @@ impl MyApp {
             });
         if !open {
             self.ui.dialogs.show_new_canvas_dialog = false;
+        }
+    }
+
+    /// Show the unsaved-changes warning when a destructive action is triggered
+    /// while the canvas has unsaved modifications.
+    ///
+    /// Offers Save (save then proceed), Discard (lose changes and proceed),
+    /// and Cancel (do nothing). The deferred action is stored in
+    /// `pending_unsaved_action` and cleared on resolution.
+    fn show_unsaved_changes_warning(&mut self, ui: &mut egui::Ui) {
+        if self.ui.dialogs.pending_unsaved_action.is_none() {
+            return;
+        }
+        let action = self
+            .ui
+            .dialogs
+            .pending_unsaved_action
+            .as_ref()
+            .unwrap()
+            .clone();
+        let mut open = true;
+        let mut resolved = false;
+        let label: String = if self.document.savefile_path.is_empty() {
+            "You have unsaved changes. What would you like to do?".to_string()
+        } else {
+            format!(
+                "\"{}\" has unsaved changes. What would you like to do?",
+                std::path::Path::new(&self.document.savefile_path)
+                    .file_name()
+                    .map(|s| s.to_string_lossy())
+                    .unwrap_or_default()
+            )
+        };
+        egui::Window::new("Unsaved Changes")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.label(&label);
+                ui.horizontal(|ui| {
+                    if ui.button("Save").clicked() {
+                        if self.document.savefile_path.is_empty() {
+                            self.ui.dialogs.pending_after_save = Some(action.clone());
+                            self.file_io
+                                .queue_file_action(PendingFileAction::Save);
+                        } else {
+                            self.file_io
+                                .save_to_current_path(&mut self.document);
+                            self.ui.dialogs.pending_after_save = Some(action.clone());
+                        }
+                        resolved = true;
+                    }
+                    if !resolved && ui.button("Don't Save").clicked() {
+                        self.execute_unsaved_action(action.clone());
+                        resolved = true;
+                    }
+                    if !resolved && ui.button("Cancel").clicked() {
+                        resolved = true;
+                    }
+                });
+            });
+        if !open || resolved {
+            self.ui.dialogs.pending_unsaved_action = None;
+        }
+    }
+
+    /// If the document has unsaved changes, store the action for later
+    /// resolution; otherwise execute it immediately.
+    pub(crate) fn guard_unsaved(&mut self, action: UnsavedWarningAction) {
+        if self.document.dirty_since_last_autosave {
+            self.ui.dialogs.pending_unsaved_action = Some(action);
+        } else {
+            self.execute_unsaved_action(action);
+        }
+    }
+
+    /// Execute a deferred destructive action after the user has resolved the
+    /// unsaved-changes warning (or after a save completes).
+    fn execute_unsaved_action(&mut self, action: UnsavedWarningAction) {
+        match action {
+            UnsavedWarningAction::Quit => {
+                self.ui.should_close = true;
+            }
+            UnsavedWarningAction::NewCanvas => {
+                self.ui.dialogs.show_new_canvas_dialog = true;
+            }
+            UnsavedWarningAction::Load => {
+                self.file_io.queue_file_action(PendingFileAction::Load);
+            }
+            UnsavedWarningAction::Import => {
+                self.file_io.queue_file_action(PendingFileAction::Import);
+            }
+            UnsavedWarningAction::LoadPath(path) => {
+                self.file_io.queue_load_direct(path);
+            }
         }
     }
 
@@ -1124,6 +1262,7 @@ impl eframe::App for MyApp {
         self.show_delete_layer_dialog(ui);
         self.show_large_canvas_warning(ui);
         self.show_new_canvas_dialog(ui);
+        self.show_unsaved_changes_warning(ui);
         self.show_stamp_naming_dialog(ui);
         self.show_brush_naming_dialog(ui);
         self.show_toast(ui);
@@ -1148,7 +1287,9 @@ impl eframe::App for MyApp {
             ui.send_viewport_cmd(egui::ViewportCommand::Title(new_title));
         }
 
-        if is_quitting {
+        if self.ui.should_close {
+            ui.send_viewport_cmd(egui::ViewportCommand::Close);
+        } else if is_quitting {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         }
 

@@ -3,6 +3,7 @@
 use eframe::egui;
 
 use crate::app::MyApp;
+use crate::app::UnsavedWarningAction;
 use crate::file_io::PendingFileAction;
 
 impl MyApp {
@@ -79,11 +80,10 @@ impl MyApp {
 
         // Keyboard shortcuts (checked every frame regardless of button hover).
         if ui.input(|i| i.key_pressed(egui::Key::N) && i.modifiers.command && !i.modifiers.shift) {
-            self.ui.dialogs.show_new_canvas_dialog = true;
+            self.guard_unsaved(UnsavedWarningAction::NewCanvas);
         }
         if ui.input(|i| i.key_pressed(egui::Key::O) && i.modifiers.command && !i.modifiers.shift) {
-            self.file_io.queue_file_action(PendingFileAction::Load);
-            ui.ctx().request_repaint();
+            self.guard_unsaved(UnsavedWarningAction::Load);
         }
         if ui.input(|i| i.key_pressed(egui::Key::S) && i.modifiers.command && !i.modifiers.shift) {
             if self.document.savefile_path.is_empty() {
@@ -98,8 +98,7 @@ impl MyApp {
             ui.ctx().request_repaint();
         }
         if ui.input(|i| i.key_pressed(egui::Key::I) && i.modifiers.command && !i.modifiers.shift) {
-            self.file_io.queue_file_action(PendingFileAction::Import);
-            ui.ctx().request_repaint();
+            self.guard_unsaved(UnsavedWarningAction::Import);
         }
         if ui.input(|i| i.key_pressed(egui::Key::E) && i.modifiers.command && !i.modifiers.shift) {
             self.file_io
@@ -120,13 +119,13 @@ impl MyApp {
 
             // Load
             if ui.button("Load").clicked() {
-                self.file_io.queue_file_action(PendingFileAction::Load);
+                self.guard_unsaved(UnsavedWarningAction::Load);
                 ui.ctx().request_repaint();
             }
 
             // New
             if ui.button("New").clicked() {
-                self.ui.dialogs.show_new_canvas_dialog = true;
+                self.guard_unsaved(UnsavedWarningAction::NewCanvas);
             }
 
             // Export menu with all supported formats
@@ -149,7 +148,7 @@ impl MyApp {
                 recent_response.context_menu(|ui| {
                     for path in self.ui.recent_files.clone() {
                         if ui.button(path.display().to_string()).clicked() {
-                            self.file_io.queue_load_direct(path);
+                            self.guard_unsaved(UnsavedWarningAction::LoadPath(path));
                             ui.ctx().request_repaint();
                             ui.close();
                         }
@@ -159,7 +158,7 @@ impl MyApp {
 
             // Import
             if ui.button("Import").clicked() {
-                self.file_io.queue_file_action(PendingFileAction::Import);
+                self.guard_unsaved(UnsavedWarningAction::Import);
                 ui.ctx().request_repaint();
             }
 
@@ -216,7 +215,10 @@ impl MyApp {
 
             // Close
             if ui.button("Close").clicked() {
-                is_quitting = true;
+                self.guard_unsaved(UnsavedWarningAction::Quit);
+                if !self.document.dirty_since_last_autosave {
+                    is_quitting = true;
+                }
             }
         });
         is_quitting
