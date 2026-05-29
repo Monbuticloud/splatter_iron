@@ -53,3 +53,7 @@ Remove with out-of-bounds index is a no-op (count unchanged).
 ## `select_out_of_bounds_noop`
 
 Select with out-of-bounds index is a no-op (selection unchanged).
+
+## `remove_middle_preserves_order`
+
+Multiple stamps — remove middle, verify ordering preserved.
