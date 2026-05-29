@@ -93,3 +93,7 @@ Calling blend_layers with an empty layer vec panics (invariant violation).
 ## `blend_layers_mismatched_lengths_panics`
 
 blend_layers with layers of different pixel counts panics.
+
+## `blend_layers_output_too_small_panics`
+
+blend_layers with an undersized output buffer panics.
