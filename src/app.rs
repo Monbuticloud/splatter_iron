@@ -29,13 +29,6 @@ pub const FILE_FILTER_NAME: &str = "SplatterCanvas";
 /// Default save-file name used when no path has been set.
 pub const DEFAULT_CANVAS_NAME: &str = "canvas.splattercanvas";
 
-/// Maximum canvas dimension (8192 = 2¹³). This is the de-facto max 2D texture
-/// size guaranteed across GPU backends in wgpu/WebGPU, and avoids
-/// platform-specific allocation issues on older hardware. Going beyond this
-/// would risk `OUT_OF_MEMORY` on integrated GPUs and driver crashes on DX11
-/// / OpenGL ES 3.0 devices that cap at 8192.
-const MAX_CANVAS_DIMENSION: u32 = 8192;
-
 /// Preset canvas sizes shown in the "New Canvas" dialog.
 const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
     ("XS", 800, 600),
@@ -447,11 +440,11 @@ impl eframe::App for MyApp {
                     ui.separator();
                     ui.label("Custom:");
                     ui.add(
-                        egui::Slider::new(&mut self.ui.new_canvas_width, 4..=MAX_CANVAS_DIMENSION)
+                        egui::Slider::new(&mut self.ui.new_canvas_width, 4..=self.ui.max_texture_dimension)
                             .text("Width"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut self.ui.new_canvas_height, 4..=MAX_CANVAS_DIMENSION)
+                        egui::Slider::new(&mut self.ui.new_canvas_height, 4..=self.ui.max_texture_dimension)
                             .text("Height"),
                     );
                     ui.horizontal(|ui| {
