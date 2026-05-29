@@ -307,7 +307,7 @@ fn decode_png_image(data: &[u8]) -> Result<BrushTip, String> {
     let mut pixels = Vec::with_capacity((w * h) as usize);
     for pixel in rgba.pixels() {
         let straight = Color32::from_rgba_unmultiplied(pixel[0], pixel[1], pixel[2], pixel[3]);
-        pixels.push(crate::pixel::premultiply(straight));
+        pixels.push(straight);
     }
     Ok(BrushTip { name: String::new(), pixels, width: w, height: h, spacing: 25 })
 }
@@ -330,7 +330,7 @@ fn decode_raw_bgra(data: &[u8]) -> Result<BrushTip, String> {
     for chunk in data.chunks_exact(4) {
         // BGRA → RGBA
         let straight = Color32::from_rgba_unmultiplied(chunk[2], chunk[1], chunk[0], chunk[3]);
-        pixels.push(crate::pixel::premultiply(straight));
+        pixels.push(straight);
     }
     Ok(BrushTip { name: String::new(), pixels, width: w, height: h, spacing: 25 })
 }
@@ -431,7 +431,7 @@ fn rasterise_round(w: u32, h: u32, radius: u32, hardness: f64) -> Vec<Color32> {
                 ((1.0 - t) * 255.0 + 0.5) as u8
             };
             let straight = Color32::from_rgba_unmultiplied(0, 0, 0, alpha);
-            pixels.push(crate::pixel::premultiply(straight));
+            pixels.push(straight);
         }
     }
     pixels
@@ -455,7 +455,7 @@ fn rasterise_square(w: u32, h: u32, hardness: f64) -> Vec<Color32> {
                 (t * 255.0 + 0.5) as u8
             };
             let straight = Color32::from_rgba_unmultiplied(0, 0, 0, alpha);
-            pixels.push(crate::pixel::premultiply(straight));
+            pixels.push(straight);
         }
     }
     pixels
@@ -485,7 +485,7 @@ fn rasterise_diamond(w: u32, h: u32, hardness: f64) -> Vec<Color32> {
                 (t * 255.0 + 0.5) as u8
             };
             let straight = Color32::from_rgba_unmultiplied(0, 0, 0, alpha);
-            pixels.push(crate::pixel::premultiply(straight));
+            pixels.push(straight);
         }
     }
     pixels
@@ -529,7 +529,7 @@ fn rasterise_capped_round(w: u32, h: u32, radius: u32, hardness: f64) -> Vec<Col
             };
 
             let straight = Color32::from_rgba_unmultiplied(0, 0, 0, alpha);
-            pixels.push(crate::pixel::premultiply(straight));
+            pixels.push(straight);
         }
     }
     pixels
