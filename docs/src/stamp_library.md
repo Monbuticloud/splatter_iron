@@ -95,9 +95,9 @@ be called after loading or when the egui context is available.
 pub fn add(&mut self, name: String, pixels: Vec<Color32>, width: u32, height: u32, ctx: &egui::Context)
 ```
 
-Add a new stamp to the library and persist it to disk. Creates a PNG file in
-the stamps directory and updates `index.json`. A cached texture handle is
-created for preview rendering.
+Add a new stamp to the library, persist it to disk, and auto-select it.
+Creates a PNG file in the stamps directory and updates `index.json`. A cached
+texture handle is created for preview rendering.
 
 ### Parameters
 
