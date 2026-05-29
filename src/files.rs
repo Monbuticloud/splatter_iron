@@ -42,7 +42,8 @@ pub fn load_bytes_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
 /// # Errors
 ///
 /// Returns an error if zstd decompression or JSON deserialization fails,
-/// or if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`].
+/// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
+/// or if the canvas has invalid dimensions or mismatched layer sizes.
 pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
     let mut decompressed = Vec::new();
     let mut decoder = zstd::Decoder::new(data)?;
