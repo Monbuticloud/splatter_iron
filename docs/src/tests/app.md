@@ -28,3 +28,7 @@ Each ExportInformation should have a valid image::ImageFormat with at least one 
 ## `import_extensions_non_empty`
 
 IMPORT_EXTENSIONS should contain common image file extensions (png, jpg, jpeg, webg, gif).
+
+## `export_formats_entries_accessible`
+
+ExportInformation struct can be read from EXPORT_FORMATS list entries.
