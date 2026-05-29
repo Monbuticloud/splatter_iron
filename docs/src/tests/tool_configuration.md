@@ -9,7 +9,7 @@ Tests for `ToolConfiguration` — default values and field consistency.
 
 ## `default_values_match_expected`
 
-The default `ToolConfiguration` uses the `Square` tool, white colour, radius 100, `alpha_overlay = false`, `show_brush_preview = true`, and `undo_redo_steps_multiplier = 1`.
+The default `ToolConfiguration` uses the `Square` tool, white colour, radius 100, `alpha_overlay = false`, `show_brush_preview = true`, `undo_redo_steps_multiplier = 1`, `stamp_sampling = Nearest`, `stamp_tint_mode = Original`, `brush_sampling = Nearest`, and `brush_tint_mode = Original`.
 
 ## `default_optional_fields_are_none`
 
