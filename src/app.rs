@@ -442,16 +442,12 @@ impl MyApp {
     }
 }
 
-impl eframe::App for MyApp {
-    /// Called every frame by eframe.
-    ///
-    /// Polls file dialog and save results, renders the canvas texture,
-    /// draws top/left/right/center panels, shows error windows,
-    /// and triggers autosave on a 2-minute interval.
-    ///
-    /// When the viewport is unfocused, sleeps to reduce CPU usage.
-    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
-        // Poll dialog results and save results before anything else.
+// --- Frame-helper methods (called once per frame from `ui()`) ---
+
+impl MyApp {
+    /// Poll file-dialog and save-result channels and transfer loaded
+    /// stamp/brush data into pending-dialog state.
+    fn poll_file_results(&mut self, ctx: &egui::Context) {
         self.file_io.poll_dialog_results(
             &mut self.document,
             &mut self.undo,
@@ -460,7 +456,6 @@ impl eframe::App for MyApp {
         self.file_io
             .poll_save_results(&mut self.document, &mut self.ui.displayed_error_list);
 
-        // Transfer a newly loaded stamp image into the stamp library.
         if let Some((pixels, w, h, name)) = self.file_io.loaded_stamp_data.take() {
             self.ui.pending_stamp_name = Some(crate::app::PendingStamp {
                 pixels,
@@ -471,7 +466,6 @@ impl eframe::App for MyApp {
             });
         }
 
-        // Transfer newly loaded brush tips into the pending-dialog state.
         if let Some(tips) = self.file_io.loaded_brush_data.take() {
             let pending: Vec<PendingStamp> = tips
                 .into_iter()
@@ -486,18 +480,19 @@ impl eframe::App for MyApp {
             self.ui.pending_brushes = Some(pending);
         }
 
-        // Create egui textures for stamps (needs ctx — available once per frame).
-        self.stamp_library.create_textures(ui.ctx());
+        self.stamp_library.create_textures(ctx);
+        self.brush_library.create_textures(ctx);
+    }
 
-        // Create egui textures for custom brushes.
-        self.brush_library.create_textures(ui.ctx());
-
+    /// Advance the render-state machine and return `true` if the frame should
+    /// be skipped (viewport unfocused or frozen).
+    fn update_render_state(&mut self, ui: &mut egui::Ui) -> bool {
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
             std::thread::sleep(std::time::Duration::from_millis(
                 UNFOCUSED_SLEEP_MILLISECONDS,
             ));
             self.ui.render_state = RenderState::UnfocusedFrozen;
-            return;
+            return true;
         }
         let predicted_delta_time =
             Duration::from_secs_f32(ui.ctx().input(|i| i.predicted_dt).max(0.0));
@@ -520,11 +515,14 @@ impl eframe::App for MyApp {
             }
             RenderState::UnfocusedFrozen => {
                 self.ui.render_state = RenderState::IdleThrottled;
-                return;
+                return true;
             }
         }
+        false
+    }
 
-        // Recreate GPU texture if canvas dimensions have changed
+    /// Recreate the GPU texture if dimensions changed, then blend and upload.
+    fn sync_gpu_texture(&mut self, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
         if let Some(gpu) = &self.gpu_texture {
             let texture_size = gpu.texture.size();
             if texture_size.width != self.document.canvas.width
@@ -534,7 +532,6 @@ impl eframe::App for MyApp {
             }
         }
 
-        // Render layers to texture if needed
         if self.gpu_texture.is_some() {
             if self.document.canvas.render_next_frame {
                 let dirty = self.document.blend_to_output();
@@ -548,280 +545,297 @@ impl eframe::App for MyApp {
         {
             self.document.render_to_texture(ui);
         }
+    }
 
+    /// Render all four panels (top, left, right, centre) and return whether
+    /// the user requested to quit (via the top panel).
+    fn show_panels(&mut self, ui: &mut egui::Ui) -> bool {
         let is_quitting = Panel::top("top")
             .show_inside(ui, |ui| self.show_top_panel(ui))
             .inner;
 
         Panel::left("side").show_inside(ui, |ui| self.show_left_panel(ui));
-
         Panel::right("right").show_inside(ui, |ui| self.show_right_panel(ui));
-
         egui::CentralPanel::default().show_inside(ui, |ui| self.show_central_panel(ui));
 
-        if !self.ui.displayed_error_list.is_empty() {
-            let mut open = true;
-            let mut to_dismiss: Vec<usize> = Vec::new();
-            egui::Window::new("Error")
-                .collapsible(false)
-                .resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .open(&mut open)
-                .show(ui, |ui| {
-                    for (index, msg) in self.ui.displayed_error_list.iter().enumerate() {
-                        ui.label(format!("Error: {msg}"));
-                        ui.horizontal(|ui| {
-                            if ui.button("Dismiss").clicked() {
-                                to_dismiss.push(index);
-                            }
-                            if ui.button("Copy error").clicked() {
-                                ui.ctx().copy_text(msg.clone());
-                            }
-                        });
-                    }
+        is_quitting
+    }
+
+    /// Show the error-list window (dismiss, copy, dismiss-all).
+    fn show_error_window(&mut self, ui: &mut egui::Ui) {
+        if self.ui.displayed_error_list.is_empty() {
+            return;
+        }
+        let mut open = true;
+        let mut to_dismiss: Vec<usize> = Vec::new();
+        egui::Window::new("Error")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                for (index, msg) in self.ui.displayed_error_list.iter().enumerate() {
+                    ui.label(format!("Error: {msg}"));
                     ui.horizontal(|ui| {
-                        if ui.button("Dismiss All").clicked() {
-                            to_dismiss.extend(0..self.ui.displayed_error_list.len());
+                        if ui.button("Dismiss").clicked() {
+                            to_dismiss.push(index);
+                        }
+                        if ui.button("Copy error").clicked() {
+                            ui.ctx().copy_text(msg.clone());
                         }
                     });
+                }
+                ui.horizontal(|ui| {
+                    if ui.button("Dismiss All").clicked() {
+                        to_dismiss.extend(0..self.ui.displayed_error_list.len());
+                    }
                 });
+            });
 
-            // Remove in descending order so earlier removals don't shift later indices.
-            to_dismiss.sort_unstable_by(|a, b| b.cmp(a));
-            to_dismiss.dedup();
-            for i in to_dismiss {
-                self.ui.displayed_error_list.remove(i);
-            }
-            if !open {
-                self.ui.displayed_error_list.clear();
-            }
+        to_dismiss.sort_unstable_by(|a, b| b.cmp(a));
+        to_dismiss.dedup();
+        for i in to_dismiss {
+            self.ui.displayed_error_list.remove(i);
         }
+        if !open {
+            self.ui.displayed_error_list.clear();
+        }
+    }
 
-        // --- Large canvas confirmation dialog ---
-        if let Some((w, h)) = self.ui.pending_large_canvas {
-            let mut open = true;
-            let estimated = estimate_canvas_memory(w, h);
-            let estimated_mb = estimated / (1024 * 1024);
-            egui::Window::new("Large Canvas Warning")
-                .collapsible(false)
-                .resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .open(&mut open)
-                .show(ui, |ui| {
-                    ui.label(format!(
-                        "This canvas ({w}×{h}) may use up to ~{estimated_mb} MB of RAM.\n\
-                         Proceed? This cannot be undone."
-                    ));
-                    ui.horizontal(|ui| {
-                        if ui.button("Yes, create").clicked() {
-                            let canvas = Canvas::new(w, h);
+    /// Show the "Large Canvas Warning" confirmation dialog.
+    fn show_large_canvas_warning(&mut self, ui: &mut egui::Ui) {
+        let Some((w, h)) = self.ui.pending_large_canvas else {
+            return;
+        };
+        let mut open = true;
+        let estimated = estimate_canvas_memory(w, h);
+        let estimated_mb = estimated / (1024 * 1024);
+        egui::Window::new("Large Canvas Warning")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.label(format!(
+                    "This canvas ({w}×{h}) may use up to ~{estimated_mb} MB of RAM.\n\
+                     Proceed? This cannot be undone."
+                ));
+                ui.horizontal(|ui| {
+                    if ui.button("Yes, create").clicked() {
+                        let canvas = Canvas::new(w, h);
+                        self.document.replace_canvas(canvas, &mut self.undo);
+                        self.ui.previous_tool = None;
+                        self.ui.previous_cursor_position = None;
+                        self.ui.show_new_canvas_dialog = false;
+                        self.ui.pending_large_canvas = None;
+                    }
+                    if ui.button("Cancel").clicked() {
+                        self.ui.pending_large_canvas = None;
+                    }
+                });
+            });
+        if !open {
+            self.ui.pending_large_canvas = None;
+        }
+    }
+
+    /// Show the "New Canvas" preset / custom-size dialog.
+    fn show_new_canvas_dialog(&mut self, ui: &mut egui::Ui) {
+        if !self.ui.show_new_canvas_dialog {
+            return;
+        }
+        let mut open = true;
+        egui::Window::new("New Canvas")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    for &(label, width, height) in NEW_CANVAS_PRESETS {
+                        if ui.button(format!("{label}\n{width}×{height}")).clicked() {
+                            self.ui.new_canvas_width = width;
+                            self.ui.new_canvas_height = height;
+                        }
+                    }
+                });
+                ui.separator();
+                ui.label("Custom:");
+                ui.add(
+                    egui::Slider::new(
+                        &mut self.ui.new_canvas_width,
+                        4..=self.ui.max_texture_dimension,
+                    )
+                    .text("Width"),
+                );
+                ui.add(
+                    egui::Slider::new(
+                        &mut self.ui.new_canvas_height,
+                        4..=self.ui.max_texture_dimension,
+                    )
+                    .text("Height"),
+                );
+                ui.horizontal(|ui| {
+                    if ui.button("Create").clicked() {
+                        let mem = estimate_canvas_memory(
+                            self.ui.new_canvas_width,
+                            self.ui.new_canvas_height,
+                        );
+                        if mem > MEMORY_WARNING_THRESHOLD {
+                            self.ui.pending_large_canvas =
+                                Some((self.ui.new_canvas_width, self.ui.new_canvas_height));
+                        } else {
+                            let canvas = Canvas::new(
+                                self.ui.new_canvas_width,
+                                self.ui.new_canvas_height,
+                            );
                             self.document.replace_canvas(canvas, &mut self.undo);
                             self.ui.previous_tool = None;
                             self.ui.previous_cursor_position = None;
                             self.ui.show_new_canvas_dialog = false;
-                            self.ui.pending_large_canvas = None;
                         }
-                        if ui.button("Cancel").clicked() {
-                            self.ui.pending_large_canvas = None;
-                        }
-                    });
+                    }
+                    if ui.button("Cancel").clicked() {
+                        self.ui.show_new_canvas_dialog = false;
+                    }
                 });
-            if !open {
-                self.ui.pending_large_canvas = None;
-            }
+            });
+        if !open {
+            self.ui.show_new_canvas_dialog = false;
         }
+    }
 
-        // --- New Canvas dialog ---
-        if self.ui.show_new_canvas_dialog {
-            let mut open = true;
-            egui::Window::new("New Canvas")
-                .collapsible(false)
-                .resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .open(&mut open)
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        for &(label, width, height) in NEW_CANVAS_PRESETS {
-                            if ui.button(format!("{label}\n{width}×{height}")).clicked() {
-                                self.ui.new_canvas_width = width;
-                                self.ui.new_canvas_height = height;
-                            }
-                        }
-                    });
-                    ui.separator();
-                    ui.label("Custom:");
-                    ui.add(
-                        egui::Slider::new(
-                            &mut self.ui.new_canvas_width,
-                            4..=self.ui.max_texture_dimension,
-                        )
-                        .text("Width"),
+    /// Show the stamp-naming dialog when a new stamp has been loaded.
+    fn show_stamp_naming_dialog(&mut self, ui: &mut egui::Ui) {
+        let Some(mut pending) = self.ui.pending_stamp_name.take() else {
+            return;
+        };
+        let mut open = true;
+        let label = format!("Size: {}×{}", pending.width, pending.height);
+        egui::Window::new("Name Your Stamp")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Name:");
+                    ui.text_edit_singleline(&mut pending.name);
+                });
+                ui.label(&label);
+                if ui.button("Add Stamp").clicked() && !pending.name.is_empty() {
+                    let stamp_name = pending.name.clone();
+                    let stamp_pixels = std::mem::take(&mut pending.pixels);
+                    let stamp_w = pending.width;
+                    let stamp_h = pending.height;
+                    self.stamp_library.add(
+                        stamp_name.clone(),
+                        stamp_pixels,
+                        stamp_w,
+                        stamp_h,
+                        ui.ctx(),
                     );
-                    ui.add(
-                        egui::Slider::new(
-                            &mut self.ui.new_canvas_height,
-                            4..=self.ui.max_texture_dimension,
-                        )
-                        .text("Height"),
-                    );
-                    ui.horizontal(|ui| {
-                        if ui.button("Create").clicked() {
-                            let mem = estimate_canvas_memory(
-                                self.ui.new_canvas_width,
-                                self.ui.new_canvas_height,
-                            );
-                            if mem > MEMORY_WARNING_THRESHOLD {
-                                self.ui.pending_large_canvas =
-                                    Some((self.ui.new_canvas_width, self.ui.new_canvas_height));
-                            } else {
-                                let canvas = Canvas::new(
-                                    self.ui.new_canvas_width,
-                                    self.ui.new_canvas_height,
-                                );
-                                self.document.replace_canvas(canvas, &mut self.undo);
-                                self.ui.previous_tool = None;
-                                self.ui.previous_cursor_position = None;
-                                self.ui.show_new_canvas_dialog = false;
-                            }
-                        }
-                        if ui.button("Cancel").clicked() {
-                            self.ui.show_new_canvas_dialog = false;
-                        }
-                    });
-                });
-            if !open {
-                self.ui.show_new_canvas_dialog = false;
-            }
-        }
-
-        // --- Stamp naming dialog ---
-        if self.ui.pending_stamp_name.is_some() {
-            // Take ownership of the pending stamp to avoid borrow conflicts.
-            let mut pending = self.ui.pending_stamp_name.take().unwrap();
-            let mut open = true;
-            let label = format!("Size: {}×{}", pending.width, pending.height);
-            egui::Window::new("Name Your Stamp")
-                .collapsible(false)
-                .resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .open(&mut open)
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Name:");
-                        ui.text_edit_singleline(&mut pending.name);
-                    });
-                    ui.label(&label);
-                    if ui.button("Add Stamp").clicked() && !pending.name.is_empty() {
-                        let stamp_name = pending.name.clone();
-                        let stamp_pixels = std::mem::take(&mut pending.pixels);
-                        let stamp_w = pending.width;
-                        let stamp_h = pending.height;
-                        self.stamp_library.add(
-                            stamp_name.clone(),
-                            stamp_pixels,
-                            stamp_w,
-                            stamp_h,
-                            ui.ctx(),
-                        );
-                        self.ui.toast_message =
-                            Some((format!("Stamp \"{stamp_name}\" added"), Instant::now()));
-                    }
-                });
-            if open {
-                self.ui.pending_stamp_name = Some(pending);
-            }
-        }
-
-        // --- Brush import naming dialog ---
-        if let Some(brushes) = &mut self.ui.pending_brushes {
-            let mut open = true;
-            let mut confirmed = false;
-            egui::Window::new("Name Your Brushes")
-                .collapsible(false)
-                .resizable(true)
-                .default_size([400.0, 300.0])
-                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-                .open(&mut open)
-                .show(ui, |ui| {
-                    ui.label(format!(
-                        "{} brush(es) imported — edit names below:",
-                        brushes.len()
-                    ));
-                    ui.separator();
-
-                    let mut names_to_remove: Vec<usize> = Vec::new();
-                    egui::ScrollArea::vertical()
-                        .max_height(ui.available_height() - 40.0)
-                        .show(ui, |ui| {
-                            for (i, brush) in brushes.iter_mut().enumerate() {
-                                ui.horizontal(|ui| {
-                                    ui.add(
-                                        egui::TextEdit::singleline(&mut brush.name)
-                                            .desired_width(150.0),
-                                    );
-                                    ui.label(format!("{}×{}", brush.width, brush.height));
-                                    if ui.button("Remove").clicked() {
-                                        names_to_remove.push(i);
-                                    }
-                                });
-                            }
-                        });
-
-                    // Remove brushes the user marked for deletion
-                    names_to_remove.sort_unstable_by(|a, b| b.cmp(a));
-                    for i in names_to_remove {
-                        brushes.remove(i);
-                    }
-
-                    ui.separator();
-                    if ui.button("Import All").clicked() && !brushes.is_empty() {
-                        confirmed = true;
-                    }
-                });
-            if confirmed {
-                let all_brushes = self.ui.pending_brushes.take().unwrap();
-                let count = all_brushes.len();
-                for brush in all_brushes {
-                    if !brush.name.is_empty() {
-                        self.brush_library.add(
-                            brush.name,
-                            brush.pixels,
-                            brush.width,
-                            brush.height,
-                            brush.spacing,
-                            ui.ctx(),
-                        );
-                    }
+                    self.ui.toast_message =
+                        Some((format!("Stamp \"{stamp_name}\" added"), Instant::now()));
                 }
-                self.ui.toast_message =
-                    Some((format!("Imported {count} brush(es)"), Instant::now()));
-            } else if !open {
-                self.ui.pending_brushes = None;
-            }
+            });
+        if open {
+            self.ui.pending_stamp_name = Some(pending);
         }
+    }
 
-        // --- Toast notification ---
-        if let Some((message, triggered_at)) = &self.ui.toast_message.clone() {
-            if triggered_at.elapsed() < std::time::Duration::from_secs(2) {
-                egui::Area::new(egui::Id::new("stamp_toast"))
-                    .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
+    /// Show the brush-import naming dialog when brushes have been loaded.
+    fn show_brush_naming_dialog(&mut self, ui: &mut egui::Ui) {
+        let Some(brushes) = &mut self.ui.pending_brushes else {
+            return;
+        };
+        let mut open = true;
+        let mut confirmed = false;
+        egui::Window::new("Name Your Brushes")
+            .collapsible(false)
+            .resizable(true)
+            .default_size([400.0, 300.0])
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.label(format!(
+                    "{} brush(es) imported — edit names below:",
+                    brushes.len()
+                ));
+                ui.separator();
+
+                let mut names_to_remove: Vec<usize> = Vec::new();
+                egui::ScrollArea::vertical()
+                    .max_height(ui.available_height() - 40.0)
                     .show(ui, |ui| {
-                        ui.label(
-                            egui::RichText::new(message)
-                                .color(egui::Color32::WHITE)
-                                .background_color(egui::Color32::from_black_alpha(180)),
-                        );
+                        for (i, brush) in brushes.iter_mut().enumerate() {
+                            ui.horizontal(|ui| {
+                                ui.add(
+                                    egui::TextEdit::singleline(&mut brush.name)
+                                        .desired_width(150.0),
+                                );
+                                ui.label(format!("{}×{}", brush.width, brush.height));
+                                if ui.button("Remove").clicked() {
+                                    names_to_remove.push(i);
+                                }
+                            });
+                        }
                     });
-            } else {
-                self.ui.toast_message = None;
+
+                names_to_remove.sort_unstable_by(|a, b| b.cmp(a));
+                for i in names_to_remove {
+                    brushes.remove(i);
+                }
+
+                ui.separator();
+                if ui.button("Import All").clicked() && !brushes.is_empty() {
+                    confirmed = true;
+                }
+            });
+        if confirmed {
+            let all_brushes = self.ui.pending_brushes.take().unwrap();
+            let count = all_brushes.len();
+            for brush in all_brushes {
+                if !brush.name.is_empty() {
+                    self.brush_library.add(
+                        brush.name,
+                        brush.pixels,
+                        brush.width,
+                        brush.height,
+                        brush.spacing,
+                        ui.ctx(),
+                    );
+                }
             }
+            self.ui.toast_message =
+                Some((format!("Imported {count} brush(es)"), Instant::now()));
+        } else if !open {
+            self.ui.pending_brushes = None;
         }
+    }
 
-        if is_quitting {
-            ui.send_viewport_cmd(egui::ViewportCommand::Close);
+    /// Show a brief toast notification (auto-dismissed after 2 seconds).
+    fn show_toast(&mut self, ui: &mut egui::Ui) {
+        let Some((message, triggered_at)) = &self.ui.toast_message.clone() else {
+            return;
+        };
+        if triggered_at.elapsed() < std::time::Duration::from_secs(2) {
+            egui::Area::new(egui::Id::new("stamp_toast"))
+                .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
+                .show(ui, |ui| {
+                    ui.label(
+                        egui::RichText::new(message)
+                            .color(egui::Color32::WHITE)
+                            .background_color(egui::Color32::from_black_alpha(180)),
+                    );
+                });
+        } else {
+            self.ui.toast_message = None;
         }
+    }
 
-        // Autosave every AUTOSAVE_INTERVAL_MINUTES minutes, but only if the canvas has been modified.
+    /// Trigger an autosave if the canvas is dirty and enough time has elapsed.
+    fn handle_autosave(&mut self) {
         if self.document.dirty_since_last_autosave
             && self
                 .ui
@@ -834,5 +848,39 @@ impl eframe::App for MyApp {
             self.file_io
                 .trigger_async_save(&mut self.document, SaveKind::Autosave);
         }
+    }
+}
+
+impl eframe::App for MyApp {
+    /// Called every frame by eframe.
+    ///
+    /// Polls file dialog and save results, renders the canvas texture,
+    /// draws top/left/right/center panels, shows error windows,
+    /// and triggers autosave on a 2-minute interval.
+    ///
+    /// When the viewport is unfocused, sleeps to reduce CPU usage.
+    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        self.poll_file_results(ui.ctx());
+
+        if self.update_render_state(ui) {
+            return;
+        }
+
+        self.sync_gpu_texture(frame, ui);
+
+        let is_quitting = self.show_panels(ui);
+
+        self.show_error_window(ui);
+        self.show_large_canvas_warning(ui);
+        self.show_new_canvas_dialog(ui);
+        self.show_stamp_naming_dialog(ui);
+        self.show_brush_naming_dialog(ui);
+        self.show_toast(ui);
+
+        if is_quitting {
+            ui.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+
+        self.handle_autosave();
     }
 }
