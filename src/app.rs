@@ -1,6 +1,7 @@
 //! Top-level application state, identity constants, export formats, autosave
 //! loop, and wiring between the document, tools, undo history, and file IO.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -407,9 +408,22 @@ impl MyApp {
                 }
             });
 
+        let tool_configuration = data_dir
+            .join("config.json")
+            .as_path()
+            .try_exists()
+            .ok()
+            .filter(|&exists| exists)
+            .and_then(|_| {
+                std::fs::File::open(data_dir.join("config.json"))
+                    .ok()
+                    .and_then(|file| serde_json::from_reader(file).ok())
+            })
+            .unwrap_or_default();
+
         Self {
             document: Document::new(canvas),
-            tool_configuration: ToolConfiguration::default(),
+            tool_configuration,
             undo: UndoHistory::new(pixel_count),
             file_io: FileIO::new(
                 dialog_sender,
@@ -935,6 +949,33 @@ impl MyApp {
         }
     }
 
+    /// Path to the user-config JSON file (tool settings, preferences).
+    fn config_path(&self) -> PathBuf {
+        self.file_io
+            .app_local_data_directory
+            .join("config.json")
+    }
+
+    /// Persist current tool configuration to disk.
+    fn save_config(&self) {
+        let path = self.config_path();
+        if let Ok(json) = serde_json::to_string(&self.tool_configuration) {
+            let _ = std::fs::write(&path, json);
+        }
+    }
+
+    /// Persist tool configuration to disk (runs on the same cadence as autosave).
+    fn handle_config_save(&mut self) {
+        if self
+            .ui
+            .time_elapsed
+            .saturating_sub(self.ui.last_autosave_time)
+            >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
+        {
+            self.save_config();
+        }
+    }
+
     /// Trigger an autosave if the canvas is dirty and enough time has elapsed.
     fn handle_autosave(&mut self) {
         if self.document.dirty_since_last_autosave
@@ -1003,5 +1044,6 @@ impl eframe::App for MyApp {
         }
 
         self.handle_autosave();
+        self.handle_config_save();
     }
 }
