@@ -412,9 +412,9 @@ impl MyApp {
                     } else {
                         let half_radius = self.tool_configuration.radius;
                         let start_x = pixel_x.saturating_sub(half_radius);
-                        let end_x = (pixel_x + half_radius).min(self.document.canvas.width - 1);
+                        let end_x = (pixel_x + half_radius + 1).min(self.document.canvas.width);
                         let start_y = pixel_y.saturating_sub(half_radius);
-                        let end_y = (pixel_y + half_radius).min(self.document.canvas.height - 1);
+                        let end_y = (pixel_y + half_radius + 1).min(self.document.canvas.height);
                         Some(draw_square(
                             start_x,
                             start_y,
