@@ -171,4 +171,12 @@ Return a slice of all stamp entries.
 pub fn len(&self) -> usize
 ```
 
-Return the number of stamps in the library. |
+Return the number of stamps in the library.
+
+## `StampLibrary::is_empty`
+
+```rust
+pub fn is_empty(&self) -> bool
+```
+
+Return `true` if the library is empty. |
