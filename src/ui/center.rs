@@ -351,12 +351,10 @@ impl MyApp {
                     }
                 }
 
-                self.ui.previous_tool = Some(self.tool_configuration.current_tool);
                 self.ui.previous_cursor_position = Some((pixel_x, pixel_y));
             }
         } else {
             self.undo.finalize_drag_accumulator();
-            self.ui.previous_tool = None;
             self.ui.previous_cursor_position = None;
         }
     }

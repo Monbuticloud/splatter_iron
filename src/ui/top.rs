@@ -40,9 +40,27 @@ impl MyApp {
             }
             if ui.input(|i| i.key_pressed(egui::Key::E) && !i.modifiers.command && !i.modifiers.shift)
             {
-                self.tool_configuration.current_tool = CurrentTool::SquareEraser;
+                let is_eraser = matches!(
+                    self.tool_configuration.current_tool,
+                    CurrentTool::SquareEraser | CurrentTool::CircleEraser
+                );
+                if is_eraser {
+                    if let Some(prev) = self.ui.previous_tool.take() {
+                        self.tool_configuration.current_tool = prev;
+                    }
+                } else {
+                    self.ui.previous_tool = Some(self.tool_configuration.current_tool);
+                    self.tool_configuration.current_tool = CurrentTool::SquareEraser;
+                }
             }
             if ui.input(|i| i.key_pressed(egui::Key::E) && i.modifiers.shift && !i.modifiers.command) {
+                let is_eraser = matches!(
+                    self.tool_configuration.current_tool,
+                    CurrentTool::SquareEraser | CurrentTool::CircleEraser
+                );
+                if !is_eraser {
+                    self.ui.previous_tool = Some(self.tool_configuration.current_tool);
+                }
                 self.tool_configuration.current_tool = CurrentTool::CircleEraser;
             }
             if ui.input(|i| i.key_pressed(egui::Key::G) && !i.modifiers.command) {
