@@ -60,3 +60,7 @@ StampSampling strategy when scaling stamp images to canvas size. Defaults to Nea
 ## `stamp_tint_mode`
 
 StampTintMode controlling whether stamp pixels are multiplied by current_color. Defaults to Original (use stamp's own colours). Can be set to Tinted to apply the current tool colour.
+
+## `brush_sampling`
+
+StampSampling strategy when scaling custom brush tips. Defaults to Nearest.
