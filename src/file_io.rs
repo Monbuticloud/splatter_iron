@@ -291,6 +291,19 @@ impl FileIO {
         }
     }
 
+    /// Queue a direct file load without showing a dialog.
+    ///
+    /// Reuses the existing `PendingFileAction::Load` handler by sending
+    /// a synthetic `Picked` result through the dialog channel.
+    ///
+    /// # Parameters
+    ///
+    /// * `path` — The file path to load.
+    pub fn queue_load_direct(&mut self, path: PathBuf) {
+        self.pending_file_action = Some(PendingFileAction::Load);
+        let _ = self.dialog_sender.send(DialogResult::Picked(path));
+    }
+
     /// Poll for completed file dialog results and process them.
     ///
     /// Called once per frame before egui layout. Handles load, import,
