@@ -2,15 +2,19 @@
 //! loop, and wiring between the document, tools, undo history, and file IO.
 
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use std::time::Instant;
 
-use eframe::egui::{ self, Panel };
-use eframe::egui_wgpu::wgpu;
 use directories::ProjectDirs;
+use eframe::egui::Panel;
+use eframe::egui::{self};
+use eframe::egui_wgpu::wgpu;
 
-use crate::canvas::{ Canvas, RenderState };
+use crate::canvas::Canvas;
+use crate::canvas::RenderState;
 use crate::document::Document;
-use crate::file_io::{ FileIO, SaveKind };
+use crate::file_io::FileIO;
+use crate::file_io::SaveKind;
 use crate::tool_configuration::ToolConfiguration;
 use crate::undo_history::UndoHistory;
 
@@ -62,8 +66,8 @@ const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 // --- Image import extensions ---
 /// File-extension list accepted by the image-import dialog (19 formats).
 pub const IMPORT_EXTENSIONS: &[&str] = &[
-    "avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif",
-    "tga", "ico", "pnm", "pgm", "ppm", "pbm", "pam", "qoi", "exr", "hdr", "ff",
+    "avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif", "tga", "ico", "pnm", "pgm", "ppm",
+    "pbm", "pam", "qoi", "exr", "hdr", "ff",
 ];
 
 /// File extension list and image format for an export target.
@@ -74,14 +78,62 @@ pub struct ExportInformation {
 
 /// Lookup table for all supported export formats.
 pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
-    ("AVIF", ExportInformation { extensions: &["avif"], fmt: image::ImageFormat::Avif }),
-    ("PNG", ExportInformation { extensions: &["png"], fmt: image::ImageFormat::Png }),
-    ("JPEG", ExportInformation { extensions: &["jpg", "jpeg"], fmt: image::ImageFormat::Jpeg }),
-    ("WebP", ExportInformation { extensions: &["webp"], fmt: image::ImageFormat::WebP }),
-    ("GIF", ExportInformation { extensions: &["gif"], fmt: image::ImageFormat::Gif }),
-    ("TIFF", ExportInformation { extensions: &["tiff", "tif"], fmt: image::ImageFormat::Tiff }),
-    ("TGA", ExportInformation { extensions: &["tga"], fmt: image::ImageFormat::Tga }),
-    ("ICO", ExportInformation { extensions: &["ico"], fmt: image::ImageFormat::Ico }),
+    (
+        "AVIF",
+        ExportInformation {
+            extensions: &["avif"],
+            fmt: image::ImageFormat::Avif,
+        },
+    ),
+    (
+        "PNG",
+        ExportInformation {
+            extensions: &["png"],
+            fmt: image::ImageFormat::Png,
+        },
+    ),
+    (
+        "JPEG",
+        ExportInformation {
+            extensions: &["jpg", "jpeg"],
+            fmt: image::ImageFormat::Jpeg,
+        },
+    ),
+    (
+        "WebP",
+        ExportInformation {
+            extensions: &["webp"],
+            fmt: image::ImageFormat::WebP,
+        },
+    ),
+    (
+        "GIF",
+        ExportInformation {
+            extensions: &["gif"],
+            fmt: image::ImageFormat::Gif,
+        },
+    ),
+    (
+        "TIFF",
+        ExportInformation {
+            extensions: &["tiff", "tif"],
+            fmt: image::ImageFormat::Tiff,
+        },
+    ),
+    (
+        "TGA",
+        ExportInformation {
+            extensions: &["tga"],
+            fmt: image::ImageFormat::Tga,
+        },
+    ),
+    (
+        "ICO",
+        ExportInformation {
+            extensions: &["ico"],
+            fmt: image::ImageFormat::Ico,
+        },
+    ),
     (
         "PNM",
         ExportInformation {
@@ -89,10 +141,34 @@ pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
             fmt: image::ImageFormat::Pnm,
         },
     ),
-    ("QOI", ExportInformation { extensions: &["qoi"], fmt: image::ImageFormat::Qoi }),
-    ("EXR", ExportInformation { extensions: &["exr"], fmt: image::ImageFormat::OpenExr }),
-    ("HDR", ExportInformation { extensions: &["hdr"], fmt: image::ImageFormat::Hdr }),
-    ("Farbfeld", ExportInformation { extensions: &["ff"], fmt: image::ImageFormat::Farbfeld }),
+    (
+        "QOI",
+        ExportInformation {
+            extensions: &["qoi"],
+            fmt: image::ImageFormat::Qoi,
+        },
+    ),
+    (
+        "EXR",
+        ExportInformation {
+            extensions: &["exr"],
+            fmt: image::ImageFormat::OpenExr,
+        },
+    ),
+    (
+        "HDR",
+        ExportInformation {
+            extensions: &["hdr"],
+            fmt: image::ImageFormat::Hdr,
+        },
+    ),
+    (
+        "Farbfeld",
+        ExportInformation {
+            extensions: &["ff"],
+            fmt: image::ImageFormat::Farbfeld,
+        },
+    ),
 ];
 
 /// A stamp image awaiting a user-provided name before being added to the library.
@@ -220,9 +296,8 @@ impl MyApp {
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
 
-        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME).expect(
-            "Couldn't resolve app dir"
-        );
+        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME)
+            .expect("Couldn't resolve app dir");
         let data_dir = project_dirs.data_dir().to_path_buf();
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
         std::fs::create_dir_all(&data_dir.join("autosaves")).expect("Couldn't create autosave dir");
@@ -238,33 +313,42 @@ impl MyApp {
         let stamp_library = crate::stamp_library::StampLibrary::load_from_disk(&data_dir);
         let brush_library = crate::brush_library::BrushLibrary::load_from_disk(&data_dir);
 
-        let gpu_texture = creation_context.wgpu_render_state.as_ref().map(|render_state| {
-            let width = canvas.width;
-            let height = canvas.height;
-            let size = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
-            let texture = render_state.device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("splatter_iron_canvas"),
-                size,
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
+        let gpu_texture = creation_context
+            .wgpu_render_state
+            .as_ref()
+            .map(|render_state| {
+                let width = canvas.width;
+                let height = canvas.height;
+                let size = wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                };
+                let texture = render_state
+                    .device
+                    .create_texture(&wgpu::TextureDescriptor {
+                        label: Some("splatter_iron_canvas"),
+                        size,
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgpu::TextureDimension::D2,
+                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                        view_formats: &[],
+                    });
+                let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+                let mut renderer = render_state.renderer.write();
+                let texture_id = renderer.register_native_texture(
+                    &render_state.device,
+                    &view,
+                    wgpu::FilterMode::Linear,
+                );
+                GpuTexture {
+                    texture,
+                    texture_id,
+                    queue: Arc::new(render_state.queue.clone()),
+                }
             });
-            let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let mut renderer = render_state.renderer.write();
-            let texture_id = renderer.register_native_texture(
-                &render_state.device,
-                &view,
-                wgpu::FilterMode::Linear,
-            );
-            GpuTexture {
-                texture,
-                texture_id,
-                queue: Arc::new(render_state.queue.clone()),
-            }
-        });
 
         Self {
             document: Document::new(canvas),
@@ -277,7 +361,10 @@ impl MyApp {
                 save_result_receiver,
                 data_dir,
             ),
-            ui: UIState { max_texture_dimension, ..UIState::default() },
+            ui: UIState {
+                max_texture_dimension,
+                ..UIState::default()
+            },
             gpu_texture,
             stamp_library,
             brush_library,
@@ -299,8 +386,12 @@ impl MyApp {
     /// 10 seconds (parking_lot deadlock detection). Panics if the wgpu device
     /// has been lost.
     pub fn recreate_gpu_texture(&mut self, frame: &mut eframe::Frame) {
-        let Some(render_state) = frame.wgpu_render_state() else { return };
-        let Some(gpu) = &mut self.gpu_texture else { return };
+        let Some(render_state) = frame.wgpu_render_state() else {
+            return;
+        };
+        let Some(gpu) = &mut self.gpu_texture else {
+            return;
+        };
         let width = self.document.canvas.width;
         let height = self.document.canvas.height;
         let max_dim = render_state.device.limits().max_texture_dimension_2d;
@@ -311,18 +402,26 @@ impl MyApp {
             ));
             return;
         }
-        let size = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
-        gpu.texture = render_state.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("splatter_iron_canvas"),
-            size,
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8UnormSrgb,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        let view = gpu.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+        gpu.texture = render_state
+            .device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("splatter_iron_canvas"),
+                size,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            });
+        let view = gpu
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
         let mut renderer = render_state.renderer.write();
         renderer.update_egui_texture_from_wgpu_texture(
             &render_state.device,
@@ -343,8 +442,13 @@ impl eframe::App for MyApp {
     /// When the viewport is unfocused, sleeps to reduce CPU usage.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         // Poll dialog results and save results before anything else.
-        self.file_io.poll_dialog_results(&mut self.document, &mut self.undo, &mut self.ui.displayed_error_list);
-        self.file_io.poll_save_results(&mut self.document, &mut self.ui.displayed_error_list);
+        self.file_io.poll_dialog_results(
+            &mut self.document,
+            &mut self.undo,
+            &mut self.ui.displayed_error_list,
+        );
+        self.file_io
+            .poll_save_results(&mut self.document, &mut self.ui.displayed_error_list);
 
         // Transfer a newly loaded stamp image into the stamp library.
         if let Some((pixels, w, h, name)) = self.file_io.loaded_stamp_data.take() {
@@ -379,16 +483,15 @@ impl eframe::App for MyApp {
         self.brush_library.create_textures(ui.ctx());
 
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
-            std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
+            std::thread::sleep(std::time::Duration::from_millis(
+                UNFOCUSED_SLEEP_MILLISECONDS,
+            ));
             self.ui.render_state = RenderState::UnfocusedFrozen;
             return;
         }
-        let predicted_delta_time = Duration::from_secs_f32(
-            ui.ctx().input(|i| i.predicted_dt).max(0.0)
-        );
-        let real_delta_time = Duration::from_secs_f32(
-            ui.ctx().input(|i| i.stable_dt).max(0.0)
-        );
+        let predicted_delta_time =
+            Duration::from_secs_f32(ui.ctx().input(|i| i.predicted_dt).max(0.0));
+        let real_delta_time = Duration::from_secs_f32(ui.ctx().input(|i| i.stable_dt).max(0.0));
 
         self.ui.time_elapsed += real_delta_time;
 
@@ -414,7 +517,9 @@ impl eframe::App for MyApp {
         // Recreate GPU texture if canvas dimensions have changed
         if let Some(gpu) = &self.gpu_texture {
             let texture_size = gpu.texture.size();
-            if texture_size.width != self.document.canvas.width || texture_size.height != self.document.canvas.height {
+            if texture_size.width != self.document.canvas.width
+                || texture_size.height != self.document.canvas.height
+            {
                 self.recreate_gpu_texture(frame);
             }
         }
@@ -424,14 +529,19 @@ impl eframe::App for MyApp {
             if self.document.canvas.render_next_frame {
                 let dirty = self.document.blend_to_output();
                 if let Some(ref gpu) = self.gpu_texture {
-                    self.document.upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
+                    self.document
+                        .upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
                 }
             }
-        } else if self.document.canvas.render_next_frame || self.document.canvas.rendered_layers.is_none() {
+        } else if self.document.canvas.render_next_frame
+            || self.document.canvas.rendered_layers.is_none()
+        {
             self.document.render_to_texture(ui);
         }
 
-        let is_quitting = Panel::top("top").show_inside(ui, |ui| self.show_top_panel(ui)).inner;
+        let is_quitting = Panel::top("top")
+            .show_inside(ui, |ui| self.show_top_panel(ui))
+            .inner;
 
         Panel::left("side").show_inside(ui, |ui| self.show_left_panel(ui));
 
@@ -442,8 +552,7 @@ impl eframe::App for MyApp {
         if !self.ui.displayed_error_list.is_empty() {
             let mut open = true;
             let mut to_dismiss: Vec<usize> = Vec::new();
-            egui::Window
-                ::new("Error")
+            egui::Window::new("Error")
                 .collapsible(false)
                 .resizable(false)
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -532,12 +641,18 @@ impl eframe::App for MyApp {
                     ui.separator();
                     ui.label("Custom:");
                     ui.add(
-                        egui::Slider::new(&mut self.ui.new_canvas_width, 4..=self.ui.max_texture_dimension)
-                            .text("Width"),
+                        egui::Slider::new(
+                            &mut self.ui.new_canvas_width,
+                            4..=self.ui.max_texture_dimension,
+                        )
+                        .text("Width"),
                     );
                     ui.add(
-                        egui::Slider::new(&mut self.ui.new_canvas_height, 4..=self.ui.max_texture_dimension)
-                            .text("Height"),
+                        egui::Slider::new(
+                            &mut self.ui.new_canvas_height,
+                            4..=self.ui.max_texture_dimension,
+                        )
+                        .text("Height"),
                     );
                     ui.horizontal(|ui| {
                         if ui.button("Create").clicked() {
@@ -546,10 +661,8 @@ impl eframe::App for MyApp {
                                 self.ui.new_canvas_height,
                             );
                             if mem > MEMORY_WARNING_THRESHOLD {
-                                self.ui.pending_large_canvas = Some((
-                                    self.ui.new_canvas_width,
-                                    self.ui.new_canvas_height,
-                                ));
+                                self.ui.pending_large_canvas =
+                                    Some((self.ui.new_canvas_width, self.ui.new_canvas_height));
                             } else {
                                 let canvas = Canvas::new(
                                     self.ui.new_canvas_width,
@@ -600,10 +713,8 @@ impl eframe::App for MyApp {
                             stamp_h,
                             ui.ctx(),
                         );
-                        self.ui.toast_message = Some((
-                            format!("Stamp \"{stamp_name}\" added"),
-                            Instant::now(),
-                        ));
+                        self.ui.toast_message =
+                            Some((format!("Stamp \"{stamp_name}\" added"), Instant::now()));
                     }
                 });
             if open {
@@ -622,7 +733,10 @@ impl eframe::App for MyApp {
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .open(&mut open)
                 .show(ui, |ui| {
-                    ui.label(format!("{} brush(es) imported — edit names below:", brushes.len()));
+                    ui.label(format!(
+                        "{} brush(es) imported — edit names below:",
+                        brushes.len()
+                    ));
                     ui.separator();
 
                     let mut names_to_remove: Vec<usize> = Vec::new();
@@ -669,10 +783,8 @@ impl eframe::App for MyApp {
                         );
                     }
                 }
-                self.ui.toast_message = Some((
-                    format!("Imported {count} brush(es)"),
-                    Instant::now(),
-                ));
+                self.ui.toast_message =
+                    Some((format!("Imported {count} brush(es)"), Instant::now()));
             } else if !open {
                 self.ui.pending_brushes = None;
             }
@@ -700,13 +812,17 @@ impl eframe::App for MyApp {
         }
 
         // Autosave every AUTOSAVE_INTERVAL_MINUTES minutes, but only if the canvas has been modified.
-        if
-            self.document.dirty_since_last_autosave &&
-            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
+        if self.document.dirty_since_last_autosave
+            && self
+                .ui
+                .time_elapsed
+                .saturating_sub(self.ui.last_autosave_time)
+                >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
         {
             self.ui.last_autosave_time = self.ui.time_elapsed;
             self.ui.times_autosaved += 1;
-            self.file_io.trigger_async_save(&self.document, SaveKind::Autosave);
+            self.file_io
+                .trigger_async_save(&self.document, SaveKind::Autosave);
         }
     }
 }

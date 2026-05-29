@@ -14,13 +14,14 @@ pub fn load_data_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error>
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `path` | `&Path` | Filesystem path to read |
+| Parameter | Type    | Description             |
+| --------- | ------- | ----------------------- |
+| `path`    | `&Path` | Filesystem path to read |
 
 ### Errors
 
 Returns `std::io::Error` if:
+
 - The file does not exist at `path`.
 - The calling process lacks read permission.
 - The path points to a directory or a non-regular file.
@@ -42,13 +43,14 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas>
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `data` | `&[u8]` | Zstd-compressed JSON bytes produced by `save_canvas_to_bytes` |
+| Parameter | Type    | Description                                                   |
+| --------- | ------- | ------------------------------------------------------------- |
+| `data`    | `&[u8]` | Zstd-compressed JSON bytes produced by `save_canvas_to_bytes` |
 
 ### Errors
 
 Returns an error if:
+
 - The input is not valid zstd-compressed data.
 - The decompressed bytes are not valid UTF-8 JSON.
 - The JSON structure does not match the `Canvas` type (e.g. missing fields,
@@ -71,13 +73,14 @@ pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>>
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `canvas` | `&Canvas` | The canvas to serialise |
+| Parameter | Type      | Description             |
+| --------- | --------- | ----------------------- |
+| `canvas`  | `&Canvas` | The canvas to serialise |
 
 ### Errors
 
 Returns an error if:
+
 - JSON serialisation of the `Canvas` fails (should not happen in practice since
   `Canvas` derives `Serialize` and contains only plain data).
 - Zstd compression fails (e.g. out of memory).
@@ -106,14 +109,15 @@ pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()>
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `data` | `&[u8]` | Pre-serialised bytes (e.g. from `save_canvas_to_bytes`) |
-| `path` | `&Path` | Destination file path |
+| Parameter | Type    | Description                                             |
+| --------- | ------- | ------------------------------------------------------- |
+| `data`    | `&[u8]` | Pre-serialised bytes (e.g. from `save_canvas_to_bytes`) |
+| `path`    | `&Path` | Destination file path                                   |
 
 ### Errors
 
 Returns an error if:
+
 - The parent directory does not exist.
 - The calling process lacks write permission.
 - An I/O error occurs during the write (disk full, etc.).
@@ -143,31 +147,31 @@ pub fn export_as_image(
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `premultiplied_rgba` | `&[u8]` | Flattened premultiplied RGBA bytes (e.g. from `output_rgba`) |
-| `width` | `u32` | Image width in pixels |
-| `height` | `u32` | Image height in pixels |
-| `path` | `&Path` | Destination file path (extension determines format only for the file system; the `format` parameter is authoritative) |
-| `format` | `image::ImageFormat` | Target image format |
+| Parameter            | Type                 | Description                                                                                                           |
+| -------------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `premultiplied_rgba` | `&[u8]`              | Flattened premultiplied RGBA bytes (e.g. from `output_rgba`)                                                          |
+| `width`              | `u32`                | Image width in pixels                                                                                                 |
+| `height`             | `u32`                | Image height in pixels                                                                                                |
+| `path`               | `&Path`              | Destination file path (extension determines format only for the file system; the `format` parameter is authoritative) |
+| `format`             | `image::ImageFormat` | Target image format                                                                                                   |
 
 ### Supported formats
 
-| Format | Variant | Alpha handling | Notes |
-|---|---|---|---|
-| AVIF | `AvifEncoder` | Straight alpha | Lossy by default |
-| PNG | `PngEncoder` | Straight alpha | Lossless |
-| JPEG | `JpegEncoder` | Blended against white | Quality 100 |
-| WebP | `WebPEncoder::new_lossless` | Straight alpha | Lossless variant |
-| GIF | `GifEncoder` | Straight alpha | Single frame |
-| TIFF | `TiffEncoder` | Straight alpha | — |
-| TGA | `TgaEncoder` | Straight alpha | — |
-| ICO | `IcoEncoder` | Straight alpha | — |
-| PNM | `PnmEncoder` | Straight alpha | — |
-| QOI | `QoiEncoder` | Straight alpha | Quite OK Image |
-| OpenEXR | `OpenExrEncoder` | Straight alpha | HDR format |
-| HDR | `HdrEncoder` | RGB float (alpha ignored) | RGB32F, linear |
-| Farbfeld | `FarbfeldEncoder` | Straight alpha | RGBA16, native endian |
+| Format   | Variant                     | Alpha handling            | Notes                 |
+| -------- | --------------------------- | ------------------------- | --------------------- |
+| AVIF     | `AvifEncoder`               | Straight alpha            | Lossy by default      |
+| PNG      | `PngEncoder`                | Straight alpha            | Lossless              |
+| JPEG     | `JpegEncoder`               | Blended against white     | Quality 100           |
+| WebP     | `WebPEncoder::new_lossless` | Straight alpha            | Lossless variant      |
+| GIF      | `GifEncoder`                | Straight alpha            | Single frame          |
+| TIFF     | `TiffEncoder`               | Straight alpha            | —                     |
+| TGA      | `TgaEncoder`                | Straight alpha            | —                     |
+| ICO      | `IcoEncoder`                | Straight alpha            | —                     |
+| PNM      | `PnmEncoder`                | Straight alpha            | —                     |
+| QOI      | `QoiEncoder`                | Straight alpha            | Quite OK Image        |
+| OpenEXR  | `OpenExrEncoder`            | Straight alpha            | HDR format            |
+| HDR      | `HdrEncoder`                | RGB float (alpha ignored) | RGB32F, linear        |
+| Farbfeld | `FarbfeldEncoder`           | Straight alpha            | RGBA16, native endian |
 
 ### JPEG special case
 
@@ -187,6 +191,7 @@ u16 and written as RGBA16.
 ### Errors
 
 Returns an error if:
+
 - The file cannot be created at `path`.
 - The chosen image encoder fails.
 - `format` is not one of the 13 supported variants (the `_` arm bails with
@@ -211,9 +216,9 @@ pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas>
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `path` | `&Path` | Path to the image file to import |
+| Parameter | Type    | Description                      |
+| --------- | ------- | -------------------------------- |
+| `path`    | `&Path` | Path to the image file to import |
 
 ### Pipeline
 
@@ -227,6 +232,7 @@ pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas>
 ### Errors
 
 Returns an error if:
+
 - The file cannot be read.
 - The image format is not recognised by the `image` crate.
 - The file is corrupted or truncated.

@@ -82,7 +82,12 @@ pub enum UndoRecord {
 /// pixel buffer. This indicates a corrupt or mismatched undo record.
 #[inline]
 pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
-    let UndoRecord::Run { layer_index, color_after: _, runs, is_alpha_overlay: _ } = record;
+    let UndoRecord::Run {
+        layer_index,
+        color_after: _,
+        runs,
+        is_alpha_overlay: _,
+    } = record;
     let layer = &mut canvas.pixels[*layer_index];
     for run in runs {
         let end = (run.start as usize) + run.length as usize;
@@ -110,7 +115,12 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
 /// pixel buffer. This indicates a corrupt or mismatched undo record.
 #[inline]
 pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
-    let UndoRecord::Run { layer_index, color_after, runs, is_alpha_overlay } = record;
+    let UndoRecord::Run {
+        layer_index,
+        color_after,
+        runs,
+        is_alpha_overlay,
+    } = record;
     let layer = &mut canvas.pixels[*layer_index];
     if *is_alpha_overlay {
         for run in runs {

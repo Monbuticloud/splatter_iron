@@ -11,11 +11,11 @@ configuration, undo history, and file-IO subsystems for eframe.
 Three reverse-domain constants identify the application to the OS for platform
 data-directory resolution via `directories::ProjectDirs`:
 
-| Constant | Value |
-|---|---|
-| `APP_QUALIFIER` | `"com"` |
+| Constant           | Value            |
+| ------------------ | ---------------- |
+| `APP_QUALIFIER`    | `"com"`          |
 | `APP_ORGANIZATION` | `"Monbuticloud"` |
-| `APP_NAME` | `"SplatterIron"` |
+| `APP_NAME`         | `"SplatterIron"` |
 
 `ProjectDirs::from("com", "Monbuticloud", "SplatterIron")` resolves to
 a platform-specific path such as `~/.local/share/SplatterIron` on Linux or
@@ -23,11 +23,11 @@ a platform-specific path such as `~/.local/share/SplatterIron` on Linux or
 
 ### Canvas File-Format Constants
 
-| Constant | Value | Purpose |
-|---|---|---|
-| `CANVAS_EXTENSION` | `".splattercanvas"` | Extension for native canvas files (zstd-compressed JSON) |
-| `FILE_FILTER_NAME` | `"SplatterCanvas"` | File-dialog filter label displayed in OS pickers |
-| `DEFAULT_CANVAS_NAME` | `"canvas.splattercanvas"` | Default save-file name when no path has been set |
+| Constant              | Value                     | Purpose                                                  |
+| --------------------- | ------------------------- | -------------------------------------------------------- |
+| `CANVAS_EXTENSION`    | `".splattercanvas"`       | Extension for native canvas files (zstd-compressed JSON) |
+| `FILE_FILTER_NAME`    | `"SplatterCanvas"`        | File-dialog filter label displayed in OS pickers         |
+| `DEFAULT_CANVAS_NAME` | `"canvas.splattercanvas"` | Default save-file name when no path has been set         |
 
 ### Import Extensions (`IMPORT_EXTENSIONS`)
 
@@ -65,21 +65,21 @@ export.
 A static lookup table mapping display names to `ExportInformation` entries.
 All 13 export targets:
 
-| Display name | Extensions | `image::ImageFormat` |
-|---|---|---|
-| AVIF | `avif` | `Avif` |
-| PNG | `png` | `Png` |
-| JPEG | `jpg`, `jpeg` | `Jpeg` |
-| WebP | `webp` | `WebP` |
-| GIF | `gif` | `Gif` |
-| TIFF | `tiff`, `tif` | `Tiff` |
-| TGA | `tga` | `Tga` |
-| ICO | `ico` | `Ico` |
-| PNM | `pnm`, `pgm`, `ppm`, `pbm`, `pam` | `Pnm` |
-| QOI | `qoi` | `Qoi` |
-| EXR | `exr` | `OpenExr` |
-| HDR | `hdr` | `Hdr` |
-| Farbfeld | `ff` | `Farbfeld` |
+| Display name | Extensions                        | `image::ImageFormat` |
+| ------------ | --------------------------------- | -------------------- |
+| AVIF         | `avif`                            | `Avif`               |
+| PNG          | `png`                             | `Png`                |
+| JPEG         | `jpg`, `jpeg`                     | `Jpeg`               |
+| WebP         | `webp`                            | `WebP`               |
+| GIF          | `gif`                             | `Gif`                |
+| TIFF         | `tiff`, `tif`                     | `Tiff`               |
+| TGA          | `tga`                             | `Tga`                |
+| ICO          | `ico`                             | `Ico`                |
+| PNM          | `pnm`, `pgm`, `ppm`, `pbm`, `pam` | `Pnm`                |
+| QOI          | `qoi`                             | `Qoi`                |
+| EXR          | `exr`                             | `OpenExr`            |
+| HDR          | `hdr`                             | `Hdr`                |
+| Farbfeld     | `ff`                              | `Farbfeld`           |
 
 The PNM entry covers all five Portable Anymap sub-formats (PBM/PGM/PPM/PAM).
 The table drives the export dialog's format picker and is extensible by
@@ -91,17 +91,17 @@ adding entries to the slice.
 
 Tracks transient UI concerns that don't belong to any domain module:
 
-| Field | Type | Purpose |
-|---|---|---|
-| `render_state` | `RenderState` | Current rendering cadence — active, idle-throttled, or unfocused-frozen |
-| `time_elapsed` | `Duration` | Total wall-clock time since application start |
-| `times_autosaved` | `u32` | Number of autosaves performed this session |
-| `last_autosave_time` | `Duration` | Wall-clock timestamp of the most recent autosave completion |
-| `displayed_error_list` | `Vec<String>` | Error messages shown in the centred error overlay |
-| `pending_layer_for_deletion` | `Option<usize>` | Layer index awaiting deletion confirmation, if any |
-| `show_new_canvas_dialog` | `bool` | Whether the "New Canvas" size picker is open |
-| `new_canvas_width` | `u32` | Width slider value for the new-canvas dialog (pixels, clamped 4–8192) |
-| `new_canvas_height` | `u32` | Height slider value for the new-canvas dialog (pixels, clamped 4–8192) |
+| Field                        | Type            | Purpose                                                                 |
+| ---------------------------- | --------------- | ----------------------------------------------------------------------- |
+| `render_state`               | `RenderState`   | Current rendering cadence — active, idle-throttled, or unfocused-frozen |
+| `time_elapsed`               | `Duration`      | Total wall-clock time since application start                           |
+| `times_autosaved`            | `u32`           | Number of autosaves performed this session                              |
+| `last_autosave_time`         | `Duration`      | Wall-clock timestamp of the most recent autosave completion             |
+| `displayed_error_list`       | `Vec<String>`   | Error messages shown in the centred error overlay                       |
+| `pending_layer_for_deletion` | `Option<usize>` | Layer index awaiting deletion confirmation, if any                      |
+| `show_new_canvas_dialog`     | `bool`          | Whether the "New Canvas" size picker is open                            |
+| `new_canvas_width`           | `u32`           | Width slider value for the new-canvas dialog (pixels, clamped 4–8192)   |
+| `new_canvas_height`          | `u32`           | Height slider value for the new-canvas dialog (pixels, clamped 4–8192)  |
 
 The `time_elapsed` field drives the 2-minute autosave interval check in the
 main frame loop. `displayed_error_list` is populated by `FileIO::poll_*`
@@ -120,11 +120,11 @@ no pending layer deletion, dialog closed, and default dimensions of
 
 Holds the wgpu resources for partial-upload canvas rendering:
 
-| Field | Type | Purpose |
-|---|---|---|
-| `texture` | `wgpu::Texture` | The GPU-side RGBA texture storing the composite canvas image |
-| `texture_id` | `egui::TextureId` | Egui texture ID registered with the egui_wgpu renderer for display |
-| `queue` | `Arc<wgpu::Queue>` | WGPU command queue for uploading dirty-rect data each frame |
+| Field        | Type               | Purpose                                                            |
+| ------------ | ------------------ | ------------------------------------------------------------------ |
+| `texture`    | `wgpu::Texture`    | The GPU-side RGBA texture storing the composite canvas image       |
+| `texture_id` | `egui::TextureId`  | Egui texture ID registered with the egui_wgpu renderer for display |
+| `queue`      | `Arc<wgpu::Queue>` | WGPU command queue for uploading dirty-rect data each frame        |
 
 Created during `MyApp::new` when the wgpu backend is available; absent under
 the Glow (OpenGL) backend where the egui-managed texture path (full-buffer
@@ -137,14 +137,14 @@ Each frame, `Document::upload_to_gpu` writes only the dirty sub-region via
 
 The top-level application struct owned by eframe, composing every subsystem:
 
-| Field | Type | Purpose |
-|---|---|---|
-| `document` | `Document` | Canvas document — layers, dimensions, save path |
-| `tool_configuration` | `ToolConfiguration` | Active tool, colour, radius, brush-preview toggle |
-| `undo` | `UndoHistory` | Undo/redo stack with 1000-entry capacity and visited-stamp deduplication |
-| `file_io` | `FileIO` | Async file-dialog and save-operation manager (mpsc channels) |
-| `ui` | `UIState` | Render state, autosave counters, dialog flags |
-| `gpu_texture` | `Option<GpuTexture>` | WGPU texture for partial-upload rendering; `None` under Glow backend |
+| Field                | Type                 | Purpose                                                                  |
+| -------------------- | -------------------- | ------------------------------------------------------------------------ |
+| `document`           | `Document`           | Canvas document — layers, dimensions, save path                          |
+| `tool_configuration` | `ToolConfiguration`  | Active tool, colour, radius, brush-preview toggle                        |
+| `undo`               | `UndoHistory`        | Undo/redo stack with 1000-entry capacity and visited-stamp deduplication |
+| `file_io`            | `FileIO`             | Async file-dialog and save-operation manager (mpsc channels)             |
+| `ui`                 | `UIState`            | Render state, autosave counters, dialog flags                            |
+| `gpu_texture`        | `Option<GpuTexture>` | WGPU texture for partial-upload rendering; `None` under Glow backend     |
 
 All fields are `pub` to give panel methods (`show_top_panel`, `show_left_panel`,
 etc.) direct access without getter boilerplate.

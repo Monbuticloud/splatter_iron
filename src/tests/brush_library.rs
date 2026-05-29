@@ -27,7 +27,14 @@ fn add_brush_increments_count() {
     assert_eq!(lib.len(), 0);
     assert!(lib.selected().is_none());
 
-    lib.add("test".to_string(), vec![red(); 4], 2, 2, 25, &Context::default());
+    lib.add(
+        "test".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        25,
+        &Context::default(),
+    );
 
     assert_eq!(lib.len(), 1);
     assert!(lib.selected().is_some());
@@ -43,7 +50,14 @@ fn remove_brush_decrements_count() {
     let dir = tempdir();
     let mut lib = BrushLibrary::load_from_disk(&dir);
 
-    lib.add("to_remove".to_string(), vec![red(); 4], 2, 2, 20, &Context::default());
+    lib.add(
+        "to_remove".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        20,
+        &Context::default(),
+    );
     assert_eq!(lib.len(), 1);
 
     lib.remove(0);
@@ -57,8 +71,22 @@ fn select_switches_active_brush() {
     let dir = tempdir();
     let mut lib = BrushLibrary::load_from_disk(&dir);
 
-    lib.add("first".to_string(), vec![red(); 4], 2, 2, 25, &Context::default());
-    lib.add("second".to_string(), vec![red(); 4], 2, 2, 30, &Context::default());
+    lib.add(
+        "first".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        25,
+        &Context::default(),
+    );
+    lib.add(
+        "second".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        30,
+        &Context::default(),
+    );
 
     lib.select(0);
     assert_eq!(lib.selected_index(), Some(0));
@@ -76,7 +104,14 @@ fn persistence_round_trip() {
 
     {
         let mut lib = BrushLibrary::load_from_disk(&dir);
-        lib.add("persist".to_string(), vec![red(); 4], 2, 2, 15, &Context::default());
+        lib.add(
+            "persist".to_string(),
+            vec![red(); 4],
+            2,
+            2,
+            15,
+            &Context::default(),
+        );
     }
 
     {
@@ -93,7 +128,14 @@ fn remove_last_brush_clears_selection() {
     let dir = tempdir();
     let mut lib = BrushLibrary::load_from_disk(&dir);
 
-    lib.add("only".to_string(), vec![red(); 4], 2, 2, 25, &Context::default());
+    lib.add(
+        "only".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        25,
+        &Context::default(),
+    );
     assert!(lib.selected().is_some());
 
     lib.remove(0);
@@ -106,7 +148,14 @@ fn remove_out_of_bounds_noop() {
     let dir = tempdir();
     let mut lib = BrushLibrary::load_from_disk(&dir);
 
-    lib.add("survivor".to_string(), vec![red(); 4], 2, 2, 25, &Context::default());
+    lib.add(
+        "survivor".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        25,
+        &Context::default(),
+    );
     assert_eq!(lib.len(), 1);
 
     lib.remove(5);
@@ -119,7 +168,14 @@ fn select_out_of_bounds_noop() {
     let dir = tempdir();
     let mut lib = BrushLibrary::load_from_disk(&dir);
 
-    lib.add("pickme".to_string(), vec![red(); 4], 2, 2, 25, &Context::default());
+    lib.add(
+        "pickme".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        25,
+        &Context::default(),
+    );
     assert_eq!(lib.selected_index(), Some(0));
 
     lib.select(42);
@@ -132,9 +188,30 @@ fn remove_middle_preserves_order() {
     let dir = tempdir();
     let mut lib = BrushLibrary::load_from_disk(&dir);
 
-    lib.add("first".to_string(), vec![red(); 4], 2, 2, 10, &Context::default());
-    lib.add("second".to_string(), vec![red(); 4], 2, 2, 20, &Context::default());
-    lib.add("third".to_string(), vec![red(); 4], 2, 2, 30, &Context::default());
+    lib.add(
+        "first".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        10,
+        &Context::default(),
+    );
+    lib.add(
+        "second".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        20,
+        &Context::default(),
+    );
+    lib.add(
+        "third".to_string(),
+        vec![red(); 4],
+        2,
+        2,
+        30,
+        &Context::default(),
+    );
 
     lib.remove(1);
     assert_eq!(lib.len(), 2);

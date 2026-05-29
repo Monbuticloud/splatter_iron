@@ -10,10 +10,10 @@ use crate::pixel;
 
 /// Check that every channel of `a` and `b` differs by at most `max_diff`.
 fn channels_close(left: Color32, right: Color32, max_diff: u8) -> bool {
-    left.r().abs_diff(right.r()) <= max_diff &&
-        left.g().abs_diff(right.g()) <= max_diff &&
-        left.b().abs_diff(right.b()) <= max_diff &&
-        left.a().abs_diff(right.a()) <= max_diff
+    left.r().abs_diff(right.r()) <= max_diff
+        && left.g().abs_diff(right.g()) <= max_diff
+        && left.b().abs_diff(right.b()) <= max_diff
+        && left.a().abs_diff(right.a()) <= max_diff
 }
 
 /// Premultiplying an opaque color should return it unchanged.
@@ -26,7 +26,10 @@ fn premultiply_opaque_is_identity() {
 /// Premultiplying a fully transparent color should return `TRANSPARENT`.
 #[test]
 fn premultiply_transparent_is_unchanged() {
-    assert_eq!(pixel::premultiply(Color32::TRANSPARENT), Color32::TRANSPARENT);
+    assert_eq!(
+        pixel::premultiply(Color32::TRANSPARENT),
+        Color32::TRANSPARENT
+    );
 }
 
 /// After premultiply, each RGB channel should be ≤ the original straight value.
@@ -59,7 +62,10 @@ fn premultiply_unpremultiply_roundtrip_close() {
     let premul = Color32::from_rgba_premultiplied(64, 32, 16, 128);
     let back = pixel::premultiply(pixel::unpremultiply(premul));
     // Fixed-point (±1 per channel)
-    assert!(channels_close(premul, back, 1), "premul={premul:?} back={back:?}");
+    assert!(
+        channels_close(premul, back, 1),
+        "premul={premul:?} back={back:?}"
+    );
 }
 
 /// Unpremultiplying an opaque color should return it unchanged.
@@ -79,7 +85,10 @@ fn premultiply_zero_alpha() {
 /// Unpremultiplying `TRANSPARENT` should return `TRANSPARENT` unchanged.
 #[test]
 fn unpremultiply_zero_alpha_stays_transparent() {
-    assert_eq!(pixel::unpremultiply(Color32::TRANSPARENT), Color32::TRANSPARENT);
+    assert_eq!(
+        pixel::unpremultiply(Color32::TRANSPARENT),
+        Color32::TRANSPARENT
+    );
 }
 
 /// Blending an opaque source over transparent should yield the source.
@@ -95,7 +104,10 @@ fn alpha_blend_transparent_over_dest_is_close() {
     let dest = Color32::from_rgba_premultiplied(100, 150, 200, 255);
     let result = pixel::alpha_blend(dest, Color32::TRANSPARENT);
     // Fixed-point `(val * 255 + 128) >> 8` can be off by 1
-    assert!(channels_close(dest, result, 1), "dest={dest:?} result={result:?}");
+    assert!(
+        channels_close(dest, result, 1),
+        "dest={dest:?} result={result:?}"
+    );
 }
 
 /// Blending a semi-transparent source over an opaque dest should produce an opaque result.
@@ -163,8 +175,11 @@ fn blend_region_single_layer_matches_full() {
     for y in 2..=5 {
         for x in 2..=5 {
             let pixel_index = (y * width + x) as usize * 4;
-            assert_eq!(region_out[pixel_index..pixel_index + 4], full_out[pixel_index..pixel_index + 4],
-                "mismatch at ({x},{y})");
+            assert_eq!(
+                region_out[pixel_index..pixel_index + 4],
+                full_out[pixel_index..pixel_index + 4],
+                "mismatch at ({x},{y})"
+            );
         }
     }
 }
@@ -187,11 +202,17 @@ fn blend_region_two_layers() {
         for x in 0..width {
             let pixel_index = (y * width + x) as usize * 4;
             if x >= 1 && x <= 4 && y >= 1 && y <= 4 {
-                assert_eq!(region_out[pixel_index..pixel_index + 4], full_out[pixel_index..pixel_index + 4],
-                    "mismatch at ({x},{y})");
+                assert_eq!(
+                    region_out[pixel_index..pixel_index + 4],
+                    full_out[pixel_index..pixel_index + 4],
+                    "mismatch at ({x},{y})"
+                );
             } else {
-                assert_eq!(region_out[pixel_index..pixel_index + 4], [0, 0, 0, 0],
-                    "outside region should be zero at ({x},{y})");
+                assert_eq!(
+                    region_out[pixel_index..pixel_index + 4],
+                    [0, 0, 0, 0],
+                    "outside region should be zero at ({x},{y})"
+                );
             }
         }
     }
@@ -240,7 +261,10 @@ fn blend_layers_semi_transparent_top() {
         // Green channel should be > 0 (dest still visible through src)
         assert!(output[i * 4 + 1] > 0, "green at {i}");
         // Result should be visually redder than green
-        assert!(output[i * 4] > output[i * 4 + 1], "more red than green at {i}");
+        assert!(
+            output[i * 4] > output[i * 4 + 1],
+            "more red than green at {i}"
+        );
     }
 }
 
@@ -279,7 +303,7 @@ fn premultiply_on_premul_storage_darkens() {
     // Color32 stores the premultiplied result, so .r() returns 128*128/255 ≈ 64.
     let stored_r = color.r();
     // Calling premultiply on the already-premultiplied storage darkens it.
-    let doubled = pixel::premultiply(color    );
+    let doubled = pixel::premultiply(color);
     assert!(
         doubled.r() < stored_r,
         "premultiply on premultiplied Color32 darkens: {} -> {}",

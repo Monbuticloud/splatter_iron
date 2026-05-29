@@ -36,11 +36,11 @@ and shows a crosshair cursor on hover.
 
 Right-clicking the canvas opens a context menu with:
 
-| Item | Behaviour |
-|------|-----------|
-| **Import** | Queues `PendingFileAction::Import` |
-| **Export As** | Submenu listing all 13 export formats from `EXPORT_FORMATS` |
-| **Save As** | Queues `PendingFileAction::Save` and clears the current save path |
+| Item          | Behaviour                                                         |
+| ------------- | ----------------------------------------------------------------- |
+| **Import**    | Queues `PendingFileAction::Import`                                |
+| **Export As** | Submenu listing all 13 export formats from `EXPORT_FORMATS`       |
+| **Save As**   | Queues `PendingFileAction::Save` and clears the current save path |
 
 ### Brush preview
 
@@ -109,11 +109,11 @@ with transparent black (zero alpha).
 
 ### Tool dispatch
 
-| Tool | First frame (stamp) | Subsequent frames (line) |
-|------|---------------------|--------------------------|
+| Tool                      | First frame (stamp)                                                                                                                                                                                                      | Subsequent frames (line)                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
 | `Square` / `SquareEraser` | Calls `draw_square` with `[cx − r, cx + r] × [cy − r, cy + r]` when alpha overlay is off. When alpha overlay is on, calls `draw_square_line` with identical start/end (zero-length line) using the drag stamp machinery. | Calls `draw_square_line` from previous to current position |
-| `Circle` / `CircleEraser` | Calls `draw_circle` when alpha overlay is off. When alpha overlay is on, calls `draw_circle_line` with identical start/end using drag stamp machinery. | Calls `draw_circle_line` from previous to current position |
-| `BucketFill` | Returns `None` | Never called (guarded by `handle_canvas_interaction`) |
+| `Circle` / `CircleEraser` | Calls `draw_circle` when alpha overlay is off. When alpha overlay is on, calls `draw_circle_line` with identical start/end using drag stamp machinery.                                                                   | Calls `draw_circle_line` from previous to current position |
+| `BucketFill`              | Returns `None`                                                                                                                                                                                                           | Never called (guarded by `handle_canvas_interaction`)      |
 
 ### Drag stamp management
 

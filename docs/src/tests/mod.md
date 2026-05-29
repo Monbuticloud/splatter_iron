@@ -4,21 +4,21 @@
 
 The test suite is organised as one `#[cfg(test)]` module per source module, plus a shared `common` module for test utilities.
 
-| Module | Tests |
-|--------|-------|
-| `common` | Shared helpers: `small_canvas()`, premultiplied `red()` and `blue()` shorthands |
-| `pixel` | Premultiplied-alpha math, SIMD blend, `blend_layers`, `blend_region` |
-| `undo` | `compress_run`, `undo_apply`, `redo_apply` — stroke-pixel round-trips |
-| `undo_history` | `UndoHistory` stack management, visited-stamp dedup, multi-step undo/redo |
-| `canvas` | `Canvas` defaults, `DirtyRect` bookkeeping |
-| `document` | Layer add/delete/reorder/select, `blend_to_output`, `replace_canvas` |
-| `files` | Serialization round-trips (zstd/JSON), PNG/JPEG export/import, error handling |
-| `file_io` | Async file-dialog mpsc plumbing, save/load orchestration |
-| `bucket_fill` | Scanline flood-fill — contiguous regions, leaks, multi-layer, premultiplied-alpha preservation |
-| `circle_brush` | Midpoint-circle span fill, stamp-line interpolation, edge clamping |
-| `square_brush` | Rectangular fill, stamp-line interpolation, coordinate clamping, zero-area edge cases |
-| `stamp_brush` | Single-stamp placement, scaling, tinting, alpha overlay, drag-line interpolation, edge clamping |
-| `tool_configuration` | `ToolConfiguration` default values and optional-field initial state |
+| Module               | Tests                                                                                           |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| `common`             | Shared helpers: `small_canvas()`, premultiplied `red()` and `blue()` shorthands                 |
+| `pixel`              | Premultiplied-alpha math, SIMD blend, `blend_layers`, `blend_region`                            |
+| `undo`               | `compress_run`, `undo_apply`, `redo_apply` — stroke-pixel round-trips                           |
+| `undo_history`       | `UndoHistory` stack management, visited-stamp dedup, multi-step undo/redo                       |
+| `canvas`             | `Canvas` defaults, `DirtyRect` bookkeeping                                                      |
+| `document`           | Layer add/delete/reorder/select, `blend_to_output`, `replace_canvas`                            |
+| `files`              | Serialization round-trips (zstd/JSON), PNG/JPEG export/import, error handling                   |
+| `file_io`            | Async file-dialog mpsc plumbing, save/load orchestration                                        |
+| `bucket_fill`        | Scanline flood-fill — contiguous regions, leaks, multi-layer, premultiplied-alpha preservation  |
+| `circle_brush`       | Midpoint-circle span fill, stamp-line interpolation, edge clamping                              |
+| `square_brush`       | Rectangular fill, stamp-line interpolation, coordinate clamping, zero-area edge cases           |
+| `stamp_brush`        | Single-stamp placement, scaling, tinting, alpha overlay, drag-line interpolation, edge clamping |
+| `tool_configuration` | `ToolConfiguration` default values and optional-field initial state                             |
 
 ## Test strategy
 

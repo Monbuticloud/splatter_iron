@@ -8,13 +8,13 @@ Analogous to `StampLibrary`, but for custom brush tips imported from
 
 ## Data directory
 
-The library is rooted at `{data_dir}/brushes/`.  Two types of files live
+The library is rooted at `{data_dir}/brushes/`. Two types of files live
 there:
 
 - **`index.json`** — a JSON array of entry metadata (name, filename,
   dimensions, spacing, selection state).
 - **`{nanos}.png`** — individual brush tip images, saved as sRGBA PNG
-  with unmultiplied alpha.  Filenames are nanosecond timestamps for
+  with unmultiplied alpha. Filenames are nanosecond timestamps for
   uniqueness.
 
 ## `BrushEntry`
@@ -46,36 +46,36 @@ pub struct BrushLibrary {
 
 ### Public methods
 
-| Method | Purpose |
-|---|---|
-| `load_from_disk(data_dir)` | Load / create the library directory and populate entries from disk |
-| `create_textures(ctx)` | Create egui textures for entries that lack one |
-| `add(name, pixels, w, h, spacing, ctx)` | Persist a new brush + update index |
-| `remove(index)` | Delete a brush and its PNG file |
-| `select(index)` | Select a brush by index |
-| `selected_index()` → `Option<usize>` | Index of the current selection |
-| `selected()` → `Option<&BrushEntry>` | The selected brush entry |
-| `entries()` → `&[BrushEntry]` | All entries |
-| `len()` → `usize` | Entry count |
-| `is_empty()` → `bool` | True if no entries |
-| `get(index)` → `Option<&BrushEntry>` | Entry by index |
+| Method                                  | Purpose                                                            |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| `load_from_disk(data_dir)`              | Load / create the library directory and populate entries from disk |
+| `create_textures(ctx)`                  | Create egui textures for entries that lack one                     |
+| `add(name, pixels, w, h, spacing, ctx)` | Persist a new brush + update index                                 |
+| `remove(index)`                         | Delete a brush and its PNG file                                    |
+| `select(index)`                         | Select a brush by index                                            |
+| `selected_index()` → `Option<usize>`    | Index of the current selection                                     |
+| `selected()` → `Option<&BrushEntry>`    | The selected brush entry                                           |
+| `entries()` → `&[BrushEntry]`           | All entries                                                        |
+| `len()` → `usize`                       | Entry count                                                        |
+| `is_empty()` → `bool`                   | True if no entries                                                 |
+| `get(index)` → `Option<&BrushEntry>`    | Entry by index                                                     |
 
 ### Persistence flow
 
 1. **Load**: `load_from_disk` reads `index.json`, then for each entry
-   loads the corresponding PNG via the `image` crate.  Raw RGBA bytes
+   loads the corresponding PNG via the `image` crate. Raw RGBA bytes
    are converted to premultiplied `Color32`.
 2. **Add**: `add` saves the entry as a PNG file (via
    `image::save_buffer`), creates an egui texture, and appends to the
    index.
 3. **Remove**: `remove` deletes the PNG file from disk and updates the
-   index.  The in-memory entry is dropped, freeing its texture handle.
+   index. The in-memory entry is dropped, freeing its texture handle.
 4. **Index write**: `save_index` serialises the current entry list to
    `index.json` as pretty-printed JSON.
 
 ### Texture caching
 
 On each frame, `create_textures` is called to generate egui textures for
-any entries that do not yet have one.  The raw premultiplied pixels are
+any entries that do not yet have one. The raw premultiplied pixels are
 un-premultiplied before being passed to `egui::ColorImage` because egui
 expects straight alpha for image data.

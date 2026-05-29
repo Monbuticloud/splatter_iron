@@ -3,12 +3,17 @@
 
 use std::io::BufWriter;
 use std::path::Path;
+
 use bytemuck::cast_slice;
 use eframe::egui::Color32;
 use image::ImageEncoder;
 
-use crate::canvas::{ Canvas, DirtyRectList, Layer };
-use crate::pixel::{ premultiply, unpremultiply, F32_COLOR_MAX };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRectList;
+use crate::canvas::Layer;
+use crate::pixel::F32_COLOR_MAX;
+use crate::pixel::premultiply;
+use crate::pixel::unpremultiply;
 
 const COMPRESSION_LEVEL: i32 = 10;
 const JPEG_QUALITY: u8 = 100;
@@ -56,8 +61,7 @@ pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
 pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     use std::io::Write;
     let json = serde_json::to_vec(canvas)?;
-    let thread_count = std::thread
-        ::available_parallelism()
+    let thread_count = std::thread::available_parallelism()
         .map(|count| count.get() as u32)
         .unwrap_or(1);
     let mut encoder = zstd::stream::Encoder::new(Vec::new(), COMPRESSION_LEVEL)?;
@@ -110,7 +114,7 @@ pub fn export_as_image(
     mut width: u32,
     mut height: u32,
     path: &Path,
-    format: image::ImageFormat
+    format: image::ImageFormat,
 ) -> anyhow::Result<()> {
     let mut img = image::RgbaImage::new(width, height);
     let is_jpeg = format == image::ImageFormat::Jpeg;
@@ -128,7 +132,12 @@ pub fn export_as_image(
                 // fully transparent (a=0,r=0) -> white (255,255,255)
                 // For premultiplied over white: r' = r + (255 - a) (clamped)
                 let inverse_alpha = (255u8).wrapping_sub(alpha); // 255 - a
-                (red.saturating_add(inverse_alpha), green.saturating_add(inverse_alpha), blue.saturating_add(inverse_alpha), 255u8)
+                (
+                    red.saturating_add(inverse_alpha),
+                    green.saturating_add(inverse_alpha),
+                    blue.saturating_add(inverse_alpha),
+                    255u8,
+                )
             } else {
                 let premultiplied = Color32::from_rgba_premultiplied(red, green, blue, alpha);
                 let straight = unpremultiply(premultiplied);
@@ -172,13 +181,13 @@ pub fn export_as_image(
     // JPEG requires RGB8 (3 bytes/pixel). Alpha was already blended
     // against white in the loop above, so strip the alpha channel.
     if format == image::ImageFormat::Jpeg {
-        let rgb: Vec<u8> = img
-            .pixels()
-            .flat_map(|p| [p[0], p[1], p[2]])
-            .collect();
-        image::codecs::jpeg::JpegEncoder
-            ::new_with_quality(writer, JPEG_QUALITY)
-            .write_image(&rgb, width, height, image::ExtendedColorType::Rgb8)?;
+        let rgb: Vec<u8> = img.pixels().flat_map(|p| [p[0], p[1], p[2]]).collect();
+        image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY).write_image(
+            &rgb,
+            width,
+            height,
+            image::ExtendedColorType::Rgb8,
+        )?;
         return Ok(());
     }
 
@@ -198,15 +207,17 @@ pub fn export_as_image(
         image::ImageFormat::Avif => export_via!(image::codecs::avif::AvifEncoder::new(writer))?,
         image::ImageFormat::Png => export_via!(image::codecs::png::PngEncoder::new(writer))?,
 
-        image::ImageFormat::WebP =>
-            export_via!(image::codecs::webp::WebPEncoder::new_lossless(writer))?,
+        image::ImageFormat::WebP => {
+            export_via!(image::codecs::webp::WebPEncoder::new_lossless(writer))?
+        }
         image::ImageFormat::Tiff => export_via!(image::codecs::tiff::TiffEncoder::new(writer))?,
         image::ImageFormat::Tga => export_via!(image::codecs::tga::TgaEncoder::new(writer))?,
         image::ImageFormat::Ico => export_via!(image::codecs::ico::IcoEncoder::new(writer))?,
         image::ImageFormat::Pnm => export_via!(image::codecs::pnm::PnmEncoder::new(writer))?,
         image::ImageFormat::Qoi => export_via!(image::codecs::qoi::QoiEncoder::new(writer))?,
-        image::ImageFormat::OpenExr =>
-            export_via!(image::codecs::openexr::OpenExrEncoder::new(writer))?,
+        image::ImageFormat::OpenExr => {
+            export_via!(image::codecs::openexr::OpenExrEncoder::new(writer))?
+        }
         image::ImageFormat::Hdr => {
             // Build Rgb32F image from the straight RGBA buffer.
             // HDR stores linear float RGB (alpha is ignored).
@@ -222,7 +233,12 @@ pub fn export_as_image(
                 float_bytes.extend_from_slice(&blue.to_ne_bytes());
             }
             let encoder = image::codecs::hdr::HdrEncoder::new(writer);
-            encoder.write_image(&float_bytes, width, height, image::ExtendedColorType::Rgb32F)?;
+            encoder.write_image(
+                &float_bytes,
+                width,
+                height,
+                image::ExtendedColorType::Rgb32F,
+            )?;
         }
         image::ImageFormat::Farbfeld => {
             // Farbfeld requires u16 RGBA (8 bytes/pixel), native endian.
@@ -236,7 +252,12 @@ pub fn export_as_image(
             }
             let rgba16_bytes: &[u8] = cast_slice(&rgba16);
             let encoder = image::codecs::farbfeld::FarbfeldEncoder::new(writer);
-            encoder.write_image(rgba16_bytes, width, height, image::ExtendedColorType::Rgba16)?;
+            encoder.write_image(
+                rgba16_bytes,
+                width,
+                height,
+                image::ExtendedColorType::Rgba16,
+            )?;
         }
         _ => {
             anyhow::bail!("Unsupported export format: {format:?}");

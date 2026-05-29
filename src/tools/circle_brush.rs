@@ -2,10 +2,14 @@
 //! [`draw_circle_line`] for Bresenham-interpolated strokes with
 //! visited-stamp deduplication.
 
-use eframe::egui::{self, Color32};
+use eframe::egui::Color32;
+use eframe::egui::{self};
 
-use crate::canvas::{ Canvas, DirtyRect };
-use crate::undo::{ compress_run, RunSegment, UndoRecord };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRect;
+use crate::undo::RunSegment;
+use crate::undo::UndoRecord;
+use crate::undo::compress_run;
 
 /// Fill a circular region without capturing undo data.
 ///
@@ -175,7 +179,17 @@ pub fn draw_circle(
     }
 
     // Fill the circle
-    fill_circle_impl(pixels, width, center_x, center_y, radius, color, canvas.width, height, alpha_overlay);
+    fill_circle_impl(
+        pixels,
+        width,
+        center_x,
+        center_y,
+        radius,
+        color,
+        canvas.width,
+        height,
+        alpha_overlay,
+    );
 
     let circle_min_x = center_x.saturating_sub(radius);
     let circle_min_y = center_y.saturating_sub(radius);
@@ -231,7 +245,11 @@ fn stamp_circle_positions(
         let step_y = if current_y < target_y { 1 } else { -1 };
         let mut error = delta_x + delta_y;
         loop {
-            if current_x >= 0 && (current_x as u32) < width as u32 && current_y >= 0 && (current_y as u32) < height {
+            if current_x >= 0
+                && (current_x as u32) < width as u32
+                && current_y >= 0
+                && (current_y as u32) < height
+            {
                 let x = current_x as u32;
                 let y = current_y as u32;
                 visited[(y as usize) * width + x as usize] = stamp;
@@ -401,7 +419,11 @@ pub fn draw_circle_line(
                 x += 1;
             }
             let (rle_before, length) = compress_run(before);
-            runs.push(RunSegment { start: run_start, length, before: rle_before });
+            runs.push(RunSegment {
+                start: run_start,
+                length,
+                before: rle_before,
+            });
         }
     }
 

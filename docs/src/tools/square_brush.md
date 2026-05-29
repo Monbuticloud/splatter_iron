@@ -90,16 +90,16 @@ Draws a filled rectangle on a canvas layer, returns an undo record.
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|---|---|---|
-| `start_x` | `u32` | Left column (inclusive). Clamped to `[0, canvas.width]`. |
-| `start_y` | `u32` | Top row (inclusive). Clamped to `[0, canvas.height]`. |
-| `end_x` | `u32` | Right column (exclusive). Clamped to `[0, canvas.width]`. |
-| `end_y` | `u32` | Bottom row (exclusive). Clamped to `[0, canvas.height]`. |
-| `canvas` | `&mut Canvas` | Canvas whose pixels are modified. |
-| `color` | `Color32` | Fill colour (premultiplied-alpha). |
-| `layer` | `usize` | Target layer index. |
-| `alpha_overlay` | `bool` | Alpha-blend instead of overwrite. |
+| Parameter       | Type          | Purpose                                                   |
+| --------------- | ------------- | --------------------------------------------------------- |
+| `start_x`       | `u32`         | Left column (inclusive). Clamped to `[0, canvas.width]`.  |
+| `start_y`       | `u32`         | Top row (inclusive). Clamped to `[0, canvas.height]`.     |
+| `end_x`         | `u32`         | Right column (exclusive). Clamped to `[0, canvas.width]`. |
+| `end_y`         | `u32`         | Bottom row (exclusive). Clamped to `[0, canvas.height]`.  |
+| `canvas`        | `&mut Canvas` | Canvas whose pixels are modified.                         |
+| `color`         | `Color32`     | Fill colour (premultiplied-alpha).                        |
+| `layer`         | `usize`       | Target layer index.                                       |
+| `alpha_overlay` | `bool`        | Alpha-blend instead of overwrite.                         |
 
 ### Returns
 
@@ -146,21 +146,21 @@ Draws a square-brush stroke between two points, returns an undo record.
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|---|---|---|
-| `start_x` | `u32` | Start column |
-| `start_y` | `u32` | Start row |
-| `end_x` | `u32` | End column |
-| `end_y` | `u32` | End row |
-| `brush_radius` | `u32` | Brush radius in pixels |
-| `canvas` | `&mut Canvas` | Canvas whose pixels are modified |
-| `color` | `Color32` | Stroke colour (premultiplied-alpha) |
-| `layer` | `usize` | Target layer index |
-| `visited` | `&mut [u32]` | Stamp buffer for per-stroke deduplication |
-| `stamp` | `u32` | Current stamp value (caller manages via `UndoHistory::next_stamp`) |
-| `alpha_overlay` | `bool` | Alpha-blend instead of overwrite |
-| `drag_processed` | `&mut [u32]` | Per-drag deduplication buffer (prevents double-blend) |
-| `drag_stamp_value` | `u32` | Current drag stamp value |
+| Parameter          | Type          | Purpose                                                            |
+| ------------------ | ------------- | ------------------------------------------------------------------ |
+| `start_x`          | `u32`         | Start column                                                       |
+| `start_y`          | `u32`         | Start row                                                          |
+| `end_x`            | `u32`         | End column                                                         |
+| `end_y`            | `u32`         | End row                                                            |
+| `brush_radius`     | `u32`         | Brush radius in pixels                                             |
+| `canvas`           | `&mut Canvas` | Canvas whose pixels are modified                                   |
+| `color`            | `Color32`     | Stroke colour (premultiplied-alpha)                                |
+| `layer`            | `usize`       | Target layer index                                                 |
+| `visited`          | `&mut [u32]`  | Stamp buffer for per-stroke deduplication                          |
+| `stamp`            | `u32`         | Current stamp value (caller manages via `UndoHistory::next_stamp`) |
+| `alpha_overlay`    | `bool`        | Alpha-blend instead of overwrite                                   |
+| `drag_processed`   | `&mut [u32]`  | Per-drag deduplication buffer (prevents double-blend)              |
+| `drag_stamp_value` | `u32`         | Current drag stamp value                                           |
 
 ### Returns
 

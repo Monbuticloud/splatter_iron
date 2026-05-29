@@ -135,7 +135,13 @@ pub(crate) fn parse_gbr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
         _ => unreachable!(),
     }
 
-    Ok(vec![BrushTip { name: String::new(), pixels, width, height, spacing }])
+    Ok(vec![BrushTip {
+        name: String::new(),
+        pixels,
+        width,
+        height,
+        spacing,
+    }])
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +164,9 @@ pub(crate) fn parse_abr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
 
     let version = u16::from_be_bytes([data[4], data[5]]);
     if !(6..=10).contains(&version) {
-        return Err(format!("Unsupported ABR version: {version} (only 6–10 supported)"));
+        return Err(format!(
+            "Unsupported ABR version: {version} (only 6–10 supported)"
+        ));
     }
 
     // Number of subblocks (only reliable in v6–7; v8+ parses subblocks iteratively)
@@ -168,7 +176,13 @@ pub(crate) fn parse_abr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
     // Initial parse offset: after the 14-byte fixed header + optional tag
     // For v6+: header is 14 bytes (4 magic + 2 version + 2 subcount + 4 reserved + 2 something)
     // Actually, the ABR header varies. Let's use a more flexible approach.
-    let header_size = if version >= 8 { 16_u32 } else if version == 6 || version == 7 { 14_u32 } else { 14 };
+    let header_size = if version >= 8 {
+        16_u32
+    } else if version == 6 || version == 7 {
+        14_u32
+    } else {
+        14
+    };
     // We'll parse subblocks by scanning for 8BIM markers instead of relying on sub_count.
 
     let mut offset = header_size as usize;
@@ -190,10 +204,20 @@ pub(crate) fn parse_abr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
 
         // Size field: for v6–7 it's a u32; for v8+ tags use different sizing
         let block_size = if version <= 7 {
-            u32::from_be_bytes([data[offset + 6], data[offset + 7], data[offset + 8], data[offset + 9]]) as usize
+            u32::from_be_bytes([
+                data[offset + 6],
+                data[offset + 7],
+                data[offset + 8],
+                data[offset + 9],
+            ]) as usize
         } else {
             // v8+ uses length after subblock header differently
-            u32::from_be_bytes([data[offset + 6], data[offset + 7], data[offset + 8], data[offset + 9]]) as usize
+            u32::from_be_bytes([
+                data[offset + 6],
+                data[offset + 7],
+                data[offset + 8],
+                data[offset + 9],
+            ]) as usize
         };
 
         if sig == b"8BIM" && block_type == 1 && block_size > 0 {
@@ -228,7 +252,11 @@ pub(crate) fn parse_abr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
 /// In ABR v6–7, sampled brushes use tag-based encoding with `8BIM`
 /// tag signatures. The embedded image is typically stored as PNG or
 /// raw BGRA data.  In ABR v10, JPEG-XL compressed samples may appear.
-fn parse_abr_sampled(data: &[u8], block_size: usize, _version: u16) -> Result<Option<BrushTip>, String> {
+fn parse_abr_sampled(
+    data: &[u8],
+    block_size: usize,
+    _version: u16,
+) -> Result<Option<BrushTip>, String> {
     if data.len() < block_size {
         return Err("ABR sampled data truncated".into());
     }
@@ -240,14 +268,22 @@ fn parse_abr_sampled(data: &[u8], block_size: usize, _version: u16) -> Result<Op
             break;
         }
         let tag = &data[offset..offset + 4];
-        let tag_len = u32::from_be_bytes([data[offset + 4], data[offset + 5], data[offset + 6], data[offset + 7]])
-            as usize;
+        let tag_len = u32::from_be_bytes([
+            data[offset + 4],
+            data[offset + 5],
+            data[offset + 6],
+            data[offset + 7],
+        ]) as usize;
 
         if tag == b"8BIM" && offset + 12 <= block_size {
             // Extended tag: 4 sig + 4 type + 4 length
             let _ext_type = &data[offset + 4..offset + 8];
-            let ext_len = u32::from_be_bytes([data[offset + 8], data[offset + 9], data[offset + 10], data[offset + 11]])
-                as usize;
+            let ext_len = u32::from_be_bytes([
+                data[offset + 8],
+                data[offset + 9],
+                data[offset + 10],
+                data[offset + 11],
+            ]) as usize;
             offset += 12;
 
             if offset + ext_len <= block_size && offset + ext_len <= data.len() {
@@ -309,7 +345,13 @@ fn decode_png_image(data: &[u8]) -> Result<BrushTip, String> {
         let straight = Color32::from_rgba_unmultiplied(pixel[0], pixel[1], pixel[2], pixel[3]);
         pixels.push(straight);
     }
-    Ok(BrushTip { name: String::new(), pixels, width: w, height: h, spacing: 25 })
+    Ok(BrushTip {
+        name: String::new(),
+        pixels,
+        width: w,
+        height: h,
+        spacing: 25,
+    })
 }
 
 /// Decode raw BGRA (Photoshop's native byte order) into premultiplied RGBA.
@@ -332,7 +374,13 @@ fn decode_raw_bgra(data: &[u8]) -> Result<BrushTip, String> {
         let straight = Color32::from_rgba_unmultiplied(chunk[2], chunk[1], chunk[0], chunk[3]);
         pixels.push(straight);
     }
-    Ok(BrushTip { name: String::new(), pixels, width: w, height: h, spacing: 25 })
+    Ok(BrushTip {
+        name: String::new(),
+        pixels,
+        width: w,
+        height: h,
+        spacing: 25,
+    })
 }
 
 /// Rasterise a computed/parametric brush from its ABR subblock data.
@@ -358,11 +406,19 @@ fn rasterise_computed_brush(data: &[u8], _block_size: usize) -> Result<Option<Br
     let mut offset = 0;
     while offset + 8 <= data.len() {
         let tag = &data[offset..offset + 4];
-        let tag_len = u32::from_be_bytes([data[offset + 4], data[offset + 5], data[offset + 6], data[offset + 7]])
-            as usize;
+        let tag_len = u32::from_be_bytes([
+            data[offset + 4],
+            data[offset + 5],
+            data[offset + 6],
+            data[offset + 7],
+        ]) as usize;
         offset += 8;
 
-        let inner = if offset + tag_len <= data.len() { &data[offset..offset + tag_len] } else { break };
+        let inner = if offset + tag_len <= data.len() {
+            &data[offset..offset + tag_len]
+        } else {
+            break;
+        };
         offset += tag_len + (tag_len & 1);
 
         if inner.len() < 2 {

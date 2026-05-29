@@ -5,7 +5,9 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, DirtyRectList, Layer };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRectList;
+use crate::canvas::Layer;
 
 /// Build a 10×10 single-layer transparent canvas for use in tests.
 ///

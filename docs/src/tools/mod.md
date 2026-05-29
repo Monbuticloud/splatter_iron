@@ -6,11 +6,11 @@ return an `UndoRecord` for undo support.
 
 ## Submodules
 
-| Module | Exports | Purpose |
-|--------|---------|---------|
-| `bucket_fill` | `draw_bucket_fill` | Scanline flood-fill from a seed point |
+| Module         | Exports                           | Purpose                                                     |
+| -------------- | --------------------------------- | ----------------------------------------------------------- |
+| `bucket_fill`  | `draw_bucket_fill`                | Scanline flood-fill from a seed point                       |
 | `circle_brush` | `draw_circle`, `draw_circle_line` | Midpoint-circle span fill (single stamp + Bresenham stroke) |
-| `square_brush` | `draw_square`, `draw_square_line` | Rectangular fill (single stamp + Bresenham stroke) |
+| `square_brush` | `draw_square`, `draw_square_line` | Rectangular fill (single stamp + Bresenham stroke)          |
 
 ### Common contract
 

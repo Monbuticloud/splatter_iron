@@ -7,12 +7,12 @@ save path, and coordinates GPU texture uploads.
 
 ### Fields
 
-| Field | Type | Purpose |
-|---|---|---|
-| `canvas` | `Canvas` | The backing canvas (layers, pixel data, dimensions) |
-| `savefile_path` | `String` | Filesystem path for the last save/load operation |
-| `current_layer` | `usize` | Index into `canvas.pixels` for the active layer |
-| `dirty_since_last_autosave` | `bool` | Whether unsaved changes exist |
+| Field                       | Type     | Purpose                                             |
+| --------------------------- | -------- | --------------------------------------------------- |
+| `canvas`                    | `Canvas` | The backing canvas (layers, pixel data, dimensions) |
+| `savefile_path`             | `String` | Filesystem path for the last save/load operation    |
+| `current_layer`             | `usize`  | Index into `canvas.pixels` for the active layer     |
+| `dirty_since_last_autosave` | `bool`   | Whether unsaved changes exist                       |
 
 ### Invariants
 
@@ -39,9 +39,9 @@ pub fn new(canvas: Canvas) -> Self
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `canvas` | `Canvas` | The backing canvas to wrap |
+| Parameter | Type     | Description                |
+| --------- | -------- | -------------------------- |
+| `canvas`  | `Canvas` | The backing canvas to wrap |
 
 ### Behaviour
 
@@ -64,10 +64,10 @@ pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory)
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `canvas` | `Canvas` | New canvas to adopt |
-| `undo` | `&mut UndoHistory` | Undo history to clear and resize |
+| Parameter | Type               | Description                      |
+| --------- | ------------------ | -------------------------------- |
+| `canvas`  | `Canvas`           | New canvas to adopt              |
+| `undo`    | `&mut UndoHistory` | Undo history to clear and resize |
 
 ### Side effects
 
@@ -132,11 +132,11 @@ pub fn upload_to_gpu(
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `queue` | `&wgpu::Queue` | Queue for submitting write commands to the GPU |
-| `texture` | `&wgpu::Texture` | Destination GPU texture |
-| `dirty` | `&Option<(u32, u32, u32, u32)>` | `Some((x, y, w, h))` for partial upload, `None` for full canvas upload |
+| Parameter | Type                            | Description                                                            |
+| --------- | ------------------------------- | ---------------------------------------------------------------------- |
+| `queue`   | `&wgpu::Queue`                  | Queue for submitting write commands to the GPU                         |
+| `texture` | `&wgpu::Texture`                | Destination GPU texture                                                |
+| `dirty`   | `&Option<(u32, u32, u32, u32)>` | `Some((x, y, w, h))` for partial upload, `None` for full canvas upload |
 
 ### Behaviour
 
@@ -169,9 +169,9 @@ pub fn render_to_texture(&mut self, ui: &egui::Ui)
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `ui` | `&egui::Ui` | Egui UI handle used to access `load_texture` |
+| Parameter | Type        | Description                                  |
+| --------- | ----------- | -------------------------------------------- |
+| `ui`      | `&egui::Ui` | Egui UI handle used to access `load_texture` |
 
 ### Behaviour
 
@@ -225,9 +225,9 @@ pub fn delete_layer(&mut self, index: usize)
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `index` | `usize` | Index of the layer to remove |
+| Parameter | Type    | Description                  |
+| --------- | ------- | ---------------------------- |
+| `index`   | `usize` | Index of the layer to remove |
 
 ### Behaviour
 
@@ -253,9 +253,9 @@ pub fn move_layer_up(&mut self, index: usize)
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `index` | `usize` | Index of the layer to move upward |
+| Parameter | Type    | Description                       |
+| --------- | ------- | --------------------------------- |
+| `index`   | `usize` | Index of the layer to move upward |
 
 ### Panics
 
@@ -283,9 +283,9 @@ pub fn move_layer_down(&mut self, index: usize)
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `index` | `usize` | Index of the layer to move downward |
+| Parameter | Type    | Description                         |
+| --------- | ------- | ----------------------------------- |
+| `index`   | `usize` | Index of the layer to move downward |
 
 ### Panics
 
@@ -313,12 +313,12 @@ pub fn select_layer(&mut self, index: usize)
 
 ### Parameters
 
-| Parameter | Type | Description |
-|---|---|---|
-| `index` | `usize` | Index of the layer to select |
+| Parameter | Type    | Description                  |
+| --------- | ------- | ---------------------------- |
+| `index`   | `usize` | Index of the layer to select |
 
 ### Behaviour
 
 - Sets `self.current_layer = index`.
 - No validation of the index is performed; the caller must ensure `index <
-  self.canvas.pixels.len()`.
+self.canvas.pixels.len()`.

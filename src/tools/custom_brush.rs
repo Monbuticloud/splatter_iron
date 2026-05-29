@@ -84,19 +84,37 @@ pub fn draw_custom_brush_line(
     let mut all_runs = Vec::new();
 
     for i in 0..num_steps {
-        let t = if num_steps == 1 { 1.0 } else { (i as f64 + 1.0) / num_steps as f64 };
+        let t = if num_steps == 1 {
+            1.0
+        } else {
+            (i as f64 + 1.0) / num_steps as f64
+        };
         let cx = (start_x as f64 + dx as f64 * t).round() as u32;
         let cy = (start_y as f64 + dy as f64 * t).round() as u32;
 
         let record = draw_stamp_line(
-            cx, cy, cx, cy,
-            tip_pixels, tip_width, tip_height,
-            radius, canvas, color, layer,
-            visited, stamp,
-            alpha_overlay, tinted, sampling,
-            drag_processed, drag_stamp_value,
+            cx,
+            cy,
+            cx,
+            cy,
+            tip_pixels,
+            tip_width,
+            tip_height,
+            radius,
+            canvas,
+            color,
+            layer,
+            visited,
+            stamp,
+            alpha_overlay,
+            tinted,
+            sampling,
+            drag_processed,
+            drag_stamp_value,
         );
-        let UndoRecord::Run { runs: step_runs, .. } = record;
+        let UndoRecord::Run {
+            runs: step_runs, ..
+        } = record;
         all_runs.extend(step_runs);
     }
 

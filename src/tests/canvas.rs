@@ -5,7 +5,8 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, DirtyRect };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRect;
 
 // --- Canvas defaults ---
 
@@ -130,7 +131,12 @@ fn canvas_serde_roundtrip() {
         5 * 3,
         "pixel count preserved"
     );
-    assert!(restored.pixels[0].pixels.iter().all(|p| *p == Color32::TRANSPARENT));
+    assert!(
+        restored.pixels[0]
+            .pixels
+            .iter()
+            .all(|p| *p == Color32::TRANSPARENT)
+    );
     assert_eq!(restored.render_next_frame, original.render_next_frame);
 
     // Skipped fields — should be defaults

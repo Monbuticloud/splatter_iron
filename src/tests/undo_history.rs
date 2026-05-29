@@ -7,9 +7,10 @@
 
 use eframe::egui::Color32;
 
-use crate::tests::common::{ red, small_canvas };
+use crate::tests::common::red;
+use crate::tests::common::small_canvas;
 use crate::tools::square_brush;
-use crate::undo::{ UndoRecord };
+use crate::undo::UndoRecord;
 use crate::undo_history::UndoHistory;
 
 /// A new undo history should have no undo or redo available.
@@ -80,7 +81,7 @@ fn undo_redo_multi_step() {
     let mut canvas = small_canvas();
     let (r1, r2) = {
         let r1 = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
-    let blue = Color32::from_rgba_premultiplied(0, 0, 255, 255);
+        let blue = Color32::from_rgba_premultiplied(0, 0, 255, 255);
         let r2 = square_brush::draw_square(3, 3, 6, 6, &mut canvas, blue, 0, false);
         (r1, r2)
     };
@@ -105,8 +106,26 @@ fn undo_redo_multi_step() {
 fn clear_resets_history() {
     let mut history = UndoHistory::new(100);
     let mut canvas = small_canvas();
-    history.push_undo(square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false));
-    history.push_undo(square_brush::draw_square(4, 4, 7, 7, &mut canvas, red(), 0, false));
+    history.push_undo(square_brush::draw_square(
+        0,
+        0,
+        3,
+        3,
+        &mut canvas,
+        red(),
+        0,
+        false,
+    ));
+    history.push_undo(square_brush::draw_square(
+        4,
+        4,
+        7,
+        7,
+        &mut canvas,
+        red(),
+        0,
+        false,
+    ));
     assert!(history.can_undo());
     history.clear();
     assert!(!history.can_undo());
@@ -279,7 +298,8 @@ fn extend_drag_without_init_noop() {
 /// `extend_drag_accumulator` with some runs without init should not crash.
 #[test]
 fn extend_drag_without_init_with_runs_noop() {
-    use crate::undo::{ RunSegment, BeforePixels };
+    use crate::undo::BeforePixels;
+    use crate::undo::RunSegment;
     let mut history = UndoHistory::new(100);
     let runs = vec![RunSegment {
         start: 0,

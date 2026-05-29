@@ -3,11 +3,15 @@
 
 use std::sync::Arc;
 
-use eframe::egui::{ self, Color32 };
+use eframe::egui::Color32;
+use eframe::egui::{self};
 use eframe::egui_wgpu::wgpu;
 
-use crate::canvas::{ Canvas, DirtyRect, Layer };
-use crate::pixel::{ self, BYTES_PER_PIXEL as RGBA_CHANNELS };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRect;
+use crate::canvas::Layer;
+use crate::pixel::BYTES_PER_PIXEL as RGBA_CHANNELS;
+use crate::pixel::{self};
 use crate::undo_history::UndoHistory;
 
 const TEXTURE_NAME: &str = "rendered_layers";
@@ -90,10 +94,8 @@ impl Document {
         }
         canvas.render_next_frame = false;
 
-        let layer_slices: Vec<&[Color32]> = canvas.pixels
-            .iter()
-            .map(|l| l.pixels.as_slice())
-            .collect();
+        let layer_slices: Vec<&[Color32]> =
+            canvas.pixels.iter().map(|l| l.pixels.as_slice()).collect();
 
         let rects = canvas.dirty_rect.take_all();
         let output = &mut canvas.output_rgba;
@@ -170,7 +172,11 @@ impl Document {
                 bytes_per_row: Some(canvas_width * 4),
                 rows_per_image: None,
             },
-            wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
         );
     }
 
@@ -187,7 +193,7 @@ impl Document {
 
         let image = egui::ColorImage::from_rgba_premultiplied(
             [self.canvas.width as usize, self.canvas.height as usize],
-            &self.canvas.output_rgba
+            &self.canvas.output_rgba,
         );
 
         let rendered = &mut self.canvas_mut().rendered_layers;
@@ -196,9 +202,11 @@ impl Document {
                 tex.set(image, egui::TextureOptions::LINEAR);
             }
             None => {
-                *rendered = Some(
-                    ui.ctx().load_texture(TEXTURE_NAME, image, egui::TextureOptions::LINEAR)
-                );
+                *rendered = Some(ui.ctx().load_texture(
+                    TEXTURE_NAME,
+                    image,
+                    egui::TextureOptions::LINEAR,
+                ));
             }
         }
     }
@@ -224,7 +232,8 @@ impl Document {
     /// * `index` — Index of the layer to remove.
     pub fn delete_layer(&mut self, index: usize) {
         self.canvas_mut().pixels.remove(index);
-        self.current_layer = self.current_layer
+        self.current_layer = self
+            .current_layer
             .saturating_sub(1)
             .min(self.canvas.pixels.len().saturating_sub(1));
         self.canvas_mut().render_next_frame = true;

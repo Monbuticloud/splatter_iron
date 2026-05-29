@@ -5,7 +5,10 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{Canvas, DirtyRect, DirtyRectList, Layer};
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRect;
+use crate::canvas::DirtyRectList;
+use crate::canvas::Layer;
 use crate::document::Document;
 use crate::undo_history::UndoHistory;
 
@@ -131,8 +134,12 @@ fn replace_canvas_resets_state() {
 
     let new_canvas = Canvas {
         pixels: vec![
-            Layer { pixels: vec![Color32::TRANSPARENT; 4] },
-            Layer { pixels: vec![Color32::TRANSPARENT; 4] },
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 4],
+            },
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 4],
+            },
         ],
         height: 2,
         width: 2,
@@ -185,7 +192,10 @@ fn blend_to_output_full_canvas_sets_render_state() {
 #[test]
 fn blend_to_output_dirty_rect_returns_bounds() {
     let mut document = small_document();
-    document.canvas_mut().dirty_rect.add(DirtyRect::new(2, 3, 5, 7));
+    document
+        .canvas_mut()
+        .dirty_rect
+        .add(DirtyRect::new(2, 3, 5, 7));
     document.canvas_mut().render_next_frame = true;
 
     let result = document.blend_to_output();
@@ -236,10 +246,7 @@ fn delete_layer_decrements_current_when_below() {
     document.current_layer = 2;
     // Delete layer at index 0 (below current_layer 2)
     document.delete_layer(0);
-    assert_eq!(
-        document.current_layer, 1,
-        "decremented when deleting below"
-    );
+    assert_eq!(document.current_layer, 1, "decremented when deleting below");
     assert_eq!(document.canvas.pixels.len(), 2);
 }
 
@@ -249,7 +256,10 @@ fn add_layer_sets_render_next_frame() {
     let mut document = small_document();
     document.canvas_mut().render_next_frame = false;
     document.add_layer();
-    assert!(document.canvas_mut().render_next_frame, "add_layer triggers re-render");
+    assert!(
+        document.canvas_mut().render_next_frame,
+        "add_layer triggers re-render"
+    );
 }
 
 /// `delete_layer` should set `render_next_frame` to true.
@@ -259,7 +269,10 @@ fn delete_layer_sets_render_next_frame() {
     document.canvas_mut().render_next_frame = false;
     document.add_layer();
     document.delete_layer(1);
-    assert!(document.canvas_mut().render_next_frame, "delete_layer triggers re-render");
+    assert!(
+        document.canvas_mut().render_next_frame,
+        "delete_layer triggers re-render"
+    );
 }
 
 /// `move_layer_up` should set `render_next_frame` to true.
@@ -269,7 +282,10 @@ fn move_layer_up_sets_render_next_frame() {
     document.add_layer();
     document.canvas_mut().render_next_frame = false;
     document.move_layer_up(1);
-    assert!(document.canvas_mut().render_next_frame, "move_layer_up triggers re-render");
+    assert!(
+        document.canvas_mut().render_next_frame,
+        "move_layer_up triggers re-render"
+    );
 }
 
 /// `move_layer_down` should set `render_next_frame` to true.
@@ -279,7 +295,10 @@ fn move_layer_down_sets_render_next_frame() {
     document.add_layer();
     document.canvas_mut().render_next_frame = false;
     document.move_layer_down(0);
-    assert!(document.canvas_mut().render_next_frame, "move_layer_down triggers re-render");
+    assert!(
+        document.canvas_mut().render_next_frame,
+        "move_layer_down triggers re-render"
+    );
 }
 
 /// `move_layer_up(0)` should panic because there is no layer above to swap with.
@@ -359,10 +378,7 @@ fn move_layer_up_swaps_ordering() {
     document.canvas_mut().pixels[0].pixels[0] = Color32::from_rgba_premultiplied(255, 0, 0, 255);
     document.move_layer_up(1);
     // After swap: [1: transparent, 0: has red pixel, 2: transparent]
-    assert_eq!(
-        document.canvas.pixels[0].pixels[0],
-        Color32::TRANSPARENT
-    );
+    assert_eq!(document.canvas.pixels[0].pixels[0], Color32::TRANSPARENT);
     assert_eq!(
         document.canvas.pixels[1].pixels[0],
         Color32::from_rgba_premultiplied(255, 0, 0, 255)

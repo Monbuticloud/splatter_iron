@@ -4,7 +4,8 @@
 //! correct pixel decoding, spacing, error handling, and computed brush
 //! rasterisation.
 
-use crate::tools::brush_parsers::{parse_abr, parse_gbr};
+use crate::tools::brush_parsers::parse_abr;
+use crate::tools::brush_parsers::parse_gbr;
 
 /// Build a valid GBR v2 byte buffer for a 2×2 RGBA brush.
 fn make_gbr_v2_rgba() -> Vec<u8> {
@@ -174,10 +175,7 @@ fn parse_gbr_unsupported_bpp() {
 /// Build a minimal ABR v6 file with a single raw-BGRA sampled brush (2x2).
 fn make_abr_v6_bgra() -> Vec<u8> {
     let bgra: [u8; 16] = [
-        0, 0, 255, 255,
-        0, 255, 0, 255,
-        255, 0, 0, 255,
-        255, 255, 255, 128,
+        0, 0, 255, 255, 0, 255, 0, 255, 255, 0, 0, 255, 255, 255, 255, 128,
     ];
     let mut block_data = Vec::new();
     block_data.extend_from_slice(b"data");

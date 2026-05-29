@@ -76,7 +76,8 @@ impl MyApp {
             ui.menu_button("Export", |ui| {
                 for (format_index, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                     if ui.button(label).clicked() {
-                        self.file_io.queue_file_action(PendingFileAction::Export(format_index));
+                        self.file_io
+                            .queue_file_action(PendingFileAction::Export(format_index));
                         ui.ctx().request_repaint();
                         ui.close();
                     }
@@ -96,26 +97,34 @@ impl MyApp {
             let redo_button = ui.button("Redo");
 
             // Undo: button or keyboard shortcut
-            if
-                self.undo.can_undo() &&
-                (ui.input(
-                    |input_state| input_state.key_pressed(egui::Key::Z) && input_state.modifiers.command && !input_state.modifiers.shift
-                ) || undo_button.clicked())
+            if self.undo.can_undo()
+                && (ui.input(|input_state| {
+                    input_state.key_pressed(egui::Key::Z)
+                        && input_state.modifiers.command
+                        && !input_state.modifiers.shift
+                }) || undo_button.clicked())
             {
-                self.undo.undo_step(self.document.canvas_mut(), self.tool_configuration.undo_redo_steps_multiplier);
+                self.undo.undo_step(
+                    self.document.canvas_mut(),
+                    self.tool_configuration.undo_redo_steps_multiplier,
+                );
                 self.document.canvas_mut().render_next_frame = true;
             }
 
             // Redo: button, cmd+shift+Z, or cmd+Y
-            if
-                self.undo.can_redo() &&
-                (ui.input(
-                    |input_state| input_state.key_pressed(egui::Key::Z) && input_state.modifiers.command && input_state.modifiers.shift
-                ) ||
-                    ui.input(|input_state| input_state.key_pressed(egui::Key::Y) && input_state.modifiers.command) ||
-                    redo_button.clicked())
+            if self.undo.can_redo()
+                && (ui.input(|input_state| {
+                    input_state.key_pressed(egui::Key::Z)
+                        && input_state.modifiers.command
+                        && input_state.modifiers.shift
+                }) || ui.input(|input_state| {
+                    input_state.key_pressed(egui::Key::Y) && input_state.modifiers.command
+                }) || redo_button.clicked())
             {
-                self.undo.redo_step(self.document.canvas_mut(), self.tool_configuration.undo_redo_steps_multiplier);
+                self.undo.redo_step(
+                    self.document.canvas_mut(),
+                    self.tool_configuration.undo_redo_steps_multiplier,
+                );
                 self.document.canvas_mut().render_next_frame = true;
             }
 

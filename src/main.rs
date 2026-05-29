@@ -21,13 +21,14 @@ mod undo_history;
 
 #[cfg(test)]
 mod tests;
-use mimalloc::MiMalloc;
-
 use std::sync::Arc;
 
 use eframe::egui_wgpu::wgpu;
+use mimalloc::MiMalloc;
 
-use crate::app::{ APP_QUALIFIER, APP_ORGANIZATION, APP_NAME };
+use crate::app::APP_NAME;
+use crate::app::APP_ORGANIZATION;
+use crate::app::APP_QUALIFIER;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -48,9 +49,8 @@ static GLOBAL: MiMalloc = MiMalloc;
 /// (no home directory) or if the operating system refuses to create the
 /// data directory (e.g., file-system permissions).
 fn main() -> eframe::Result {
-    let project_dirs = directories::ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME).expect(
-        "Couldn't resolve app dir"
-    );
+    let project_dirs = directories::ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME)
+        .expect("Couldn't resolve app dir");
     let data_dir = project_dirs.data_local_dir().to_path_buf();
     std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
 
@@ -62,13 +62,15 @@ fn main() -> eframe::Result {
             wgpu_options: WgpuConfiguration {
                 wgpu_setup: eframe::egui_wgpu::WgpuSetup::CreateNew(
                     eframe::egui_wgpu::WgpuSetupCreateNew {
-                        device_descriptor: Arc::new(|_adapter: &wgpu::Adapter| wgpu::DeviceDescriptor {
-                            label: Some("splatter_iron_device"),
-                            required_limits: wgpu::Limits {
-                                max_texture_dimension_2d: 16384,
-                                ..wgpu::Limits::default()
-                            },
-                            ..Default::default()
+                        device_descriptor: Arc::new(|_adapter: &wgpu::Adapter| {
+                            wgpu::DeviceDescriptor {
+                                label: Some("splatter_iron_device"),
+                                required_limits: wgpu::Limits {
+                                    max_texture_dimension_2d: 16384,
+                                    ..wgpu::Limits::default()
+                                },
+                                ..Default::default()
+                            }
                         }),
                         ..eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle()
                     },
@@ -77,6 +79,6 @@ fn main() -> eframe::Result {
             },
             ..Default::default()
         },
-        Box::new(|cc| Ok(Box::new(app::MyApp::new(cc))))
+        Box::new(|cc| Ok(Box::new(app::MyApp::new(cc)))),
     )
 }

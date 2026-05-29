@@ -8,16 +8,16 @@ The struct is a plain data container with no methods except [`Default`]. Ownersh
 
 ### Fields
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `current_tool` | `CurrentTool` | The currently selected drawing tool (`Square`, `Circle`, `SquareEraser`, `CircleEraser`). Determines which drawing function is called on pointer events |
-| `current_color` | `Color32` | Color applied by brush strokes. Stored in premultiplied-alpha format to match the pixel buffer representation — no conversion is needed during drawing |
-| `radius` | `u32` | Brush radius in pixels. Controls the size of square/circle brush stamps and the brush preview overlay. Default 100 gives a visible brush out of the box |
-| `alpha_overlay` | `bool` | Whether strokes use alpha-overlay blending instead of opaque overwrite. When true, the brush color is blended over the existing pixel via `alpha_blend`; when false, it replaces the pixel outright |
-| `previous_tool` | `Option<CurrentTool>` | The tool that was selected before the current tool. Used by the eraser toggle: when the user switches to an eraser tool, the previous tool is saved here; when they switch away from the eraser, the previous tool is restored. `None` if no previous tool is saved |
-| `previous_cursor_position` | `Option<(u32, u32)>` | Cursor coordinates from the previous frame, in pixel space. Used to compute the brush preview position and to enable per-frame cursor movement deltas. `None` if no previous frame data exists |
-| `show_brush_preview` | `bool` | Whether to render the brush size preview indicator on the canvas. When true, a semi-transparent outline (square or circle, matching the current tool) is drawn at the cursor position |
-| `undo_redo_steps_multiplier` | `usize` | Multiplier applied to undo/redo step count during fast-scroll (e.g., holding Ctrl+Shift+Scroll). A value of 1 means one step per scroll tick; higher values accelerate undoing/redoing through many strokes quickly |
+| Field                        | Type                  | Purpose                                                                                                                                                                                                                                                             |
+| ---------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `current_tool`               | `CurrentTool`         | The currently selected drawing tool (`Square`, `Circle`, `SquareEraser`, `CircleEraser`). Determines which drawing function is called on pointer events                                                                                                             |
+| `current_color`              | `Color32`             | Color applied by brush strokes. Stored in premultiplied-alpha format to match the pixel buffer representation — no conversion is needed during drawing                                                                                                              |
+| `radius`                     | `u32`                 | Brush radius in pixels. Controls the size of square/circle brush stamps and the brush preview overlay. Default 100 gives a visible brush out of the box                                                                                                             |
+| `alpha_overlay`              | `bool`                | Whether strokes use alpha-overlay blending instead of opaque overwrite. When true, the brush color is blended over the existing pixel via `alpha_blend`; when false, it replaces the pixel outright                                                                 |
+| `previous_tool`              | `Option<CurrentTool>` | The tool that was selected before the current tool. Used by the eraser toggle: when the user switches to an eraser tool, the previous tool is saved here; when they switch away from the eraser, the previous tool is restored. `None` if no previous tool is saved |
+| `previous_cursor_position`   | `Option<(u32, u32)>`  | Cursor coordinates from the previous frame, in pixel space. Used to compute the brush preview position and to enable per-frame cursor movement deltas. `None` if no previous frame data exists                                                                      |
+| `show_brush_preview`         | `bool`                | Whether to render the brush size preview indicator on the canvas. When true, a semi-transparent outline (square or circle, matching the current tool) is drawn at the cursor position                                                                               |
+| `undo_redo_steps_multiplier` | `usize`               | Multiplier applied to undo/redo step count during fast-scroll (e.g., holding Ctrl+Shift+Scroll). A value of 1 means one step per scroll tick; higher values accelerate undoing/redoing through many strokes quickly                                                 |
 
 ### Eraser toggle
 
@@ -38,16 +38,16 @@ Provides sensible defaults for the initial application state. Rust's `#[derive(D
 
 ### Default values
 
-| Field | Default | Rationale |
-|-------|---------|-----------|
-| `current_tool` | `CurrentTool::Square` | Square is the simplest and most intuitive default tool for a raster paint application |
-| `current_color` | `Color32::from_rgba_premultiplied(255, 255, 255, 255)` | Opaque white — a neutral starting color that shows clearly against any canvas background |
-| `radius` | `100` | 100 pixels gives a brush large enough to be immediately usable and visible at typical canvas zoom levels |
-| `alpha_overlay` | `false` | Opaque painting is the expected default; users opt into alpha blending consciously |
-| `previous_tool` | `None` | No previous tool exists on startup |
-| `previous_cursor_position` | `None` | No cursor history exists on startup |
-| `show_brush_preview` | `true` | Brush preview provides essential visual feedback on brush position and size |
-| `undo_redo_steps_multiplier` | `1` | One step per scroll tick provides fine-grained control. Users can scroll multiple ticks to undo/redo several steps, with each tick corresponding to exactly one stroke |
+| Field                        | Default                                                | Rationale                                                                                                                                                              |
+| ---------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `current_tool`               | `CurrentTool::Square`                                  | Square is the simplest and most intuitive default tool for a raster paint application                                                                                  |
+| `current_color`              | `Color32::from_rgba_premultiplied(255, 255, 255, 255)` | Opaque white — a neutral starting color that shows clearly against any canvas background                                                                               |
+| `radius`                     | `100`                                                  | 100 pixels gives a brush large enough to be immediately usable and visible at typical canvas zoom levels                                                               |
+| `alpha_overlay`              | `false`                                                | Opaque painting is the expected default; users opt into alpha blending consciously                                                                                     |
+| `previous_tool`              | `None`                                                 | No previous tool exists on startup                                                                                                                                     |
+| `previous_cursor_position`   | `None`                                                 | No cursor history exists on startup                                                                                                                                    |
+| `show_brush_preview`         | `true`                                                 | Brush preview provides essential visual feedback on brush position and size                                                                                            |
+| `undo_redo_steps_multiplier` | `1`                                                    | One step per scroll tick provides fine-grained control. Users can scroll multiple ticks to undo/redo several steps, with each tick corresponding to exactly one stroke |
 
 ### Why manual `Default` instead of derive
 

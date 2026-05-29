@@ -24,15 +24,15 @@ When the user drags the mouse across the canvas, each frame generates a new set 
 
 ### Fields
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `stroke_stack` | `VecDeque<UndoRecord>` | Ordered history of undo records, most recent at the back |
-| `redo_index` | `usize` | Partition point: entries >= this index are redoable |
-| `visited` | `Vec<u32>` | Per-pixel stamp counters for intra-stroke deduplication |
-| `visited_stamp` | `u32` | Global stamp counter, incremented per stroke |
-| `drag_processed` | `Vec<u32>` | Per-pixel stamp counters for drag-gesture deduplication |
-| `drag_stamp_value` | `u32` | Stamp counter for the current drag gesture |
-| `drag_accumulator` | `Option<DragAccumulator>` | Accumulator for merging per-frame runs into one record |
+| Field              | Type                      | Purpose                                                  |
+| ------------------ | ------------------------- | -------------------------------------------------------- |
+| `stroke_stack`     | `VecDeque<UndoRecord>`    | Ordered history of undo records, most recent at the back |
+| `redo_index`       | `usize`                   | Partition point: entries >= this index are redoable      |
+| `visited`          | `Vec<u32>`                | Per-pixel stamp counters for intra-stroke deduplication  |
+| `visited_stamp`    | `u32`                     | Global stamp counter, incremented per stroke             |
+| `drag_processed`   | `Vec<u32>`                | Per-pixel stamp counters for drag-gesture deduplication  |
+| `drag_stamp_value` | `u32`                     | Stamp counter for the current drag gesture               |
+| `drag_accumulator` | `Option<DragAccumulator>` | Accumulator for merging per-frame runs into one record   |
 
 ### Invariants
 
@@ -51,21 +51,21 @@ Both `visited` and `drag_processed` are allocated as `vec![0u32; pixel_count]` i
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
+| Parameter     | Type    | Purpose                                                         |
+| ------------- | ------- | --------------------------------------------------------------- |
 | `pixel_count` | `usize` | Number of pixels in the canvas, determines visited buffer sizes |
 
 ### Initial state
 
-| Field | Initial value |
-|-------|---------------|
-| `stroke_stack` | Empty `VecDeque` |
-| `redo_index` | `0` |
-| `visited` | `vec![0u32; pixel_count]` |
-| `visited_stamp` | `1` (0 is the unvisited sentinel) |
-| `drag_processed` | `vec![0u32; pixel_count]` |
-| `drag_stamp_value` | `1` |
-| `drag_accumulator` | `None` |
+| Field              | Initial value                     |
+| ------------------ | --------------------------------- |
+| `stroke_stack`     | Empty `VecDeque`                  |
+| `redo_index`       | `0`                               |
+| `visited`          | `vec![0u32; pixel_count]`         |
+| `visited_stamp`    | `1` (0 is the unvisited sentinel) |
+| `drag_processed`   | `vec![0u32; pixel_count]`         |
+| `drag_stamp_value` | `1`                               |
+| `drag_accumulator` | `None`                            |
 
 ## `impl UndoHistory::push_undo(record)`
 
@@ -80,9 +80,9 @@ Pushes a new undo record onto the history stack and invalidates any existing red
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `record` | `UndoRecord` | The record to push onto the history stack |
+| Parameter | Type         | Purpose                                   |
+| --------- | ------------ | ----------------------------------------- |
+| `record`  | `UndoRecord` | The record to push onto the history stack |
 
 ### Stack-limit behavior
 
@@ -110,17 +110,17 @@ Buffers are only resized if the requested `pixel_count` exceeds the current buff
 
 ### Post-resize state
 
-| Field | After `resize_visited` |
-|-------|------------------------|
-| `visited` | New `vec![0u32; pixel_count]` if grown; unchanged otherwise |
-| `drag_processed` | New `vec![0u32; pixel_count]` if grown; unchanged otherwise |
-| `visited_stamp` | Reset to `1` unconditionally |
-| `drag_stamp_value` | Reset to `1` unconditionally |
+| Field              | After `resize_visited`                                      |
+| ------------------ | ----------------------------------------------------------- |
+| `visited`          | New `vec![0u32; pixel_count]` if grown; unchanged otherwise |
+| `drag_processed`   | New `vec![0u32; pixel_count]` if grown; unchanged otherwise |
+| `visited_stamp`    | Reset to `1` unconditionally                                |
+| `drag_stamp_value` | Reset to `1` unconditionally                                |
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
+| Parameter     | Type    | Purpose                                           |
+| ------------- | ------- | ------------------------------------------------- |
 | `pixel_count` | `usize` | Required number of entries in the visited buffers |
 
 ### Why unconditional stamp reset
@@ -161,12 +161,12 @@ mouse_down()
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `layer_index` | `usize` | Target layer for this drag gesture |
-| `width` | `u32` | Canvas width (stored for potential row-stride computations) |
-| `color_after` | `Color32` | Color applied by the drag stroke |
-| `is_alpha_overlay` | `bool` | Whether the drag uses alpha-overlay blending |
+| Parameter          | Type      | Purpose                                                     |
+| ------------------ | --------- | ----------------------------------------------------------- |
+| `layer_index`      | `usize`   | Target layer for this drag gesture                          |
+| `width`            | `u32`     | Canvas width (stored for potential row-stride computations) |
+| `color_after`      | `Color32` | Color applied by the drag stroke                            |
+| `is_alpha_overlay` | `bool`    | Whether the drag uses alpha-overlay blending                |
 
 ### Internal state
 
@@ -190,9 +190,9 @@ This means the most recent frame's runs appear first in the final `UndoRecord`. 
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `runs` | `Vec<RunSegment>` | Run segments captured during the current drag frame |
+| Parameter | Type              | Purpose                                             |
+| --------- | ----------------- | --------------------------------------------------- |
+| `runs`    | `Vec<RunSegment>` | Run segments captured during the current drag frame |
 
 ### Safety
 
@@ -252,14 +252,14 @@ Entries at indices `[stroke_stack.len() - redo_index, stroke_stack.len())` are r
 
 ### State transitions
 
-| Action | `redo_index` | `can_undo` | `can_redo` |
-|--------|-------------|------------|------------|
-| Initial (empty) | 0 | false | false |
-| After push | 0 | true | false |
-| After 1 undo | 1 | true (if >1 entries) | true |
-| After all undone | N (= len) | false | true |
-| After 1 redo | N-1 | true | true (if >0) |
-| After new push | 0 | true | false |
+| Action           | `redo_index` | `can_undo`           | `can_redo`   |
+| ---------------- | ------------ | -------------------- | ------------ |
+| Initial (empty)  | 0            | false                | false        |
+| After push       | 0            | true                 | false        |
+| After 1 undo     | 1            | true (if >1 entries) | true         |
+| After all undone | N (= len)    | false                | true         |
+| After 1 redo     | N-1          | true                 | true (if >0) |
+| After new push   | 0            | true                 | false        |
 
 ## `impl UndoHistory::undo_step(canvas, steps_multiplier)`
 
@@ -275,10 +275,10 @@ Applies one or more undo records from the stroke stack, restoring the canvas to 
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `canvas` | `&mut Canvas` | The canvas to restore pixels on |
-| `steps_multiplier` | `usize` | Number of undo steps to apply. In the UI, this is multiplied by scroll distance for fast-scroll undo |
+| Parameter          | Type          | Purpose                                                                                              |
+| ------------------ | ------------- | ---------------------------------------------------------------------------------------------------- |
+| `canvas`           | `&mut Canvas` | The canvas to restore pixels on                                                                      |
+| `steps_multiplier` | `usize`       | Number of undo steps to apply. In the UI, this is multiplied by scroll distance for fast-scroll undo |
 
 ### Clamping
 
@@ -304,14 +304,14 @@ Reapplies one or more previously undone records, restoring the canvas to a more 
    - Decrement `redo_index` by 1 (the record is at the new `redo_index`).
    - Call `redo_apply(canvas, &self.stroke_stack[index])` to reapply the after-pixels.
 
-The key ordering difference from undo: undo processes records from most-recent to oldest (index decreasing), while redo processes records from oldest-undone to most-recently-undone (index increasing). This is achieved by decrementing `redo_index` *before* reading the record.
+The key ordering difference from undo: undo processes records from most-recent to oldest (index decreasing), while redo processes records from oldest-undone to most-recently-undone (index increasing). This is achieved by decrementing `redo_index` _before_ reading the record.
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `canvas` | `&mut Canvas` | The canvas to reapply strokes on |
-| `steps_multiplier` | `usize` | Number of redo steps to apply |
+| Parameter          | Type          | Purpose                          |
+| ------------------ | ------------- | -------------------------------- |
+| `canvas`           | `&mut Canvas` | The canvas to reapply strokes on |
+| `steps_multiplier` | `usize`       | Number of redo steps to apply    |
 
 ### Clamping
 

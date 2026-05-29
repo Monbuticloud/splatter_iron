@@ -133,6 +133,7 @@ body. Scalar head/tail pixels (those before/after the 4-aligned boundary)
 and the single-layer fast path (`memcpy`) run on the calling thread.
 
 **Panics:**
+
 - If `layers` is empty.
 - (debug builds only) If any layer has a different pixel count from
   `layers[0]`.
@@ -165,5 +166,6 @@ rows with scalar + SIMD within each row is the preferred strategy.
 `blend_layers` which panics.
 
 **Panics:**
+
 - If any layer has fewer pixels than required by the region bounds.
 - If `output` is too small for the required byte range.

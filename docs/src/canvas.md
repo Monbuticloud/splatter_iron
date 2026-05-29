@@ -8,12 +8,12 @@ A value of `None` in `Canvas::dirty_rect` signals that the entire composite need
 
 ### Fields
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `min_x` | `u32` | Leftmost column (inclusive) |
-| `min_y` | `u32` | Topmost row (inclusive) |
+| Field   | Type  | Purpose                      |
+| ------- | ----- | ---------------------------- |
+| `min_x` | `u32` | Leftmost column (inclusive)  |
+| `min_y` | `u32` | Topmost row (inclusive)      |
 | `max_x` | `u32` | Rightmost column (inclusive) |
-| `max_y` | `u32` | Bottommost row (inclusive) |
+| `max_y` | `u32` | Bottommost row (inclusive)   |
 
 ### Invariants
 
@@ -31,12 +31,12 @@ Constructs a `DirtyRect` directly from explicit bounds.
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `min_x` | `u32` | Leftmost column (inclusive) |
-| `min_y` | `u32` | Topmost row (inclusive) |
-| `max_x` | `u32` | Rightmost column (inclusive) |
-| `max_y` | `u32` | Bottommost row (inclusive) |
+| Parameter | Type  | Purpose                      |
+| --------- | ----- | ---------------------------- |
+| `min_x`   | `u32` | Leftmost column (inclusive)  |
+| `min_y`   | `u32` | Topmost row (inclusive)      |
+| `max_x`   | `u32` | Rightmost column (inclusive) |
+| `max_y`   | `u32` | Bottommost row (inclusive)   |
 
 The caller is responsible for maintaining the invariant that `min_x <= max_x` and `min_y <= max_y` for a meaningful non-empty rect. Passing inverted bounds produces an empty rect indistinguishable from one created by `empty()`.
 
@@ -53,6 +53,7 @@ Creates an empty `DirtyRect` with inverted bounds (`min_x = MAX`, `min_y = MAX`,
 The first call to `extend(point)` will overwrite these sentinel values with the point's coordinates, transforming the rect into a single-pixel region. Until then, `is_empty()` returns `true` and `width()`/`height()` return `0`.
 
 This is the idiomatic constructor for incremental dirty tracking:
+
 ```rust
 let mut dirty = DirtyRect::empty();
 for pixel in stroke_pixels {
@@ -70,10 +71,10 @@ Expands the dirty rectangle to include the pixel at `(x, y)`. If the rect is cur
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `x` | `u32` | Column index of the affected pixel |
-| `y` | `u32` | Row index of the affected pixel |
+| Parameter | Type  | Purpose                            |
+| --------- | ----- | ---------------------------------- |
+| `x`       | `u32` | Column index of the affected pixel |
+| `y`       | `u32` | Row index of the affected pixel    |
 
 ### Performance
 
@@ -94,9 +95,9 @@ Merges two dirty rectangles into one, producing the minimal axis-aligned boundin
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `other` | `&Self` | The second rect to merge with `self` |
+| Parameter | Type    | Purpose                              |
+| --------- | ------- | ------------------------------------ |
+| `other`   | `&Self` | The second rect to merge with `self` |
 
 ### Returns
 
@@ -167,15 +168,15 @@ The type derives `Clone` for undo/redo snapshotting and `Serialize`/`Deserialize
 
 ### Fields
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `pixels` | `Vec<Layer>` | Layer stack, bottom (index 0) to top |
-| `height` | `u32` | Canvas height in pixels |
-| `width` | `u32` | Canvas width in pixels |
-| `rendered_layers` | `Option<TextureHandle>` | Cached GPU texture handle for the blended composite |
-| `output_rgba` | `Vec<u8>` | Premultiplied-alpha RGBA output buffer (width × height × 4 bytes) |
-| `dirty_rect` | `Option<DirtyRect>` | Bounding box of pixels changed since last upload; `None` triggers full re-blend |
-| `render_next_frame` | `bool` | Flag requesting full re-render on next frame |
+| Field               | Type                    | Purpose                                                                         |
+| ------------------- | ----------------------- | ------------------------------------------------------------------------------- |
+| `pixels`            | `Vec<Layer>`            | Layer stack, bottom (index 0) to top                                            |
+| `height`            | `u32`                   | Canvas height in pixels                                                         |
+| `width`             | `u32`                   | Canvas width in pixels                                                          |
+| `rendered_layers`   | `Option<TextureHandle>` | Cached GPU texture handle for the blended composite                             |
+| `output_rgba`       | `Vec<u8>`               | Premultiplied-alpha RGBA output buffer (width × height × 4 bytes)               |
+| `dirty_rect`        | `Option<DirtyRect>`     | Bounding box of pixels changed since last upload; `None` triggers full re-blend |
+| `render_next_frame` | `bool`                  | Flag requesting full re-render on next frame                                    |
 
 ### Invariants
 
@@ -193,6 +194,7 @@ fn default() -> Self
 Creates a default canvas with the dimensions `2000 × 1500` pixels and a single fully-transparent layer. The constants `DEFAULT_WIDTH` and `DEFAULT_HEIGHT` are defined at module scope in `src/canvas.rs`.
 
 The default canvas starts with:
+
 - One transparent layer (all pixels set to `Color32::TRANSPARENT`).
 - An empty `output_rgba` buffer (allocated lazily on first render).
 - No GPU texture handle (`rendered_layers: None`).
@@ -221,10 +223,10 @@ The constructor allocates `width × height` pixels for the initial layer, each s
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `width` | `u32` | Canvas width in pixels |
-| `height` | `u32` | Canvas height in pixels |
+| Parameter | Type  | Purpose                 |
+| --------- | ----- | ----------------------- |
+| `width`   | `u32` | Canvas width in pixels  |
+| `height`  | `u32` | Canvas height in pixels |
 
 ### Panics
 
@@ -243,13 +245,13 @@ Each variant selects a different drawing primitive or operation:
 
 ### Variants
 
-| Variant | Behaviour |
-|---------|-----------|
-| `Square` | Fill axis-aligned rectangles. Dispatches to [`square_brush::fill_rect`] which writes `UndoRecord` entries for every pixel in the dragged rectangle. |
-| `Circle` | Fill circles using the midpoint circle algorithm. Dispatches to [`circle_brush::fill_circle`] for span-based fill, producing an `UndoRecord`. |
-| `SquareEraser` | Erase by dragging a rectangular region. Sets affected pixels to `Color32::TRANSPARENT` with a square mask. Dispatches to [`square_brush::fill_rect`] with the eraser color. |
+| Variant        | Behaviour                                                                                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Square`       | Fill axis-aligned rectangles. Dispatches to [`square_brush::fill_rect`] which writes `UndoRecord` entries for every pixel in the dragged rectangle.                          |
+| `Circle`       | Fill circles using the midpoint circle algorithm. Dispatches to [`circle_brush::fill_circle`] for span-based fill, producing an `UndoRecord`.                                |
+| `SquareEraser` | Erase by dragging a rectangular region. Sets affected pixels to `Color32::TRANSPARENT` with a square mask. Dispatches to [`square_brush::fill_rect`] with the eraser color.  |
 | `CircleEraser` | Erase by dragging a circular region. Sets affected pixels to `Color32::TRANSPARENT` with a circular mask. Dispatches to [`circle_brush::fill_circle`] with the eraser color. |
-| `BucketFill` | Flood-fill a contiguous region of similar color using a scanline algorithm. Dispatches to [`bucket_fill::flood_fill`]. |
+| `BucketFill`   | Flood-fill a contiguous region of similar color using a scanline algorithm. Dispatches to [`bucket_fill::flood_fill`].                                                       |
 
 ### Matching
 
@@ -276,11 +278,11 @@ Controls the egui repaint cadence to balance responsiveness against power consum
 
 ### Variants
 
-| Variant | Repaint behaviour | Use case |
-|---------|-------------------|----------|
-| `ActiveWake(Duration)` | Request repaint every frame (via `ctx.request_repaint_after(dur)`). The `Duration` parameter controls the throttle — typically set to `Duration::ZERO` for immediate repaint during active brush strokes. | User is dragging a brush, erasing, or flood-filling. Every frame matters for low-latency cursor feedback. |
-| `IdleThrottled` | No continuous repaint requests. egui will still repaint on input events (mouse move, key press), but no periodic wake-up. | User has stopped drawing but the viewport is focused. Throttling saves battery/CPU without sacrificing responsiveness to the next interaction. |
-| `UnfocusedFrozen` | All GPU work suspended. The viewport (egui window) is not focused. No repaint requests are issued regardless of input. | Viewport lost focus. Zero GPU work until the user refocuses the window. |
+| Variant                | Repaint behaviour                                                                                                                                                                                         | Use case                                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ActiveWake(Duration)` | Request repaint every frame (via `ctx.request_repaint_after(dur)`). The `Duration` parameter controls the throttle — typically set to `Duration::ZERO` for immediate repaint during active brush strokes. | User is dragging a brush, erasing, or flood-filling. Every frame matters for low-latency cursor feedback.                                      |
+| `IdleThrottled`        | No continuous repaint requests. egui will still repaint on input events (mouse move, key press), but no periodic wake-up.                                                                                 | User has stopped drawing but the viewport is focused. Throttling saves battery/CPU without sacrificing responsiveness to the next interaction. |
+| `UnfocusedFrozen`      | All GPU work suspended. The viewport (egui window) is not focused. No repaint requests are issued regardless of input.                                                                                    | Viewport lost focus. Zero GPU work until the user refocuses the window.                                                                        |
 
 ### State transitions
 
@@ -305,8 +307,8 @@ Layers are composited bottom-to-top by [`blend_layers()`] — later layers overl
 
 ### Fields
 
-| Field | Type | Purpose |
-|-------|------|---------|
+| Field    | Type           | Purpose                                          |
+| -------- | -------------- | ------------------------------------------------ |
 | `pixels` | `Vec<Color32>` | Premultiplied-alpha RGBA pixels, row-major order |
 
 ### Invariants

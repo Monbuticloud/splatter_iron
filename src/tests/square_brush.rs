@@ -6,8 +6,11 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, DirtyRectList, Layer };
-use crate::tests::common::{ red, small_canvas };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRectList;
+use crate::canvas::Layer;
+use crate::tests::common::red;
+use crate::tests::common::small_canvas;
 use crate::tools::square_brush;
 
 // --- draw_square ---
@@ -53,11 +56,7 @@ fn draw_square_clamps_to_canvas_bounds() {
     square_brush::draw_square(0, 0, 100, 100, &mut canvas, red(), 0, false);
     // Last pixel should be colored (clamped)
     assert_eq!(canvas.pixels[0].pixels[99], red(), "corner clamped");
-    assert_eq!(
-        canvas.pixels[0].pixels[0],
-        red(),
-        "top-left corner colored"
-    );
+    assert_eq!(canvas.pixels[0].pixels[0], red(), "top-left corner colored");
 }
 
 /// A zero-area square should not modify any pixels.
@@ -90,8 +89,12 @@ fn draw_square_inverted_coordinates() {
 fn draw_square_multi_layer() {
     let mut canvas = Canvas {
         pixels: vec![
-            Layer { pixels: vec![Color32::TRANSPARENT; 100] },
-            Layer { pixels: vec![Color32::TRANSPARENT; 100] },
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 100],
+            },
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 100],
+            },
         ],
         height: 10,
         width: 10,
@@ -127,7 +130,21 @@ fn draw_square_line_horizontal() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
-    square_brush::draw_square_line(1, 5, 8, 5, 1, &mut canvas, red(), 0, &mut visited, 1, false, &mut drag_processed, 0);
+    square_brush::draw_square_line(
+        1,
+        5,
+        8,
+        5,
+        1,
+        &mut canvas,
+        red(),
+        0,
+        &mut visited,
+        1,
+        false,
+        &mut drag_processed,
+        0,
+    );
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 1], red(), "start");
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 8], red(), "end");
 }
@@ -138,7 +155,21 @@ fn draw_square_line_vertical() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
-    square_brush::draw_square_line(5, 1, 5, 8, 1, &mut canvas, red(), 0, &mut visited, 1, false, &mut drag_processed, 0);
+    square_brush::draw_square_line(
+        5,
+        1,
+        5,
+        8,
+        1,
+        &mut canvas,
+        red(),
+        0,
+        &mut visited,
+        1,
+        false,
+        &mut drag_processed,
+        0,
+    );
     assert_eq!(canvas.pixels[0].pixels[1 * 10 + 5], red(), "start");
     assert_eq!(canvas.pixels[0].pixels[8 * 10 + 5], red(), "end");
 }
@@ -149,7 +180,21 @@ fn draw_square_line_diagonal() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
-    square_brush::draw_square_line(1, 1, 8, 8, 1, &mut canvas, red(), 0, &mut visited, 1, false, &mut drag_processed, 0);
+    square_brush::draw_square_line(
+        1,
+        1,
+        8,
+        8,
+        1,
+        &mut canvas,
+        red(),
+        0,
+        &mut visited,
+        1,
+        false,
+        &mut drag_processed,
+        0,
+    );
     // At least the end points should be colored
     assert_eq!(canvas.pixels[0].pixels[1 * 10 + 1], red(), "start");
     assert_eq!(canvas.pixels[0].pixels[8 * 10 + 8], red(), "end");
@@ -162,7 +207,21 @@ fn draw_square_line_different_stamps_dont_interfere() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
     // First line with stamp 1
-    square_brush::draw_square_line(1, 1, 3, 1, 1, &mut canvas, red(), 0, &mut visited, 1, false, &mut drag_processed, 0);
+    square_brush::draw_square_line(
+        1,
+        1,
+        3,
+        1,
+        1,
+        &mut canvas,
+        red(),
+        0,
+        &mut visited,
+        1,
+        false,
+        &mut drag_processed,
+        0,
+    );
     // Second line with stamp 2 in a different area
     square_brush::draw_square_line(
         6,
@@ -195,7 +254,21 @@ fn draw_square_line_brush_radius() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
     // Brush radius 3 → 7x7 brush, centered at cursor
-    square_brush::draw_square_line(5, 5, 5, 5, 3, &mut canvas, red(), 0, &mut visited, 1, false, &mut drag_processed, 0);
+    square_brush::draw_square_line(
+        5,
+        5,
+        5,
+        5,
+        3,
+        &mut canvas,
+        red(),
+        0,
+        &mut visited,
+        1,
+        false,
+        &mut drag_processed,
+        0,
+    );
     // Pixel at center
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 5], red());
     // Pixel within brush radius
@@ -203,10 +276,7 @@ fn draw_square_line_brush_radius() {
     // Pixel at brush edge (within radius 3 from center at 5,5)
     assert_eq!(canvas.pixels[0].pixels[2 * 10 + 2], red(), "brush corner");
     // Pixel outside brush radius
-    assert_eq!(
-        canvas.pixels[0].pixels[1 * 10 + 1],
-        Color32::TRANSPARENT
-    );
+    assert_eq!(canvas.pixels[0].pixels[1 * 10 + 1], Color32::TRANSPARENT);
 }
 
 /// Drawing at the canvas edge with a large brush should not panic.
@@ -215,7 +285,21 @@ fn draw_square_line_clamps_to_canvas() {
     let mut canvas = small_canvas();
     let mut visited = vec![0u32; 100];
     let mut drag_processed = Vec::new();
-    square_brush::draw_square_line(0, 0, 0, 0, 5, &mut canvas, red(), 0, &mut visited, 1, false, &mut drag_processed, 0);
+    square_brush::draw_square_line(
+        0,
+        0,
+        0,
+        0,
+        5,
+        &mut canvas,
+        red(),
+        0,
+        &mut visited,
+        1,
+        false,
+        &mut drag_processed,
+        0,
+    );
     // Should not panic, corner should be colored
     assert_eq!(canvas.pixels[0].pixels[0], red());
 }
@@ -250,7 +334,21 @@ fn draw_square_line_alpha_overlay_blends() {
     let mut visited = vec![0u32; 100];
     let mut drag_processed = vec![0u32; 100];
     let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
-    square_brush::draw_square_line(1, 5, 1, 5, 1, &mut canvas, semi_red, 0, &mut visited, 1, true, &mut drag_processed, 1);
+    square_brush::draw_square_line(
+        1,
+        5,
+        1,
+        5,
+        1,
+        &mut canvas,
+        semi_red,
+        0,
+        &mut visited,
+        1,
+        true,
+        &mut drag_processed,
+        1,
+    );
     let blended = canvas.pixels[0].pixels[5 * 10 + 1];
     assert_ne!(
         blended,
@@ -271,8 +369,7 @@ fn draw_square_preserves_premultiplied_semi_transparent() {
     let semi = Color32::from_rgba_premultiplied(128, 64, 32, 128);
     square_brush::draw_square(0, 0, 5, 5, &mut canvas, semi, 0, false);
     assert_eq!(
-        canvas.pixels[0].pixels[0],
-        semi,
+        canvas.pixels[0].pixels[0], semi,
         "pixel should store exact premultiplied color"
     );
     assert_eq!(canvas.pixels[0].pixels[0].r(), 128, "r must not be darkend");
@@ -286,7 +383,19 @@ fn draw_square_line_preserves_premultiplied_semi_transparent() {
     let mut drag_processed = Vec::new();
     let semi = Color32::from_rgba_premultiplied(128, 64, 32, 128);
     square_brush::draw_square_line(
-        2, 5, 7, 5, 1, &mut canvas, semi, 0, &mut visited, 1, false, &mut drag_processed, 0,
+        2,
+        5,
+        7,
+        5,
+        1,
+        &mut canvas,
+        semi,
+        0,
+        &mut visited,
+        1,
+        false,
+        &mut drag_processed,
+        0,
     );
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 2], semi);
     assert_eq!(canvas.pixels[0].pixels[5 * 10 + 2].r(), 128);

@@ -5,8 +5,12 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, DirtyRectList, Layer };
-use crate::tests::common::{ blue, red, small_canvas };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRectList;
+use crate::canvas::Layer;
+use crate::tests::common::blue;
+use crate::tests::common::red;
+use crate::tests::common::small_canvas;
 use crate::tools::bucket_fill;
 
 /// Build a canvas with a pre-drawn 2×2 red square at (1,1)–(3,3).
@@ -78,8 +82,12 @@ fn bucket_fill_same_color_noop() {
 fn bucket_fill_multi_layer() {
     let mut canvas = Canvas {
         pixels: vec![
-            Layer { pixels: vec![Color32::TRANSPARENT; 100] },
-            Layer { pixels: vec![Color32::TRANSPARENT; 100] },
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 100],
+            },
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 100],
+            },
         ],
         height: 10,
         width: 10,
@@ -153,12 +161,15 @@ fn bucket_fill_preserves_premultiplied_semi_transparent() {
     // Fill entire canvas with semi-transparent color
     bucket_fill::draw_bucket_fill(0, 0, &mut canvas, semi, 0, false);
     assert_eq!(
-        canvas.pixels[0].pixels[0],
-        semi,
+        canvas.pixels[0].pixels[0], semi,
         "pixel should store exact premultiplied color"
     );
     assert_eq!(canvas.pixels[0].pixels[0].r(), 128, "r must not be darkend");
-    assert_eq!(canvas.pixels[0].pixels[9 * 10 + 9], semi, "far corner also preserved");
+    assert_eq!(
+        canvas.pixels[0].pixels[9 * 10 + 9],
+        semi,
+        "far corner also preserved"
+    );
 }
 
 // --- Alpha overlay ---
@@ -168,7 +179,16 @@ fn bucket_fill_preserves_premultiplied_semi_transparent() {
 fn bucket_fill_alpha_overlay_blends() {
     let mut canvas = small_canvas();
     // Pre-fill with opaque white
-    crate::tools::square_brush::draw_square(0, 0, 10, 10, &mut canvas, Color32::from_rgba_premultiplied(255, 255, 255, 255), 0, false);
+    crate::tools::square_brush::draw_square(
+        0,
+        0,
+        10,
+        10,
+        &mut canvas,
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        0,
+        false,
+    );
     let semi_red = Color32::from_rgba_premultiplied(128, 0, 0, 128);
     bucket_fill::draw_bucket_fill(0, 0, &mut canvas, semi_red, 0, true);
     let blended = canvas.pixels[0].pixels[0];
@@ -194,5 +214,9 @@ fn bucket_fill_seed_outside_bounds() {
     // Seed at (100, 100) — outside canvas — should clamp to (9, 9)
     bucket_fill::draw_bucket_fill(100, 100, &mut canvas, blue(), 0, false);
     // The clamped seed should find the red region and fill it
-    assert_eq!(canvas.pixels[0].pixels[99], blue(), "far corner filled after clamped seed");
+    assert_eq!(
+        canvas.pixels[0].pixels[99],
+        blue(),
+        "far corner filled after clamped seed"
+    );
 }

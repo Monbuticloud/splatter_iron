@@ -6,10 +6,10 @@
 
 ### Variants
 
-| Variant | Data | When used |
-|---------|------|-----------|
-| `All(Color32)` | Single color value | Every pixel in the run had the same original color (run is long enough to benefit from compression) |
-| `Many(Vec<Color32>)` | Full pixel vector | Pixels in the run had distinct colors, or the run was too short for RLE to be worthwhile |
+| Variant              | Data               | When used                                                                                           |
+| -------------------- | ------------------ | --------------------------------------------------------------------------------------------------- |
+| `All(Color32)`       | Single color value | Every pixel in the run had the same original color (run is long enough to benefit from compression) |
+| `Many(Vec<Color32>)` | Full pixel vector  | Pixels in the run had distinct colors, or the run was too short for RLE to be worthwhile            |
 
 ### Memory trade-off
 
@@ -23,10 +23,10 @@ A stroke touching many disconnected regions of the canvas produces multiple `Run
 
 ### Fields
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `start` | `u32` | Starting pixel index within the layer's flat `Vec<Color32>` (row-major order, `y * width + x`). Zero-based. |
-| `length` | `u32` | Number of contiguous pixels in this run. Must be at least 1. |
+| Field    | Type           | Purpose                                                                                                                  |
+| -------- | -------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `start`  | `u32`          | Starting pixel index within the layer's flat `Vec<Color32>` (row-major order, `y * width + x`). Zero-based.              |
+| `length` | `u32`          | Number of contiguous pixels in this run. Must be at least 1.                                                             |
 | `before` | `BeforePixels` | Compressed storage of the pixel values before the stroke modified them. See [`BeforePixels`] for the compression scheme. |
 
 ### Invariants
@@ -42,9 +42,9 @@ The compression decision uses a threshold constant `RLE_SHORT_RUN_THRESHOLD = 8`
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `pixels` | `Vec<Color32>` | Contiguous run of before-pixel colors to compress |
+| Parameter | Type           | Purpose                                           |
+| --------- | -------------- | ------------------------------------------------- |
+| `pixels`  | `Vec<Color32>` | Contiguous run of before-pixel colors to compress |
 
 ### Returns
 
@@ -52,11 +52,11 @@ The compression decision uses a threshold constant `RLE_SHORT_RUN_THRESHOLD = 8`
 
 ### Decision matrix
 
-| Condition | Result |
-|-----------|--------|
-| Run length < 8 | `Many(pixels)` — vector stored as-is |
-| All pixels equal, length ≥ 8 | `All(color)` — single color |
-| Not all equal, length ≥ 8 | `Many(pixels)` — vector must be stored |
+| Condition                    | Result                                 |
+| ---------------------------- | -------------------------------------- |
+| Run length < 8               | `Many(pixels)` — vector stored as-is   |
+| All pixels equal, length ≥ 8 | `All(color)` — single color            |
+| Not all equal, length ≥ 8    | `Many(pixels)` — vector must be stored |
 
 ### Performance
 
@@ -74,12 +74,12 @@ The `Run` variant stores a stroke as a collection of compressed contiguous pixel
 
 #### Fields
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `layer_index` | `usize` | Index of the layer that was modified, used to select the target layer in the `Canvas.pixels` array |
-| `color_after` | `Color32` | Color applied by the stroke. For opaque strokes this is written directly; for alpha overlays it is blended with the existing pixel via [`alpha_blend`] |
-| `runs` | `Vec<RunSegment>` | Compressed run-length segments preserving before-pixel data. Each segment covers a contiguous span |
-| `is_alpha_overlay` | `bool` | Whether this stroke was drawn as an alpha overlay. Controls redo behavior: `true` blends `color_after` over existing pixels; `false` overwrites them outright |
+| Field              | Type              | Purpose                                                                                                                                                       |
+| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layer_index`      | `usize`           | Index of the layer that was modified, used to select the target layer in the `Canvas.pixels` array                                                            |
+| `color_after`      | `Color32`         | Color applied by the stroke. For opaque strokes this is written directly; for alpha overlays it is blended with the existing pixel via [`alpha_blend`]        |
+| `runs`             | `Vec<RunSegment>` | Compressed run-length segments preserving before-pixel data. Each segment covers a contiguous span                                                            |
+| `is_alpha_overlay` | `bool`            | Whether this stroke was drawn as an alpha overlay. Controls redo behavior: `true` blends `color_after` over existing pixels; `false` overwrites them outright |
 
 ### Invariants
 
@@ -101,10 +101,10 @@ The `Run` variant stores a stroke as a collection of compressed contiguous pixel
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `canvas` | `&mut Canvas` | The canvas whose layer pixels will be restored |
-| `record` | `&UndoRecord` | The undo record containing before-pixel data |
+| Parameter | Type          | Purpose                                        |
+| --------- | ------------- | ---------------------------------------------- |
+| `canvas`  | `&mut Canvas` | The canvas whose layer pixels will be restored |
+| `record`  | `&UndoRecord` | The undo record containing before-pixel data   |
 
 ### Performance
 
@@ -131,10 +131,10 @@ The alpha-overlay path is deliberately slower (pixel-by-pixel iteration with fun
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|-----------|------|---------|
-| `canvas` | `&mut Canvas` | The canvas whose layer pixels will be re-stroked |
-| `record` | `&UndoRecord` | The undo record containing after-pixel data |
+| Parameter | Type          | Purpose                                          |
+| --------- | ------------- | ------------------------------------------------ |
+| `canvas`  | `&mut Canvas` | The canvas whose layer pixels will be re-stroked |
+| `record`  | `&UndoRecord` | The undo record containing after-pixel data      |
 
 ### Panics
 

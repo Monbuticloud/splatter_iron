@@ -105,7 +105,7 @@ pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
         (source_red + blend_channel(dest_red, inverse_alpha)) as u8,
         (source_green + blend_channel(dest_green, inverse_alpha)) as u8,
         (source_blue + blend_channel(dest_blue, inverse_alpha)) as u8,
-        (source_alpha + blend_channel(dest_alpha, inverse_alpha)) as u8
+        (source_alpha + blend_channel(dest_alpha, inverse_alpha)) as u8,
     )
 }
 
@@ -114,11 +114,7 @@ const PARALLEL_BLEND_THRESHOLD: usize = 64;
 
 /// SIMD blend of 4 pixels (one 16-byte chunk).
 #[inline]
-fn blend_simd_chunk(
-    output_chunk: &mut [u8],
-    layers: &[&[Color32]],
-    pixel_base: usize,
-) {
+fn blend_simd_chunk(output_chunk: &mut [u8], layers: &[&[Color32]], pixel_base: usize) {
     let bottom_layer = layers[0];
     let bottom_pixel_0 = bottom_layer[pixel_base].to_array();
     let bottom_pixel_1 = bottom_layer[pixel_base + 1].to_array();
@@ -250,7 +246,8 @@ fn blend_pixel_range(
         let simd_pixel_count = aligned_end - aligned_start;
         let simd_chunks = simd_pixel_count / 4;
         let byte_start = aligned_start * BYTES_PER_PIXEL;
-        let aligned_output = &mut output[byte_start..byte_start + simd_pixel_count * BYTES_PER_PIXEL];
+        let aligned_output =
+            &mut output[byte_start..byte_start + simd_pixel_count * BYTES_PER_PIXEL];
 
         if parallel && simd_chunks > PARALLEL_BLEND_THRESHOLD {
             aligned_output
@@ -297,14 +294,25 @@ fn blend_pixel_range(
 /// - If `output.len() != layers[0].len() * 4`.
 #[inline]
 pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8]) {
-    assert!(!layers.is_empty(), "blend_layers: at least one layer required");
+    assert!(
+        !layers.is_empty(),
+        "blend_layers: at least one layer required"
+    );
 
     let pixel_count = layers[0].len();
     #[cfg(debug_assertions)]
     for (layer_index, layer) in layers.iter().enumerate() {
-        assert_eq!(layer.len(), pixel_count, "blend_layers: layer {layer_index} length mismatch");
+        assert_eq!(
+            layer.len(),
+            pixel_count,
+            "blend_layers: layer {layer_index} length mismatch"
+        );
     }
-    assert_eq!(output.len(), pixel_count * BYTES_PER_PIXEL, "blend_layers: output length mismatch");
+    assert_eq!(
+        output.len(),
+        pixel_count * BYTES_PER_PIXEL,
+        "blend_layers: output length mismatch"
+    );
 
     blend_pixel_range(layers, output, 0, pixel_count, true);
 }

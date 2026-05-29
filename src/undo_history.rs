@@ -4,7 +4,10 @@
 use std::collections::VecDeque;
 
 use crate::canvas::Canvas;
-use crate::undo::{ redo_apply, undo_apply, RunSegment, UndoRecord };
+use crate::undo::RunSegment;
+use crate::undo::UndoRecord;
+use crate::undo::redo_apply;
+use crate::undo::undo_apply;
 
 const MAX_STROKE_STACK: usize = 1000;
 
@@ -64,7 +67,8 @@ impl UndoHistory {
     ///
     /// * `record` — The undo record to push onto the history stack.
     pub fn push_undo(&mut self, record: UndoRecord) {
-        self.stroke_stack.truncate(self.stroke_stack.len() - self.redo_index);
+        self.stroke_stack
+            .truncate(self.stroke_stack.len() - self.redo_index);
         self.stroke_stack.push_back(record);
         while self.stroke_stack.len() > MAX_STROKE_STACK {
             self.stroke_stack.pop_front();
@@ -127,7 +131,13 @@ impl UndoHistory {
     /// * `width` — Canvas width (for row-stride computations).
     /// * `color_after` — Color applied by the drag stroke.
     /// * `is_alpha_overlay` — Whether the stroke uses alpha overlay.
-    pub fn init_drag_accumulator(&mut self, layer_index: usize, width: u32, color_after: eframe::egui::Color32, is_alpha_overlay: bool) {
+    pub fn init_drag_accumulator(
+        &mut self,
+        layer_index: usize,
+        width: u32,
+        color_after: eframe::egui::Color32,
+        is_alpha_overlay: bool,
+    ) {
         self.drag_accumulator = Some(DragAccumulator {
             runs: Vec::new(),
             layer_index,

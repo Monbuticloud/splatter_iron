@@ -6,7 +6,9 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{Canvas, DirtyRectList, Layer};
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRectList;
+use crate::canvas::Layer;
 use crate::files;
 
 /// Build a 4×4 checkerboard canvas with alternating white/black opaque pixels.
@@ -56,8 +58,12 @@ fn save_load_roundtrip_identical_pixels() {
 fn save_load_roundtrip_multi_layer() {
     let canvas = Canvas {
         pixels: vec![
-            Layer { pixels: vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); 9] },
-            Layer { pixels: vec![Color32::from_rgba_premultiplied(0, 0, 255, 255); 9] },
+            Layer {
+                pixels: vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); 9],
+            },
+            Layer {
+                pixels: vec![Color32::from_rgba_premultiplied(0, 0, 255, 255); 9],
+            },
         ],
         height: 3,
         width: 3,
@@ -120,8 +126,7 @@ fn export_png_roundtrip() {
     }
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("test.png");
-    files::export_as_image(&rgba, 4, 4, &path, image::ImageFormat::Png)
-        .expect("export PNG");
+    files::export_as_image(&rgba, 4, 4, &path, image::ImageFormat::Png).expect("export PNG");
     let imported = files::import_image_as_canvas(&path).expect("import PNG");
     assert_eq!(imported.width, 4);
     assert_eq!(imported.height, 4);
@@ -145,8 +150,7 @@ fn export_jpeg_creates_file() {
     }
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("test.jpg");
-    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Jpeg)
-        .expect("export JPEG");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Jpeg).expect("export JPEG");
     assert!(path.exists());
     let metadata = std::fs::metadata(&path).expect("metadata");
     assert!(metadata.len() > 0, "JPEG file should have content");
@@ -162,8 +166,7 @@ fn export_png_semi_transparent() {
     rgba.extend_from_slice(&[0, 0, 255, 255]);
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("test.png");
-    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Png)
-        .expect("export PNG");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Png).expect("export PNG");
     let imported = files::import_image_as_canvas(&path).expect("import PNG");
     assert_eq!(imported.width, 2);
     assert_eq!(imported.height, 2);
@@ -196,8 +199,7 @@ fn export_webp_creates_file() {
     }
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("test.webp");
-    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::WebP)
-        .expect("export WebP");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::WebP).expect("export WebP");
     assert!(path.exists());
     let metadata = std::fs::metadata(&path).expect("metadata");
     assert!(metadata.len() > 0, "WebP file should have content");
@@ -212,8 +214,7 @@ fn export_gif_creates_file() {
     }
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("test.gif");
-    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Gif)
-        .expect("export GIF");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Gif).expect("export GIF");
     assert!(path.exists());
     let metadata = std::fs::metadata(&path).expect("metadata");
     assert!(metadata.len() > 0, "GIF file should have content");
@@ -228,8 +229,7 @@ fn export_tiff_creates_file() {
     }
     let dir = tempfile::tempdir().expect("temp dir");
     let path = dir.path().join("test.tiff");
-    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Tiff)
-        .expect("export TIFF");
+    files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Tiff).expect("export TIFF");
     assert!(path.exists());
     let metadata = std::fs::metadata(&path).expect("metadata");
     assert!(metadata.len() > 0, "TIFF file should have content");
@@ -267,7 +267,10 @@ fn check_export(format: image::ImageFormat, extension: &str) {
     files::export_as_image(&rgba, 4, 4, &path, format).expect(&format!("export {format:?}"));
     assert!(path.exists(), "file should exist for {format:?}");
     let metadata = std::fs::metadata(&path).expect("metadata");
-    assert!(metadata.len() > 0, "file should have content for {format:?}");
+    assert!(
+        metadata.len() > 0,
+        "file should have content for {format:?}"
+    );
 }
 
 #[test]
@@ -324,7 +327,10 @@ fn export_unsupported_format_errors() {
     let result = files::export_as_image(&rgba, 2, 2, &path, image::ImageFormat::Bmp);
     assert!(result.is_err(), "unsupported format should error");
     let err = format!("{}", result.unwrap_err());
-    assert!(err.contains("Unsupported"), "error should mention unsupported: {err}");
+    assert!(
+        err.contains("Unsupported"),
+        "error should mention unsupported: {err}"
+    );
 }
 
 /// Export with zero-width image should fail gracefully.

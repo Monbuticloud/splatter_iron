@@ -27,7 +27,7 @@ Radius 0 produces a 1×1 output mapping to source (0,0).
 
 ## `tinted_stamp_applies_color`
 
-Tinted mode multiplies stamp pixels by the tint colour: red * (128,128,128,255) → (128,0,0,255).
+Tinted mode multiplies stamp pixels by the tint colour: red \* (128,128,128,255) → (128,0,0,255).
 
 ## `alpha_overlay_blends_stamp`
 

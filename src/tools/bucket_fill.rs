@@ -3,8 +3,11 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, DirtyRect };
-use crate::undo::{ compress_run, RunSegment, UndoRecord };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRect;
+use crate::undo::RunSegment;
+use crate::undo::UndoRecord;
+use crate::undo::compress_run;
 
 /// Fill a contiguous region of matching color starting from the seed point.
 ///
@@ -97,10 +100,18 @@ pub fn draw_bucket_fill(
             pixels[span_start..span_end].fill(color);
         }
 
-        if left_x < min_x { min_x = left_x; }
-        if right_x > max_x { max_x = right_x; }
-        if y < min_y { min_y = y; }
-        if y > max_y { max_y = y; }
+        if left_x < min_x {
+            min_x = left_x;
+        }
+        if right_x > max_x {
+            max_x = right_x;
+        }
+        if y < min_y {
+            min_y = y;
+        }
+        if y > max_y {
+            max_y = y;
+        }
 
         let search_left = if left_x > 0 { left_x - 1 } else { 0 };
         let search_right = (right_x + 1).min(canvas.width - 1);

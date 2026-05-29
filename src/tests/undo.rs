@@ -5,10 +5,14 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, DirtyRectList, Layer };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRectList;
+use crate::canvas::Layer;
 use crate::tests::common::red;
 use crate::tools::square_brush;
-use crate::undo::{ self, BeforePixels, UndoRecord };
+use crate::undo::BeforePixels;
+use crate::undo::UndoRecord;
+use crate::undo::{self};
 
 /// Short runs below the threshold should return `BeforePixels::Many`.
 #[test]
@@ -25,7 +29,9 @@ fn compress_run_uniform_long_returns_all() {
     let pixels = vec![Color32::GREEN; 20];
     let (before, length) = undo::compress_run(pixels);
     assert_eq!(length, 20);
-    let BeforePixels::All(c) = before else { panic!("expected All") };
+    let BeforePixels::All(c) = before else {
+        panic!("expected All")
+    };
     assert_eq!(c, Color32::GREEN);
 }
 
@@ -33,7 +39,13 @@ fn compress_run_uniform_long_returns_all() {
 #[test]
 fn compress_run_mixed_long_returns_many() {
     let pixels: Vec<Color32> = (0..20)
-        .map(|i| if i % 2 == 0 { Color32::RED } else { Color32::BLUE })
+        .map(|i| {
+            if i % 2 == 0 {
+                Color32::RED
+            } else {
+                Color32::BLUE
+            }
+        })
         .collect();
     let (before, length) = undo::compress_run(pixels);
     assert_eq!(length, 20);
@@ -149,7 +161,10 @@ fn redo_apply_alpha_overlay_blends() {
     );
     undo::redo_apply(&mut canvas, &record);
     // After redo: should match the blended result
-    assert_eq!(canvas.pixels[0].pixels[0], after_draw, "redo blend matches original blend");
+    assert_eq!(
+        canvas.pixels[0].pixels[0], after_draw,
+        "redo blend matches original blend"
+    );
 }
 
 /// `undo_apply` with a uniform run stored as `BeforePixels::All` should restore correctly.
@@ -187,14 +202,24 @@ fn multiple_undos_stack() {
 
     // Undo second stroke
     undo::undo_apply(&mut canvas, &r2);
-    assert_eq!(canvas.pixels[0].pixels[0], red(), "first square still present");
-    assert_eq!(canvas.pixels[0].pixels[33], Color32::from_rgba_premultiplied(255, 255, 255, 255),
-        "second square area restored after undo");
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        red(),
+        "first square still present"
+    );
+    assert_eq!(
+        canvas.pixels[0].pixels[33],
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        "second square area restored after undo"
+    );
 
     // Undo first stroke
     undo::undo_apply(&mut canvas, &r1);
-    assert_eq!(canvas.pixels[0].pixels[0], Color32::from_rgba_premultiplied(255, 255, 255, 255),
-        "all pixels restored after both undos");
+    assert_eq!(
+        canvas.pixels[0].pixels[0],
+        Color32::from_rgba_premultiplied(255, 255, 255, 255),
+        "all pixels restored after both undos"
+    );
 
     // Redo both in order
     undo::redo_apply(&mut canvas, &r1);
@@ -207,7 +232,8 @@ fn multiple_undos_stack() {
 #[test]
 #[should_panic]
 fn undo_apply_corrupt_run_panics() {
-    use crate::undo::{ RunSegment, BeforePixels };
+    use crate::undo::BeforePixels;
+    use crate::undo::RunSegment;
     let mut canvas = small_white_canvas();
     let corrupt = UndoRecord::Run {
         layer_index: 0,
@@ -226,13 +252,14 @@ fn undo_apply_corrupt_run_panics() {
 #[test]
 #[should_panic]
 fn redo_apply_corrupt_run_panics() {
-    use crate::undo::{ RunSegment, BeforePixels };
+    use crate::undo::BeforePixels;
+    use crate::undo::RunSegment;
     let mut canvas = small_white_canvas();
     let corrupt = UndoRecord::Run {
         layer_index: 0,
         color_after: Color32::RED,
         runs: vec![RunSegment {
-            start: 50, // valid start
+            start: 50,   // valid start
             length: 100, // extends past 100-pixel buffer end (50+100 > 100)
             before: BeforePixels::All(Color32::WHITE),
         }],
@@ -246,7 +273,8 @@ fn redo_apply_corrupt_run_panics() {
 #[test]
 #[should_panic]
 fn undo_apply_before_pixels_many_wrong_length_panics() {
-    use crate::undo::{ RunSegment, BeforePixels };
+    use crate::undo::BeforePixels;
+    use crate::undo::RunSegment;
     let mut canvas = small_white_canvas();
     let corrupt = UndoRecord::Run {
         layer_index: 0,
@@ -267,13 +295,16 @@ fn compress_run_identical_long() {
     let pixels = vec![Color32::from_rgba_premultiplied(42, 100, 200, 128); 15];
     let (before, length) = undo::compress_run(pixels);
     assert_eq!(length, 15);
-    assert!(matches!(before, BeforePixels::All(c) if c == Color32::from_rgba_premultiplied(42, 100, 200, 128)));
+    assert!(
+        matches!(before, BeforePixels::All(c) if c == Color32::from_rgba_premultiplied(42, 100, 200, 128))
+    );
 }
 
 /// Undo on a record where length of the run is 0 (empty run).
 #[test]
 fn undo_apply_empty_run_noop() {
-    use crate::undo::{ RunSegment, BeforePixels };
+    use crate::undo::BeforePixels;
+    use crate::undo::RunSegment;
     let mut canvas = small_white_canvas();
     let record = UndoRecord::Run {
         layer_index: 0,
@@ -297,7 +328,8 @@ fn undo_apply_empty_run_noop() {
 /// `redo_apply` with empty run.
 #[test]
 fn redo_apply_empty_run_noop() {
-    use crate::undo::{ RunSegment, BeforePixels };
+    use crate::undo::BeforePixels;
+    use crate::undo::RunSegment;
     let mut canvas = small_white_canvas();
     let record = UndoRecord::Run {
         layer_index: 0,

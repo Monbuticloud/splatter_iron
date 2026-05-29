@@ -1,11 +1,14 @@
 //! Tests for application-level constants, UI state defaults, and export
 //! format metadata.
 
-use crate::app::{
-    EXPORT_FORMATS, IMPORT_EXTENSIONS, UIState, PendingStamp, ExportInformation,
-};
-use crate::canvas::RenderState;
 use eframe::egui::Color32;
+
+use crate::app::EXPORT_FORMATS;
+use crate::app::ExportInformation;
+use crate::app::IMPORT_EXTENSIONS;
+use crate::app::PendingStamp;
+use crate::app::UIState;
+use crate::canvas::RenderState;
 
 /// Default UIState should have IdleThrottled render state, zero elapsed
 /// time, no autosaves, no pending layer deletion, and default canvas size.
@@ -48,9 +51,15 @@ fn pending_stamp_construction() {
 /// All EXPORT_FORMATS entries should have at least one extension.
 #[test]
 fn export_formats_all_have_extensions() {
-    assert!(!EXPORT_FORMATS.is_empty(), "should have at least one format");
+    assert!(
+        !EXPORT_FORMATS.is_empty(),
+        "should have at least one format"
+    );
     for (label, info) in EXPORT_FORMATS {
-        assert!(!info.extensions.is_empty(), "format {label} has no extensions");
+        assert!(
+            !info.extensions.is_empty(),
+            "format {label} has no extensions"
+        );
     }
 }
 
@@ -83,7 +92,10 @@ fn export_information_extensions() {
 /// IMPORT_EXTENSIONS should contain common image file extensions.
 #[test]
 fn import_extensions_non_empty() {
-    assert!(!IMPORT_EXTENSIONS.is_empty(), "should have import extensions");
+    assert!(
+        !IMPORT_EXTENSIONS.is_empty(),
+        "should have import extensions"
+    );
     // Check a few expected formats
     let expected = ["png", "jpg", "jpeg", "webp", "gif"];
     for ext in &expected {

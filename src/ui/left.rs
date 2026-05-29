@@ -7,7 +7,8 @@ use eframe::egui;
 use crate::app::MyApp;
 use crate::canvas::CurrentTool;
 use crate::file_io::PendingFileAction;
-use crate::stamp_library::{ StampSampling, StampTintMode };
+use crate::stamp_library::StampSampling;
+use crate::stamp_library::StampTintMode;
 
 /// Selection highlight color for active tool buttons.
 const SELECTED_TOOL_COLOR: egui::Color32 = egui::Color32::from_rgb(128, 0, 128);
@@ -79,7 +80,12 @@ impl MyApp {
                     self.stamp_library.selected_index(),
                     |index| {
                         let entry = &self.stamp_library.entries()[index];
-                        (entry.name.clone(), entry.texture_id(), entry.width, entry.height)
+                        (
+                            entry.name.clone(),
+                            entry.texture_id(),
+                            entry.width,
+                            entry.height,
+                        )
                     },
                     &mut cmd_select,
                     &mut cmd_delete,
@@ -134,7 +140,12 @@ impl MyApp {
                     self.brush_library.selected_index(),
                     |index| {
                         let entry = &self.brush_library.entries()[index];
-                        (entry.name.clone(), entry.texture_id(), entry.width, entry.height)
+                        (
+                            entry.name.clone(),
+                            entry.texture_id(),
+                            entry.width,
+                            entry.height,
+                        )
                     },
                     &mut cmd_select,
                     &mut cmd_delete,
@@ -199,12 +210,9 @@ impl MyApp {
                             ui.horizontal(|ui| {
                                 if let Some(tid) = tex_id {
                                     let response = ui.add(
-                                        egui::Image::new((
-                                            tid,
-                                            egui::vec2(w as f32, h as f32),
-                                        ))
-                                        .fit_to_exact_size(thumbnail_size)
-                                        .sense(egui::Sense::click()),
+                                        egui::Image::new((tid, egui::vec2(w as f32, h as f32)))
+                                            .fit_to_exact_size(thumbnail_size)
+                                            .sense(egui::Sense::click()),
                                     );
                                     if response.clicked() {
                                         *cmd_select = Some(index);
@@ -234,16 +242,8 @@ impl MyApp {
                 StampSampling::Bilinear => "Bilinear",
             })
             .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    sampling,
-                    StampSampling::Nearest,
-                    "Nearest",
-                );
-                ui.selectable_value(
-                    sampling,
-                    StampSampling::Bilinear,
-                    "Bilinear",
-                );
+                ui.selectable_value(sampling, StampSampling::Nearest, "Nearest");
+                ui.selectable_value(sampling, StampSampling::Bilinear, "Bilinear");
             });
     }
 }

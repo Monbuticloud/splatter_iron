@@ -5,9 +5,12 @@
 
 use eframe::egui::Color32;
 
-use crate::canvas::{ Canvas, DirtyRect };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRect;
 use crate::stamp_library::StampSampling;
-use crate::undo::{ compress_run, RunSegment, UndoRecord };
+use crate::undo::RunSegment;
+use crate::undo::UndoRecord;
+use crate::undo::compress_run;
 
 /// Nearest-neighbour sampling: take the closest source pixel.
 fn sample_nearest(
@@ -43,7 +46,8 @@ fn sample_bilinear(
     let bot_left = stamp_pixels[(y1 * stamp_width + x0) as usize];
     let bot_right = stamp_pixels[(y1 * stamp_width + x1) as usize];
 
-    let lerp = |a: u32, b: u32, t: f64| -> u8 { ((a as f64 * (1.0 - t) + b as f64 * t) + 0.5) as u8 };
+    let lerp =
+        |a: u32, b: u32, t: f64| -> u8 { ((a as f64 * (1.0 - t) + b as f64 * t) + 0.5) as u8 };
 
     // Top row lerp
     let tr = lerp(top_left.r() as u32, top_right.r() as u32, fx);
@@ -112,7 +116,11 @@ fn stamp_at(
     let out_bottom = out_top + output_h as i64 - 1;
 
     // Completely off-screen — nothing to do
-    if out_right < 0 || out_left >= canvas_width as i64 || out_bottom < 0 || out_top >= canvas_height as i64 {
+    if out_right < 0
+        || out_left >= canvas_width as i64
+        || out_bottom < 0
+        || out_top >= canvas_height as i64
+    {
         return;
     }
 
@@ -149,7 +157,8 @@ fn stamp_at(
         let mut before = Vec::new();
 
         // Precompute src_y once per row (O(height) vs O(width*height)).
-        let src_y = ((((y as i64) - out_top) as f64 * float_scale_y).round() as u32).min(stamp_height - 1);
+        let src_y =
+            ((((y as i64) - out_top) as f64 * float_scale_y).round() as u32).min(stamp_height - 1);
         let src_y_f = ((y as i64) - out_top) as f64 * float_scale_y;
 
         for (_x_idx, x) in (left..=right).enumerate() {
@@ -159,7 +168,11 @@ fn stamp_at(
             if visited[idx] == stamp {
                 if let Some(rs) = run_start.take() {
                     let (rle_before, length) = compress_run(std::mem::take(&mut before));
-                    runs.push(RunSegment { start: rs, length, before: rle_before });
+                    runs.push(RunSegment {
+                        start: rs,
+                        length,
+                        before: rle_before,
+                    });
                 }
                 continue;
             }
@@ -168,7 +181,11 @@ fn stamp_at(
             if alpha_overlay && drag_processed[idx] == drag_stamp_value {
                 if let Some(rs) = run_start.take() {
                     let (rle_before, length) = compress_run(std::mem::take(&mut before));
-                    runs.push(RunSegment { start: rs, length, before: rle_before });
+                    runs.push(RunSegment {
+                        start: rs,
+                        length,
+                        before: rle_before,
+                    });
                 }
                 continue;
             }
@@ -180,9 +197,7 @@ fn stamp_at(
                 }
                 StampSampling::Bilinear => {
                     let src_x_f = ((x as i64) - out_left) as f64 * float_scale_x;
-                    sample_bilinear(
-                        src_x_f, src_y_f, stamp_pixels, stamp_width, stamp_height,
-                    )
+                    sample_bilinear(src_x_f, src_y_f, stamp_pixels, stamp_width, stamp_height)
                 }
             };
 
@@ -220,7 +235,11 @@ fn stamp_at(
 
         if let Some(rs) = run_start.take() {
             let (rle_before, length) = compress_run(before);
-            runs.push(RunSegment { start: rs, length, before: rle_before });
+            runs.push(RunSegment {
+                start: rs,
+                length,
+                before: rle_before,
+            });
         }
     }
 }
@@ -285,11 +304,16 @@ pub fn draw_stamp_line(
     let layer_pixels = &mut canvas.pixels[layer].pixels;
 
     let output_w = radius.max(1);
-    let output_h = ((stamp_height as f64 * output_w as f64 / stamp_width as f64).round() as u32).max(1);
+    let output_h =
+        ((stamp_height as f64 * output_w as f64 / stamp_width as f64).round() as u32).max(1);
 
     // Dynamic step spacing: opaque mode stamps edge-to-edge; alpha overlay
     // stamps half-overlapping for smoother blends.
-    let step = if alpha_overlay { (output_w / 2).max(1) } else { output_w.max(1) };
+    let step = if alpha_overlay {
+        (output_w / 2).max(1)
+    } else {
+        output_w.max(1)
+    };
 
     let mut runs: Vec<RunSegment> = Vec::new();
     let mut dirty_rect = DirtyRect::empty();

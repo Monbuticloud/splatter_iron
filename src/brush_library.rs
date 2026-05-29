@@ -3,8 +3,11 @@
 
 use std::path::Path;
 
-use eframe::egui::{self, Color32, TextureHandle};
-use serde::{Deserialize, Serialize};
+use eframe::egui::Color32;
+use eframe::egui::TextureHandle;
+use eframe::egui::{self};
+use serde::Deserialize;
+use serde::Serialize;
 
 const BRUSHES_DIR_NAME: &str = "brushes";
 const INDEX_FILE_NAME: &str = "index.json";
@@ -111,7 +114,11 @@ impl BrushLibrary {
         }
 
         let selected_index = if brushes.is_empty() { None } else { Some(0) };
-        Self { brushes, selected_index, brushes_dir }
+        Self {
+            brushes,
+            selected_index,
+            brushes_dir,
+        }
     }
 
     /// Create egui textures for all brush entries that don't have one yet.
@@ -133,9 +140,8 @@ impl BrushLibrary {
                     [entry.width as usize, entry.height as usize],
                     &raw,
                 );
-                entry.texture_handle = Some(
-                    ctx.load_texture(&entry.name, image, egui::TextureOptions::LINEAR),
-                );
+                entry.texture_handle =
+                    Some(ctx.load_texture(&entry.name, image, egui::TextureOptions::LINEAR));
             }
         }
     }
@@ -178,10 +184,8 @@ impl BrushLibrary {
         let _ = image::save_buffer(&png_path, &raw, width, height, image::ColorType::Rgba8);
 
         // Create egui texture for preview
-        let image = egui::ColorImage::from_rgba_unmultiplied(
-            [width as usize, height as usize],
-            &raw,
-        );
+        let image =
+            egui::ColorImage::from_rgba_unmultiplied([width as usize, height as usize], &raw);
         let tex = ctx.load_texture(&name, image, egui::TextureOptions::LINEAR);
 
         let entry = BrushEntry {
@@ -224,7 +228,11 @@ impl BrushLibrary {
         // Adjust selection
         if let Some(sel) = self.selected_index {
             if sel == index {
-                self.selected_index = if self.brushes.is_empty() { None } else { Some(0) };
+                self.selected_index = if self.brushes.is_empty() {
+                    None
+                } else {
+                    Some(0)
+                };
             } else if sel > index {
                 self.selected_index = Some(sel - 1);
             }

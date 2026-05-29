@@ -10,7 +10,11 @@ use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::document::Document;
-use crate::file_io::{ DialogResult, FileIO, PendingFileAction, SaveKind, SaveResult };
+use crate::file_io::DialogResult;
+use crate::file_io::FileIO;
+use crate::file_io::PendingFileAction;
+use crate::file_io::SaveKind;
+use crate::file_io::SaveResult;
 use crate::undo_history::UndoHistory;
 
 /// Create a `FileIO` with test channels and return it plus senders for
@@ -20,7 +24,13 @@ fn test_file_io() -> (FileIO, mpsc::Sender<DialogResult>, mpsc::Sender<SaveResul
     let (save_sender, save_receiver) = mpsc::channel();
     let dialog_sender_clone = dialog_sender.clone();
     let save_sender_clone = save_sender.clone();
-    let file_io = FileIO::new(dialog_sender, dialog_receiver, save_sender, save_receiver, PathBuf::from("/tmp"));
+    let file_io = FileIO::new(
+        dialog_sender,
+        dialog_receiver,
+        save_sender,
+        save_receiver,
+        PathBuf::from("/tmp"),
+    );
     (file_io, dialog_sender_clone, save_sender_clone)
 }
 
@@ -47,7 +57,9 @@ fn poll_save_results_manual_save_sets_path() {
     let mut errors = Vec::new();
     let path = PathBuf::from("/tmp/test.splattercanvas");
 
-    save_sender.send(SaveResult::ManualSave(path.clone())).unwrap();
+    save_sender
+        .send(SaveResult::ManualSave(path.clone()))
+        .unwrap();
     file_io.poll_save_results(&mut document, &mut errors);
 
     assert_eq!(document.savefile_path, path.display().to_string());
@@ -61,7 +73,9 @@ fn poll_save_results_failed_appends_error() {
     let mut document = Document::new(Canvas::new(10, 10));
     let mut errors = Vec::new();
 
-    save_sender.send(SaveResult::Failed("disk full".into())).unwrap();
+    save_sender
+        .send(SaveResult::Failed("disk full".into()))
+        .unwrap();
     file_io.poll_save_results(&mut document, &mut errors);
 
     assert!(errors.iter().any(|e| e.contains("disk full")));
@@ -84,13 +98,23 @@ fn poll_save_results_no_messages_is_noop() {
 fn poll_dialog_results_save_triggers_async_save() {
     let (dialog_sender, dialog_receiver) = mpsc::channel();
     let (save_sender, save_receiver) = mpsc::channel();
-    let mut file_io = FileIO::new(dialog_sender.clone(), dialog_receiver, save_sender, save_receiver, PathBuf::from("/tmp"));
+    let mut file_io = FileIO::new(
+        dialog_sender.clone(),
+        dialog_receiver,
+        save_sender,
+        save_receiver,
+        PathBuf::from("/tmp"),
+    );
     file_io.pending_file_action = Some(PendingFileAction::Save);
     let mut document = Document::new(Canvas::new(10, 10));
     let mut undo = UndoHistory::new(100);
     let mut errors = Vec::new();
 
-    dialog_sender.send(DialogResult::Picked(PathBuf::from("/tmp/test.splattercanvas"))).unwrap();
+    dialog_sender
+        .send(DialogResult::Picked(PathBuf::from(
+            "/tmp/test.splattercanvas",
+        )))
+        .unwrap();
     file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
 
     // pending_file_action should have been consumed
@@ -108,7 +132,11 @@ fn poll_dialog_results_mismatched_pending_skips() {
 
     // Send a dialog result without setting matching pending action
     // pending_file_action was set to Load, but we'll set it to None after taking
-    dialog_sender.send(DialogResult::Picked(PathBuf::from("/tmp/test.splattercanvas"))).unwrap();
+    dialog_sender
+        .send(DialogResult::Picked(PathBuf::from(
+            "/tmp/test.splattercanvas",
+        )))
+        .unwrap();
     file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
 
     // No error, message consumed but skipped because pending didn't match
@@ -153,7 +181,12 @@ fn poll_dialog_results_stamp_pixels_sets_loaded() {
 
     let pixels = vec![Color32::RED; 4];
     dialog_sender
-        .send(DialogResult::StampPixels(pixels.clone(), 2, 2, "stamp_name".to_string()))
+        .send(DialogResult::StampPixels(
+            pixels.clone(),
+            2,
+            2,
+            "stamp_name".to_string(),
+        ))
         .unwrap();
     file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
 
@@ -189,7 +222,8 @@ fn poll_dialog_results_error_appends() {
 /// should load and replace the document canvas.
 #[test]
 fn poll_dialog_results_load_replaces_canvas() {
-    use crate::files::{ save_canvas_to_bytes, save_bytes_to_file };
+    use crate::files::save_bytes_to_file;
+    use crate::files::save_canvas_to_bytes;
     let (mut file_io, dialog_sender, _) = test_file_io();
     let mut document = Document::new(Canvas::new(10, 10));
     let mut undo = UndoHistory::new(100);
@@ -227,8 +261,7 @@ fn poll_dialog_results_import_replaces_canvas() {
     let rgba = vec![255u8; 16]; // 2x2 white opaque
     let dir = tempfile::tempdir().expect("temp dir");
     let img_path = dir.path().join("test_import.png");
-    export_as_image(&rgba, 2, 2, &img_path, image::ImageFormat::Png)
-        .expect("create test image");
+    export_as_image(&rgba, 2, 2, &img_path, image::ImageFormat::Png).expect("create test image");
 
     file_io.pending_file_action = Some(PendingFileAction::Import);
     dialog_sender.send(DialogResult::Picked(img_path)).unwrap();
@@ -289,7 +322,9 @@ fn poll_save_results_manual_save_empty_path() {
     let mut document = Document::new(Canvas::new(10, 10));
     let mut errors = Vec::new();
 
-    save_sender.send(SaveResult::ManualSave(PathBuf::new())).unwrap();
+    save_sender
+        .send(SaveResult::ManualSave(PathBuf::new()))
+        .unwrap();
     file_io.poll_save_results(&mut document, &mut errors);
 
     // Path should be set to empty string representation

@@ -2,10 +2,14 @@
 //! [`draw_square_line`] for Bresenham-interpolated strokes with
 //! visited-stamp deduplication.
 
-use eframe::egui::{self, Color32};
+use eframe::egui::Color32;
+use eframe::egui::{self};
 
-use crate::canvas::{ Canvas, DirtyRect };
-use crate::undo::{ compress_run, RunSegment, UndoRecord };
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRect;
+use crate::undo::RunSegment;
+use crate::undo::UndoRecord;
+use crate::undo::compress_run;
 
 /// Fill a rectangular region of a pixel slice without capturing undo data.
 ///
@@ -201,7 +205,16 @@ pub fn draw_square(
     }
 
     // Fill the rectangle (efficient contiguous write)
-    fill_square_impl(pixels, width, start_x, end_x, start_y, end_y, color, alpha_overlay);
+    fill_square_impl(
+        pixels,
+        width,
+        start_x,
+        end_x,
+        start_y,
+        end_y,
+        color,
+        alpha_overlay,
+    );
 
     let rect = DirtyRect::new(start_x, start_y, end_x - 1, end_y - 1);
     canvas.dirty_rect.add(rect);
@@ -310,7 +323,11 @@ pub fn draw_square_line(
                 x += 1;
             }
             let (rle_before, length) = compress_run(before);
-            runs.push(RunSegment { start: run_start, length, before: rle_before });
+            runs.push(RunSegment {
+                start: run_start,
+                length,
+                before: rle_before,
+            });
         }
     }
 

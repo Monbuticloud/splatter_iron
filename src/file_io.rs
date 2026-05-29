@@ -1,17 +1,18 @@
 //! Async file-dialog and save handling via mpsc channels.  Manages save-to-
 //! current-path, save-as, load, and autosave workflows with result polling.
 
-use std::path::{ Path, PathBuf };
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::mpsc;
 
 use chrono::Local;
-
 use eframe::egui::Color32;
 
-use crate::app::{
-    CANVAS_EXTENSION, EXPORT_FORMATS, FILE_FILTER_NAME, DEFAULT_CANVAS_NAME,
-    IMPORT_EXTENSIONS,
-};
+use crate::app::CANVAS_EXTENSION;
+use crate::app::DEFAULT_CANVAS_NAME;
+use crate::app::EXPORT_FORMATS;
+use crate::app::FILE_FILTER_NAME;
+use crate::app::IMPORT_EXTENSIONS;
 use crate::document::Document;
 use crate::tools::brush_parsers::BrushTip;
 use crate::undo_history::UndoHistory;
@@ -115,8 +116,7 @@ impl FileIO {
         save_result_sender: mpsc::Sender<SaveResult>,
         save_result_receiver: mpsc::Receiver<SaveResult>,
         app_local_data_directory: PathBuf,
-    ) -> Self
-    {
+    ) -> Self {
         Self {
             pending_file_action: None,
             dialog_sender,
@@ -145,12 +145,13 @@ impl FileIO {
             PendingFileAction::Save => {
                 self.pending_file_action = Some(PendingFileAction::Save);
                 std::thread::spawn(move || {
-                    if
-                        let Some(path) = rfd::FileDialog
-                            ::new()
-                            .add_filter(FILE_FILTER_NAME, &[CANVAS_EXTENSION.trim_start_matches('.')])
-                            .set_file_name(DEFAULT_CANVAS_NAME)
-                            .save_file()
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(
+                            FILE_FILTER_NAME,
+                            &[CANVAS_EXTENSION.trim_start_matches('.')],
+                        )
+                        .set_file_name(DEFAULT_CANVAS_NAME)
+                        .save_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
                     }
@@ -159,11 +160,12 @@ impl FileIO {
             PendingFileAction::Load => {
                 self.pending_file_action = Some(PendingFileAction::Load);
                 std::thread::spawn(move || {
-                    if
-                        let Some(path) = rfd::FileDialog
-                            ::new()
-                            .add_filter(FILE_FILTER_NAME, &[CANVAS_EXTENSION.trim_start_matches('.')])
-                            .pick_file()
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(
+                            FILE_FILTER_NAME,
+                            &[CANVAS_EXTENSION.trim_start_matches('.')],
+                        )
+                        .pick_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
                     }
@@ -172,11 +174,9 @@ impl FileIO {
             PendingFileAction::Import => {
                 self.pending_file_action = Some(PendingFileAction::Import);
                 std::thread::spawn(move || {
-                    if
-                        let Some(path) = rfd::FileDialog
-                            ::new()
-                            .add_filter("Images", IMPORT_EXTENSIONS)
-                            .pick_file()
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("Images", IMPORT_EXTENSIONS)
+                        .pick_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
                     }
@@ -188,12 +188,10 @@ impl FileIO {
                 let extensions: Vec<&str> = information.extensions.to_vec();
                 let default_name = format!("export.{}", information.extensions[0]);
                 std::thread::spawn(move || {
-                    if
-                        let Some(path) = rfd::FileDialog
-                            ::new()
-                            .add_filter(EXPORT_FORMATS[index].0, &extensions)
-                            .set_file_name(&default_name)
-                            .save_file()
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(EXPORT_FORMATS[index].0, &extensions)
+                        .set_file_name(&default_name)
+                        .save_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
                     }
@@ -202,11 +200,9 @@ impl FileIO {
             PendingFileAction::LoadBrush => {
                 self.pending_file_action = Some(PendingFileAction::LoadBrush);
                 std::thread::spawn(move || {
-                    if
-                        let Some(path) = rfd::FileDialog
-                            ::new()
-                            .add_filter("Brush Files", &["abr", "gbr"])
-                            .pick_file()
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("Brush Files", &["abr", "gbr"])
+                        .pick_file()
                     {
                         // Parse the brush file in the background thread
                         match crate::tools::brush_parsers::parse_brush_file(&path) {
@@ -214,9 +210,9 @@ impl FileIO {
                                 let _ = sender.send(DialogResult::BrushTips(tips));
                             }
                             Err(error) => {
-                                let _ = sender.send(DialogResult::Error(
-                                    format!("Failed to load brush: {error}"),
-                                ));
+                                let _ = sender.send(DialogResult::Error(format!(
+                                    "Failed to load brush: {error}"
+                                )));
                             }
                         }
                     }
@@ -225,11 +221,9 @@ impl FileIO {
             PendingFileAction::LoadStamp => {
                 self.pending_file_action = Some(PendingFileAction::LoadStamp);
                 std::thread::spawn(move || {
-                    if
-                        let Some(path) = rfd::FileDialog
-                            ::new()
-                            .add_filter("Images", IMPORT_EXTENSIONS)
-                            .pick_file()
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter("Images", IMPORT_EXTENSIONS)
+                        .pick_file()
                     {
                         // Decode the image in the background thread to avoid
                         // blocking the UI frame.
@@ -252,9 +246,9 @@ impl FileIO {
                                 let _ = sender.send(DialogResult::StampPixels(pixels, w, h, name));
                             }
                             Err(error) => {
-                                let _ = sender.send(DialogResult::Error(
-                                    format!("Failed to load stamp: {error}"),
-                                ));
+                                let _ = sender.send(DialogResult::Error(format!(
+                                    "Failed to load stamp: {error}"
+                                )));
                             }
                         }
                     }
@@ -308,31 +302,23 @@ impl FileIO {
                             };
                             self.trigger_async_save(document, SaveKind::ManualSave(save_path));
                         }
-                        PendingFileAction::Load => {
-                            match crate::files::load_data_from_file(&path) {
-                                Ok(data) => {
-                                    match crate::files::load_app_from_data(&data) {
-                                        Ok(canvas) => {
-                                            let save_path = path.display().to_string();
-                                            document.replace_canvas(canvas, undo);
-                                            document.savefile_path = save_path;
-                                        }
-                                Err(error) => error_list.push(
-                                    format!("Failed to load canvas: {error}")
-                                ),
-                            }
-                        }
-                        Err(error) => error_list.push(
-                            format!("Failed to read file: {error}")
-                                ),
-                            }
-                        }
+                        PendingFileAction::Load => match crate::files::load_data_from_file(&path) {
+                            Ok(data) => match crate::files::load_app_from_data(&data) {
+                                Ok(canvas) => {
+                                    let save_path = path.display().to_string();
+                                    document.replace_canvas(canvas, undo);
+                                    document.savefile_path = save_path;
+                                }
+                                Err(error) => {
+                                    error_list.push(format!("Failed to load canvas: {error}"))
+                                }
+                            },
+                            Err(error) => error_list.push(format!("Failed to read file: {error}")),
+                        },
                         PendingFileAction::Import => {
                             match crate::files::import_image_as_canvas(&path) {
                                 Ok(canvas) => document.replace_canvas(canvas, undo),
-                                Err(error) => error_list.push(
-                                    format!("Import failed: {error}")
-                                ),
+                                Err(error) => error_list.push(format!("Import failed: {error}")),
                             }
                         }
                         PendingFileAction::Export(index) => {
@@ -342,25 +328,23 @@ impl FileIO {
                             let information = &EXPORT_FORMATS[index].1;
                             let default_extension = information.extensions[0];
                             let path_string = path.display().to_string();
-                            let path_string = if
-                                information.extensions.iter().any(|ext| path_string.ends_with(ext))
+                            let path_string = if information
+                                .extensions
+                                .iter()
+                                .any(|ext| path_string.ends_with(ext))
                             {
                                 path_string
                             } else {
                                 format!("{path_string}.{default_extension}")
                             };
-                            if
-                                let Err(error) = crate::files::export_as_image(
-                                    &document.canvas.output_rgba,
-                                    document.canvas.width,
-                                    document.canvas.height,
-                                    Path::new(&path_string),
-                                    information.fmt
-                                )
-                            {
-                                error_list.push(
-                                    format!("Export failed: {error}")
-                                );
+                            if let Err(error) = crate::files::export_as_image(
+                                &document.canvas.output_rgba,
+                                document.canvas.width,
+                                document.canvas.height,
+                                Path::new(&path_string),
+                                information.fmt,
+                            ) {
+                                error_list.push(format!("Export failed: {error}"));
                             }
                         }
                         PendingFileAction::LoadStamp => {
@@ -389,24 +373,26 @@ impl FileIO {
     pub fn trigger_async_save(&self, document: &Document, kind: SaveKind) {
         let canvas = document.canvas.clone();
         let path = match &kind {
-            SaveKind::Autosave =>
+            SaveKind::Autosave => {
                 self.app_local_data_directory
                     .join(AUTOSAVE_DIRECTORY)
-                    .join(format!("{}.splattercanvas", Local::now().format(AUTOSAVE_DATE_FORMAT))),
+                    .join(format!(
+                        "{}.splattercanvas",
+                        Local::now().format(AUTOSAVE_DATE_FORMAT)
+                    ))
+            }
             SaveKind::ManualSave(save_path) => save_path.clone(),
         };
         let sender = self.save_result_sender.clone();
         std::thread::spawn(move || {
             let result = match crate::files::save_canvas_to_bytes(&canvas) {
-                Ok(data) =>
-                    match crate::files::save_bytes_to_file(&data, &path) {
-                        Ok(()) =>
-                            match kind {
-                                SaveKind::Autosave => SaveResult::Autosave,
-                                SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
-                            }
-                        Err(error) => SaveResult::Failed(format!("Write failed: {error}")),
-                    }
+                Ok(data) => match crate::files::save_bytes_to_file(&data, &path) {
+                    Ok(()) => match kind {
+                        SaveKind::Autosave => SaveResult::Autosave,
+                        SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
+                    },
+                    Err(error) => SaveResult::Failed(format!("Write failed: {error}")),
+                },
                 Err(error) => SaveResult::Failed(format!("Serialisation failed: {error}")),
             };
             let _ = sender.send(result);
@@ -422,7 +408,10 @@ impl FileIO {
     /// * `document` — The document whose canvas will be saved.
     pub fn save_to_current_path(&self, document: &Document) {
         if !document.savefile_path.is_empty() {
-            self.trigger_async_save(document, SaveKind::ManualSave(PathBuf::from(&document.savefile_path)));
+            self.trigger_async_save(
+                document,
+                SaveKind::ManualSave(PathBuf::from(&document.savefile_path)),
+            );
         }
     }
 

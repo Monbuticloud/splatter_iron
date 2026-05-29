@@ -4,7 +4,8 @@
 use eframe::egui::Color32;
 
 use crate::canvas::CurrentTool;
-use crate::stamp_library::{ StampSampling, StampTintMode };
+use crate::stamp_library::StampSampling;
+use crate::stamp_library::StampTintMode;
 
 /// Current tool selection, color, brush radius, undo/redo step count, and UI interaction state.
 pub struct ToolConfiguration {

@@ -34,14 +34,14 @@ The implementation is a classic scanline flood-fill:
 
 ### Parameters
 
-| Parameter | Type | Purpose |
-|---|---|---|
-| `seed_x` | `u32` | Column of the starting fill point. Clamped to `[0, canvas.width - 1]`. |
-| `seed_y` | `u32` | Row of the starting fill point. Clamped to `[0, canvas.height - 1]`. |
-| `canvas` | `&mut Canvas` | The canvas whose pixels will be modified. |
-| `color` | `Color32` | Fill colour in premultiplied-alpha format. |
-| `layer` | `usize` | Index of the target layer. |
-| `alpha_overlay` | `bool` | When true, alpha-blends `color` over existing pixels instead of overwriting. |
+| Parameter       | Type          | Purpose                                                                      |
+| --------------- | ------------- | ---------------------------------------------------------------------------- |
+| `seed_x`        | `u32`         | Column of the starting fill point. Clamped to `[0, canvas.width - 1]`.       |
+| `seed_y`        | `u32`         | Row of the starting fill point. Clamped to `[0, canvas.height - 1]`.         |
+| `canvas`        | `&mut Canvas` | The canvas whose pixels will be modified.                                    |
+| `color`         | `Color32`     | Fill colour in premultiplied-alpha format.                                   |
+| `layer`         | `usize`       | Index of the target layer.                                                   |
+| `alpha_overlay` | `bool`        | When true, alpha-blends `color` over existing pixels instead of overwriting. |
 
 ### Returns
 

@@ -3,8 +3,10 @@
 
 use std::time::Duration;
 
-use eframe::egui::{ Color32, TextureHandle };
-use serde::{ Deserialize, Serialize };
+use eframe::egui::Color32;
+use eframe::egui::TextureHandle;
+use serde::Deserialize;
+use serde::Serialize;
 
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
@@ -32,12 +34,22 @@ pub struct DirtyRect {
 impl DirtyRect {
     /// Create a `DirtyRect` with given bounds.
     pub const fn new(min_x: u32, min_y: u32, max_x: u32, max_y: u32) -> Self {
-        Self { min_x, min_y, max_x, max_y }
+        Self {
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        }
     }
 
     /// Create an empty rect that expands on the first `extend` call.
     pub const fn empty() -> Self {
-        Self { min_x: u32::MAX, min_y: u32::MAX, max_x: 0, max_y: 0 }
+        Self {
+            min_x: u32::MAX,
+            min_y: u32::MAX,
+            max_x: 0,
+            max_y: 0,
+        }
     }
 
     /// Expand the rect to include `(x, y)`.
@@ -65,12 +77,20 @@ impl DirtyRect {
 
     /// Number of columns in the rect, or `0` if empty.
     pub const fn width(&self) -> u32 {
-        if self.is_empty() { 0 } else { self.max_x - self.min_x + 1 }
+        if self.is_empty() {
+            0
+        } else {
+            self.max_x - self.min_x + 1
+        }
     }
 
     /// Number of rows in the rect, or `0` if empty.
     pub const fn height(&self) -> u32 {
-        if self.is_empty() { 0 } else { self.max_y - self.min_y + 1 }
+        if self.is_empty() {
+            0
+        } else {
+            self.max_y - self.min_y + 1
+        }
     }
 }
 
@@ -220,11 +240,13 @@ impl Canvas {
     ///
     /// Panics if `width * height` overflows `usize` (extremely unlikely in practice).
     pub fn new(width: u32, height: u32) -> Self {
-        let pixel_count = (width as usize).checked_mul(height as usize).expect(
-            "Canvas dimensions overflow usize"
-        );
+        let pixel_count = (width as usize)
+            .checked_mul(height as usize)
+            .expect("Canvas dimensions overflow usize");
         Self {
-            pixels: vec![Layer { pixels: vec![Color32::TRANSPARENT; pixel_count] }],
+            pixels: vec![Layer {
+                pixels: vec![Color32::TRANSPARENT; pixel_count],
+            }],
             width,
             height,
             output_rgba: Vec::new(),
