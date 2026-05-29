@@ -139,4 +139,12 @@ Select the stamp at `index`. No-op if `index` is out of range.
 pub fn selected_index(&self) -> Option<usize>
 ```
 
-Return the index of the currently selected stamp, if any. |
+Return the index of the currently selected stamp, if any.
+
+## `StampLibrary::selected`
+
+```rust
+pub fn selected(&self) -> Option<&StampEntry>
+```
+
+Return a reference to the currently selected stamp entry, if any. |
