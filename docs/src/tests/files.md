@@ -105,3 +105,7 @@ Exporting a zero-width canvas returns an error.
 ## `import_jpeg_as_canvas`
 
 Import a JPEG file via import_image_as_canvas produces a valid canvas.
+
+## `decompress_corrupted_data_errors`
+
+Decompress on corrupted zstd data returns an error.
