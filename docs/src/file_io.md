@@ -182,3 +182,7 @@ Called once per frame to process completed async save results. Drains the `save_
 - `error_list` — A `Vec<String>` where `Failed(message)` results are pushed as `"Save failed: {message}"`.
 
 Non-blocking: uses `try_recv()` so it will not stall the frame if no save has completed.
+
+## `PendingFileAction::LoadStamp`
+
+Opens native open dialog filtered for image files; decodes into pixels and sends StampPixels result.
