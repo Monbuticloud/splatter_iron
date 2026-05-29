@@ -77,3 +77,7 @@ Export as ICO produces a non-empty file.
 ## `export_pnm_creates_file`
 
 Export as PNM produces a non-empty file.
+
+## `export_qoi_creates_file`
+
+Export as QOI produces a non-empty file.
