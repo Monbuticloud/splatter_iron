@@ -265,9 +265,10 @@ Panics if `index == 0` — there is no layer above to swap with. The caller
 
 ### Behaviour
 
-- Performs `self.canvas.pixels.swap(index, index - 1)`.
+- Gets a mutable canvas via `self.canvas_mut()` and swaps layers with
+  `canvas.pixels.swap(index, index - 1)`.
 - Sets `current_layer = index - 1` (the layer moves with the swap).
-- Sets `render_next_frame = true`.
+- Sets `canvas.render_next_frame = true`.
 
 ---
 
