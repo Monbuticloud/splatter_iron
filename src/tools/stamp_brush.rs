@@ -265,6 +265,10 @@ fn stamp_at(
 /// * `tinted` — Multiply stamp pixels by `color`.
 /// * `sampling` — Pixel-sampling strategy (nearest or bilinear).
 ///
+/// # Returns
+///
+/// An empty `UndoRecord` (no-op) when `stamp_width` or `stamp_height` is zero.
+///
 /// # Panics
 ///
 /// Panics if `params.layer >= params.canvas.pixels.len()`.
