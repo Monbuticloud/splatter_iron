@@ -326,7 +326,7 @@ Creates an empty DirtyRectList with no rects.
 
 ## `DirtyRectList::add`
 
-Adds a DirtyRect to the list. If the new rect overlaps or is within MAX_PROXIMITY (8 pixels) of an existing rect, they are merged rather than appended. When the list exceeds MAX_RECTS (8), all rects are merged into one.
+Adds a DirtyRect to the list. If the new rect overlaps or is within DIRTY_RECT_PROXIMITY (8 pixels) of an existing rect, they are merged rather than appended. When the list exceeds DIRTY_RECT_MAX_COUNT (8), all rects are merged into one.
 
 ## `DirtyRectList::merge_all`
 
