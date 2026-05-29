@@ -326,8 +326,18 @@ self.canvas.pixels.len()`.
 
 ## `Document::canvas_mut`
 
-Returns a mutable reference to the underlying Canvas. Uses Arc::make_mut to clone-on-write, ensuring that if the Arc is shared (e.g. during async save) a fresh copy is created before mutation.
+### Signature
 
-## `canvas field type Arc<Canvas>`
+```rust
+pub fn canvas_mut(&mut self) -> &mut Canvas
+```
 
-The canvas field is now Arc<Canvas> rather than Canvas directly. This enables clone-on-write semantics: during async save the canvas Arc is cloned cheaply (refcount bump), and the background thread gets a snapshot while the UI thread continues to mutate via make_mut.
+Returns a mutable reference to the underlying canvas. Uses `Arc::make_mut` to clone-on-write: when an async save holds a second `Arc` reference, the canvas is cloned before mutation; when no other references exist, this is a cheap `Arc::get_mut`.
+
+### Returns
+
+A `&mut Canvas` referencing the underlying canvas data.
+
+### Panics
+
+Does not panic in normal single-threaded use. `Arc::make_mut` would panic if the `Arc` had outstanding weak references with multiple strong references, but this codebase never creates weak references to the canvas.
