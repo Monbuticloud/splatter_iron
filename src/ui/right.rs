@@ -64,7 +64,10 @@ impl MyApp {
 
         ui.separator();
         ui.label("Save Path:");
-        ui.text_edit_singleline(&mut self.document.savefile_path);
+        ui.add(
+            egui::TextEdit::singleline(&mut self.document.savefile_path)
+                .id_source("save_path_text"),
+        );
 
         ui.separator();
         let add_layer_button = ui.button("Add Layer");

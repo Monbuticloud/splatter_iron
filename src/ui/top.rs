@@ -20,6 +20,42 @@ impl MyApp {
     pub fn show_top_panel(&mut self, ui: &mut egui::Ui) -> bool {
         let mut is_quitting = false;
 
+        // Keyboard shortcuts for tool switching (single keys, no modifier).
+        let is_in_text_field = ui.memory(|m| {
+            if m.has_focus(egui::Id::new("save_path_text"))
+                || m.has_focus(egui::Id::new("stamp_name_text"))
+            {
+                return true;
+            }
+            // Check brush name fields (dynamic IDs up to 64 brushes).
+            (0..64).any(|i| m.has_focus(egui::Id::new(format!("brush_name_{i}"))))
+        });
+        if !is_in_text_field {
+            use crate::canvas::CurrentTool;
+            if ui.input(|i| i.key_pressed(egui::Key::S) && !i.modifiers.command) {
+                self.tool_configuration.current_tool = CurrentTool::Square;
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::C) && !i.modifiers.command) {
+                self.tool_configuration.current_tool = CurrentTool::Circle;
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::E) && !i.modifiers.command && !i.modifiers.shift)
+            {
+                self.tool_configuration.current_tool = CurrentTool::SquareEraser;
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::E) && i.modifiers.shift && !i.modifiers.command) {
+                self.tool_configuration.current_tool = CurrentTool::CircleEraser;
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::G) && !i.modifiers.command) {
+                self.tool_configuration.current_tool = CurrentTool::BucketFill;
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::T) && !i.modifiers.command) {
+                self.tool_configuration.current_tool = CurrentTool::Stamp;
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::B) && !i.modifiers.command) {
+                self.tool_configuration.current_tool = CurrentTool::CustomBrush;
+            }
+        }
+
         // Keyboard shortcuts (checked every frame regardless of button hover).
         if ui.input(|i| i.key_pressed(egui::Key::N) && i.modifiers.command && !i.modifiers.shift) {
             self.ui.dialogs.show_new_canvas_dialog = true;

@@ -762,7 +762,10 @@ impl MyApp {
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.label("Name:");
-                    ui.text_edit_singleline(&mut pending.name);
+                    ui.add(
+                        egui::TextEdit::singleline(&mut pending.name)
+                            .id_source("stamp_name_text"),
+                    );
                 });
                 ui.label(&label);
                 if ui.button("Add Stamp").clicked() && !pending.name.is_empty() {
@@ -815,7 +818,8 @@ impl MyApp {
                             ui.horizontal(|ui| {
                                 ui.add(
                                     egui::TextEdit::singleline(&mut brush.name)
-                                        .desired_width(150.0),
+                                        .desired_width(150.0)
+                                        .id_source(format!("brush_name_{i}")),
                                 );
                                 ui.label(format!("{}×{}", brush.width, brush.height));
                                 if ui.button("Remove").clicked() {
