@@ -63,7 +63,7 @@ fn poll_save_results_manual_save_sets_path() {
     file_io.poll_save_results(&mut document, &mut errors);
 
     assert_eq!(document.savefile_path, path.display().to_string());
-    assert!(document.canvas.render_next_frame);
+    assert!(document.canvas.dirty_rect.needs_reblend());
     assert!(errors.is_empty());
 }
 
@@ -244,7 +244,7 @@ fn poll_dialog_results_load_replaces_canvas() {
     assert!(errors.is_empty(), "errors: {errors:?}");
     assert_eq!(document.canvas.width, 3);
     assert_eq!(document.canvas.height, 4);
-    assert!(document.canvas.render_next_frame);
+    assert!(document.canvas.dirty_rect.needs_reblend());
     assert!(file_io.pending_file_action.is_none());
 }
 

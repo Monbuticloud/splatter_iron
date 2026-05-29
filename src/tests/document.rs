@@ -23,7 +23,6 @@ fn small_document() -> Document {
         output_rgba: Vec::new(),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
-        render_next_frame: false,
     };
     Document::new(canvas)
 }
@@ -44,7 +43,7 @@ fn add_layer_increases_count() {
     let mut document = small_document();
     document.add_layer();
     assert_eq!(document.canvas.pixels.len(), 2);
-    assert!(document.canvas_mut().render_next_frame);
+    assert!(document.canvas_mut().dirty_rect.needs_reblend());
 }
 
 /// A newly added layer should match the canvas dimensions.
@@ -146,14 +145,13 @@ fn replace_canvas_resets_state() {
         output_rgba: Vec::new(),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
-        render_next_frame: false,
     };
     document.replace_canvas(new_canvas, &mut undo);
     assert_eq!(document.canvas.width, 2);
     assert_eq!(document.canvas.pixels.len(), 2);
     assert!(document.savefile_path.is_empty());
     assert!(!document.dirty_since_last_autosave);
-    assert!(document.canvas_mut().render_next_frame);
+    assert!(document.canvas_mut().dirty_rect.needs_reblend());
     assert!(!undo.can_undo());
 }
 
@@ -170,19 +168,19 @@ fn render_to_texture_allocates_output() {
     assert_eq!(pixel_count, 100);
 }
 
-/// `blend_to_output` with no dirty rects blends the full canvas and sets
-/// `render_next_frame` to false, and sizes `output_rgba`.
+/// `blend_to_output` with no dirty rects but with `needs_full_blend` set
+/// blends the full canvas and clears the reblend request.
 #[test]
-fn blend_to_output_full_canvas_sets_render_state() {
+fn blend_to_output_full_canvas_clears_reblend() {
     let mut document = small_document();
     assert_eq!(document.canvas.output_rgba.len(), 0);
     assert!(document.canvas.dirty_rect.is_empty());
-    document.canvas_mut().render_next_frame = true;
+    document.canvas_mut().dirty_rect.request_full_blend();
 
     let result = document.blend_to_output();
 
     assert_eq!(result, Some(DirtyRect::new(0, 0, 9, 9)));
-    assert!(!document.canvas_mut().render_next_frame);
+    assert!(!document.canvas_mut().dirty_rect.needs_reblend());
     assert!(document.canvas.dirty_rect.is_empty());
     assert_eq!(document.canvas.output_rgba.len(), 100 * 4);
 }
@@ -196,31 +194,31 @@ fn blend_to_output_dirty_rect_returns_bounds() {
         .canvas_mut()
         .dirty_rect
         .add(DirtyRect::new(2, 3, 5, 7));
-    document.canvas_mut().render_next_frame = true;
+    document.canvas_mut().dirty_rect.request_full_blend();
 
     let result = document.blend_to_output();
 
     // DirtyRect(2,3,5,7) -> width=4, height=5
     assert_eq!(result, Some(DirtyRect::new(2, 3, 5, 7)));
-    assert!(!document.canvas_mut().render_next_frame);
+    assert!(!document.canvas_mut().dirty_rect.needs_reblend());
     assert!(document.canvas.dirty_rect.is_empty());
 }
 
 /// `blend_to_output` with only empty dirty rects (which are no-ops) does a
-/// full canvas blend when `render_next_frame` is true.
+/// full canvas blend when `needs_full_blend` is set.
 #[test]
 fn blend_to_output_empty_dirty_rect_triggers_full_blend() {
     let mut document = small_document();
     // Empty rects are filtered out by DirtyRectList::add → no-op.
-    // An empty dirty list with render_next_frame=true triggers a full blend.
+    // An empty dirty list with needs_full_blend triggers a full blend.
     document.canvas_mut().dirty_rect.add(DirtyRect::empty());
     assert!(document.canvas.dirty_rect.is_empty());
-    document.canvas_mut().render_next_frame = true;
+    document.canvas_mut().dirty_rect.request_full_blend();
 
     let result = document.blend_to_output();
 
     assert_eq!(result, Some(DirtyRect::new(0, 0, 9, 9)));
-    assert!(!document.canvas_mut().render_next_frame);
+    assert!(!document.canvas_mut().dirty_rect.needs_reblend());
     assert!(document.canvas.dirty_rect.is_empty());
 }
 
@@ -250,53 +248,53 @@ fn delete_layer_decrements_current_when_below() {
     assert_eq!(document.canvas.pixels.len(), 2);
 }
 
-/// `add_layer` should set `render_next_frame` to true.
+/// `add_layer` should request a full re-blend.
 #[test]
-fn add_layer_sets_render_next_frame() {
+fn add_layer_triggers_full_blend() {
     let mut document = small_document();
-    document.canvas_mut().render_next_frame = false;
+    document.canvas_mut().dirty_rect.clear();
     document.add_layer();
     assert!(
-        document.canvas_mut().render_next_frame,
+        document.canvas_mut().dirty_rect.needs_reblend(),
         "add_layer triggers re-render"
     );
 }
 
-/// `delete_layer` should set `render_next_frame` to true.
+/// `delete_layer` should request a full re-blend.
 #[test]
-fn delete_layer_sets_render_next_frame() {
+fn delete_layer_triggers_full_blend() {
     let mut document = small_document();
-    document.canvas_mut().render_next_frame = false;
+    document.canvas_mut().dirty_rect.clear();
     document.add_layer();
     document.delete_layer(1);
     assert!(
-        document.canvas_mut().render_next_frame,
+        document.canvas_mut().dirty_rect.needs_reblend(),
         "delete_layer triggers re-render"
     );
 }
 
-/// `move_layer_up` should set `render_next_frame` to true.
+/// `move_layer_up` should request a full re-blend.
 #[test]
-fn move_layer_up_sets_render_next_frame() {
+fn move_layer_up_triggers_full_blend() {
     let mut document = small_document();
     document.add_layer();
-    document.canvas_mut().render_next_frame = false;
+    document.canvas_mut().dirty_rect.clear();
     document.move_layer_up(1);
     assert!(
-        document.canvas_mut().render_next_frame,
+        document.canvas_mut().dirty_rect.needs_reblend(),
         "move_layer_up triggers re-render"
     );
 }
 
-/// `move_layer_down` should set `render_next_frame` to true.
+/// `move_layer_down` should request a full re-blend.
 #[test]
-fn move_layer_down_sets_render_next_frame() {
+fn move_layer_down_triggers_full_blend() {
     let mut document = small_document();
     document.add_layer();
-    document.canvas_mut().render_next_frame = false;
+    document.canvas_mut().dirty_rect.clear();
     document.move_layer_down(0);
     assert!(
-        document.canvas_mut().render_next_frame,
+        document.canvas_mut().dirty_rect.needs_reblend(),
         "move_layer_down triggers re-render"
     );
 }
@@ -339,23 +337,24 @@ fn select_layer_out_of_bounds_sets_index() {
 }
 
 /// Calling `blend_to_output` twice in a row — second call on clean state
-/// should set render_next_frame = false and return full-canvas result.
+/// should clear the reblend request and return full-canvas result each time.
 #[test]
 fn blend_to_output_twice_resets_state() {
     let mut document = small_document();
-    document.canvas_mut().render_next_frame = true;
+    document.canvas_mut().dirty_rect.request_full_blend();
 
     // First blend — full canvas (no dirty rects)
     let result1 = document.blend_to_output();
     assert_eq!(result1, Some(DirtyRect::new(0, 0, 9, 9)));
-    assert!(!document.canvas_mut().render_next_frame);
+    assert!(!document.canvas_mut().dirty_rect.needs_reblend());
     assert!(document.canvas.dirty_rect.is_empty());
 
-    // Second blend — still no dirty rects, full blend again
-    document.canvas_mut().render_next_frame = true; // force flag back on
+    // Second blend — needs_full_blend was cleared, but take_all() returns
+    // empty, so blend_to_output still does a full blend (no partial info).
+    document.canvas_mut().dirty_rect.request_full_blend(); // force flag back on
     let result2 = document.blend_to_output();
     assert_eq!(result2, Some(DirtyRect::new(0, 0, 9, 9)));
-    assert!(!document.canvas_mut().render_next_frame);
+    assert!(!document.canvas_mut().dirty_rect.needs_reblend());
 }
 
 /// `add_layer` initializes layer pixels to transparent.

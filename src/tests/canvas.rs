@@ -99,18 +99,11 @@ fn canvas_new_sets_dimensions() {
     assert_eq!(canvas.pixels[0].pixels[0], Color32::TRANSPARENT);
 }
 
-/// The default canvas should have `render_next_frame` set to `true`.
+/// A fresh canvas should request a full blend on first frame.
 #[test]
-fn default_render_next_frame_is_true() {
-    let canvas = Canvas::default();
-    assert!(canvas.render_next_frame);
-}
-
-/// `Canvas::new` should also set `render_next_frame` to `true`.
-#[test]
-fn canvas_new_render_next_frame_is_true() {
+fn new_canvas_requests_full_blend() {
     let canvas = Canvas::new(10, 10);
-    assert!(canvas.render_next_frame);
+    assert!(canvas.dirty_rect.needs_reblend());
 }
 
 // --- Serde round-trip ---
@@ -137,8 +130,6 @@ fn canvas_serde_roundtrip() {
             .iter()
             .all(|p| *p == Color32::TRANSPARENT)
     );
-    assert_eq!(restored.render_next_frame, original.render_next_frame);
-
     // Skipped fields — should be defaults
     assert!(restored.rendered_layers.is_none());
     assert!(restored.output_rgba.is_empty());

@@ -81,7 +81,6 @@ fn draw_circle_multi_layer() {
         output_rgba: Vec::new(),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
-        render_next_frame: false,
     };
     circle_brush::draw_circle(2, 2, 1, &mut canvas, red(), 0, false);
     circle_brush::draw_circle(7, 7, 1, &mut canvas, blue(), 1, false);

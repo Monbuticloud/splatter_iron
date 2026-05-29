@@ -81,7 +81,6 @@ fn small_white_canvas() -> Canvas {
         output_rgba: Vec::new(),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
-        render_next_frame: false,
     }
 }
 

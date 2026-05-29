@@ -30,7 +30,6 @@ fn checkerboard_4x4() -> Canvas {
         output_rgba: Vec::new(),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
-        render_next_frame: false,
     }
 }
 
@@ -70,7 +69,6 @@ fn save_load_roundtrip_multi_layer() {
         output_rgba: Vec::new(),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
-        render_next_frame: false,
     };
     let data = files::save_canvas_to_bytes(&canvas).expect("save");
     let loaded = files::load_canvas_from_bytes(&data).expect("load");
@@ -109,7 +107,6 @@ fn save_load_roundtrip_transparent() {
         output_rgba: Vec::new(),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
-        render_next_frame: false,
     };
     let data = files::save_canvas_to_bytes(&canvas).expect("save");
     let loaded = files::load_canvas_from_bytes(&data).expect("load");
@@ -363,7 +360,7 @@ fn import_jpeg_as_canvas() {
     assert_eq!(imported.height, 2);
     assert_eq!(imported.pixels.len(), 1);
     // JPEG is lossy, so we can't compare exact pixels — just check that it loaded
-    assert!(imported.render_next_frame);
+    assert!(imported.dirty_rect.needs_reblend());
 }
 
 /// Decompress corrupted zstd data should return an error.
