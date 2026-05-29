@@ -197,19 +197,20 @@ Replaces the wgpu texture after a canvas resize while keeping the same
 `egui::TextureId`.
 
 Called from the main frame loop when `gpu.texture.size()` no longer matches
-`self.document.canvas.width` / `height`. Destroys the old texture (via
-`Drop`) and creates a new one with updated dimensions, then calls
-`renderer.update_egui_texture_from_wgpu_texture` to associate the existing
-`egui::TextureId` with the new wgpu texture view, avoiding stale entries in
-the renderer's internal map.
+`self.document.canvas.width` / `height`. Validates the new dimensions against
+the device's `max_texture_dimension_2d` — if the canvas exceeds the limit,
+pushes an error to `displayed_error_list` and returns early. Otherwise
+destroys the old texture (via `Drop`) and creates a new one with updated
+dimensions, then calls `renderer.update_egui_texture_from_wgpu_texture` to
+associate the existing `egui::TextureId` with the new wgpu texture view,
+avoiding stale entries in the renderer's internal map.
 
 Early-returns (no-op) when the wgpu render state is absent or when
 `gpu_texture` is `None` (Glow backend).
 
 ### Panics
 
-Panics if `render_state.renderer.write()` is poisoned (lock contention) or
-if the wgpu device has been lost.
+Panics if the wgpu device has been lost.
 
 ## `impl eframe::App for MyApp`
 
