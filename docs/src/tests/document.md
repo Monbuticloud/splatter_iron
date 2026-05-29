@@ -111,3 +111,7 @@ select_layer with out-of-bounds index still sets current_layer (no validation).
 ## `blend_to_output_twice_resets_state`
 
 Calling blend_to_output twice resets render state; second call returns None.
+
+## `add_layer_pixels_are_transparent`
+
+Newly added layers are fully transparent.
