@@ -50,3 +50,7 @@ When Stamp tool is selected, renders a vertical gallery of stamp thumbnails. Eac
 ## `Brush gallery`
 
 When CustomBrush tool is selected, renders a vertical gallery of brush tip thumbnails. Each entry shows the tip image and name. Clicking selects that brush. Above the gallery are tint mode and sampling mode combo selectors.
+
+## `Stamp/brush tint mode selector`
+
+A combo box selecting between Original and Tinted modes. Affects how stamp/brush colours are composited onto the canvas.
