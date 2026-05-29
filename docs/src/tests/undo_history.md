@@ -79,3 +79,7 @@ Pushing 1001 records (one past `MAX_STROKE_STACK = 1000`) evicts the oldest; the
 ## `extend_drag_without_init_noop`
 
 Calling extend_drag_accumulator without init is a no-op.
+
+## `extend_drag_without_init_with_runs_noop`
+
+Extending drag with runs but without init is a no-op.
