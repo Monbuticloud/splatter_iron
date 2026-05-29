@@ -316,6 +316,22 @@ fn save_to_current_path_non_empty_triggers_save() {
     // but at least the async save thread was spawned without panic
 }
 
+/// `poll_dialog_results` with `Cancelled` should clear `pending_file_action`.
+#[test]
+fn poll_dialog_results_cancelled_clears_pending() {
+    let (mut file_io, dialog_sender, _) = test_file_io();
+    file_io.pending_file_action = Some(PendingFileAction::Save);
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    dialog_sender.send(DialogResult::Cancelled).unwrap();
+    file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+
+    assert!(file_io.pending_file_action.is_none());
+    assert!(errors.is_empty());
+}
+
 /// `poll_save_results` with manual save sets document path even if it's empty.
 #[test]
 fn poll_save_results_manual_save_empty_path() {

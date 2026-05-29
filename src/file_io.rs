@@ -52,6 +52,8 @@ pub enum DialogResult {
     BrushTips(Vec<BrushTip>),
     /// An error occurred during a file operation.
     Error(String),
+    /// User cancelled the dialog — clears `pending_file_action`.
+    Cancelled,
 }
 
 /// Distinguishes an autosave from a manual save in the async save pipeline.
@@ -142,6 +144,11 @@ impl FileIO {
     pub fn queue_file_action(&mut self, action: PendingFileAction) {
         let sender = self.dialog_sender.clone();
 
+        #[inline]
+        fn send_cancelled(sender: &mpsc::Sender<DialogResult>) {
+            let _ = sender.send(DialogResult::Cancelled);
+        }
+
         match action {
             PendingFileAction::Save => {
                 self.pending_file_action = Some(PendingFileAction::Save);
@@ -155,6 +162,8 @@ impl FileIO {
                         .save_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
+                    } else {
+                        send_cancelled(&sender);
                     }
                 });
             }
@@ -169,6 +178,8 @@ impl FileIO {
                         .pick_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
+                    } else {
+                        send_cancelled(&sender);
                     }
                 });
             }
@@ -180,6 +191,8 @@ impl FileIO {
                         .pick_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
+                    } else {
+                        send_cancelled(&sender);
                     }
                 });
             }
@@ -195,6 +208,8 @@ impl FileIO {
                         .save_file()
                     {
                         let _ = sender.send(DialogResult::Picked(path));
+                    } else {
+                        send_cancelled(&sender);
                     }
                 });
             }
@@ -216,6 +231,8 @@ impl FileIO {
                                 )));
                             }
                         }
+                    } else {
+                        send_cancelled(&sender);
                     }
                 });
             }
@@ -226,8 +243,6 @@ impl FileIO {
                         .add_filter("Images", IMPORT_EXTENSIONS)
                         .pick_file()
                     {
-                        // Decode the image in the background thread to avoid
-                        // blocking the UI frame.
                         match image::open(&path) {
                             Ok(dynamic_image) => {
                                 let rgba = dynamic_image.to_rgba8();
@@ -252,6 +267,8 @@ impl FileIO {
                                 )));
                             }
                         }
+                    } else {
+                        send_cancelled(&sender);
                     }
                 });
             }
@@ -283,6 +300,9 @@ impl FileIO {
                 }
                 DialogResult::BrushTips(tips) => {
                     self.loaded_brush_data = Some(tips);
+                    self.pending_file_action = None;
+                }
+                DialogResult::Cancelled => {
                     self.pending_file_action = None;
                 }
                 DialogResult::Error(msg) => {
