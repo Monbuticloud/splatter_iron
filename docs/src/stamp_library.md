@@ -21,3 +21,16 @@ Pixel-sampling strategy when scaling the stamp to canvas dimensions.
 | --------- | ------------------------------------------------------------------------- |
 | `Nearest`  | Nearest-neighbour (sharp edges, pixel-art friendly).                      |
 | `Bilinear` | Bilinear interpolation (smooth scaling for photographs).                  |
+
+## `struct StampEntry`
+
+A single stamp entry in the library.
+
+| Field             | Type                    | Purpose                                              |
+| ----------------- | ----------------------- | ---------------------------------------------------- |
+| `name`            | `String`                | User-given display name                              |
+| `filename`        | `String`                | On-disk PNG filename (relative to `stamps/` dir)     |
+| `pixels`          | `Vec<Color32>`          | Premultiplied-alpha pixel data (row-major)           |
+| `width`           | `u32`                   | Stamp image width in pixels                          |
+| `height`          | `u32`                   | Stamp image height in pixels                         |
+| `texture_handle`  | `Option<TextureHandle>` | Cached egui texture for preview rendering            |
