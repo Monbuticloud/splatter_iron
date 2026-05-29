@@ -438,6 +438,40 @@ impl eframe::App for MyApp {
             }
         }
 
+        // --- Large canvas confirmation dialog ---
+        if let Some((w, h)) = self.ui.pending_large_canvas {
+            let mut open = true;
+            let estimated = estimate_canvas_memory(w, h);
+            let estimated_mb = estimated / (1024 * 1024);
+            egui::Window::new("Large Canvas Warning")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .open(&mut open)
+                .show(ui, |ui| {
+                    ui.label(format!(
+                        "This canvas ({w}×{h}) may use up to ~{estimated_mb} MB of RAM.\n\
+                         Proceed? This cannot be undone."
+                    ));
+                    ui.horizontal(|ui| {
+                        if ui.button("Yes, create").clicked() {
+                            let canvas = Canvas::new(w, h);
+                            self.document.replace_canvas(canvas, &mut self.undo);
+                            self.tool_configuration.previous_tool = None;
+                            self.tool_configuration.previous_cursor_position = None;
+                            self.ui.show_new_canvas_dialog = false;
+                            self.ui.pending_large_canvas = None;
+                        }
+                        if ui.button("Cancel").clicked() {
+                            self.ui.pending_large_canvas = None;
+                        }
+                    });
+                });
+            if !open {
+                self.ui.pending_large_canvas = None;
+            }
+        }
+
         // --- New Canvas dialog ---
         if self.ui.show_new_canvas_dialog {
             let mut open = true;
@@ -467,11 +501,25 @@ impl eframe::App for MyApp {
                     );
                     ui.horizontal(|ui| {
                         if ui.button("Create").clicked() {
-                            let canvas = Canvas::new(self.ui.new_canvas_width, self.ui.new_canvas_height);
-                            self.document.replace_canvas(canvas, &mut self.undo);
-                            self.tool_configuration.previous_tool = None;
-                            self.tool_configuration.previous_cursor_position = None;
-                            self.ui.show_new_canvas_dialog = false;
+                            let mem = estimate_canvas_memory(
+                                self.ui.new_canvas_width,
+                                self.ui.new_canvas_height,
+                            );
+                            if mem > MEMORY_WARNING_THRESHOLD {
+                                self.ui.pending_large_canvas = Some((
+                                    self.ui.new_canvas_width,
+                                    self.ui.new_canvas_height,
+                                ));
+                            } else {
+                                let canvas = Canvas::new(
+                                    self.ui.new_canvas_width,
+                                    self.ui.new_canvas_height,
+                                );
+                                self.document.replace_canvas(canvas, &mut self.undo);
+                                self.tool_configuration.previous_tool = None;
+                                self.tool_configuration.previous_cursor_position = None;
+                                self.ui.show_new_canvas_dialog = false;
+                            }
                         }
                         if ui.button("Cancel").clicked() {
                             self.ui.show_new_canvas_dialog = false;
