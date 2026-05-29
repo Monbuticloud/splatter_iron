@@ -173,14 +173,18 @@ impl Document {
     ) {
         let canvas_width = self.canvas.width;
         let canvas_height = self.canvas.height;
-        let (x, y, width, height) = match dirty {
+        let (x, y, mut width, mut height) = match dirty {
             Some(r) => (r.min_x, r.min_y, r.width(), r.height()),
             None => (0, 0, canvas_width, canvas_height),
         };
 
+        // Clamp to canvas bounds to prevent wgpu validation errors from
+        // dirty-rect accumulation outside the canvas.
         if width == 0 || height == 0 {
             return;
         }
+        width = width.min(canvas_width.saturating_sub(x));
+        height = height.min(canvas_height.saturating_sub(y));
 
         queue.write_texture(
             wgpu::TexelCopyTextureInfo {
