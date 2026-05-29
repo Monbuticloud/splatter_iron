@@ -13,4 +13,4 @@ The default `ToolConfiguration` uses the `Square` tool, white colour, radius 100
 
 ## `default_optional_fields_are_none`
 
-`previous_tool`, `previous_cursor_position`, and `stamp_image` are all `None` by default; `stamp_tinted` is `false`.
+`previous_tool` and `previous_cursor_position` are `None` by default; `stamp_sampling` is `StampSampling::Nearest`, `stamp_tint_mode` is `StampTintMode::Original`, `brush_sampling` is `StampSampling::Nearest`, and `brush_tint_mode` is `StampTintMode::Original`.
