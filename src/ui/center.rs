@@ -273,7 +273,6 @@ impl MyApp {
         }
 
         if response.hovered() {
-            self.ui.dialogs.pending_layer_for_deletion = None;
             self.ui.render_state =
                 RenderState::ActiveWake(Duration::from_millis(ACTIVE_DURATION_MILLISECONDS));
         }

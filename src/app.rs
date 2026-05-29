@@ -186,12 +186,12 @@ pub struct PendingStamp {
     pub spacing: u8,
 }
 
-/// Dialog-related state: open/closed flags, input values, pending confirmations.
-pub struct DialogState {
-    /// Layer index pending deletion confirmation, if any.
-    pub pending_layer_for_deletion: Option<usize>,
-    /// Whether the "New Canvas" dialog is currently open.
-    pub show_new_canvas_dialog: bool,
+    /// Dialog-related state: open/closed flags, input values, pending confirmations.
+    pub struct DialogState {
+        /// Layer index pending deletion confirmation via modal dialog.
+        pub show_delete_layer_dialog: Option<usize>,
+        /// Whether the "New Canvas" dialog is currently open.
+        pub show_new_canvas_dialog: bool,
     /// Width input for the new canvas dialog (in pixels).
     pub new_canvas_width: u32,
     /// Height input for the new canvas dialog (in pixels).
@@ -208,7 +208,7 @@ pub struct DialogState {
 impl Default for DialogState {
     fn default() -> Self {
         Self {
-            pending_layer_for_deletion: None,
+            show_delete_layer_dialog: None,
             show_new_canvas_dialog: false,
             new_canvas_width: 2000,
             new_canvas_height: 1500,
@@ -684,6 +684,41 @@ impl MyApp {
         }
     }
 
+    /// Show the "Delete Layer" confirmation dialog.
+    fn show_delete_layer_dialog(&mut self, ui: &mut egui::Ui) {
+        let Some(index) = self.ui.dialogs.show_delete_layer_dialog else {
+            return;
+        };
+        let layer_name = self
+            .document
+            .canvas
+            .pixels
+            .get(index)
+            .map(|_| format!("Layer {index}"))
+            .unwrap_or_default();
+        let mut open = true;
+        egui::Window::new("Delete Layer")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.label(format!("Delete \"{layer_name}\"? This cannot be undone."));
+                ui.horizontal(|ui| {
+                    if ui.button("Delete").clicked() {
+                        self.document.delete_layer(index);
+                        self.ui.dialogs.show_delete_layer_dialog = None;
+                    }
+                    if ui.button("Cancel").clicked() {
+                        self.ui.dialogs.show_delete_layer_dialog = None;
+                    }
+                });
+            });
+        if !open {
+            self.ui.dialogs.show_delete_layer_dialog = None;
+        }
+    }
+
     /// Show the "New Canvas" preset / custom-size dialog.
     fn show_new_canvas_dialog(&mut self, ui: &mut egui::Ui) {
         if !self.ui.dialogs.show_new_canvas_dialog {
@@ -934,6 +969,7 @@ impl eframe::App for MyApp {
         let is_quitting = self.show_panels(ui);
 
         self.show_error_window(ui);
+        self.show_delete_layer_dialog(ui);
         self.show_large_canvas_warning(ui);
         self.show_new_canvas_dialog(ui);
         self.show_stamp_naming_dialog(ui);
