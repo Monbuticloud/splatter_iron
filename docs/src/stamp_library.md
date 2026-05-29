@@ -131,4 +131,12 @@ selection is cleared.
 pub fn select(&mut self, index: usize)
 ```
 
-Select the stamp at `index`. No-op if `index` is out of range. |
+Select the stamp at `index`. No-op if `index` is out of range.
+
+## `StampLibrary::selected_index`
+
+```rust
+pub fn selected_index(&self) -> Option<usize>
+```
+
+Return the index of the currently selected stamp, if any. |
