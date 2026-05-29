@@ -68,3 +68,7 @@ queue_file_action with PendingFileAction::Save sets pending_file_action and spaw
 ## `queue_file_action_load_stamp_sets_pending`
 
 queue_file_action with LoadStamp sets pending_file_action.
+
+## `save_to_current_path_non_empty_triggers_save`
+
+save_to_current_path with a non-empty savefile_path triggers an async save.
