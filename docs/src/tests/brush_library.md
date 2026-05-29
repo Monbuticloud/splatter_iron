@@ -13,3 +13,7 @@ Remove a brush and verify count decreases and selection clears.
 ## `select_switches_active_brush`
 
 Select a specific brush by index; verify selected_index and name update.
+
+## `persistence_round_trip`
+
+Persist to temp dir, reload, and verify entries survive.
