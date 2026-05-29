@@ -23,9 +23,10 @@ Derives `Clone`, `Copy`.
 
 Message sent from the file-dialog background thread to the UI thread after the user interacts with a native dialog.
 
-| Variant           | Description                                                                                                                            |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `Picked(PathBuf)` | User selected a file path via the native dialog. Sent through `dialog_sender` and received by `poll_dialog_results` on the next frame. |
+| Variant                       | Description                                                                                                                                                      |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Picked(PathBuf)`             | User selected a file path via the native dialog. Sent through `dialog_sender` and received by `poll_dialog_results` on the next frame.                           |
+| `StampPixels(Vec, u32, u32, String)` | Decoded stamp image pixels + dimensions + suggested name stem, sent from the background thread after a `LoadStamp` action.                                |
 
 ### `SaveKind`
 
