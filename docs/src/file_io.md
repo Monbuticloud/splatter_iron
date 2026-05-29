@@ -107,6 +107,8 @@ Queues a file dialog action and spawns it on a background thread. Dispatched via
   - `Save` — Save dialog, `.splattercanvas` filter, default name `canvas.splattercanvas`, calls `save_file()`.
   - `Import` — Open dialog, image extensions filter (`IMPORT_EXTENSIONS`), calls `pick_file()`.
   - `Export(index)` — Save dialog, export format filter from `EXPORT_FORMATS[index]`, default name `export.{ext}`, calls `save_file()`.
+  - `LoadStamp` — Open dialog, image extensions filter (`IMPORT_EXTENSIONS`), calls `pick_file()`. Decodes the selected image on a background thread and sends `StampPixels` or `Error`.
+  - `LoadBrush` — Open dialog, `.abr`/`.gbr` filter, calls `pick_file()`. Parses the file on a background thread and sends `BrushTips` or `Error`.
 
 If the user cancels the dialog, no result is sent and `pending_file_action` remains set (consumed only when a `DialogResult` arrives).
 
@@ -121,7 +123,12 @@ pub fn poll_dialog_results(
 )
 ```
 
-Called once per frame (before egui layout) to process completed file dialog results. Drains the `dialog_receiver` channel with `try_recv()`, matching each received `DialogResult::Picked(path)` against the `pending_file_action` to determine the operation.
+Called once per frame (before egui layout) to process completed file dialog results. Drains the `dialog_receiver` channel with `try_recv()`, matching each received `DialogResult` variant:
+
+- **`StampPixels`** — Stores decoded pixels, dimensions, and name in `self.loaded_stamp_data` for the frame loop to present a naming dialog. Clears `pending_file_action`.
+- **`BrushTips`** — Stores parsed brush tips in `self.loaded_brush_data` for the frame loop. Clears `pending_file_action`.
+- **`Error(msg)`** — Pushes `msg` to `error_list`. Clears `pending_file_action`.
+- **`Picked(path)`** — Matches against `pending_file_action` to determine the operation.
 
 **Parameters:**
 
@@ -129,7 +136,7 @@ Called once per frame (before egui layout) to process completed file dialog resu
 - `undo` — The `UndoHistory` to reset on load/import. Passed to `replace_canvas()` to clear the undo/redo stack.
 - `error_list` — A `Vec<String>` of error messages displayed to the user. Failures at any stage (file read, deserialization, import, export) are pushed here.
 
-**Operation details per action:**
+**Operation details per `Picked` action:**
 
 - **Save:** Appends `CANVAS_EXTENSION` if missing. Calls `trigger_async_save(document, SaveKind::ManualSave(path))`.
 - **Load:** Reads via `crate::files::load_data_from_file`, deserializes via `load_app_from_data`, replaces the canvas, and sets `document.savefile_path` to the loaded file's path.
