@@ -64,3 +64,7 @@ Receiving DialogResult::Picked with Import pending replaces the canvas via impor
 ## `queue_file_action_save_sets_pending`
 
 queue_file_action with PendingFileAction::Save sets pending_file_action and spawns a thread.
+
+## `queue_file_action_load_stamp_sets_pending`
+
+queue_file_action with LoadStamp sets pending_file_action.
