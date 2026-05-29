@@ -87,3 +87,7 @@ Deleting a layer at index 0 when `current_layer = 2` decrements `current_layer` 
 ## `move_layer_down_sets_render_next_frame`
 
 `move_layer_down` sets `render_next_frame` to `true` after swapping layers.
+
+## `blend_to_output_empty_dirty_rect_triggers_full_blend`
+
+With an empty DirtyRect (DirtyRectList), blend_to_output performs a full-canvas blend and returns Some((0,0,10,10)) because the empty-list triggers a full blend. Previously documented as returning None.
