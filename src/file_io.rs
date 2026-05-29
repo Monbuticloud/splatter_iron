@@ -103,7 +103,13 @@ pub struct FileIO {
     ///
     /// Defaults to [`DefaultExportStrategy`](crate::files::DefaultExportStrategy)
     /// which handles all 13 supported formats.
-    pub export_strategy: Box<dyn ExportStrategy>,
+    pub export_strategy: std::sync::Arc<dyn ExportStrategy + Send + Sync>,
+    /// Channel sender for export results from background thread.
+    pub export_result_sender: mpsc::Sender<anyhow::Result<()>>,
+    /// Channel receiver for export results on the UI thread.
+    pub export_result_receiver: mpsc::Receiver<anyhow::Result<()>>,
+    /// `true` while an async export thread is running.
+    pub export_in_flight: bool,
 }
 
 impl FileIO {
@@ -119,20 +125,25 @@ impl FileIO {
     /// * `save_result_sender` — Channel sender for async save results.
     /// * `save_result_receiver` — Channel receiver for async save results.
     /// * `app_local_data_directory` — Base path for autosave directory.
+    /// * `export_strategy` — Image export implementation.
     pub fn new(
         dialog_sender: mpsc::Sender<DialogResult>,
         dialog_receiver: mpsc::Receiver<DialogResult>,
         save_result_sender: mpsc::Sender<SaveResult>,
         save_result_receiver: mpsc::Receiver<SaveResult>,
         app_local_data_directory: PathBuf,
-        export_strategy: Box<dyn ExportStrategy>,
+        export_strategy: std::sync::Arc<dyn ExportStrategy + Send + Sync>,
     ) -> Self {
+        let (export_result_sender, export_result_receiver) = mpsc::channel();
         Self {
             pending_file_action: None,
             dialog_sender,
             dialog_receiver,
             save_result_sender,
             save_result_receiver,
+            export_result_sender,
+            export_result_receiver,
+            export_in_flight: false,
             app_local_data_directory,
             loaded_stamp_data: None,
             loaded_brush_data: None,
@@ -387,14 +398,11 @@ impl FileIO {
                             } else {
                                 format!("{path_string}.{default_extension}")
                             };
-                            if let Err(error) = self.export_strategy.export(
-                                &document.canvas.output_rgba,
-                                document.canvas.width,
-                                document.canvas.height,
-                                Path::new(&path_string),
-                            ) {
-                                error_list.push(format!("Export failed: {error}"));
-                            }
+                            let rgba = document.canvas.output_rgba.clone();
+                            let w = document.canvas.width;
+                            let h = document.canvas.height;
+                            let export_path = PathBuf::from(&path_string);
+                            self.trigger_async_export(rgba, w, h, export_path);
                         }
                         PendingFileAction::LoadStamp => {
                             // Handled exclusively by the StampPixels variant above.
@@ -464,6 +472,55 @@ impl FileIO {
                 document,
                 SaveKind::ManualSave(PathBuf::from(&document.savefile_path)),
             );
+        }
+    }
+
+    /// Spawn a background thread to encode and write the exported image.
+    ///
+    /// Clones the blended RGBA buffer to avoid holding a reference across
+    /// the thread boundary. Sends the result (success or error string) back
+    /// via `export_result_receiver`. The caller should call
+    /// [`poll_export_results`](Self::poll_export_results) next frame.
+    ///
+    /// # Parameters
+    ///
+    /// * `premultiplied_rgba` — The already-blended premultiplied RGBA buffer.
+    /// * `width` — Image width in pixels.
+    /// * `height` — Image height in pixels.
+    /// * `path` — Destination file path.
+    pub fn trigger_async_export(
+        &mut self,
+        premultiplied_rgba: Vec<u8>,
+        width: u32,
+        height: u32,
+        path: PathBuf,
+    ) {
+        self.export_in_flight = true;
+        let strategy = std::sync::Arc::clone(&self.export_strategy);
+        let sender = self.export_result_sender.clone();
+        std::thread::spawn(move || {
+            let result = strategy.export(&premultiplied_rgba, width, height, &path);
+            let _ = sender.send(result);
+        });
+    }
+
+    /// Poll for completed async export results.
+    ///
+    /// Pushes errors to `error_list`. Returns `true` if an export result was
+    /// processed (either success or failure).
+    ///
+    /// # Parameters
+    ///
+    /// * `error_list` — Error list to push failure messages into.
+    pub fn poll_export_results(&mut self, error_list: &mut Vec<String>) -> bool {
+        if let Ok(result) = self.export_result_receiver.try_recv() {
+            self.export_in_flight = false;
+            if let Err(error) = result {
+                error_list.push(format!("Export failed: {error}"));
+            }
+            true
+        } else {
+            false
         }
     }
 
