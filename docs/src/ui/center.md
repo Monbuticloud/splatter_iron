@@ -132,15 +132,15 @@ When the CustomBrush tool is active, right-clicking the canvas shows a Replace B
 
 ## `Brush preview: Stamp`
 
-When tool is Stamp and show_brush_preview is true, the preview renders a rectangular outline matching the stamp dimensions scaled to brush radius.
+When tool is Stamp and show_brush_preview is true, the preview renders the actual stamp image scaled to the brush radius with a border stroke.
 
 ## `Brush preview: CustomBrush`
 
-When tool is CustomBrush and show_brush_preview is true, the preview renders a rectangular outline matching the brush tip dimensions scaled to brush radius.
+When tool is CustomBrush and show_brush_preview is true, the preview renders the actual brush tip image scaled to the brush radius with a border stroke.
 
 ## `Canvas border`
 
-The canvas area is rendered with a dashed purple border (Stroke::new(2.0, Color32::from_rgba_premultiplied(180, 100, 255, 200))) to visually distinguish the canvas from the background.
+The canvas area is rendered with a dashed purple border (Stroke::new(2.0, Color32::from_rgb(128, 0, 128))) to visually distinguish the canvas from the background.
 
 ## `Tool dispatch: Stamp`
 
