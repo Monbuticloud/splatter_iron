@@ -15,6 +15,7 @@ A file-dialog action queued for execution on a background thread. The result is 
 | `Import`        | Opens a native `rfd::FileDialog` "open" dialog filtered for image files (`IMPORT_EXTENSIONS`). Spawns a thread; on user selection, sends `DialogResult::Picked(path)`.                                                                        |
 | `Export(usize)` | Opens a native `rfd::FileDialog` "save" dialog for the export format at the given index into `EXPORT_FORMATS`. Sets default filename to `export.{primary_extension}`. Spawns a thread; on user selection, sends `DialogResult::Picked(path)`. |
 | `LoadStamp`     | Opens a native `rfd::FileDialog` "open" dialog filtered for image files (`IMPORT_EXTENSIONS`). Spawns a thread; decodes the selected image and sends `DialogResult::StampPixels` or `DialogResult::Error`. |
+| `LoadBrush`     | Opens a native `rfd::FileDialog` "open" dialog filtered for `.abr`/`.gbr` files. Spawns a thread; parses the file and sends `DialogResult::BrushTips` or `DialogResult::Error`. |
 
 Derives `Clone`, `Copy`.
 
