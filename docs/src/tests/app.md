@@ -32,3 +32,7 @@ IMPORT_EXTENSIONS should contain common image file extensions (png, jpg, jpeg, w
 ## `export_formats_entries_accessible`
 
 ExportInformation struct can be read from EXPORT_FORMATS list entries.
+
+## `export_information_construction`
+
+ExportInformation can be constructed manually with an extensions slice and an image::ImageFormat.
