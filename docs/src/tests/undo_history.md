@@ -91,3 +91,7 @@ Finalizing drag without init is a no-op (returns None).
 ## `undo_step_on_empty_history_noop`
 
 Undo on an empty history is a no-op (no panic).
+
+## `redo_step_on_empty_history_noop`
+
+Redo on an empty history is a no-op.
