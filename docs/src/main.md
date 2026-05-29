@@ -63,3 +63,7 @@ is additionally gated behind `#[cfg(test)]`.
 ## `brush_library`
 
 Persistent collection of custom brush tips with naming, thumbnails, and on-disk storage. See docs/src/brush_library.md.
+
+## `stamp_library`
+
+Persistent collection of stamp images with naming, thumbnails, and on-disk storage. See docs/src/stamp_library.md.
