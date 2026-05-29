@@ -172,13 +172,18 @@ Steps:
    undo-history capacity.
 3. Resolves the platform data directory via `ProjectDirs` using the three
    identity constants, then creates the `autosaves/` subdirectory.
-4. When the wgpu render state is available (`creation_context.wgpu_render_state`),
+4. Queries `max_texture_dimension_2d` from the wgpu device (falls back to
+   8192 when unavailable) for clamping new-canvas sliders.
+5. Loads the persistent `StampLibrary` and `BrushLibrary` from disk via
+   `load_from_disk(&data_dir)`.
+6. When the wgpu render state is available (`creation_context.wgpu_render_state`),
    creates a GPU `Rgba8UnormSrgb` texture sized to the canvas, registers it
    with the egui_wgpu renderer as a native texture via
    `renderer.register_native_texture`, and wraps it in `GpuTexture`.
-5. Assembles `MyApp` with a new `Document`, default `ToolConfiguration`,
+7. Assembles `MyApp` with a new `Document`, default `ToolConfiguration`,
    `UndoHistory` sized to `pixel_count`, `FileIO` wired to both mpsc
-   channels, default `UIState`, and the optional `GpuTexture`.
+   channels, `UIState` with the queried `max_texture_dimension`, the
+   loaded `StampLibrary` and `BrushLibrary`, and the optional `GpuTexture`.
 
 ### Panics
 
