@@ -64,3 +64,7 @@ StampTintMode controlling whether stamp pixels are multiplied by current_color. 
 ## `brush_sampling`
 
 StampSampling strategy when scaling custom brush tips. Defaults to Nearest.
+
+## `brush_tint_mode`
+
+StampTintMode controlling whether custom brush pixels are tinted by current_color. Defaults to Original.
