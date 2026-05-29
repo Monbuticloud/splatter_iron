@@ -301,11 +301,12 @@ impl MyApp {
                 let pixel_x = (uv.x * (self.document.canvas.width as f32)).floor() as u32;
                 let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
-                Arc::make_mut(&mut self.document.canvas).dirty_rect.request_full_blend();
+                let canvas = Arc::make_mut(&mut self.document.canvas);
+                canvas.dirty_rect.request_full_blend();
                 let stroke = draw_bucket_fill(
                     pixel_x,
                     pixel_y,
-                    Arc::make_mut(&mut self.document.canvas),
+                    canvas,
                     self.tool_configuration.current_color,
                     self.document.current_layer,
                     self.tool_configuration.alpha_overlay,
@@ -327,7 +328,6 @@ impl MyApp {
                 let pixel_y = (uv.y * (self.document.canvas.height as f32)).floor() as u32;
 
                 if self.tool_configuration.current_tool != CurrentTool::BucketFill {
-                    Arc::make_mut(&mut self.document.canvas).dirty_rect.request_full_blend();
                     if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
                         self.document.dirty_since_last_autosave = true;
                         if self.ui.previous_cursor_position.is_none() {
@@ -380,6 +380,9 @@ impl MyApp {
         };
         let alpha_overlay = self.tool_configuration.alpha_overlay && !is_eraser;
 
+        let canvas = Arc::make_mut(&mut self.document.canvas);
+        canvas.dirty_rect.request_full_blend();
+
         match self.tool_configuration.current_tool {
             CurrentTool::BucketFill => None,
 
@@ -398,7 +401,7 @@ impl MyApp {
                                 start_y: pixel_y,
                                 end_x: pixel_x,
                                 end_y: pixel_y,
-                                canvas: Arc::make_mut(&mut self.document.canvas),
+                                canvas,
                                 color,
                                 layer: self.document.current_layer,
                                 visited,
@@ -412,15 +415,15 @@ impl MyApp {
                     } else {
                         let half_radius = self.tool_configuration.radius;
                         let start_x = pixel_x.saturating_sub(half_radius);
-                        let end_x = (pixel_x + half_radius + 1).min(self.document.canvas.width);
+                        let end_x = (pixel_x + half_radius + 1).min(canvas.width);
                         let start_y = pixel_y.saturating_sub(half_radius);
-                        let end_y = (pixel_y + half_radius + 1).min(self.document.canvas.height);
+                        let end_y = (pixel_y + half_radius + 1).min(canvas.height);
                         Some(draw_square(
                             start_x,
                             start_y,
                             end_x,
                             end_y,
-                            Arc::make_mut(&mut self.document.canvas),
+                            canvas,
                             color,
                             self.document.current_layer,
                             false,
@@ -435,7 +438,7 @@ impl MyApp {
                             start_y: previous_y,
                             end_x: pixel_x,
                             end_y: pixel_y,
-                            canvas: Arc::make_mut(&mut self.document.canvas),
+                            canvas,
                             color,
                             layer: self.document.current_layer,
                             visited,
@@ -466,7 +469,7 @@ impl MyApp {
                                 start_y: pixel_y,
                                 end_x: pixel_x,
                                 end_y: pixel_y,
-                                canvas: Arc::make_mut(&mut self.document.canvas),
+                                canvas,
                                 color,
                                 layer: self.document.current_layer,
                                 visited,
@@ -482,7 +485,7 @@ impl MyApp {
                             pixel_x,
                             pixel_y,
                             self.tool_configuration.radius,
-                            Arc::make_mut(&mut self.document.canvas),
+                            canvas,
                             color,
                             self.document.current_layer,
                             false,
@@ -497,7 +500,7 @@ impl MyApp {
                             start_y: previous_y,
                             end_x: pixel_x,
                             end_y: pixel_y,
-                            canvas: Arc::make_mut(&mut self.document.canvas),
+                            canvas,
                             color,
                             layer: self.document.current_layer,
                             visited,
@@ -539,7 +542,7 @@ impl MyApp {
                             start_y,
                             end_x: pixel_x,
                             end_y: pixel_y,
-                            canvas: Arc::make_mut(&mut self.document.canvas),
+                            canvas,
                             color,
                             layer: self.document.current_layer,
                             visited,
@@ -585,7 +588,7 @@ impl MyApp {
                             start_y,
                             end_x: pixel_x,
                             end_y: pixel_y,
-                            canvas: Arc::make_mut(&mut self.document.canvas),
+                            canvas,
                             color,
                             layer: self.document.current_layer,
                             visited,
