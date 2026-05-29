@@ -43,3 +43,7 @@ GBR and ABR brush format file parser tests with synthetic byte buffers.
 ## `custom_brush`
 
 Custom brush tip placement, line interpolation with spacing, and aspect-ratio scaling.
+
+## `stamp_library`
+
+StampLibrary add/remove/select/persistence round-trip tests.
