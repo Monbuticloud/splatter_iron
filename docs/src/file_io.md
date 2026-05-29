@@ -202,3 +202,7 @@ Parsed brush tips Vec<BrushTip> from ABR/GBR file.
 ## `DialogResult::Error`
 
 Error message from bg file operation, pushed to UI error list.
+
+## `FileIO.loaded_stamp_data`
+
+Holds decoded stamp image data after poll_dialog_results processing, consumed by app frame for naming dialog.
