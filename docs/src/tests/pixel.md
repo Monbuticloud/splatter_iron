@@ -113,3 +113,7 @@ blend_region with coordinates outside canvas bounds panics.
 ## `premultiply_alpha_one_zeros_rgb`
 
 Premultiply with alpha=1 and nonzero RGB zeros out RGB (correct premultiplied math).
+
+## `unpremultiply_opaque_max_values`
+
+Unpremultiply on opaque max values stays within valid range.
