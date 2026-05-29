@@ -22,7 +22,7 @@ impl MyApp {
 
         // Keyboard shortcuts (checked every frame regardless of button hover).
         if ui.input(|i| i.key_pressed(egui::Key::N) && i.modifiers.command && !i.modifiers.shift) {
-            self.ui.show_new_canvas_dialog = true;
+            self.ui.dialogs.show_new_canvas_dialog = true;
         }
         if ui.input(|i| i.key_pressed(egui::Key::O) && i.modifiers.command && !i.modifiers.shift) {
             self.file_io.queue_file_action(PendingFileAction::Load);
@@ -69,7 +69,7 @@ impl MyApp {
 
             // New
             if ui.button("New").clicked() {
-                self.ui.show_new_canvas_dialog = true;
+                self.ui.dialogs.show_new_canvas_dialog = true;
             }
 
             // Export menu with all supported formats

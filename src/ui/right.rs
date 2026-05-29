@@ -104,24 +104,24 @@ impl MyApp {
             if let Some(layer_action) = pending_layer_action {
                 match layer_action {
                     LayerAction::Delete(index) => {
-                        if self.ui.pending_layer_for_deletion == Some(index)
+                        if self.ui.dialogs.pending_layer_for_deletion == Some(index)
                             && self.document.canvas.pixels.len() > 1
                         {
-                            self.ui.pending_layer_for_deletion = None;
+                            self.ui.dialogs.pending_layer_for_deletion = None;
                             self.document.delete_layer(index);
                         } else {
-                            self.ui.pending_layer_for_deletion = Some(index);
+                            self.ui.dialogs.pending_layer_for_deletion = Some(index);
                         }
                     }
                     LayerAction::MoveUp(index) => {
                         if index > 0 {
-                            self.ui.pending_layer_for_deletion = None;
+                            self.ui.dialogs.pending_layer_for_deletion = None;
                             self.document.move_layer_up(index);
                         }
                     }
                     LayerAction::MoveDown(index) => {
                         if index < self.document.canvas.pixels.len() - 1 {
-                            self.ui.pending_layer_for_deletion = None;
+                            self.ui.dialogs.pending_layer_for_deletion = None;
                             self.document.move_layer_down(index);
                         }
                     }

@@ -185,6 +185,62 @@ pub struct PendingStamp {
     pub spacing: u8,
 }
 
+/// Dialog-related state: open/closed flags, input values, pending confirmations.
+pub struct DialogState {
+    /// Layer index pending deletion confirmation, if any.
+    pub pending_layer_for_deletion: Option<usize>,
+    /// Whether the "New Canvas" dialog is currently open.
+    pub show_new_canvas_dialog: bool,
+    /// Width input for the new canvas dialog (in pixels).
+    pub new_canvas_width: u32,
+    /// Height input for the new canvas dialog (in pixels).
+    pub new_canvas_height: u32,
+    /// Dimensions of a canvas pending user confirmation because it exceeds the
+    /// memory warning threshold. `None` when no confirmation is pending.
+    pub pending_large_canvas: Option<(u32, u32)>,
+    /// A stamp image awaiting a name from the user before being added to the library.
+    pub pending_stamp_name: Option<PendingStamp>,
+    /// Brush tips awaiting user-confirmed names before being added to the library.
+    pub pending_brushes: Option<Vec<PendingStamp>>,
+}
+
+impl Default for DialogState {
+    fn default() -> Self {
+        Self {
+            pending_layer_for_deletion: None,
+            show_new_canvas_dialog: false,
+            new_canvas_width: 2000,
+            new_canvas_height: 1500,
+            pending_large_canvas: None,
+            pending_stamp_name: None,
+            pending_brushes: None,
+        }
+    }
+}
+
+/// Error messages displayed in the error overlay.
+pub struct ErrorState {
+    pub list: Vec<String>,
+}
+
+impl Default for ErrorState {
+    fn default() -> Self {
+        Self { list: Vec::new() }
+    }
+}
+
+/// Transient toast notification.
+pub struct ToastState {
+    /// The message text and the instant it was triggered.
+    pub message: Option<(String, Instant)>,
+}
+
+impl Default for ToastState {
+    fn default() -> Self {
+        Self { message: None }
+    }
+}
+
 /// UI-level state that doesn't belong to any domain module.
 pub struct UIState {
     /// Current rendering cadence (active, throttled, or frozen).
@@ -195,16 +251,6 @@ pub struct UIState {
     pub times_autosaved: u32,
     /// Wall-clock time when the last autosave completed.
     pub last_autosave_time: Duration,
-    /// Error messages displayed in the error overlay.
-    pub displayed_error_list: Vec<String>,
-    /// Layer index pending deletion confirmation, if any.
-    pub pending_layer_for_deletion: Option<usize>,
-    /// Whether the "New Canvas" dialog is currently open.
-    pub show_new_canvas_dialog: bool,
-    /// Width input for the new canvas dialog (in pixels).
-    pub new_canvas_width: u32,
-    /// Height input for the new canvas dialog (in pixels).
-    pub new_canvas_height: u32,
     /// Tool selected before the current one (used for eraser toggle-back).
     pub previous_tool: Option<CurrentTool>,
     /// Cursor position from the previous frame (used for brush preview).
@@ -215,15 +261,12 @@ pub struct UIState {
     /// Queried from `device.limits().max_texture_dimension_2d`; falls back
     /// to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
     pub max_texture_dimension: u32,
-    /// Dimensions of a canvas pending user confirmation because it exceeds the
-    /// memory warning threshold. `None` when no confirmation is pending.
-    pub pending_large_canvas: Option<(u32, u32)>,
-    /// A stamp image awaiting a name from the user before being added to the library.
-    pub pending_stamp_name: Option<PendingStamp>,
-    /// Brush tips awaiting user-confirmed names before being added to the library.
-    pub pending_brushes: Option<Vec<PendingStamp>>,
-    /// Transient toast message and the instant it was triggered.
-    pub toast_message: Option<(String, Instant)>,
+    /// Dialog-related state.
+    pub dialogs: DialogState,
+    /// Error messages displayed in the error overlay.
+    pub errors: ErrorState,
+    /// Transient toast notification.
+    pub toasts: ToastState,
 }
 
 impl Default for UIState {
@@ -235,19 +278,13 @@ impl Default for UIState {
             time_elapsed: Duration::ZERO,
             times_autosaved: 0,
             last_autosave_time: Duration::ZERO,
-            displayed_error_list: Vec::new(),
-            pending_layer_for_deletion: None,
-            show_new_canvas_dialog: false,
-            new_canvas_width: 2000,
-            new_canvas_height: 1500,
             max_texture_dimension: 8192,
             previous_tool: None,
             previous_cursor_position: None,
             undo_redo_steps_multiplier: 1,
-            pending_large_canvas: None,
-            pending_stamp_name: None,
-            pending_brushes: None,
-            toast_message: None,
+            dialogs: DialogState::default(),
+            errors: ErrorState::default(),
+            toasts: ToastState::default(),
         }
     }
 }
@@ -409,7 +446,7 @@ impl MyApp {
         let height = self.document.canvas.height;
         let max_dim = render_state.device.limits().max_texture_dimension_2d;
         if width > max_dim || height > max_dim {
-            self.ui.displayed_error_list.push(format!(
+            self.ui.errors.list.push(format!(
                 "Canvas too large for GPU: {width}×{height} exceeds device max \
                  texture dimension of {max_dim}. The display may be incomplete."
             ));
@@ -454,13 +491,13 @@ impl MyApp {
         self.file_io.poll_dialog_results(
             &mut self.document,
             &mut self.undo,
-            &mut self.ui.displayed_error_list,
+            &mut self.ui.errors.list,
         );
         self.file_io
-            .poll_save_results(&mut self.document, &mut self.ui.displayed_error_list);
+            .poll_save_results(&mut self.document, &mut self.ui.errors.list);
 
         if let Some((pixels, w, h, name)) = self.file_io.loaded_stamp_data.take() {
-            self.ui.pending_stamp_name = Some(crate::app::PendingStamp {
+            self.ui.dialogs.pending_stamp_name = Some(crate::app::PendingStamp {
                 pixels,
                 width: w,
                 height: h,
@@ -480,7 +517,7 @@ impl MyApp {
                     spacing: tip.spacing,
                 })
                 .collect();
-            self.ui.pending_brushes = Some(pending);
+            self.ui.dialogs.pending_brushes = Some(pending);
         }
 
         self.stamp_library.create_textures(ctx);
@@ -566,7 +603,7 @@ impl MyApp {
 
     /// Show the error-list window (dismiss, copy, dismiss-all).
     fn show_error_window(&mut self, ui: &mut egui::Ui) {
-        if self.ui.displayed_error_list.is_empty() {
+        if self.ui.errors.list.is_empty() {
             return;
         }
         let mut open = true;
@@ -577,7 +614,7 @@ impl MyApp {
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .open(&mut open)
             .show(ui, |ui| {
-                for (index, msg) in self.ui.displayed_error_list.iter().enumerate() {
+                for (index, msg) in self.ui.errors.list.iter().enumerate() {
                     ui.label(format!("Error: {msg}"));
                     ui.horizontal(|ui| {
                         if ui.button("Dismiss").clicked() {
@@ -590,7 +627,7 @@ impl MyApp {
                 }
                 ui.horizontal(|ui| {
                     if ui.button("Dismiss All").clicked() {
-                        to_dismiss.extend(0..self.ui.displayed_error_list.len());
+                        to_dismiss.extend(0..self.ui.errors.list.len());
                     }
                 });
             });
@@ -598,16 +635,16 @@ impl MyApp {
         to_dismiss.sort_unstable_by(|a, b| b.cmp(a));
         to_dismiss.dedup();
         for i in to_dismiss {
-            self.ui.displayed_error_list.remove(i);
+            self.ui.errors.list.remove(i);
         }
         if !open {
-            self.ui.displayed_error_list.clear();
+            self.ui.errors.list.clear();
         }
     }
 
     /// Show the "Large Canvas Warning" confirmation dialog.
     fn show_large_canvas_warning(&mut self, ui: &mut egui::Ui) {
-        let Some((w, h)) = self.ui.pending_large_canvas else {
+        let Some((w, h)) = self.ui.dialogs.pending_large_canvas else {
             return;
         };
         let mut open = true;
@@ -629,22 +666,22 @@ impl MyApp {
                         self.document.replace_canvas(canvas, &mut self.undo);
                         self.ui.previous_tool = None;
                         self.ui.previous_cursor_position = None;
-                        self.ui.show_new_canvas_dialog = false;
-                        self.ui.pending_large_canvas = None;
+                        self.ui.dialogs.show_new_canvas_dialog = false;
+                        self.ui.dialogs.pending_large_canvas = None;
                     }
                     if ui.button("Cancel").clicked() {
-                        self.ui.pending_large_canvas = None;
+                        self.ui.dialogs.pending_large_canvas = None;
                     }
                 });
             });
         if !open {
-            self.ui.pending_large_canvas = None;
+            self.ui.dialogs.pending_large_canvas = None;
         }
     }
 
     /// Show the "New Canvas" preset / custom-size dialog.
     fn show_new_canvas_dialog(&mut self, ui: &mut egui::Ui) {
-        if !self.ui.show_new_canvas_dialog {
+        if !self.ui.dialogs.show_new_canvas_dialog {
             return;
         }
         let mut open = true;
@@ -657,8 +694,8 @@ impl MyApp {
                 ui.horizontal(|ui| {
                     for &(label, width, height) in NEW_CANVAS_PRESETS {
                         if ui.button(format!("{label}\n{width}×{height}")).clicked() {
-                            self.ui.new_canvas_width = width;
-                            self.ui.new_canvas_height = height;
+                            self.ui.dialogs.new_canvas_width = width;
+                            self.ui.dialogs.new_canvas_height = height;
                         }
                     }
                 });
@@ -666,14 +703,14 @@ impl MyApp {
                 ui.label("Custom:");
                 ui.add(
                     egui::Slider::new(
-                        &mut self.ui.new_canvas_width,
+                        &mut self.ui.dialogs.new_canvas_width,
                         4..=self.ui.max_texture_dimension,
                     )
                     .text("Width"),
                 );
                 ui.add(
                     egui::Slider::new(
-                        &mut self.ui.new_canvas_height,
+                        &mut self.ui.dialogs.new_canvas_height,
                         4..=self.ui.max_texture_dimension,
                     )
                     .text("Height"),
@@ -681,36 +718,36 @@ impl MyApp {
                 ui.horizontal(|ui| {
                     if ui.button("Create").clicked() {
                         let mem = estimate_canvas_memory(
-                            self.ui.new_canvas_width,
-                            self.ui.new_canvas_height,
+                            self.ui.dialogs.new_canvas_width,
+                            self.ui.dialogs.new_canvas_height,
                         );
                         if mem > MEMORY_WARNING_THRESHOLD {
-                            self.ui.pending_large_canvas =
-                                Some((self.ui.new_canvas_width, self.ui.new_canvas_height));
+                            self.ui.dialogs.pending_large_canvas =
+                                Some((self.ui.dialogs.new_canvas_width, self.ui.dialogs.new_canvas_height));
                         } else {
                             let canvas = Canvas::new(
-                                self.ui.new_canvas_width,
-                                self.ui.new_canvas_height,
+                                self.ui.dialogs.new_canvas_width,
+                                self.ui.dialogs.new_canvas_height,
                             );
                             self.document.replace_canvas(canvas, &mut self.undo);
                             self.ui.previous_tool = None;
                             self.ui.previous_cursor_position = None;
-                            self.ui.show_new_canvas_dialog = false;
+                            self.ui.dialogs.show_new_canvas_dialog = false;
                         }
                     }
                     if ui.button("Cancel").clicked() {
-                        self.ui.show_new_canvas_dialog = false;
+                        self.ui.dialogs.show_new_canvas_dialog = false;
                     }
                 });
             });
         if !open {
-            self.ui.show_new_canvas_dialog = false;
+            self.ui.dialogs.show_new_canvas_dialog = false;
         }
     }
 
     /// Show the stamp-naming dialog when a new stamp has been loaded.
     fn show_stamp_naming_dialog(&mut self, ui: &mut egui::Ui) {
-        let Some(mut pending) = self.ui.pending_stamp_name.take() else {
+        let Some(mut pending) = self.ui.dialogs.pending_stamp_name.take() else {
             return;
         };
         let mut open = true;
@@ -739,18 +776,18 @@ impl MyApp {
                         stamp_h,
                         ui.ctx(),
                     );
-                    self.ui.toast_message =
+                    self.ui.toasts.message =
                         Some((format!("Stamp \"{stamp_name}\" added"), Instant::now()));
                 }
             });
         if open {
-            self.ui.pending_stamp_name = Some(pending);
+            self.ui.dialogs.pending_stamp_name = Some(pending);
         }
     }
 
     /// Show the brush-import naming dialog when brushes have been loaded.
     fn show_brush_naming_dialog(&mut self, ui: &mut egui::Ui) {
-        let Some(brushes) = &mut self.ui.pending_brushes else {
+        let Some(brushes) = &mut self.ui.dialogs.pending_brushes else {
             return;
         };
         let mut open = true;
@@ -797,7 +834,7 @@ impl MyApp {
                 }
             });
         if confirmed {
-            let all_brushes = self.ui.pending_brushes.take().unwrap();
+            let all_brushes = self.ui.dialogs.pending_brushes.take().unwrap();
             let count = all_brushes.len();
             for brush in all_brushes {
                 if !brush.name.is_empty() {
@@ -812,16 +849,16 @@ impl MyApp {
                     );
                 }
             }
-            self.ui.toast_message =
+            self.ui.toasts.message =
                 Some((format!("Imported {count} brush(es)"), Instant::now()));
         } else if !open {
-            self.ui.pending_brushes = None;
+            self.ui.dialogs.pending_brushes = None;
         }
     }
 
     /// Show a brief toast notification (auto-dismissed after 2 seconds).
     fn show_toast(&mut self, ui: &mut egui::Ui) {
-        let Some((message, triggered_at)) = &self.ui.toast_message.clone() else {
+        let Some((message, triggered_at)) = &self.ui.toasts.message.clone() else {
             return;
         };
         if triggered_at.elapsed() < std::time::Duration::from_secs(2) {
@@ -835,7 +872,7 @@ impl MyApp {
                     );
                 });
         } else {
-            self.ui.toast_message = None;
+            self.ui.toasts.message = None;
         }
     }
 
