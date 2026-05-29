@@ -117,9 +117,9 @@ pub fn draw_circle(
     let width = canvas.width as usize;
     let height = canvas.height;
 
-    // Clamp center to canvas
-    let center_x = center_x.min(canvas.width);
-    let center_y = center_y.min(height);
+    // Clamp center to canvas (inclusive bounds)
+    let center_x = center_x.min(canvas.width.saturating_sub(1));
+    let center_y = center_y.min(height.saturating_sub(1));
 
     if radius == 0 || center_x >= canvas.width || center_y >= height {
         return UndoRecord::Run {
