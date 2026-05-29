@@ -63,3 +63,7 @@ A uniform full-canvas square compresses each run as `BeforePixels::All`. `undo_a
 ## `multiple_undos_stack`
 
 Two consecutive strokes can be undone in reverse order and redone in original order, composing correctly.
+
+## `undo_apply_corrupt_run_panics`
+
+undo_apply on an UndoRecord with mismatched run lengths panics (invariant violation).
