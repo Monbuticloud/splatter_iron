@@ -4,6 +4,7 @@
 use eframe::egui;
 
 use crate::app::MyApp;
+use crate::canvas::CurrentTool;
 
 const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=100;
 const BRUSH_RADIUS_RANGE: std::ops::RangeInclusive<u32> = 0..=1000;
@@ -45,8 +46,18 @@ impl MyApp {
         ui.label("Settings");
         ui.separator();
         ui.label("Color Selector");
-
-        ui.color_edit_button_srgba(&mut self.tool_configuration.current_color);
+        ui.horizontal(|ui| {
+            if ui
+                .selectable_label(
+                    self.tool_configuration.current_tool == CurrentTool::Eyedropper,
+                    "Eyedropper",
+                )
+                .clicked()
+            {
+                self.tool_configuration.current_tool = CurrentTool::Eyedropper;
+            }
+            ui.color_edit_button_srgba(&mut self.tool_configuration.current_color);
+        });
 
         ui.separator();
 
