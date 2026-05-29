@@ -22,6 +22,10 @@ mod undo_history;
 mod tests;
 use mimalloc::MiMalloc;
 
+use std::sync::Arc;
+
+use eframe::egui_wgpu::wgpu;
+
 use crate::app::{ APP_QUALIFIER, APP_ORGANIZATION, APP_NAME };
 
 #[global_allocator]
@@ -49,9 +53,29 @@ fn main() -> eframe::Result {
     let data_dir = project_dirs.data_local_dir().to_path_buf();
     std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
 
+    use eframe::egui_wgpu::WgpuConfiguration;
+
     eframe::run_native(
         APP_NAME,
-        eframe::NativeOptions::default(),
+        eframe::NativeOptions {
+            wgpu_options: WgpuConfiguration {
+                wgpu_setup: eframe::egui_wgpu::WgpuSetup::CreateNew(
+                    eframe::egui_wgpu::WgpuSetupCreateNew {
+                        device_descriptor: Arc::new(|_adapter: &wgpu::Adapter| wgpu::DeviceDescriptor {
+                            label: Some("splatter_iron_device"),
+                            required_limits: wgpu::Limits {
+                                max_texture_dimension_2d: 32768,
+                                ..wgpu::Limits::default()
+                            },
+                            ..Default::default()
+                        }),
+                        ..eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle()
+                    },
+                ),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
         Box::new(|cc| Ok(Box::new(app::MyApp::new(cc))))
     )
 }
