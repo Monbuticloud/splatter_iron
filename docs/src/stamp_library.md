@@ -144,6 +144,12 @@ pub fn select(&mut self, index: usize)
 
 Select the stamp at `index`. No-op if `index` is out of range.
 
+### Parameters
+
+| Parameter | Type     | Purpose                          |
+| --------- | -------- | -------------------------------- |
+| `index`   | `usize`  | Index of the stamp to select     |
+
 ## `StampLibrary::selected_index`
 
 ```rust
