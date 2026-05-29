@@ -297,6 +297,15 @@ pub fn draw_stamp_line(
     let canvas_height = canvas.height;
     let layer_pixels = &mut canvas.pixels[layer].pixels;
 
+    if stamp_width == 0 || stamp_height == 0 {
+        return UndoRecord::Run {
+            layer_index: layer,
+            color_after: color,
+            runs: Vec::new(),
+            is_alpha_overlay: alpha_overlay,
+        };
+    }
+
     let output_w = radius.max(1);
     let output_h =
         ((stamp_height as f64 * output_w as f64 / stamp_width as f64).round() as u32).max(1);
