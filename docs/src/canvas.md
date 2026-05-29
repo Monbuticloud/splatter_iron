@@ -319,3 +319,7 @@ Layers are composited bottom-to-top by [`blend_layers()`] — later layers overl
 ## `struct DirtyRectList`
 
 A collection of DirtyRect values with proximity-based merging. When adding a rect via add(), if it overlaps or is within MAX_PROXIMITY of an existing rect they are merged. This reduces the number of partial texture uploads without requiring a full-canvas blend.
+
+## `DirtyRectList::new`
+
+Creates an empty DirtyRectList with no rects.
