@@ -113,6 +113,9 @@ pub struct UIState {
     /// Queried from `device.limits().max_texture_dimension_2d`; falls back
     /// to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
     pub max_texture_dimension: u32,
+    /// Dimensions of a canvas pending user confirmation because it exceeds the
+    /// memory warning threshold. `None` when no confirmation is pending.
+    pub pending_large_canvas: Option<(u32, u32)>,
     /// A stamp image awaiting a name from the user before being added to the library.
     pub pending_stamp_name: Option<PendingStamp>,
     /// Transient toast message and the instant it was triggered.
@@ -134,6 +137,7 @@ impl Default for UIState {
             new_canvas_width: 2000,
             new_canvas_height: 1500,
             max_texture_dimension: 8192,
+            pending_large_canvas: None,
             pending_stamp_name: None,
             toast_message: None,
         }
