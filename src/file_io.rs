@@ -13,6 +13,7 @@ use crate::app::{
     IMPORT_EXTENSIONS,
 };
 use crate::document::Document;
+use crate::tools::brush_parsers::BrushTip;
 use crate::undo_history::UndoHistory;
 
 // --- Autosave constants ---
@@ -36,6 +37,8 @@ pub enum PendingFileAction {
     Export(usize),
     /// Open a native "open" dialog to load an image as a stamp.
     LoadStamp,
+    /// Open a native "open" dialog to load a brush file (.abr, .gbr, .brush).
+    LoadBrush,
 }
 
 /// Message sent back from the file-dialog thread to the UI thread.
@@ -43,6 +46,8 @@ pub enum DialogResult {
     Picked(PathBuf),
     /// Decoded stamp image pixels + dimensions + suggested name (file stem).
     StampPixels(Vec<Color32>, u32, u32, String),
+    /// Parsed brush tips from an ABR/GBR file.
+    BrushTips(Vec<BrushTip>),
     /// An error occurred during a file operation.
     Error(String),
 }
@@ -86,6 +91,9 @@ pub struct FileIO {
     /// Result of a stamp-image load, consumed by the app frame after polling.
     /// Contains pixels, width, height, and suggested name.
     pub loaded_stamp_data: Option<(Vec<Color32>, u32, u32, String)>,
+    /// Result of a brush-file load, consumed by the app frame after polling.
+    /// Contains parsed brush tips.
+    pub loaded_brush_data: Option<Vec<BrushTip>>,
 }
 
 impl FileIO {
@@ -117,6 +125,7 @@ impl FileIO {
             save_result_receiver,
             app_local_data_directory,
             loaded_stamp_data: None,
+            loaded_brush_data: None,
         }
     }
 
@@ -190,6 +199,29 @@ impl FileIO {
                     }
                 });
             }
+            PendingFileAction::LoadBrush => {
+                self.pending_file_action = Some(PendingFileAction::LoadBrush);
+                std::thread::spawn(move || {
+                    if
+                        let Some(path) = rfd::FileDialog
+                            ::new()
+                            .add_filter("Brush Files", &["abr", "gbr", "brush"])
+                            .pick_file()
+                    {
+                        // Parse the brush file in the background thread
+                        match crate::tools::brush_parsers::parse_brush_file(&path) {
+                            Ok(tips) => {
+                                let _ = sender.send(DialogResult::BrushTips(tips));
+                            }
+                            Err(error) => {
+                                let _ = sender.send(DialogResult::Error(
+                                    format!("Failed to load brush: {error}"),
+                                ));
+                            }
+                        }
+                    }
+                });
+            }
             PendingFileAction::LoadStamp => {
                 self.pending_file_action = Some(PendingFileAction::LoadStamp);
                 std::thread::spawn(move || {
@@ -252,6 +284,10 @@ impl FileIO {
             match result {
                 DialogResult::StampPixels(pixels, w, h, name) => {
                     self.loaded_stamp_data = Some((pixels, w, h, name));
+                    self.pending_file_action = None;
+                }
+                DialogResult::BrushTips(tips) => {
+                    self.loaded_brush_data = Some(tips);
                     self.pending_file_action = None;
                 }
                 DialogResult::Error(msg) => {
@@ -329,6 +365,9 @@ impl FileIO {
                         }
                         PendingFileAction::LoadStamp => {
                             // Handled exclusively by the StampPixels variant above.
+                        }
+                        PendingFileAction::LoadBrush => {
+                            // Handled exclusively by the BrushTips variant above.
                         }
                     }
                 }
