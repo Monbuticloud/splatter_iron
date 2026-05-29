@@ -44,3 +44,7 @@ Calling `save_to_current_path` with an empty save path does nothing.
 ## `trigger_async_save_writes_file`
 
 `trigger_async_save` writes a valid `.splattercanvas` file to disk, verified by checking file existence after a 100 ms sleep.
+
+## `poll_dialog_results_stamp_pixels_sets_loaded`
+
+Receiving DialogResult::StampPixels with LoadStamp pending sets loaded_stamp_data for the frame loop.
