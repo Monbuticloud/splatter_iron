@@ -268,3 +268,7 @@ Brush tips awaiting user confirmation in a name-entry dialog. Set when loaded_br
 ## `UIState.toast_message`
 
 A transient toast notification message displayed briefly in the UI. Set by the frame loop for non-blocking feedback.
+
+## `MyApp.stamp_library`
+
+Persistent StampLibrary instance holding all imported stamp images. Initialised in MyApp::new via StampLibrary::load_from_disk.
