@@ -76,6 +76,9 @@ impl MyApp {
             if ui.input(|i| i.key_pressed(egui::Key::B) && !i.modifiers.command) {
                 self.tool_configuration.current_tool = CurrentTool::CustomBrush;
             }
+            if ui.input(|i| i.key_pressed(egui::Key::I) && !i.modifiers.command) {
+                self.tool_configuration.current_tool = CurrentTool::Eyedropper;
+            }
         }
 
         // Keyboard shortcuts (checked every frame regardless of button hover).
