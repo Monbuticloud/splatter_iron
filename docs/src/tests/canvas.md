@@ -46,3 +46,7 @@ The default canvas sets `render_next_frame` to `true` (initial full re-render ne
 ## `canvas_new_render_next_frame_is_true`
 
 `Canvas::new(10, 10)` also sets `render_next_frame` to `true`.
+
+## `canvas_dirty_rect_default_empty`
+
+A freshly constructed Canvas has dirty_rect.is_empty() (DirtyRectList starts empty). Renamed from canvas_dirty_rect_default_none to reflect the DirtyRectList type.
