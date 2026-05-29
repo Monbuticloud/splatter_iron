@@ -190,3 +190,7 @@ Opens native open dialog filtered for image files; decodes into pixels and sends
 ## `PendingFileAction::LoadBrush`
 
 Opens native open dialog for .abr/.gbr files; parses and sends BrushTips result.
+
+## `DialogResult::StampPixels`
+
+Decoded stamp image from bg thread: pix Vec<Color32>, width, height, name stem.
