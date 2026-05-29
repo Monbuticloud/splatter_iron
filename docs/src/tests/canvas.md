@@ -118,3 +118,7 @@ Clearing DirtyRectList removes all rects.
 ## `dirty_rect_list_take_all_drains`
 
 take_all() drains the list and returns all rects.
+
+## `dirty_rect_list_merge_all`
+
+merge_all() returns the union of all rects.
