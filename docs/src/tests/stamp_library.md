@@ -25,3 +25,7 @@ Remove the last stamp clears selection to None.
 ## `get_valid_index`
 
 Retrieve a stamp by valid index returns Some with correct name.
+
+## `get_out_of_bounds_returns_none`
+
+Get with out-of-bounds index returns None.
