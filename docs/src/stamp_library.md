@@ -147,4 +147,12 @@ Return the index of the currently selected stamp, if any.
 pub fn selected(&self) -> Option<&StampEntry>
 ```
 
-Return a reference to the currently selected stamp entry, if any. |
+Return a reference to the currently selected stamp entry, if any.
+
+## `StampLibrary::selected_mut`
+
+```rust
+pub fn selected_mut(&mut self) -> Option<&mut StampEntry>
+```
+
+Return a mutable reference to the currently selected stamp entry, if any. |
