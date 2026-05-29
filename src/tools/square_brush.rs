@@ -282,49 +282,17 @@ pub fn draw_square_line(
 
     let pixels = &mut canvas.pixels[layer].pixels;
 
-    let mut runs: Vec<RunSegment> = Vec::new();
-    for y in dirty_rect.min_y..=dirty_rect.max_y {
-        let row_start = (y as usize) * width;
-        let mut x = dirty_rect.min_x;
-        while x <= dirty_rect.max_x {
-            let pixel_index = row_start + x as usize;
-            if visited[pixel_index] != stamp {
-                x += 1;
-                continue;
-            }
-            if alpha_overlay && drag_processed[pixel_index] == drag_stamp_value {
-                x += 1;
-                continue;
-            }
-            let run_start = pixel_index as u32;
-            let mut before = Vec::new();
-            while x <= dirty_rect.max_x {
-                let next_pixel_index = row_start + x as usize;
-                if visited[next_pixel_index] != stamp {
-                    break;
-                }
-                if alpha_overlay && drag_processed[next_pixel_index] == drag_stamp_value {
-                    break;
-                }
-                before.push(pixels[next_pixel_index]);
-                pixels[next_pixel_index] = if alpha_overlay {
-                    crate::pixel::alpha_blend(pixels[next_pixel_index], color)
-                } else {
-                    color
-                };
-                if alpha_overlay {
-                    drag_processed[next_pixel_index] = drag_stamp_value;
-                }
-                x += 1;
-            }
-            let (rle_before, length) = compress_run(before);
-            runs.push(RunSegment {
-                start: run_start,
-                length,
-                before: rle_before,
-            });
-        }
-    }
+    let runs = crate::tools::brush_common::apply_visited_runs(
+        pixels,
+        &dirty_rect,
+        width,
+        visited,
+        stamp,
+        color,
+        alpha_overlay,
+        drag_processed,
+        drag_stamp_value,
+    );
 
     canvas.dirty_rect.add(dirty_rect);
 
