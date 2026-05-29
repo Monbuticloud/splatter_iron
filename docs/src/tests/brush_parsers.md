@@ -47,3 +47,7 @@ Truncated ABR file should return an error.
 ## `parse_abr_unsupported_version`
 
 ABR with unsupported version number should return an error.
+
+## `parse_abr_sampled_bgra`
+
+Parse ABR v6 sampled BGRA brush; verify pixel values and premultiplied constraint.
