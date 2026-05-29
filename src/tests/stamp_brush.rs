@@ -550,3 +550,73 @@ fn stamp_fully_off_screen_noop() {
         "off-screen stamp leaves canvas unchanged",
     );
 }
+
+/// Zero-width stamp should return an empty undo record without panicking.
+#[test]
+fn zero_width_stamp_returns_empty_undo() {
+    let mut canvas = small_canvas();
+    let mut visited = vec![0u32; 100];
+    let mut drag_processed = vec![0u32; 100];
+    let record = stamp_brush::draw_stamp_line(
+        BrushStrokeParams {
+            start_x: 5,
+            start_y: 5,
+            end_x: 5,
+            end_y: 5,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 1,
+        },
+        &[],
+        0,
+        2,
+        5,
+        false,
+        StampSampling::Nearest,
+    );
+    let crate::undo::UndoRecord::Run { runs, .. } = &record;
+    assert!(
+        runs.is_empty(),
+        "zero-width stamp should have no runs"
+    );
+}
+
+/// Zero-height stamp should return an empty undo record without panicking.
+#[test]
+fn zero_height_stamp_returns_empty_undo() {
+    let mut canvas = small_canvas();
+    let mut visited = vec![0u32; 100];
+    let mut drag_processed = vec![0u32; 100];
+    let record = stamp_brush::draw_stamp_line(
+        BrushStrokeParams {
+            start_x: 5,
+            start_y: 5,
+            end_x: 5,
+            end_y: 5,
+            canvas: &mut canvas,
+            color: red(),
+            layer: 0,
+            visited: &mut visited,
+            stamp: 1,
+            alpha_overlay: false,
+            drag_processed: &mut drag_processed,
+            drag_stamp_value: 1,
+        },
+        &[],
+        2,
+        0,
+        5,
+        false,
+        StampSampling::Nearest,
+    );
+    let crate::undo::UndoRecord::Run { runs, .. } = &record;
+    assert!(
+        runs.is_empty(),
+        "zero-height stamp should have no runs"
+    );
+}
