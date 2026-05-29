@@ -10,4 +10,5 @@ pub mod circle_brush;
 pub mod custom_brush;
 /// Rectangular brush tool implementation.
 pub mod square_brush;
+/// External-image stamp brush tool implementation.
 pub mod stamp_brush;
