@@ -261,6 +261,10 @@ pub enum ProgressState {
     Idle,
     /// Exporting an image file.
     Exporting,
+    /// Loading a `.splattercanvas` file.
+    Loading,
+    /// Importing an image file as a new canvas.
+    Importing,
 }
 
 /// UI-level state that doesn't belong to any domain module.
@@ -548,9 +552,22 @@ impl MyApp {
         self.file_io
             .poll_save_results(&mut self.document, &mut self.ui.errors.list);
 
-        // Track export progress.
-        if self.file_io.export_in_flight {
+        // Poll load/import results (applies `Canvas` to document).
+        self.file_io.poll_load_import_results(
+            &mut self.document,
+            &mut self.undo,
+            &mut self.ui.errors.list,
+        );
+
+        // Track async operation progress.
+        if self.file_io.load_in_flight {
+            self.ui.progress = ProgressState::Loading;
+        } else if self.file_io.import_in_flight {
+            self.ui.progress = ProgressState::Importing;
+        } else if self.file_io.export_in_flight {
             self.ui.progress = ProgressState::Exporting;
+        } else {
+            self.ui.progress = ProgressState::Idle;
         }
         if self.file_io.poll_export_results(&mut self.ui.errors.list) {
             self.ui.progress = ProgressState::Idle;
@@ -1007,6 +1024,8 @@ impl MyApp {
         let label = match self.ui.progress {
             ProgressState::Idle => return,
             ProgressState::Exporting => "Exporting…",
+            ProgressState::Loading => "Loading…",
+            ProgressState::Importing => "Importing…",
         };
         egui::Area::new(egui::Id::new("progress_indicator"))
             .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
