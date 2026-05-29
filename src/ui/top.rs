@@ -90,6 +90,17 @@ impl MyApp {
                 ui.ctx().request_repaint();
             }
 
+            // Autosaves — open the autosave folder in the OS file manager
+            if ui.button("Autosaves").clicked() {
+                let path = self.file_io.autosave_directory();
+                #[cfg(target_os = "macos")]
+                let _ = std::process::Command::new("open").arg(&path).spawn();
+                #[cfg(target_os = "windows")]
+                let _ = std::process::Command::new("explorer").arg(&path).spawn();
+                #[cfg(all(unix, not(target_os = "macos")))]
+                let _ = std::process::Command::new("xdg-open").arg(&path).spawn();
+            }
+
             ui.separator();
 
             // Undo / Redo buttons
