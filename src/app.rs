@@ -116,6 +116,10 @@ pub struct UIState {
     pub new_canvas_width: u32,
     /// Height input for the new canvas dialog (in pixels).
     pub new_canvas_height: u32,
+    /// Maximum 2D texture dimension supported by the GPU device.
+    /// Queried from `device.limits().max_texture_dimension_2d`; falls back
+    /// to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
+    pub max_texture_dimension: u32,
     /// A stamp image awaiting a name from the user before being added to the library.
     pub pending_stamp_name: Option<PendingStamp>,
     /// Transient toast message and the instant it was triggered.
@@ -136,6 +140,7 @@ impl Default for UIState {
             show_new_canvas_dialog: false,
             new_canvas_width: 2000,
             new_canvas_height: 1500,
+            max_texture_dimension: 8192,
             pending_stamp_name: None,
             toast_message: None,
         }
@@ -204,6 +209,14 @@ impl MyApp {
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
         std::fs::create_dir_all(&data_dir.join("autosaves")).expect("Couldn't create autosave dir");
 
+        // Query the device's max 2D texture dimension for the new-canvas slider.
+        // Falls back to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
+        let max_texture_dimension = creation_context
+            .wgpu_render_state
+            .as_ref()
+            .map(|rs| rs.device.limits().max_texture_dimension_2d)
+            .unwrap_or(8192);
+
         let stamp_library = crate::stamp_library::StampLibrary::load_from_disk(&data_dir);
 
         let gpu_texture = creation_context.wgpu_render_state.as_ref().map(|render_state| {
@@ -245,7 +258,7 @@ impl MyApp {
                 save_result_receiver,
                 data_dir,
             ),
-            ui: UIState::default(),
+            ui: UIState { max_texture_dimension, ..UIState::default() },
             gpu_texture,
             stamp_library,
         }

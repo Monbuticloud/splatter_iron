@@ -107,8 +107,8 @@ pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
 /// Returns an error if the file cannot be created or the image encoder fails.
 pub fn export_as_image(
     premultiplied_rgba: &[u8],
-    width: u32,
-    height: u32,
+    mut width: u32,
+    mut height: u32,
     path: &Path,
     format: image::ImageFormat
 ) -> anyhow::Result<()> {
@@ -142,6 +142,24 @@ pub fn export_as_image(
 
     let file = std::fs::File::create(path)?;
     let writer = BufWriter::new(file);
+
+    // ICO format has a 256×256 pixel limit — scale down if needed.
+    if format == image::ImageFormat::Ico && (width > 256 || height > 256) {
+        let scale = (256.0f64 / width.max(height) as f64).min(1.0);
+        let new_width = (width as f64 * scale).round() as u32;
+        let new_height = (height as f64 * scale).round() as u32;
+        let new_width = new_width.max(1);
+        let new_height = new_height.max(1);
+        img = image::imageops::resize(
+            &img,
+            new_width,
+            new_height,
+            image::imageops::FilterType::Lanczos3,
+        );
+        let (w, h) = img.dimensions();
+        width = w;
+        height = h;
+    }
 
     // GIF needs the `RgbaImage` directly, not raw bytes — handle it first.
     if format == image::ImageFormat::Gif {
