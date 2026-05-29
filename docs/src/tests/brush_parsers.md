@@ -15,3 +15,7 @@ Verify RGBA pixel values, premultiplied format, and per-pixel channel constraint
 ## `parse_gbr_v2_grayscale`
 
 Parse a grayscale GBR brush and verify correct alpha-derived premultiplied values.
+
+## `parse_gbr_v1`
+
+Parse a GBR v1 file (no spacing) and verify default spacing of 25.
