@@ -336,6 +336,8 @@ pub enum CurrentTool {
     Stamp,
     /// Draw using a custom brush tip from the brush library.
     CustomBrush,
+    /// Pick a color from the canvas.
+    Eyedropper,
 }
 
 /// Desired rendering cadence: active wake for fast repaints,
