@@ -79,3 +79,7 @@ On each frame, `create_textures` is called to generate egui textures for
 any entries that do not yet have one. The raw premultiplied pixels are
 un-premultiplied before being passed to `egui::ColorImage` because egui
 expects straight alpha for image data.
+
+## `BrushEntry::texture_id`
+
+Returns the cached TextureId if a texture has been created, or None otherwise. Used during gallery rendering to display the brush tip preview.
