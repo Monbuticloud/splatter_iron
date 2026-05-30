@@ -72,6 +72,8 @@ impl Default for ToolConfiguration {
             brush_tint_mode: StampTintMode::Original,
             show_grid: false,
             grid_size: 50,
+            stabilization_enabled: false,
+            stabilization_smoothing: 30.0,
         }
     }
 }
