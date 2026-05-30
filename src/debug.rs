@@ -4,7 +4,6 @@
 //! when compiled in debug mode.  No-ops in release builds.
 
 use crate::app::MyApp;
-use crate::main;
 
 /// Dump a snapshot of the application state using `dbg!`.
 ///
