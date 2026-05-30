@@ -80,7 +80,11 @@
 
 ## Accepted
 
--
+### Allocation reductions
+
+- `canvas.rs:262` + `file_io.rs:432` — `output_rgba: Vec<u8>` cloned (12MB) on every export → `Arc<Vec<u8>>` for atomic-shared export. (P1)(B1)(514450e)
+- `tools/stamp_brush.rs:148` — `src_x_map` allocated per stamp placement in `stamp_at` → reuse `scratch_src_x` buffer across stamps within a line. (P1)(B1)(514450e)
+- `files.rs:262,325,367,387` — export allocates intermediate RgbaImage → skip it for JPEG/HDR/Farbfeld, encode from `raw_output` directly. (P2)(B1)(514450e)
 
 ## Implementing
 
