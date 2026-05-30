@@ -106,6 +106,27 @@ jobs:
           shared-key: splatter-iron
       - run: cargo audit
 
+  coverage:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cargo-tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: splatter-iron
+      - run: cargo tarpaulin --out Html --out Xml
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            tarpaulin-report.html
+            cobertura.xml
+
   test:
     if: github.event_name != 'schedule'
     strategy:
