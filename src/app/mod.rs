@@ -561,15 +561,7 @@ impl MyApp {
 
 
     impl MyApp {
-    /// Add a file path to the recent-files list (dedup, max 10, most recent first).
-    fn push_recent_file(&mut self, path: PathBuf) {
-        if path.as_os_str().is_empty() {
-            return;
-        }
-        self.ui.recent_files.retain(|p| p != &path);
-        self.ui.recent_files.insert(0, path);
-        self.ui.recent_files.truncate(10);
-    }
+
 
     /// Path to the user-config JSON file (tool settings, preferences).
     fn config_path(&self) -> PathBuf {

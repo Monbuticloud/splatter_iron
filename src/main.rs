@@ -14,6 +14,7 @@ mod canvas;
 mod document;
 mod file_io;
 mod files;
+mod persistence;
 mod pixel;
 mod stamp_library;
 mod tool_configuration;
