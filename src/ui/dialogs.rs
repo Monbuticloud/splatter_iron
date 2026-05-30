@@ -299,4 +299,53 @@ impl MyApp {
             }
         }
     }
+
+    /// Show the stamp-naming dialog when a new stamp has been loaded.
+    pub(crate) fn show_stamp_naming_dialog(&mut self, ui: &mut egui::Ui) {
+        let Some(mut pending) = self.ui.dialogs.pending_stamp_name.take() else {
+            return;
+        };
+        let mut open = true;
+        let mut cancelled = false;
+        let label = format!("Size: {}×{}", pending.width, pending.height);
+        egui::Window
+            ::new("Name Your Stamp")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Name:");
+                    ui.add(
+                        egui::TextEdit::singleline(&mut pending.name).id_source("stamp_name_text")
+                    );
+                });
+                ui.label(&label);
+                if ui.button("Cancel").clicked() {
+                    cancelled = true;
+                }
+                if ui.button("Add Stamp").clicked() && !pending.name.is_empty() {
+                    let stamp_name = pending.name.clone();
+                    let stamp_pixels = std::mem::take(&mut pending.pixels);
+                    let stamp_w = pending.width;
+                    let stamp_h = pending.height;
+                    crate::stamp_library::add_stamp(
+                        &mut self.stamp_library,
+                        stamp_name.clone(),
+                        stamp_pixels,
+                        stamp_w,
+                        stamp_h,
+                        ui.ctx()
+                    );
+                    self.ui.toasts.message = Some((
+                        format!("Stamp \"{stamp_name}\" added"),
+                        Instant::now(),
+                    ));
+                }
+            });
+        if open && !cancelled {
+            self.ui.dialogs.pending_stamp_name = Some(pending);
+        }
+    }
 }
