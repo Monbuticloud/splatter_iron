@@ -465,8 +465,9 @@ impl FileIO {
     ///
     /// * `document` — The document whose canvas will be saved.
     /// * `kind` — Whether this is an autosave or a manual save to a specific path.
-    pub fn trigger_async_save(&self, document: &mut Document, kind: SaveKind) {
+    pub fn trigger_async_save(&mut self, document: &mut Document, kind: SaveKind) {
         use crate::document::SaveState;
+        self.autosave_in_flight = matches!(kind, SaveKind::Autosave);
         document.save_state = SaveState::InFlight;
         let canvas = document.canvas.clone();
         let path = match &kind {
@@ -500,7 +501,7 @@ impl FileIO {
     /// # Parameters
     ///
     /// * `document` — The document whose canvas will be saved.
-    pub fn save_to_current_path(&self, document: &mut Document) {
+    pub fn save_to_current_path(&mut self, document: &mut Document) {
         if !document.savefile_path.is_empty() {
             self.trigger_async_save(
                 document,
@@ -660,7 +661,7 @@ impl FileIO {
     ///
     /// * `document` — The document to update save-path / dirty-flag on.
     /// * `error_list` — Error list to push failure messages into.
-    pub fn poll_save_results(&self, document: &mut Document, error_list: &mut Vec<String>) {
+    pub fn poll_save_results(&mut self, document: &mut Document, error_list: &mut Vec<String>) {
         let mut had_result = false;
         while let Ok(result) = self.save_result_receiver.try_recv() {
             had_result = true;
@@ -680,6 +681,7 @@ impl FileIO {
         }
         if had_result {
             document.save_state = crate::document::SaveState::Idle;
+            self.autosave_in_flight = false;
         }
     }
 }

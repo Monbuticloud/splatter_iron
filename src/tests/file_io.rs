@@ -149,7 +149,7 @@ fn poll_dialog_results_mismatched_pending_skips() {
 
 #[test]
 fn save_to_current_path_empty_path_noop() {
-    let (file_io, _, _) = test_file_io();
+    let (mut file_io, _, _) = test_file_io();
     let mut document = Document::new(Canvas::new(10, 10));
     // Should not panic or spawn thread
     file_io.save_to_current_path(&mut document);
@@ -159,7 +159,7 @@ fn save_to_current_path_empty_path_noop() {
 
 #[test]
 fn trigger_async_save_writes_file() {
-    let (file_io, _, _) = test_file_io();
+    let (mut file_io, _, _) = test_file_io();
     let canvas = Canvas::new(10, 10);
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("test.splattercanvas");
@@ -316,7 +316,7 @@ fn queue_file_action_load_stamp_sets_pending() {
 fn save_to_current_path_non_empty_triggers_save() {
     let (save_sender, save_receiver) = mpsc::channel();
     let (dialog_sender, dialog_receiver) = mpsc::channel();
-    let file_io = FileIO::new(
+    let mut file_io = FileIO::new(
         dialog_sender,
         dialog_receiver,
         save_sender,
