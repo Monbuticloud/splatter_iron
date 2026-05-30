@@ -83,6 +83,21 @@ impl MyApp {
                 .range(1..=500)
                 .prefix("Grid: "),
         );
+        ui.checkbox(
+            &mut self.tool_configuration.stabilization_enabled,
+            "Stabilize",
+        );
+        ui.add_enabled(
+            self.tool_configuration.stabilization_enabled,
+            egui::Slider::new(
+                &mut self.tool_configuration.stabilization_smoothing,
+                0.0..=100.0,
+            )
+            .text("Smoothing"),
+        )
+        .on_hover_text(
+            "Higher values make the virtual cursor lag further behind the real cursor"
+        );
 
         ui.separator();
         ui.label("Save Path:");
