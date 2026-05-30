@@ -288,11 +288,71 @@ pub fn export_as_image(
             pixel[3] = fa;
         });
 
-    let mut img = image::RgbaImage::from_raw(width, height, raw_output)
-        .expect("dimensions match allocated pixel count");
-
     let file = std::fs::File::create(path)?;
     let writer = BufWriter::new(file);
+
+    // JPEG: alpha was blended against white above. Strip alpha channel
+    // directly from raw_output, skipping the RgbaImage intermediate.
+    if format == image::ImageFormat::Jpeg {
+        let rgb: Vec<u8> = raw_output
+            .chunks_exact(4)
+            .flat_map(|p| [p[0], p[1], p[2]])
+            .collect();
+        image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY).write_image(
+            &rgb,
+            width,
+            height,
+            image::ExtendedColorType::Rgb8,
+        )?;
+        return Ok(());
+    }
+
+    // Build Rgb32F for HDR directly from raw_output, skipping RgbaImage.
+    if format == image::ImageFormat::Hdr {
+        let pixel_count = (width * height) as usize;
+        let mut float_bytes = Vec::with_capacity(pixel_count * 3 * 4);
+        for chunk in raw_output.chunks_exact(4) {
+            let red = f32::from(chunk[0]) / F32_COLOR_MAX;
+            let green = f32::from(chunk[1]) / F32_COLOR_MAX;
+            let blue = f32::from(chunk[2]) / F32_COLOR_MAX;
+            float_bytes.extend_from_slice(&red.to_ne_bytes());
+            float_bytes.extend_from_slice(&green.to_ne_bytes());
+            float_bytes.extend_from_slice(&blue.to_ne_bytes());
+        }
+        let encoder = image::codecs::hdr::HdrEncoder::new(writer);
+        encoder.write_image(
+            &float_bytes,
+            width,
+            height,
+            image::ExtendedColorType::Rgb32F,
+        )?;
+        return Ok(());
+    }
+
+    // Build u16 RGBA for Farbfeld directly from raw_output, skipping RgbaImage.
+    if format == image::ImageFormat::Farbfeld {
+        let pixel_count = (width * height) as usize;
+        let mut rgba16 = Vec::with_capacity(pixel_count * 4);
+        for chunk in raw_output.chunks_exact(4) {
+            rgba16.push(u16::from(chunk[0]));
+            rgba16.push(u16::from(chunk[1]));
+            rgba16.push(u16::from(chunk[2]));
+            rgba16.push(u16::from(chunk[3]));
+        }
+        let rgba16_bytes: &[u8] = cast_slice(&rgba16);
+        let encoder = image::codecs::farbfeld::FarbfeldEncoder::new(writer);
+        encoder.write_image(
+            rgba16_bytes,
+            width,
+            height,
+            image::ExtendedColorType::Rgba16,
+        )?;
+        return Ok(());
+    }
+
+    // For non-RgbaImage formats (ICO, GIF) and the rest, create RgbaImage.
+    let mut img = image::RgbaImage::from_raw(width, height, raw_output)
+        .expect("dimensions match allocated pixel count");
 
     // ICO format has a 256×256 pixel limit — scale down if needed.
     if format == image::ImageFormat::Ico && (width > 256 || height > 256) {
@@ -317,19 +377,6 @@ pub fn export_as_image(
         let frame = image::Frame::new(img);
         let mut encoder = image::codecs::gif::GifEncoder::new(writer);
         encoder.encode_frame(frame)?;
-        return Ok(());
-    }
-
-    // JPEG requires RGB8 (3 bytes/pixel). Alpha was already blended
-    // against white in the loop above, so strip the alpha channel.
-    if format == image::ImageFormat::Jpeg {
-        let rgb: Vec<u8> = img.pixels().flat_map(|p| [p[0], p[1], p[2]]).collect();
-        image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY).write_image(
-            &rgb,
-            width,
-            height,
-            image::ExtendedColorType::Rgb8,
-        )?;
         return Ok(());
     }
 
@@ -359,47 +406,6 @@ pub fn export_as_image(
         image::ImageFormat::Qoi => export_via!(image::codecs::qoi::QoiEncoder::new(writer))?,
         image::ImageFormat::OpenExr => {
             export_via!(image::codecs::openexr::OpenExrEncoder::new(writer))?
-        }
-        image::ImageFormat::Hdr => {
-            // Build Rgb32F image from the straight RGBA buffer.
-            // HDR stores linear float RGB (alpha is ignored).
-            // Build u8 buffer directly from f32 values (no unsafe needed).
-            let pixel_count = (width * height) as usize;
-            let mut float_bytes = Vec::with_capacity(pixel_count * 3 * 4);
-            for chunk in raw.chunks_exact(4) {
-                let red = f32::from(chunk[0]) / F32_COLOR_MAX;
-                let green = f32::from(chunk[1]) / F32_COLOR_MAX;
-                let blue = f32::from(chunk[2]) / F32_COLOR_MAX;
-                float_bytes.extend_from_slice(&red.to_ne_bytes());
-                float_bytes.extend_from_slice(&green.to_ne_bytes());
-                float_bytes.extend_from_slice(&blue.to_ne_bytes());
-            }
-            let encoder = image::codecs::hdr::HdrEncoder::new(writer);
-            encoder.write_image(
-                &float_bytes,
-                width,
-                height,
-                image::ExtendedColorType::Rgb32F,
-            )?;
-        }
-        image::ImageFormat::Farbfeld => {
-            // Farbfeld requires u16 RGBA (8 bytes/pixel), native endian.
-            let pixel_count = (width * height) as usize;
-            let mut rgba16 = Vec::with_capacity(pixel_count * 4);
-            for chunk in raw.chunks_exact(4) {
-                rgba16.push(u16::from(chunk[0]));
-                rgba16.push(u16::from(chunk[1]));
-                rgba16.push(u16::from(chunk[2]));
-                rgba16.push(u16::from(chunk[3]));
-            }
-            let rgba16_bytes: &[u8] = cast_slice(&rgba16);
-            let encoder = image::codecs::farbfeld::FarbfeldEncoder::new(writer);
-            encoder.write_image(
-                rgba16_bytes,
-                width,
-                height,
-                image::ExtendedColorType::Rgba16,
-            )?;
         }
         _ => {
             anyhow::bail!("Unsupported export format: {format:?}");
