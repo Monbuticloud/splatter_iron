@@ -384,7 +384,7 @@ impl Default for UIState {
             undo_redo_steps_multiplier: 1,
             recent_files: Vec::new(),
             last_export_format: 1,
-            current_title: crate::app::APP_NAME.to_string(),
+            current_title: APP_NAME.to_string(),
             dialogs: DialogState::default(),
             errors: ErrorState::default(),
             toasts: ToastState::default(),
@@ -517,7 +517,7 @@ impl MyApp {
                     ::open(data_dir.join("config.json"))
                     .ok()
                     .and_then(|file| {
-                        let p: crate::app::PersistedConfig = serde_json::from_reader(file).ok()?;
+                        let p: PersistedConfig = serde_json::from_reader(file).ok()?;
                         Some((p.tool_configuration, p.recent_files))
                     })
             })
@@ -649,7 +649,7 @@ impl MyApp {
         }
 
         if let Some((pixels, w, h, name)) = self.file_io.loaded_stamp_data.take() {
-            self.ui.dialogs.pending_stamp_name = Some(crate::app::PendingStamp {
+            self.ui.dialogs.pending_stamp_name = Some(PendingStamp {
                 pixels,
                 width: w,
                 height: h,
@@ -1241,7 +1241,7 @@ impl MyApp {
 
     /// Persist current tool configuration and recent files to disk.
     fn save_config(&self) {
-        let persisted = crate::app::PersistedConfig {
+        let persisted = PersistedConfig {
             tool_configuration: self.tool_configuration.clone(),
             recent_files: self.ui.recent_files.clone(),
         };
