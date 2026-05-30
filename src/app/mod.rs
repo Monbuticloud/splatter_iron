@@ -612,49 +612,7 @@ impl MyApp {
 // --- Frame-helper methods (called once per frame from `ui()`) ---
 
 impl MyApp {
-    /// Advance the render-state machine and return `true` if the frame should
-    /// be skipped (viewport unfocused or frozen).
-    fn update_render_state(&mut self, ui: &mut egui::Ui) -> bool {
-        if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
-            std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
-            self.ui.render_state = RenderState::UnfocusedFrozen;
-            return true;
-        }
-        let predicted_delta_time = Duration::from_secs_f32(
-            ui
-                .ctx()
-                .input(|i| i.predicted_dt)
-                .max(0.0)
-        );
-        let real_delta_time = Duration::from_secs_f32(
-            ui
-                .ctx()
-                .input(|i| i.stable_dt)
-                .max(0.0)
-        );
 
-        self.ui.time_elapsed += real_delta_time;
-
-        match self.ui.render_state {
-            RenderState::ActiveWake(duration) => {
-                let remaining = duration.saturating_sub(predicted_delta_time);
-                if remaining.is_zero() {
-                    self.ui.render_state = RenderState::IdleThrottled;
-                    ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULTIPLIER);
-                } else {
-                    self.ui.render_state = RenderState::ActiveWake(remaining);
-                }
-            }
-            RenderState::IdleThrottled => {
-                ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULTIPLIER);
-            }
-            RenderState::UnfocusedFrozen => {
-                self.ui.render_state = RenderState::IdleThrottled;
-                return true;
-            }
-        }
-        false
-    }
 
     /// Recreate the GPU texture if dimensions changed, then blend and upload.
     fn sync_gpu_texture(&mut self, frame: &mut eframe::Frame, ui: &mut egui::Ui) {

@@ -2,12 +2,16 @@
 //! I/O, manage render-state transitions, sync GPU texture, and autosave.
 
 use std::path::PathBuf;
+use std::time::Duration;
 
 use eframe::egui;
 
 use crate::app::MyApp;
 use crate::app::PendingStamp;
 use crate::app::ProgressState;
+use crate::app::REPAINT_DELAY_MULTIPLIER;
+use crate::app::UNFOCUSED_SLEEP_MILLISECONDS;
+use crate::canvas::RenderState;
 use crate::document::SaveState;
 
 impl MyApp {
@@ -86,5 +90,49 @@ impl MyApp {
 
         self.stamp_library.create_textures(ctx);
         self.brush_library.create_textures(ctx);
+    }
+
+    /// Advance the render-state machine and return `true` if the frame should
+    /// be skipped (viewport unfocused or frozen).
+    pub(crate) fn update_render_state(&mut self, ui: &mut egui::Ui) -> bool {
+        if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
+            std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
+            self.ui.render_state = RenderState::UnfocusedFrozen;
+            return true;
+        }
+        let predicted_delta_time = Duration::from_secs_f32(
+            ui
+                .ctx()
+                .input(|i| i.predicted_dt)
+                .max(0.0)
+        );
+        let real_delta_time = Duration::from_secs_f32(
+            ui
+                .ctx()
+                .input(|i| i.stable_dt)
+                .max(0.0)
+        );
+
+        self.ui.time_elapsed += real_delta_time;
+
+        match self.ui.render_state {
+            RenderState::ActiveWake(duration) => {
+                let remaining = duration.saturating_sub(predicted_delta_time);
+                if remaining.is_zero() {
+                    self.ui.render_state = RenderState::IdleThrottled;
+                    ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULTIPLIER);
+                } else {
+                    self.ui.render_state = RenderState::ActiveWake(remaining);
+                }
+            }
+            RenderState::IdleThrottled => {
+                ui.request_repaint_after(predicted_delta_time * REPAINT_DELAY_MULTIPLIER);
+            }
+            RenderState::UnfocusedFrozen => {
+                self.ui.render_state = RenderState::IdleThrottled;
+                return true;
+            }
+        }
+        false
     }
 }
