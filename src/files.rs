@@ -21,6 +21,21 @@ const COMPRESSION_LEVEL: i32 = 10;
 const MAX_DECOMPRESSED_BYTES: u64 = 512 * 1024 * 1024;
 const JPEG_QUALITY: u8 = 100;
 
+/// Decompress and deserialize a `Canvas` from any `std::io::Read` by streaming
+/// the zstd decoder directly into `serde_json::from_reader`.
+///
+/// Eliminates the intermediate decompression `Vec<u8>` allocation — compressed
+/// data is decompressed incrementally and parsed as JSON on the fly.
+///
+/// # Parameters
+///
+/// * `reader` — Source of zstd-compressed JSON bytes (e.g. `File`, `&[u8]`).
+///
+/// # Errors
+///
+/// Returns an error if zstd decompression or JSON deserialization fails,
+/// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
+/// or if the canvas has invalid dimensions or mismatched layer sizes.
 fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
     let decoder = zstd::Decoder::new(reader)?;
     let limited = decoder.take(MAX_DECOMPRESSED_BYTES);
