@@ -156,11 +156,37 @@ pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     Ok(compressed)
 }
 
+/// Serialize a `Canvas` directly to a file by streaming JSON through zstd
+/// compression into a `File` — zero intermediate `Vec<u8>` allocations.
+///
+/// The file is created at `path`; the parent directory must exist.
+///
+/// # Parameters
+///
+/// * `canvas` — The canvas to serialize.
+/// * `path` — Destination file path.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be created, or if JSON serialization
+/// or zstd compression fails.
 pub fn save_canvas_to_path(canvas: &Canvas, path: &Path) -> anyhow::Result<()> {
     let file = std::fs::File::create(path)?;
     write_canvas(canvas, file)
 }
 
+/// Decompress and deserialize a `Canvas` from a file by streaming the file
+/// through zstd decompression into `serde_json::from_reader` — no intermediate
+/// `Vec<u8>` for the compressed file or the decompressed JSON.
+///
+/// # Parameters
+///
+/// * `path` — Path to a `.splattercanvas` file.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be read, or if zstd decompression or
+/// JSON deserialization fails, or if the canvas has invalid dimensions.
 pub fn load_canvas_from_path(path: &Path) -> anyhow::Result<Canvas> {
     let file = std::fs::File::open(path)?;
     read_canvas(file)
