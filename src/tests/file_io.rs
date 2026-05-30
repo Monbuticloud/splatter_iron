@@ -225,8 +225,7 @@ fn poll_dialog_results_error_appends() {
 /// should load and replace the document canvas.
 #[test]
 fn poll_dialog_results_load_replaces_canvas() {
-    use crate::files::save_bytes_to_file;
-    use crate::files::save_canvas_to_bytes;
+    use crate::files::save_canvas_to_path;
     let (mut file_io, dialog_sender, _) = test_file_io();
     let mut document = Document::new(Canvas::new(10, 10));
     let mut undo = UndoHistory::new(100);
@@ -234,10 +233,9 @@ fn poll_dialog_results_load_replaces_canvas() {
 
     // Create a valid .splattercanvas file
     let source_canvas = Canvas::new(3, 4);
-    let data = save_canvas_to_bytes(&source_canvas).expect("save source canvas");
     let dir = tempfile::tempdir().expect("temp dir");
     let file_path = dir.path().join("test.splattercanvas");
-    save_bytes_to_file(&data, &file_path).expect("write file");
+    save_canvas_to_path(&source_canvas, &file_path).expect("save to path");
 
     file_io.pending_file_action = Some(PendingFileAction::Load);
     dialog_sender.send(DialogResult::Picked(file_path)).unwrap();

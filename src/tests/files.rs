@@ -37,8 +37,10 @@ fn checkerboard_4x4() -> Canvas {
 #[test]
 fn save_load_roundtrip_identical_pixels() {
     let original = checkerboard_4x4();
-    let data = files::save_canvas_to_bytes(&original).expect("save to bytes");
-    let loaded = files::load_canvas_from_bytes(&data).expect("load from bytes");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.splattercanvas");
+    files::save_canvas_to_path(&original, &path).expect("save to path");
+    let loaded = files::load_canvas_from_path(&path).expect("load from path");
     assert_eq!(loaded.width, original.width);
     assert_eq!(loaded.height, original.height);
     assert_eq!(loaded.pixels.len(), original.pixels.len());
@@ -72,8 +74,10 @@ fn save_load_roundtrip_multi_layer() {
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
-    let data = files::save_canvas_to_bytes(&canvas).expect("save");
-    let loaded = files::load_canvas_from_bytes(&data).expect("load");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.splattercanvas");
+    files::save_canvas_to_path(&canvas, &path).expect("save");
+    let loaded = files::load_canvas_from_path(&path).expect("load");
     assert_eq!(loaded.pixels.len(), 2);
     for (i, (a, b)) in canvas.pixels[0]
         .pixels
@@ -111,8 +115,10 @@ fn save_load_roundtrip_transparent() {
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
-    let data = files::save_canvas_to_bytes(&canvas).expect("save");
-    let loaded = files::load_canvas_from_bytes(&data).expect("load");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.splattercanvas");
+    files::save_canvas_to_path(&canvas, &path).expect("save");
+    let loaded = files::load_canvas_from_path(&path).expect("load");
     assert_eq!(loaded.pixels[0].pixels.len(), 3);
 }
 
@@ -176,15 +182,20 @@ fn export_png_semi_transparent() {
 /// Loading non-zstd data should return an error.
 #[test]
 fn invalid_data_returns_error() {
-    let bad = b"this is not zstd-compressed json";
-    let result = files::load_canvas_from_bytes(bad);
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("bad.splattercanvas");
+    std::fs::write(&path, b"this is not zstd-compressed json").expect("write bad data");
+    let result = files::load_canvas_from_path(&path);
     assert!(result.is_err());
 }
 
 /// Loading empty data should return an error.
 #[test]
 fn empty_data_returns_error() {
-    let result = files::load_canvas_from_bytes(&[]);
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("empty.splattercanvas");
+    std::fs::write(&path, []).expect("write empty file");
+    let result = files::load_canvas_from_path(&path);
     assert!(result.is_err());
 }
 
@@ -233,19 +244,6 @@ fn export_tiff_creates_file() {
     assert!(path.exists());
     let metadata = std::fs::metadata(&path).expect("metadata");
     assert!(metadata.len() > 0, "TIFF file should have content");
-}
-
-// --- save_bytes_to_file / load_bytes_from_file ---
-
-/// `save_bytes_to_file` and `load_bytes_from_file` should round-trip correctly.
-#[test]
-fn save_bytes_to_file_roundtrip() {
-    let data = b"hello, splatter canvas test data!";
-    let dir = tempfile::tempdir().expect("temp dir");
-    let path = dir.path().join("test.bin");
-    files::save_bytes_to_file(data, &path).expect("save bytes");
-    let loaded = files::load_bytes_from_file(&path).expect("load bytes");
-    assert_eq!(loaded, data, "bytes round-trip");
 }
 
 // --- Remaining export format tests (AVIF, TGA, ICO, PNM, QOI, EXR, HDR, Farbfeld) ---
@@ -369,8 +367,11 @@ fn import_jpeg_as_canvas() {
 /// Decompress corrupted zstd data should return an error.
 #[test]
 fn decompress_corrupted_data_errors() {
-    let corrupted = b"this is not valid zstd compressed data at all!!!";
-    let result = files::load_canvas_from_bytes(corrupted);
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("corrupted.splattercanvas");
+    std::fs::write(&path, b"this is not valid zstd compressed data at all!!!")
+        .expect("write corrupted data");
+    let result = files::load_canvas_from_path(&path);
     assert!(result.is_err());
 }
 
@@ -386,7 +387,10 @@ fn decompress_partially_corrupted_zstd_errors() {
     buf.push(0x00);
     // Add some garbage as body
     buf.extend_from_slice(&[0xDE, 0xAD, 0xBE, 0xEF]);
-    let result = files::load_canvas_from_bytes(&buf);
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("badframe.splattercanvas");
+    std::fs::write(&path, &buf).expect("write bad frame");
+    let result = files::load_canvas_from_path(&path);
     assert!(result.is_err());
 }
 
@@ -417,9 +421,11 @@ fn load_zero_width_canvas_rejected() {
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
-    let data = files::save_canvas_to_bytes(&canvas).expect("save");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("bad.splattercanvas");
+    files::save_canvas_to_path(&canvas, &path).expect("save");
     assert!(
-        files::load_canvas_from_bytes(&data).is_err(),
+        files::load_canvas_from_path(&path).is_err(),
         "zero-width canvas should be rejected"
     );
 }
@@ -435,9 +441,11 @@ fn load_zero_height_canvas_rejected() {
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
-    let data = files::save_canvas_to_bytes(&canvas).expect("save");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("bad.splattercanvas");
+    files::save_canvas_to_path(&canvas, &path).expect("save");
     assert!(
-        files::load_canvas_from_bytes(&data).is_err(),
+        files::load_canvas_from_path(&path).is_err(),
         "zero-height canvas should be rejected"
     );
 }
@@ -463,9 +471,11 @@ fn load_wrong_layer_size_rejected() {
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
-    let data = files::save_canvas_to_bytes(&canvas).expect("save");
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("bad.splattercanvas");
+    files::save_canvas_to_path(&canvas, &path).expect("save");
     assert!(
-        files::load_canvas_from_bytes(&data).is_err(),
+        files::load_canvas_from_path(&path).is_err(),
         "mismatched layer pixel count should be rejected"
     );
 }
