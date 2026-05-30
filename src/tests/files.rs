@@ -1,6 +1,6 @@
 //! Tests for serialization — canvas save/load round-trips, export, import.
 //!
-//! Validates that `save_canvas_to_bytes` / `load_canvas_from_bytes` produce
+//! Validates that `save_canvas_to_path` / `load_canvas_from_path` produce
 //! identical output, that image export produces valid headers, and that
 //! zstd-compressed `.splattercanvas` files survive round-trip.
 
