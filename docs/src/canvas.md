@@ -175,7 +175,6 @@ The type derives `Clone` for undo/redo snapshotting and `Serialize`/`Deserialize
 | `rendered_layers`   | `Option<TextureHandle>` | Cached GPU texture handle for the blended composite                             |
 | `output_rgba`       | `Vec<u8>`               | Premultiplied-alpha RGBA output buffer (width × height × 4 bytes)               |
 | `dirty_rect`        | `DirtyRectList`         | List of dirty regions; empty list triggers full re-blend |
-| `render_next_frame` | `bool`                  | Flag requesting full re-render on next frame                                    |
 
 ### Invariants
 
@@ -198,7 +197,7 @@ The default canvas starts with:
 - An empty `output_rgba` buffer (allocated lazily on first render).
 - No GPU texture handle (`rendered_layers: None`).
 - An empty dirty region list (`dirty_rect: DirtyRectList::new()`).
-- `render_next_frame: true` to trigger immediate initial compositing.
+- `dirty_rect` has `request_full_blend` called to trigger immediate initial compositing.
 
 ### Panics
 
@@ -218,7 +217,7 @@ pub fn new(width: u32, height: u32) -> Self
 
 Creates a new canvas with the specified dimensions and a single transparent layer. This is the parameterized constructor used when creating a canvas of non-default size (e.g. from a new-document dialog).
 
-The constructor allocates `width × height` pixels for the initial layer, each set to `Color32::TRANSPARENT`. Transient GPU state (`rendered_layers`, `output_rgba`, `dirty_rect`) starts empty, and `render_next_frame` is set to `true`.
+The constructor allocates `width × height` pixels for the initial layer, each set to `Color32::TRANSPARENT`. Transient GPU state (`rendered_layers`, `output_rgba`, `dirty_rect`) starts empty, and `dirty_rect.request_full_blend()` is called to trigger immediate initial compositing.
 
 ### Parameters
 
@@ -246,13 +245,15 @@ Each variant selects a different drawing primitive or operation:
 
 | Variant        | Behaviour                                                                                                                                                                    |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Square`       | Fill axis-aligned rectangles. Dispatches to [`square_brush::fill_rect`] which writes `UndoRecord` entries for every pixel in the dragged rectangle.                          |
-| `Circle`       | Fill circles using the midpoint circle algorithm. Dispatches to [`circle_brush::fill_circle`] for span-based fill, producing an `UndoRecord`.                                |
-| `SquareEraser` | Erase by dragging a rectangular region. Sets affected pixels to `Color32::TRANSPARENT` with a square mask. Dispatches to [`square_brush::fill_rect`] with the eraser color.  |
-| `CircleEraser` | Erase by dragging a circular region. Sets affected pixels to `Color32::TRANSPARENT` with a circular mask. Dispatches to [`circle_brush::fill_circle`] with the eraser color. |
-| `BucketFill`   | Flood-fill a contiguous region of similar color using a scanline algorithm. Dispatches to [`bucket_fill::flood_fill`].                                                       |
+| `Square`       | Fill axis-aligned rectangles. Dispatches to [`square_brush::draw_square`] / [`square_brush::draw_square_line`] which writes `UndoRecord` entries.                            |
+| `Circle`       | Fill circles using the midpoint circle algorithm. Dispatches to [`circle_brush::draw_circle`] / [`circle_brush::draw_circle_line`].                                          |
+| `SquareEraser` | Erase by dragging a rectangular region. Sets affected pixels to `Color32::TRANSPARENT` with a square mask.                                                                   |
+| `CircleEraser` | Erase by dragging a circular region. Sets affected pixels to `Color32::TRANSPARENT` with a circular mask.                                                                    |
+| `BucketFill`   | Flood-fill a contiguous region of similar color using a scanline algorithm. Dispatches to [`bucket_fill::draw_bucket_fill`].                                                 |
 | `Stamp`        | Stamp an external image onto the canvas. Dispatches to [`stamp_brush::draw_stamp_line`] which stamps the selected image from the [`StampLibrary`].                           |
 | `CustomBrush`  | Paint using a custom brush tip from the brush library. Dispatches to [`custom_brush::draw_custom_brush_line`] with the selected tip.                                         |
+| `Eyedropper`   | Pick a colour from the canvas at the cursor position and set it as the current colour.                                                                                       |
+| `Pan`          | Pan the canvas viewport by dragging.                                                                                                                                         |
 
 ### Matching
 
@@ -298,7 +299,7 @@ IdleThrottled ──(viewport unfocused)──────▶ UnfocusedFrozen
 UnfocusedFrozen ──(viewport refocused)────▶ IdleThrottled
 ```
 
-The `ActiveWake` variant's `Duration` parameter is set from [`ToolConfig::undo_redo_steps_multiplier`] — during fast drawing the throttle duration may be increased slightly to batch repaints and reduce texture upload contention.
+The `ActiveWake` variant's `Duration` parameter is set from [`UIState::undo_redo_steps_multiplier`] — during fast drawing the throttle duration may be increased slightly to batch repaints and reduce texture upload contention.
 
 ## `struct Layer`
 
@@ -310,9 +311,12 @@ Layers are composited bottom-to-top by [`blend_layers()`] — later layers overl
 
 ### Fields
 
-| Field    | Type           | Purpose                                          |
-| -------- | -------------- | ------------------------------------------------ |
-| `pixels` | `Vec<Color32>` | Premultiplied-alpha RGBA pixels, row-major order |
+| Field     | Type           | Purpose                                                |
+| --------- | -------------- | ------------------------------------------------------ |
+| `pixels`  | `Vec<Color32>` | Premultiplied-alpha RGBA pixels, row-major order       |
+| `name`    | `String`       | Human-readable layer name shown in the layer panel     |
+| `visible` | `bool`         | Whether the layer contributes to the composite output  |
+| `opacity` | `u8`           | Opacity multiplier (0–255) applied during compositing  |
 
 ### Invariants
 
@@ -329,11 +333,11 @@ Creates an empty DirtyRectList with no rects.
 
 ## `DirtyRectList::add`
 
-Adds a DirtyRect to the list. If the new rect overlaps or is within DIRTY_RECT_PROXIMITY (8 pixels) of an existing rect, they are merged rather than appended. When the list exceeds DIRTY_RECT_MAX_COUNT (8), all rects are merged into one.
+Adds a DirtyRect to the list. If the new rect overlaps or is within DIRTY_RECT_PROXIMITY (16 pixels) of an existing rect, they are merged rather than appended. When the list exceeds DIRTY_RECT_MAX_COUNT (8), all rects are merged into one. Clears any pending full-blend request.
 
 ## `DirtyRectList::merge_all`
 
-Merges all rects in the list into a single bounding box covering the union of all entries. Returns an empty DirtyRect if the list is empty.
+Merges all rects into a single bounding box covering the union of all entries. No-op if the list is empty.
 
 ## `DirtyRectList::take_all`
 
@@ -341,7 +345,7 @@ Replaces the internal list with an empty vec and returns the drained rects. Used
 
 ## `DirtyRectList::is_empty`
 
-Returns true if there are no rects in the list.
+Returns true if there are no rects in the list AND no full blend has been requested.
 
 ## `DirtyRectList::clear`
 
