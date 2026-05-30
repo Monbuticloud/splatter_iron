@@ -572,40 +572,7 @@ impl MyApp {
 
 
 
-    /// Show the "Delete Layer" confirmation dialog.
-    fn show_delete_layer_dialog(&mut self, ui: &mut egui::Ui) {
-        let Some(index) = self.ui.dialogs.show_delete_layer_dialog else {
-            return;
-        };
-        let layer_name = self.document.canvas.pixels
-            .get(index)
-            .map(|l| {
-                if l.name.is_empty() { format!("Layer {index}") } else { l.name.clone() }
-            })
-            .unwrap_or_default();
-        let mut open = true;
-        egui::Window
-            ::new("Delete Layer")
-            .collapsible(false)
-            .resizable(false)
-            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-            .open(&mut open)
-            .show(ui, |ui| {
-                ui.label(format!("Delete \"{layer_name}\"? This cannot be undone."));
-                ui.horizontal(|ui| {
-                    if ui.button("Delete").clicked() {
-                        self.document.delete_layer(index, &mut self.undo);
-                        self.ui.dialogs.show_delete_layer_dialog = None;
-                    }
-                    if ui.button("Cancel").clicked() {
-                        self.ui.dialogs.show_delete_layer_dialog = None;
-                    }
-                });
-            });
-        if !open {
-            self.ui.dialogs.show_delete_layer_dialog = None;
-        }
-    }
+
 
     /// Show the "New Canvas" preset / custom-size dialog.
     fn show_new_canvas_dialog(&mut self, ui: &mut egui::Ui) {
