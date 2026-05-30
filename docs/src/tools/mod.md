@@ -6,12 +6,15 @@ return an `UndoRecord` for undo support.
 
 ## Submodules
 
-| Module         | Exports                           | Purpose                                                     |
-| -------------- | --------------------------------- | ----------------------------------------------------------- |
-| `bucket_fill`  | `draw_bucket_fill`                | Scanline flood-fill from a seed point                       |
-| `circle_brush` | `draw_circle`, `draw_circle_line` | Midpoint-circle span fill (single stamp + Bresenham stroke) |
-
-| `square_brush` | `draw_square`, `draw_square_line` | Rectangular fill (single stamp + Bresenham stroke)          |
+| Module           | Exports                                    | Purpose                                                     |
+| ---------------- | ------------------------------------------ | ----------------------------------------------------------- |
+| `bucket_fill`    | `draw_bucket_fill`                         | Scanline flood-fill from a seed point                       |
+| `circle_brush`   | `draw_circle`, `draw_circle_line`          | Midpoint-circle span fill (single stamp + Bresenham stroke) |
+| `square_brush`   | `draw_square`, `draw_square_line`          | Rectangular fill (single stamp + Bresenham stroke)          |
+| `custom_brush`   | `draw_custom_brush_line`                   | Custom brush tip line drawing with spacing                  |
+| `stamp_brush`    | `draw_stamp_line`                          | External-image stamp brush                                  |
+| `brush_common`   | `apply_visited_runs`                       | Shared visited-pixel run capture for all brush tools        |
+| `brush_parsers`  | `parse_brush_file`                         | GBR/ABR file format parsers                                 |
 ### Common contract
 
 Every public drawing function:
