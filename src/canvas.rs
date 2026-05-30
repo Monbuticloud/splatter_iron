@@ -147,7 +147,7 @@ const DIRTY_RECT_MAX_COUNT: usize = 8;
 /// [`DIRTY_RECT_MAX_COUNT`], all rects are merged into a single bounding box.
 ///
 /// Also tracks whether a full-canvas re-blend has been requested (e.g. after
-/// layer add/delete/move). [`take_all`] returns a single full-canvas rect when
+/// layer add/delete/move). \[`take_all`\] returns a single full-canvas rect when
 /// a full blend was requested.
 #[derive(Clone, Default, Debug)]
 pub struct DirtyRectList {
@@ -214,7 +214,7 @@ impl DirtyRectList {
 
     /// Take all tracked rects and reset the list to empty.
     ///
-    /// If a full-blend was requested (via [`request_full_blend`]), returns
+    /// If a full-blend was requested (via \[`request_full_blend`\]), returns
     /// an empty list — the caller should blend the full canvas instead.
     /// Also clears the full-blend flag.
     pub fn take_all(&mut self) -> Vec<DirtyRect> {

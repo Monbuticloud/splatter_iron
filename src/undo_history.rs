@@ -149,8 +149,8 @@ impl UndoHistory {
     /// Begin accumulating undo data for a new drag gesture.
     ///
     /// Stores the layer and color metadata; runs are accumulated via
-    /// [`extend_drag_accumulator`] and finally pushed as one record via
-    /// [`finalize_drag_accumulator`].
+    /// \[`extend_drag_accumulator`\] and finally pushed as one record via
+    /// \[`finalize_drag_accumulator`\].
     ///
     /// # Parameters
     ///

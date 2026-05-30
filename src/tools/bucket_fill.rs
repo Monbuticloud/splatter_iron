@@ -1,4 +1,4 @@
-//! Scanline flood-fill tool: [`draw_bucket_fill`] replaces a contiguous
+//! Scanline flood-fill tool: \[`draw_bucket_fill`\] replaces a contiguous
 //! region of same-colored pixels with a new color.
 
 use eframe::egui::Color32;

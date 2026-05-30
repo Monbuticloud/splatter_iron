@@ -1,5 +1,5 @@
-//! Midpoint-circle span-fill brush: [`draw_circle`] for single stamps and
-//! [`draw_circle_line`] for Bresenham-interpolated strokes with
+//! Midpoint-circle span-fill brush: \[`draw_circle`\] for single stamps and
+//! \[`draw_circle_line`\] for Bresenham-interpolated strokes with
 //! visited-stamp deduplication.
 
 use eframe::egui::Color32;

@@ -1,4 +1,4 @@
-//! Custom brush line drawing: [`draw_custom_brush_line`] stamps a brush tip
+//! Custom brush line drawing: \[`draw_custom_brush_line`\] stamps a brush tip
 //! along an interpolated drag path with spacing derived from the brush's
 //! native spacing percentage, supporting alpha-overlay blending and the
 //! same visited-stamp deduplication as the other brush tools.

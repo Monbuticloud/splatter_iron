@@ -1,4 +1,4 @@
-//! Stamp brush: [`draw_stamp_line`] for placing an external image onto the
+//! Stamp brush: \[`draw_stamp_line`\] for placing an external image onto the
 //! canvas at a single point or along an interpolated drag path, with
 //! nearest-neighbour or bilinear scaling, colour tinting, and alpha-overlay
 //! support.

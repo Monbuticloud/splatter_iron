@@ -1,8 +1,8 @@
 //! Shared brush utilities for visited-pixel run capture.
 //!
-//! Provides [`apply_visited_runs`] which is used by `square_brush`,
+//! Provides \[`apply_visited_runs`\] which is used by `square_brush`,
 //! `circle_brush`, and `stamp_brush` to collect before-pixel data,
-//! write new colour values, and produce compressed [`RunSegment`]s
+//! write new colour values, and produce compressed \[`RunSegment`\]s
 //! for undo records.
 
 use eframe::egui::Color32;

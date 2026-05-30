@@ -517,7 +517,7 @@ impl FileIO {
     /// The thread clones the current canvas to avoid blocking the UI.
     /// For autosaves, the file name is a timestamp under `AUTOSAVE_DIRECTORY`.
     /// For manual saves, the provided path is used. Results are sent back
-    /// via `save_result_sender`. Sets [`SaveState::InFlight`] on the document
+    /// via `save_result_sender`. Sets \[`SaveState::InFlight`\] on the document
     /// while the save thread runs.
     ///
     /// # Parameters
@@ -572,7 +572,7 @@ impl FileIO {
     /// Spawn a background thread to serialize and write a timestamped
     /// `.splatterarchive` autosave file under `AUTOSAVE_DIRECTORY`.
     ///
-    /// Results are sent via [`save_result_sender`] as [`SaveResult::ArchiveAutosave`]
+    /// Results are sent via \[`save_result_sender`\] as [`SaveResult::ArchiveAutosave`]
     /// (or `Failed`). The archive autosave is a separate stream from the regular
     /// `.splattercanvas` autosave.
     ///
@@ -677,7 +677,7 @@ impl FileIO {
     ///
     /// Takes an already-cloned [`Canvas`] (cheap [`Arc`] clone) so the UI
     /// thread can continue drawing while compression runs on a background
-    /// thread. Sends the result via [`export_result_sender`]; poll with
+    /// thread. Sends the result via \[`export_result_sender`\]; poll with
     /// [`poll_export_results`](Self::poll_export_results).
     ///
     /// # Parameters
@@ -792,7 +792,7 @@ impl FileIO {
     ///
     /// Marks the document as clean after autosave, sets the save path
     /// after manual save, pushes errors to the error list, and
-    /// resets [`SaveState`] to `Idle` when results are consumed.
+    /// resets \[`SaveState`\] to `Idle` when results are consumed.
     ///
     /// # Parameters
     ///
