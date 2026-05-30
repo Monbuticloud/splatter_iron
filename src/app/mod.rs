@@ -363,6 +363,10 @@ pub struct UIState {
     pub toasts: ToastState,
     /// Long-running operation progress.
     pub progress: ProgressState,
+    /// Brief completion message shown in the canvas status bar after a save
+    /// or autosave finishes (e.g. "Saved", "Autosaved"). Erased after ~2
+    /// seconds via the status bar drawing logic.
+    pub last_status_message: Option<(&'static str, Instant)>,
     /// Set to `true` when the app should close (e.g., after unsaved-changes
     /// resolution chooses Quit).
     pub should_close: bool,
@@ -393,6 +397,7 @@ impl Default for UIState {
             errors: ErrorState::default(),
             toasts: ToastState::default(),
             progress: ProgressState::Idle,
+            last_status_message: None,
             should_close: false,
             pan_offset: egui::Vec2::ZERO,
             zoom: 1.0,
