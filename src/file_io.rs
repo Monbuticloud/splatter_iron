@@ -543,15 +543,12 @@ impl FileIO {
         self.load_in_flight = true;
         let sender = self.load_import_sender.clone();
         std::thread::spawn(move || {
-            let result = match crate::files::load_bytes_from_file(&path) {
-                Ok(data) => match crate::files::load_canvas_from_bytes(&data) {
-                    Ok(canvas) => {
-                        let save_path = path.display().to_string();
-                        LoadImportResult::Loaded(canvas.pixels, canvas.width, canvas.height, save_path)
-                    }
-                    Err(error) => LoadImportResult::Failed(format!("Failed to load canvas: {error}")),
-                },
-                Err(error) => LoadImportResult::Failed(format!("Failed to read file: {error}")),
+            let result = match crate::files::load_canvas_from_path(&path) {
+                Ok(canvas) => {
+                    let save_path = path.display().to_string();
+                    LoadImportResult::Loaded(canvas, save_path)
+                }
+                Err(error) => LoadImportResult::Failed(format!("Failed to load canvas: {error}")),
             };
             let _ = sender.send(result);
         });
@@ -597,18 +594,9 @@ impl FileIO {
     ) {
         while let Ok(result) = self.load_import_receiver.try_recv() {
             match result {
-                LoadImportResult::Loaded(layers, width, height, save_path) => {
+                LoadImportResult::Loaded(mut canvas, save_path) => {
                     self.load_in_flight = false;
-                    let mut dirty_rect = crate::canvas::DirtyRectList::new();
-                    dirty_rect.request_full_blend();
-                    let canvas = crate::canvas::Canvas {
-                        pixels: layers,
-                        width,
-                        height,
-                        output_rgba: Vec::new(),
-                        rendered_layers: None,
-                        dirty_rect,
-                    };
+                    canvas.dirty_rect.request_full_blend();
                     document.replace_canvas(canvas, undo);
                     document.savefile_path = save_path;
                 }
