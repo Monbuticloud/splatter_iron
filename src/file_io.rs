@@ -476,13 +476,10 @@ impl FileIO {
         };
         let sender = self.save_result_sender.clone();
         std::thread::spawn(move || {
-            let result = match crate::files::save_canvas_to_bytes(&canvas) {
-                Ok(data) => match crate::files::save_bytes_to_file(&data, &path) {
-                    Ok(()) => match kind {
-                        SaveKind::Autosave => SaveResult::Autosave,
-                        SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
-                    },
-                    Err(error) => SaveResult::Failed(format!("Write failed: {error}")),
+            let result = match crate::files::save_canvas_to_path(&canvas, &path) {
+                Ok(()) => match kind {
+                    SaveKind::Autosave => SaveResult::Autosave,
+                    SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
                 },
                 Err(error) => SaveResult::Failed(format!("Serialisation failed: {error}")),
             };
