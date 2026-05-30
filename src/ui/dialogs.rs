@@ -348,4 +348,83 @@ impl MyApp {
             self.ui.dialogs.pending_stamp_name = Some(pending);
         }
     }
+
+    /// Show the brush-import naming dialog when brushes have been loaded.
+    pub(crate) fn show_brush_naming_dialog(&mut self, ui: &mut egui::Ui) {
+        let Some(brushes) = &mut self.ui.dialogs.pending_brushes else {
+            return;
+        };
+        let mut open = true;
+        let mut confirmed = false;
+        let mut cancelled = false;
+        egui::Window
+            ::new("Name Your Brushes")
+            .collapsible(false)
+            .resizable(true)
+            .default_size([400.0, 300.0])
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.label(format!("{} brush(es) imported — edit names below:", brushes.len()));
+                ui.separator();
+
+                let mut names_to_remove: Vec<usize> = Vec::new();
+                egui::ScrollArea
+                    ::vertical()
+                    .max_height(ui.available_height() - 40.0)
+                    .show(ui, |ui| {
+                        for (i, brush) in brushes.iter_mut().enumerate() {
+                            ui.horizontal(|ui| {
+                                ui.add(
+                                    egui::TextEdit
+                                        ::singleline(&mut brush.name)
+                                        .desired_width(150.0)
+                                        .id_source(format!("brush_name_{i}"))
+                                );
+                                ui.label(format!("{}×{}", brush.width, brush.height));
+                                if ui.button("Remove").clicked() {
+                                    names_to_remove.push(i);
+                                }
+                            });
+                        }
+                    });
+
+                names_to_remove.sort_unstable_by(|a, b| b.cmp(a));
+                for i in names_to_remove {
+                    brushes.remove(i);
+                }
+
+                ui.separator();
+                ui.horizontal(|ui| {
+                    if ui.button("Cancel").clicked() {
+                        cancelled = true;
+                    }
+                    if ui.button("Import All").clicked() && !brushes.is_empty() {
+                        confirmed = true;
+                    }
+                });
+            });
+        if cancelled {
+            self.ui.dialogs.pending_brushes = None;
+        } else if confirmed {
+            let all_brushes = self.ui.dialogs.pending_brushes.take().unwrap();
+            let count = all_brushes.len();
+            for brush in all_brushes {
+                if !brush.name.is_empty() {
+                    crate::brush_library::add_brush(
+                        &mut self.brush_library,
+                        brush.name,
+                        brush.pixels,
+                        brush.width,
+                        brush.height,
+                        brush.spacing,
+                        ui.ctx()
+                    );
+                }
+            }
+            self.ui.toasts.message = Some((format!("Imported {count} brush(es)"), Instant::now()));
+        } else if !open {
+            self.ui.dialogs.pending_brushes = None;
+        }
+    }
 }
