@@ -100,6 +100,21 @@ pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
 /// # Errors
 ///
 /// Returns an error if JSON serialization or zstd compression fails.
+/// Serialize a `Canvas` into any `std::io::Write` by streaming JSON directly
+/// into a multi-threaded zstd encoder.
+///
+/// Eliminates the intermediate `serde_json::to_vec` allocation — JSON is
+/// serialized incrementally into the zstd compressor, which in turn writes
+/// compressed frames into `writer`.
+///
+/// # Parameters
+///
+/// * `canvas` — The canvas to serialize.
+/// * `writer` — Destination writer (e.g. `File`, `Vec<u8>`).
+///
+/// # Errors
+///
+/// Returns an error if JSON serialization or zstd compression fails.
 fn write_canvas(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
     let thread_count = std::thread::available_parallelism()
         .map(|count| count.get() as u32)
