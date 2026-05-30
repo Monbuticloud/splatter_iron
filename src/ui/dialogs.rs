@@ -218,10 +218,9 @@ impl MyApp {
     /// and Cancel (do nothing). The deferred action is stored in
     /// `pending_unsaved_action` and cleared on resolution.
     pub(crate) fn show_unsaved_changes_warning(&mut self, ui: &mut egui::Ui) {
-        if self.ui.dialogs.pending_unsaved_action.is_none() {
+        let Some(action) = self.ui.dialogs.pending_unsaved_action.clone() else {
             return;
-        }
-        let action = self.ui.dialogs.pending_unsaved_action.as_ref().unwrap().clone();
+        };
         let mut open = true;
         let mut resolved = false;
         let label: String = if self.document.savefile_path.is_empty() {
@@ -408,7 +407,9 @@ impl MyApp {
         if cancelled {
             self.ui.dialogs.pending_brushes = None;
         } else if confirmed {
-            let all_brushes = self.ui.dialogs.pending_brushes.take().unwrap();
+            let Some(all_brushes) = self.ui.dialogs.pending_brushes.take() else {
+                return;
+            };
             let count = all_brushes.len();
             for brush in all_brushes {
                 if !brush.name.is_empty() {
