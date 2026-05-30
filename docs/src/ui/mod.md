@@ -6,12 +6,14 @@ loop in `MyApp`.
 
 ## Submodules
 
-| Module   | Panel                  | Purpose                                                                                       |
-| -------- | ---------------------- | --------------------------------------------------------------------------------------------- |
-| `top`    | Top menu bar           | Save, Load, New, Export, Import, Undo, Redo, Close                                            |
-| `left`   | Left tool palette      | Tool selection (Square, Circle, Square Eraser, Circle Eraser, Bucket Fill)                    |
-| `right`  | Right properties panel | Colour picker, brush radius, alpha overlay toggle, layer management, undo strength, save path |
-| `center` | Central canvas         | Texture rendering, brush preview, mouse interaction handling, stroke application              |
+| Module      | Panel / Role                | Purpose                                                                                       |
+| ----------- | --------------------------- | --------------------------------------------------------------------------------------------- |
+| `top`       | Top menu bar                | Save, Load, New, Export, Import, Undo, Redo, Close                                            |
+| `left`      | Left tool palette           | Tool selection (Square, Circle, Square Eraser, Circle Eraser, Bucket Fill)                    |
+| `right`     | Right properties panel      | Colour picker, brush radius, alpha overlay toggle, layer management, undo strength, save path |
+| `center`    | Central canvas              | Texture rendering, brush preview, mouse interaction handling, stroke application              |
+| `dialogs`   | Dialog windows              | Error list, confirmations (delete, large canvas), stamp/brush naming, toast, progress         |
+| `panels`    | Panel layout coordinator    | Dispatches to top/left/right/centre panel methods                                             |
 
 ### Panel layout
 
