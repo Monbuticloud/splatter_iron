@@ -164,6 +164,22 @@ impl MyApp {
                 ui.ctx().request_repaint();
             }
 
+            // File menu with archive operations
+            ui.menu_button("File", |ui| {
+                if ui.button("Export Archive…").clicked() {
+                    self.file_io
+                        .queue_file_action(PendingFileAction::ExportArchive);
+                    ui.ctx().request_repaint();
+                    ui.close();
+                }
+                if ui.button("Import Archive…").clicked() {
+                    self.file_io
+                        .queue_file_action(PendingFileAction::ImportArchive);
+                    ui.ctx().request_repaint();
+                    ui.close();
+                }
+            });
+
             // Autosaves — open the autosave folder in the OS file manager
             if ui.button("Autosaves").clicked() {
                 let path = self.file_io.autosave_directory();
