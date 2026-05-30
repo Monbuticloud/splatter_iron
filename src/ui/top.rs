@@ -148,7 +148,7 @@ impl MyApp {
                 recent_response.context_menu(|ui| {
                     for path in &self.ui.recent_files {
                         if ui.button(path.display().to_string()).clicked() {
-                            self.guard_unsaved(UnsavedWarningAction::LoadPath(path));
+                            self.guard_unsaved(UnsavedWarningAction::LoadPath(path.clone()));
                             ui.ctx().request_repaint();
                             ui.close();
                         }
