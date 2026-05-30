@@ -293,6 +293,9 @@ impl MyApp {
                     let fill_color = if brush_alpha == 0 {
                         Color32::TRANSPARENT
                     } else {
+                        // SAFETY: `brush_alpha ≤ 255`, `PREVIEW_FILL_ALPHA_FACTOR ≈ 0.5`,
+                        // so float result ≤ 127.5 → truncation to u8 is safe;
+                        // all intermediates are non-negative → no sign loss.
                         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                         let preview_alpha =
                             ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
