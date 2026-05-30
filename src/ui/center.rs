@@ -459,10 +459,10 @@ impl MyApp {
                     local_position.y / response.rect.height(),
                 );
 
-                let pixel_x = (uv.x * (self.document.canvas.width as f32))
+                let raw_x = (uv.x * (self.document.canvas.width as f32))
                     .floor()
                     .min((self.document.canvas.width - 1) as f32) as u32;
-                let pixel_y = (uv.y * (self.document.canvas.height as f32))
+                let raw_y = (uv.y * (self.document.canvas.height as f32))
                     .floor()
                     .min((self.document.canvas.height - 1) as f32) as u32;
 
@@ -470,7 +470,10 @@ impl MyApp {
                     self.tool_configuration.current_tool,
                     CurrentTool::BucketFill | CurrentTool::Eyedropper | CurrentTool::Pan
                 ) {
-                    if let Some(stroke) = self.apply_stroke(pixel_x, pixel_y) {
+                    let dt = ui.input(|i| i.unstable_dt);
+                    let (stab_x, stab_y) = self.stabilized_pixel(raw_x, raw_y, dt);
+
+                    if let Some(stroke) = self.apply_stroke(stab_x, stab_y) {
                         self.document.dirty_since_last_autosave = true;
                         if self.ui.previous_cursor_position.is_none() {
                             if let UndoRecord::Run {
@@ -492,13 +495,15 @@ impl MyApp {
                             self.undo.extend_drag_accumulator(runs);
                         }
                     }
+                    self.ui.previous_cursor_position = Some((stab_x, stab_y));
+                } else {
+                    self.ui.previous_cursor_position = Some((raw_x, raw_y));
                 }
-
-                self.ui.previous_cursor_position = Some((pixel_x, pixel_y));
             }
         } else {
             self.undo.finalize_drag_accumulator();
             self.ui.previous_cursor_position = None;
+            self.ui.stabilized_cursor = None;
         }
     }
 
