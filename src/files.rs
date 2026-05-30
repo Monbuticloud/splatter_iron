@@ -20,6 +20,7 @@ use crate::pixel::premultiply;
 use crate::pixel::unpremultiply;
 
 const COMPRESSION_LEVEL: i32 = 10;
+const XZ_COMPRESSION_PRESET: u32 = 9;
 const MAX_DECOMPRESSED_BYTES: u64 = 512 * 1024 * 1024;
 const JPEG_QUALITY: u8 = 100;
 
@@ -171,6 +172,153 @@ pub fn save_canvas_to_path(canvas: &Canvas, path: &Path) -> anyhow::Result<()> {
 pub fn load_canvas_from_path(path: &Path) -> anyhow::Result<Canvas> {
     let file = std::fs::File::open(path)?;
     read_canvas(file)
+}
+
+// ---------------------------------------------------------------------------
+// XZ-compressed `.splatterarchive` format (export/import only, max compression)
+// ---------------------------------------------------------------------------
+
+/// Decompress and deserialize a `Canvas` from any `std::io::Read` by streaming
+/// the xz decoder directly into `serde_json::from_reader`.
+///
+/// No intermediate decompression `Vec<u8>` is allocated — compressed data is
+/// decompressed incrementally and parsed as JSON on the fly.
+///
+/// # Parameters
+///
+/// * `reader` — Source of xz-compressed JSON bytes (e.g. `File`, `&[u8]`).
+///
+/// # Errors
+///
+/// Returns an error if xz decompression or JSON deserialization fails,
+/// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
+/// or if the canvas has invalid dimensions or mismatched layer sizes.
+fn read_canvas_xz(reader: impl Read) -> anyhow::Result<Canvas> {
+    let decoder = xz2::read::XzDecoder::new(reader);
+    let limited = decoder.take(MAX_DECOMPRESSED_BYTES);
+    let mut canvas: Canvas = serde_json::from_reader(limited).map_err(|e| {
+        if e.classify() == serde_json::error::Category::Eof {
+            anyhow::anyhow!(
+                "decompressed data exceeds {} bytes",
+                MAX_DECOMPRESSED_BYTES,
+            )
+        } else {
+            e.into()
+        }
+    })?;
+
+    if canvas.width == 0 || canvas.height == 0 {
+        anyhow::bail!(
+            "invalid canvas dimensions: {}x{}",
+            canvas.width,
+            canvas.height,
+        );
+    }
+
+    let expected = (canvas.width as usize).saturating_mul(canvas.height as usize);
+    for (i, layer) in canvas.pixels.iter().enumerate() {
+        if layer.pixels.len() != expected {
+            anyhow::bail!(
+                "layer {i}: expected {expected} pixels, got {}",
+                layer.pixels.len(),
+            );
+        }
+    }
+
+    canvas.dirty_rect.request_full_blend();
+    Ok(canvas)
+}
+
+/// Deserialize a `Canvas` from xz-compressed JSON bytes.
+///
+/// # Parameters
+///
+/// * `data` — Xz-compressed JSON bytes produced by [`save_canvas_to_bytes_xz`].
+///
+/// # Errors
+///
+/// Returns an error if xz decompression or JSON deserialization fails,
+/// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
+/// or if the canvas has invalid dimensions or mismatched layer sizes.
+pub fn load_canvas_from_bytes_xz(data: &[u8]) -> anyhow::Result<Canvas> {
+    read_canvas_xz(data)
+}
+
+/// Decompress and deserialize a `Canvas` from a file by streaming the file
+/// through xz decompression into `serde_json::from_reader` — no intermediate
+/// `Vec<u8>` for the compressed file or the decompressed JSON.
+///
+/// # Parameters
+///
+/// * `path` — Path to a `.splatterarchive` file.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be read, or if xz decompression or
+/// JSON deserialization fails, or if the canvas has invalid dimensions.
+pub fn load_canvas_from_path_xz(path: &Path) -> anyhow::Result<Canvas> {
+    let file = std::fs::File::open(path)?;
+    read_canvas_xz(file)
+}
+
+/// Serialize a `Canvas` into any `std::io::Write` by streaming JSON directly
+/// into an xz encoder at maximum compression (preset 9).
+///
+/// No intermediate JSON `Vec<u8>` is allocated — JSON is serialized
+/// incrementally into the xz compressor, which writes compressed frames
+/// into `writer`.
+///
+/// # Parameters
+///
+/// * `canvas` — The canvas to serialize.
+/// * `writer` — Destination writer (e.g. `File`, `Vec<u8>`).
+///
+/// # Errors
+///
+/// Returns an error if JSON serialization or xz compression fails.
+fn write_canvas_xz(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
+    let mut encoder = xz2::write::XzEncoder::new(writer, XZ_COMPRESSION_PRESET);
+    serde_json::to_writer(&mut encoder, canvas)?;
+    encoder.finish()?;
+    Ok(())
+}
+
+/// Serialize a `Canvas` to xz-compressed JSON bytes without writing to disk.
+///
+/// This is the CPU-heavy part of exporting and should be called on a
+/// background thread. Internally streams JSON directly into the xz encoder
+/// — no intermediate JSON `Vec<u8>`.
+///
+/// # Parameters
+///
+/// * `canvas` — The canvas to serialize.
+///
+/// # Errors
+///
+/// Returns an error if JSON serialization or xz compression fails.
+pub fn save_canvas_to_bytes_xz(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
+    let mut compressed = Vec::new();
+    write_canvas_xz(canvas, &mut compressed)?;
+    Ok(compressed)
+}
+
+/// Serialize a `Canvas` directly to a file by streaming JSON through xz
+/// compression into a `File` — zero intermediate `Vec<u8>` allocations.
+///
+/// The file is created at `path`; the parent directory must exist.
+///
+/// # Parameters
+///
+/// * `canvas` — The canvas to serialize.
+/// * `path` — Destination file path.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be created, or if JSON serialization
+/// or xz compression fails.
+pub fn save_canvas_to_path_xz(canvas: &Canvas, path: &Path) -> anyhow::Result<()> {
+    let file = std::fs::File::create(path)?;
+    write_canvas_xz(canvas, file)
 }
 
 /// Strategy for exporting a premultiplied RGBA buffer to an image file.
