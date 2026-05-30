@@ -7,6 +7,8 @@ use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
+use std::sync::Arc;
+
 use crate::canvas::Layer;
 use crate::tests::common::blue;
 use crate::tests::common::red;
@@ -93,7 +95,7 @@ fn bucket_fill_multi_layer() {
         ],
         height: 10,
         width: 10,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };

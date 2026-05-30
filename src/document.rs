@@ -108,7 +108,7 @@ impl Document {
         let pixel_count = (canvas.width as usize) * (canvas.height as usize);
 
         if canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
-            canvas.output_rgba = vec![0; pixel_count * RGBA_CHANNELS];
+            canvas.output_rgba = Arc::new(vec![0; pixel_count * RGBA_CHANNELS]);
         }
         // Collect pixel slices + opacity for visible layers only.
         let layer_data: Vec<(&[Color32], u8)> = canvas
@@ -119,7 +119,7 @@ impl Document {
             .collect();
 
         let rects = canvas.dirty_rect.take_all();
-        let output = &mut canvas.output_rgba;
+        let output = Arc::make_mut(&mut canvas.output_rgba).as_mut_slice();
         let width = canvas.width;
         let height = canvas.height;
 
@@ -221,7 +221,7 @@ impl Document {
 
         let image = egui::ColorImage::from_rgba_premultiplied(
             [self.canvas.width as usize, self.canvas.height as usize],
-            &self.canvas.output_rgba,
+            &self.canvas.output_rgba[..],
         );
 
         let rendered = &mut self.canvas_mut().rendered_layers;

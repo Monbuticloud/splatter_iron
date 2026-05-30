@@ -1,6 +1,7 @@
 //! Core canvas and layer types, brush-tool enum ([`CurrentTool`]),
 //! render-state machine ([`RenderState`]), and dirty-rect tracking.
 
+use std::sync::Arc;
 use std::time::Duration;
 
 use eframe::egui::Color32;
@@ -265,7 +266,7 @@ pub struct Canvas {
     /// Premultiplied-alpha output buffer holding the blended result
     /// of all layers (width × height × 4 bytes).
     #[serde(skip)]
-    pub output_rgba: Vec<u8>,
+    pub output_rgba: Arc<Vec<u8>>,
 
     /// Regions that changed since the last texture upload.
     /// When empty, a full re-blend is needed (e.g. after layer reorder).
@@ -280,7 +281,7 @@ impl std::fmt::Debug for Canvas {
             .field("pixels", &self.pixels)
             .field("height", &self.height)
             .field("width", &self.width)
-            .field("output_rgba.len", &self.output_rgba.len())
+            .field("output_rgba.len", &self.output_rgba.as_ref().len())
             .field("dirty_rect", &self.dirty_rect)
             .finish()
     }
@@ -300,7 +301,7 @@ impl Default for Canvas {
             pixels: layers,
             height: DEFAULT_HEIGHT,
             width: DEFAULT_WIDTH,
-            output_rgba: Vec::new(),
+            output_rgba: Arc::new(Vec::new()),
             rendered_layers: None,
             dirty_rect: DirtyRectList::new(),
         }
@@ -333,7 +334,7 @@ impl Canvas {
             }],
             width,
             height,
-            output_rgba: Vec::new(),
+            output_rgba: Arc::new(Vec::new()),
             rendered_layers: None,
             dirty_rect,
         }

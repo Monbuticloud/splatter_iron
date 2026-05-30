@@ -7,6 +7,8 @@
 use eframe::egui::Color32;
 
 use crate::brush_params::BrushStrokeParams;
+use std::sync::Arc;
+
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
 use crate::canvas::Layer;
@@ -80,7 +82,7 @@ fn draw_circle_multi_layer() {
         ],
         height: 10,
         width: 10,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };

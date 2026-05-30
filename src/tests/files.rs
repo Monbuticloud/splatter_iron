@@ -8,6 +8,8 @@ use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
+use std::sync::Arc;
+
 use crate::canvas::Layer;
 use crate::files;
 
@@ -27,7 +29,7 @@ fn checkerboard_4x4() -> Canvas {
         pixels: vec![Layer { pixels, ..Default::default() }],
         height: 4,
         width: 4,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     }
@@ -70,7 +72,7 @@ fn save_load_roundtrip_multi_layer() {
         ],
         height: 3,
         width: 3,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
@@ -111,7 +113,7 @@ fn save_load_roundtrip_transparent() {
         }],
         height: 1,
         width: 3,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
@@ -417,7 +419,7 @@ fn load_zero_width_canvas_rejected() {
         pixels: vec![Layer { pixels: vec![Color32::TRANSPARENT; 1], ..Default::default() }],
         height: 1,
         width: 0,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
@@ -437,7 +439,7 @@ fn load_zero_height_canvas_rejected() {
         pixels: vec![Layer { pixels: vec![], ..Default::default() }],
         height: 0,
         width: 1,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
@@ -467,7 +469,7 @@ fn load_wrong_layer_size_rejected() {
         ],
         height: 2,
         width: 2,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };

@@ -7,6 +7,8 @@ use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
+use std::sync::Arc;
+
 use crate::canvas::DirtyRectList;
 use crate::canvas::Layer;
 use crate::document::Document;
@@ -21,7 +23,7 @@ fn small_document() -> Document {
         }],
         height: 10,
         width: 10,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };
@@ -145,7 +147,7 @@ fn replace_canvas_resets_state() {
         ],
         height: 2,
         width: 2,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect: DirtyRectList::new(),
     };

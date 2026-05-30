@@ -3,6 +3,7 @@
 
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::mpsc;
 
 use chrono::Local;
@@ -429,7 +430,7 @@ impl FileIO {
                             } else {
                                 format!("{path_string}.{default_extension}")
                             };
-                            let rgba = document.canvas.output_rgba.clone();
+                            let rgba = Arc::clone(&document.canvas.output_rgba);
                             let w = document.canvas.width;
                             let h = document.canvas.height;
                             let export_path = PathBuf::from(&path_string);
@@ -518,7 +519,7 @@ impl FileIO {
     /// * `path` — Destination file path.
     pub fn trigger_async_export(
         &mut self,
-        premultiplied_rgba: Vec<u8>,
+        premultiplied_rgba: Arc<Vec<u8>>,
         width: u32,
         height: u32,
         path: PathBuf,
@@ -608,7 +609,7 @@ impl FileIO {
                         pixels: layers,
                         width,
                         height,
-                        output_rgba: Vec::new(),
+                        output_rgba: Arc::new(Vec::new()),
                         rendered_layers: None,
                         dirty_rect,
                     };

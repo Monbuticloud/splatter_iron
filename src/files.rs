@@ -5,6 +5,7 @@ use std::io::BufWriter;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
+use std::sync::Arc;
 
 use bytemuck::cast_slice;
 use eframe::egui::Color32;
@@ -440,7 +441,7 @@ pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
         pixels: vec![Layer { pixels, ..Default::default() }],
         height: height_u32,
         width: width_u32,
-        output_rgba: Vec::new(),
+        output_rgba: Arc::new(Vec::new()),
         rendered_layers: None,
         dirty_rect,
     })
