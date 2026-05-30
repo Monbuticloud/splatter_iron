@@ -1,5 +1,9 @@
 # SplatterIron — Agent Guide
 
+## Metadata
+
+- **Last AGENTS.md commit**: `db30383` — if `HEAD` diverges, check if staleness affects this guide.
+
 ## Build & Dev
 
 - **Requires Rust ≥1.96.0** (stable) — commit `rust-toolchain.toml` pins the channel.
@@ -16,23 +20,32 @@
 
 ## Source Layout
 
-| File                  | Role                                                                                                                                                                                                                                                 |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/main.rs`         | Entry point, `TrackingAllocator` (MiMalloc), `eframe::run_native`, `allocated_bytes()`                                                                                                                                                               |
-| `src/app.rs`          | `MyApp` (wires `Document` + `ToolConfig` + `UndoHistory` + `FileIO` + `UIState`), app identity constants, `ExportInfo`, `EXPORT_FORMATS` (13 formats), `UIState` (render state / autosave tracking), async autosave loop (2min interval)             |
-| `src/document.rs`     | `Document` — wraps `Canvas` + save path + current layer; `render_to_texture()`, `add_layer()` / `delete_layer()` / `move_layer_up/down()` / `select_layer()`, `replace_canvas()`                                                                     |
-| `src/canvas.rs`       | `Canvas`, `Layer`, `draw_square()`, `draw_square_line()`, `draw_circle()`, `draw_circle_line()`, `CurrentTool` enum (`Square` / `Circle` / `SquareEraser` / `CircleEraser`), `RenderState` enum (`ActiveWake` / `IdleThrottled` / `UnfocusedFrozen`) |
-| `src/pixel.rs`        | SIMD (`wide::u32x4`) + rayon parallel blend, premultiplied-alpha, `blend_layers()`, `unpremultiply()`                                                                                                                                                |
-| `src/files.rs`        | `save_canvas()`, `load_canvas()`, `compress_canvas()`, `decompress_canvas()`, `save_compressed()`, `export_as_image()` — zstd-compressed JSON → `.splattercanvas`                                                                                    |
-| `src/file_io.rs`      | `FileIO` (async file dialogs via mpsc channels), `PendingFileAction`, `SaveKind`, `SaveResult`, autosave to `{data_dir}/autosaves/`                                                                                                                  |
-| `src/undo.rs`         | `UndoRecord`, `StrokePixel`, `RunSegment`, `BeforePixels` — per-pixel stroke apply / undo / redo application                                                                                                                                         |
-| `src/undo_history.rs` | `UndoHistory` — undo/redo stack with visited-stamp dedup (`MAX_STROKE_STACK = 1000`), `push_undo()` / `undo_step()` / `redo_step()` / `next_stamp()`                                                                                                 |
-| `src/tool_configuration.rs`  | `ToolConfiguration` — `current_tool`, `current_color`, `radius`, `alpha_overlay`, `show_brush_preview`, `undo_redo_steps_multiplier`                                                                     |
-| `src/ui/`             | 4 panels: `top` (file menu), `left` (tools), `right` (color / layers), `center` (canvas)                                                                                                                                                             |
-| `src/tools/`          | `bucket_fill` (scanline flood-fill), `circle_brush` (midpoint-circle span fill), `square_brush` (rectangular fill) — all return `UndoRecord`, used by `Document`/`Canvas`                                                                            |
-| `src/tests/`          | 9 test modules: `pixel`, `undo`, `undo_history`, `canvas`, `document`, `files`, `bucket_fill`, `circle_brush`, `square_brush`                                                                                                                        |
-| `docs/src/`           | Mirrors `src/` structure; one `.md` per `.rs` file for post-implementation documentation                                                                                                                                                             |
-| `docs/architecture/`  | Numbered ADRs for deliberate architecture decisions                                                                                                                                                                                                  |
+| File                          | Role                                                                                                                                                                                                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TODO.md`                     | Decision pipeline — prioritized improvement ideas with priority/change-level/commit-history tags                                                                                                                                                     |
+| `TODO_ARCHIVE.md`             | Archived TODO items split into Denied / Implemented / Outdated sections                                                                                                                                                                              |
+| `src/main.rs`                 | Entry point, `TrackingAllocator` (MiMalloc), `eframe::run_native`, `allocated_bytes()`                                                                                                                                                               |
+| `src/app/mod.rs`              | `MyApp` (wires `Document` + `ToolConfiguration` + `UndoHistory` + `FileIO` + `UIState`), app identity constants, `ExportInfo`, `EXPORT_FORMATS` (13 formats), `UIState`, async autosave loop (2min interval)                                          |
+| `src/app/frame.rs`            | GPU texture sync (`recreate_gpu_texture`, `sync_gpu_texture`), render state update, autosave handler                                                                                                                                                 |
+| `src/persistence.rs`          | Config save/load (`config_path`, `save_config`, `push_recent_file`)                                                                                                                                                                                  |
+| `src/document.rs`             | `Document` — wraps `Canvas` + save path + current layer; `render_to_texture()`, `add_layer()` / `delete_layer()` / `move_layer_up/down()` / `select_layer()`, `replace_canvas()`                                                                     |
+| `src/canvas.rs`               | `Canvas`, `Layer`, `draw_square()`, `draw_square_line()`, `draw_circle()`, `draw_circle_line()`, `CurrentTool` enum (`Square` / `Circle` / `SquareEraser` / `CircleEraser`), `RenderState` enum (`ActiveWake` / `IdleThrottled` / `UnfocusedFrozen`) |
+| `src/pixel.rs`                | SIMD (`wide::u32x4`) + rayon parallel blend, premultiplied-alpha, `blend_layers()`, `unpremultiply()`                                                                                                                                                |
+| `src/files.rs`                | `save_canvas()`, `load_canvas()`, `compress_canvas()`, `decompress_canvas()`, `save_compressed()`, `export_as_image()` — zstd-compressed JSON → `.splattercanvas`                                                                                    |
+| `src/file_io.rs`              | `FileIO` (async file dialogs via mpsc channels), `PendingFileAction`, `SaveKind`, `SaveResult`, autosave to `{data_dir}/autosaves/`                                                                                                                  |
+| `src/undo.rs`                 | `UndoRecord`, `StrokePixel`, `RunSegment`, `BeforePixels` — per-pixel stroke apply / undo / redo application                                                                                                                                         |
+| `src/undo_history.rs`         | `UndoHistory` — undo/redo stack with visited-stamp dedup (`MAX_STROKE_STACK = 1000`), `push_undo()` / `undo_step()` / `redo_step()` / `next_stamp()`                                                                                                 |
+| `src/tool_configuration.rs`   | `ToolConfiguration` — `current_tool`, `current_color`, `radius`, `alpha_overlay`, `show_brush_preview`, `undo_redo_steps_multiplier`                                                                                                                 |
+| `src/asset_library.rs`        | Generic `Library<T>` with persistent JSON-backed storage for brush tips / stamps                                                                                                                                                                     |
+| `src/brush_library.rs`        | Managed `Library<BrushTip>` collection                                                                                                                                                                                                               |
+| `src/stamp_library.rs`        | Managed `Library<StampImage>` collection                                                                                                                                                                                                             |
+| `src/brush_params.rs`         | Shared `BrushStrokeParams` parameter bundle (radius, hardness, spacing, opacity, etc.)                                                                                                                                                               |
+| `src/debug.rs`                | `debug_snapshot()` canvas pixel dump utility for test assertions                                                                                                                                                                                     |
+| `src/ui/`                     | 7 panels: `center` (canvas), `dialogs` (naming, warnings, error), `left` (tools), `panels` (panel visibility), `right` (color/layers), `top` (file menu)                                                                                             |
+| `src/tools/`                  | 7 tool modules: `bucket_fill`, `circle_brush`, `square_brush`, `custom_brush`, `stamp_brush`, `brush_common`, `brush_parsers` — all return `UndoRecord`                                                                                              |
+| `src/tests/`                  | 22 test modules (full list in Code Standards)                                                                                                                                                                                                        |
+| `docs/src/`                   | Mirrors `src/` structure; one `.md` per `.rs` file for post-implementation documentation                                                                                                                                                             |
+| `docs/architecture/`          | 18 ADRs (0001–0018) for deliberate architecture decisions                                                                                                                                                                                            |
 
 ## Notable
 
@@ -86,10 +99,10 @@
 
 ### Code Standards
 
-- **Clippy**: `all` + `pedantic` + `nursery` + `unwrap_used` → `warn`. Zero `#[allow(clippy::…)]` without an inline comment explaining why. Current codebase has exactly one exception (`cast_possible_truncation` + `cast_sign_loss` in `src/ui/center.rs` brush preview alpha).
+- **Clippy**: `all` + `pedantic` + `nursery` + `unwrap_used` → `warn`. Zero `#[allow(clippy::…)]` without an inline comment explaining why. Current codebase has exactly two exceptions: (`cast_possible_truncation` + `cast_sign_loss` in `src/ui/center.rs` brush preview alpha) and `too_many_arguments` on `stamp_at` in `src/tools/stamp_brush.rs` (18 params vs threshold of 9).
 - **Unsafe**: Only in `TrackingAllocator` (`main.rs`) — the sole justified use. All other `unsafe` prohibited; use safe abstractions (`wide::u32x4` for SIMD, `bytemuck` for casting).
 - **Docs**: Every `pub` item gets a docstring — document every argument, all invariants, all return values, side effects, and any additional nuance. Inline docs must convey the purpose in depth: a single function's docs may span two or more paragraphs. Document `# Panics` for invariant-violation panics and `# Errors` for `Result` returns. Additionally, `docs/src/` mirrors `src/` — each `.rs` file has a corresponding `.md` for post-implementation documentation. When checking for missing docs, also check `docs/src/` for missing functions.
-- **Tests**: Every `src/*.rs` module has a corresponding `src/tests/*.rs` module. New modules must add test coverage. Pre-commit gate: `cargo test && cargo clippy`.
+- **Tests**: Every `src/*.rs` module has a corresponding `src/tests/*.rs` module. Current test modules: `app`, `asset_library`, `brush_common`, `brush_library`, `brush_params`, `brush_parsers`, `bucket_fill`, `canvas`, `circle_brush`, `common`, `custom_brush`, `debug`, `document`, `file_io`, `files`, `pixel`, `square_brush`, `stamp_brush`, `stamp_library`, `tool_configuration`, `undo`, `undo_history` (22 total). New modules must add test coverage. Pre-commit gate: `cargo test && cargo clippy`.
 - **Error handling**: Panic on invariant violations (logic bugs) with documented `# Panics`. `Result` for recoverable errors (IO, deserialization, dialogs) with documented `# Errors`.
 
 ### Agent Expectations
