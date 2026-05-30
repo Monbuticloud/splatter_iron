@@ -502,6 +502,27 @@ impl MyApp {
         }
     }
 
+    fn stabilized_pixel(&mut self, raw_x: u32, raw_y: u32, dt: f32) -> (u32, u32) {
+        if !self.tool_configuration.stabilization_enabled {
+            return (raw_x, raw_y);
+        }
+        let raw_f = (raw_x as f32, raw_y as f32);
+        let st = self.ui.stabilized_cursor.get_or_insert(raw_f);
+
+        if self.ui.previous_cursor_position.is_none() {
+            *st = raw_f;
+            return (raw_x, raw_y);
+        }
+
+        let t = self.tool_configuration.stabilization_smoothing / 100.0;
+        let rate = 100.0 * (1.0 - t).max(0.01);
+        let lerp_factor = 1.0 - (-rate * dt).exp();
+        st.0 += lerp_factor * (raw_f.0 - st.0);
+        st.1 += lerp_factor * (raw_f.1 - st.1);
+
+        (st.0.round() as u32, st.1.round() as u32)
+    }
+
     /// Apply the current drawing tool at the given pixel coordinates.
     ///
     /// Returns `Some(UndoRecord)` if a stroke was applied, or `None` for tools
