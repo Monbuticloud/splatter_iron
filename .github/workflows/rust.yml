@@ -56,31 +56,12 @@ jobs:
       - name: cargo check
         run: cargo check
 
-  test-linux:
+  test:
     if: github.event_name != 'schedule'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: splatter-iron
-      - name: cargo test
-        run: cargo test
-
-  test-mac:
-    if: github.event_name != 'schedule'
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: splatter-iron
-      - name: cargo test
-        run: cargo test
-
-  test-windows:
-    if: github.event_name != 'schedule'
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
