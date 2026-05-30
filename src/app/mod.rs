@@ -565,15 +565,7 @@ impl MyApp {
 
 
 
-    /// Persist tool configuration to disk (runs on the same cadence as autosave).
-    fn handle_config_save(&mut self) {
-        if
-            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >=
-            Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
-        {
-            self.save_config();
-        }
-    }
+
 
 
 }

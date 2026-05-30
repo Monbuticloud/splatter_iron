@@ -2,7 +2,9 @@
 //! and periodic config write on the autosave cadence.
 
 use std::path::PathBuf;
+use std::time::Duration;
 
+use crate::app::AUTOSAVE_INTERVAL_MINUTES;
 use crate::app::MyApp;
 use crate::app::PersistedConfig;
 use serde_json;
@@ -32,6 +34,16 @@ impl MyApp {
         let path = self.config_path();
         if let Ok(json) = serde_json::to_string(&persisted) {
             let _ = std::fs::write(&path, json);
+        }
+    }
+
+    /// Persist tool configuration to disk (runs on the same cadence as autosave).
+    pub(crate) fn handle_config_save(&mut self) {
+        if
+            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >=
+            Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
+        {
+            self.save_config();
         }
     }
 }
