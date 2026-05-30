@@ -4,7 +4,7 @@ Tests for serialisation — zstd-compressed JSON canvas save/load round-trips an
 
 ## Test strategy
 
-- Round-trips: save a `Canvas` to bytes, load it back, verify every pixel is identical.
+- Round-trips: save a `Canvas` to file via `save_canvas_to_path`, load it back via `load_canvas_from_path`, verify every pixel is identical.
 - Multi-layer: both layers survive the round-trip.
 - Transparency: transparent and semi-transparent pixels are preserved.
 - Image formats: export a checkerboard to PNG and re-import; export JPEG and verify file existence; export semi-transparent PNG and verify re-import.
@@ -16,7 +16,7 @@ Constructs a 4×4 single-layer `Canvas` with alternating white/black opaque pixe
 
 ## `save_load_roundtrip_identical_pixels`
 
-A checkerboard canvas survives a `save_canvas_to_bytes` → `load_app_from_data` round-trip with all pixels identical.
+A checkerboard canvas survives a `save_canvas_to_path` → `load_canvas_from_path` round-trip with all pixels identical.
 
 ## `save_load_roundtrip_multi_layer`
 
@@ -57,10 +57,6 @@ Exporting a 2×2 uniform-color buffer as GIF produces a non-empty file on disk.
 ## `export_tiff_creates_file`
 
 Exporting a 2×2 uniform-color buffer as TIFF produces a non-empty file on disk.
-
-## `save_bytes_to_file_roundtrip`
-
-`save_bytes_to_file` followed by `load_data_from_file` recovers the identical byte slice.
 
 ## `export_avif_creates_file`
 
