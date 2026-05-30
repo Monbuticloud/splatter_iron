@@ -72,19 +72,6 @@ fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
     Ok(canvas)
 }
 
-/// Read the raw bytes of a file from disk.
-///
-/// # Parameters
-///
-/// * `path` — Path to the file to read.
-///
-/// # Errors
-///
-/// Returns `std::io::Error` if the file cannot be read (e.g. not found, permission denied).
-pub fn load_bytes_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
-    std::fs::read(path)
-}
-
 /// Deserialize a `Canvas` from zstd-compressed JSON bytes.
 ///
 /// # Parameters
@@ -191,24 +178,6 @@ pub fn save_canvas_to_path(canvas: &Canvas, path: &Path) -> anyhow::Result<()> {
 pub fn load_canvas_from_path(path: &Path) -> anyhow::Result<Canvas> {
     let file = std::fs::File::open(path)?;
     read_canvas(file)
-}
-
-/// Write pre-serialized bytes to a file.
-///
-/// This is a pure I/O operation — serialization should be done beforehand
-/// with [`save_canvas_to_bytes`].
-///
-/// # Parameters
-///
-/// * `data` — Pre-serialized bytes to write.
-/// * `path` — Destination file path.
-///
-/// # Errors
-///
-/// Returns an error if the file cannot be written.
-pub fn save_bytes_to_file(data: &[u8], path: &Path) -> anyhow::Result<()> {
-    std::fs::write(path, data)?;
-    Ok(())
 }
 
 /// Strategy for exporting a premultiplied RGBA buffer to an image file.
