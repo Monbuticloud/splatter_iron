@@ -278,3 +278,45 @@ Returns an error if:
 - The file cannot be read.
 - The image format is not recognised by the `image` crate.
 - The file is corrupted or truncated.
+
+---
+
+## XZ-compressed `.splatterarchive` format
+
+Functions mirroring the zstd-based `.splattercanvas` API but using xz (LZMA2)
+at maximum compression (preset 9). Used for the separate archive export/import
+and archive autosave streams.
+
+### `save_canvas_to_path_xz(canvas, path)`
+
+Serialises a `Canvas` to an xz-compressed file at `path`. Uses preset 9
+(max compression, single-threaded). Zero intermediate allocations — streams
+JSON directly into the xz encoder.
+
+### `load_canvas_from_path_xz(path)`
+
+Decompresses and deserialises a `Canvas` from an xz-compressed file.
+
+### `save_canvas_to_bytes_xz(canvas)`
+
+Serialises a `Canvas` to xz-compressed `Vec<u8>`.
+
+### `load_canvas_from_bytes_xz(data)`
+
+Deserialises a `Canvas` from xz-compressed bytes.
+
+### `write_canvas_xz(canvas, writer)`
+
+Core streaming writer — serialises JSON into an `XzEncoder` wrapping any
+`std::io::Write`.
+
+### `read_canvas_xz(reader)`
+
+Core streaming reader — wraps any `std::io::Read` with `XzDecoder` and
+`take(512 MiB)` before `serde_json::from_reader`.
+
+### Errors
+
+All read functions validate canvas dimensions and layer pixel counts,
+returning `anyhow::Error` on mismatch. Decompression is limited to
+`MAX_DECOMPRESSED_BYTES` (512 MiB).
