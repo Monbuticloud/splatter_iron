@@ -563,22 +563,7 @@ impl MyApp {
     impl MyApp {
 
 
-    /// Path to the user-config JSON file (tool settings, preferences).
-    fn config_path(&self) -> PathBuf {
-        self.file_io.app_local_data_directory.join("config.json")
-    }
 
-    /// Persist current tool configuration and recent files to disk.
-    fn save_config(&self) {
-        let persisted = PersistedConfig {
-            tool_configuration: self.tool_configuration.clone(),
-            recent_files: self.ui.recent_files.clone(),
-        };
-        let path = self.config_path();
-        if let Ok(json) = serde_json::to_string(&persisted) {
-            let _ = std::fs::write(&path, json);
-        }
-    }
 
     /// Persist tool configuration to disk (runs on the same cadence as autosave).
     fn handle_config_save(&mut self) {
