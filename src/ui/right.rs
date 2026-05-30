@@ -31,13 +31,12 @@ enum LayerAction {
 }
 
 impl MyApp {
-    /// Render the right settings panel with color picker, brush settings,
-    /// undo/redo strength, save path, and layer management controls.
+    /// Render the right settings panel: colour selector, brush radius, alpha
+    /// overlay toggle, brush preview toggle, undo strength, layer list,
+    /// and layer management controls.
     ///
     /// Layer actions (add, delete, move up/down, select) are processed
     /// via a `LayerAction` enum to avoid borrowing conflicts.
-    /// Render the right settings panel: colour selector, brush radius, alpha
-    /// overlay toggle, brush preview toggle, undo strength, layer list, and save path.
     ///
     /// # Parameters
     ///
