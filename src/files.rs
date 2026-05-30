@@ -156,6 +156,16 @@ pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     Ok(compressed)
 }
 
+pub fn save_canvas_to_path(canvas: &Canvas, path: &Path) -> anyhow::Result<()> {
+    let file = std::fs::File::create(path)?;
+    write_canvas(canvas, file)
+}
+
+pub fn load_canvas_from_path(path: &Path) -> anyhow::Result<Canvas> {
+    let file = std::fs::File::open(path)?;
+    read_canvas(file)
+}
+
 /// Write pre-serialized bytes to a file.
 ///
 /// This is a pure I/O operation — serialization should be done beforehand
