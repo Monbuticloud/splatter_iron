@@ -50,6 +50,10 @@ pub struct ToolConfiguration {
     pub show_grid: bool,
     /// Spacing of grid lines in canvas pixels.
     pub grid_size: u32,
+    /// Whether brush stabilization (lerped virtual cursor) is enabled.
+    pub stabilization_enabled: bool,
+    /// Smoothing strength for brush stabilization (0 = snappy, 100 = frozen).
+    pub stabilization_smoothing: f32,
 }
 
 impl Default for ToolConfiguration {
