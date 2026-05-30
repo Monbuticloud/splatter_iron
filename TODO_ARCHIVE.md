@@ -6,6 +6,14 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 
 - `ActiveWake` render state at unlimited FPS — `src/canvas.rs:370` : already implemented — `ActiveWake(Duration)` with decrement-to-throttle in `src/app/frame.rs:122-129`. (P3)(B1)(59653a1)
 - `src/files.rs:211` missing `# Errors` — `ExportStrategy` trait already documents `# Errors` at `src/files.rs:193-195`; impl inherits. (P2)(B1)(59653a1)
+- `ui/top.rs:149` — clone `recent_files` every frame → borrow instead. (P2)(B1)(514450e) — clone is inside `context_menu` closure, only runs on menu open not every frame.
+- `document.rs:114-119` — `.collect()` allocates layer ref vec every blend frame → reuse Vec via `clear()`+`push()`. (P1)(B1)(514450e) — allocation is ~90 bytes for 10 layers, negligible.
+- `tools/brush_common.rs:53-54` — `apply_visited_runs` returns new `Vec<RunSegment>` per stroke → take `&mut` scratch param. (P1)(B1)(514450e) — `UndoRecord` must own the runs Vec; `std::mem::take` loses scratch capacity, making reuse equivalent to current code.
+- `tools/square_brush.rs:189,197` — per-row `Vec::with_capacity` in `draw_square` → scratch `&mut Vec<RunSegment>`. (P1)(B1)(514450e) — same ownership issue; `before` Vecs per row consumed by `compress_run`.
+- `tools/circle_brush.rs:139,162,179` — per-row `Vec::new()`/`Vec::with_capacity` in `draw_circle` → scratch `&mut Vec<RunSegment>`. (P1)(B1)(514450e) — same ownership issue.
+- `tools/bucket_fill.rs:60-61,86` — runs+stack+per-span allocations in `draw_bucket_fill` → scratch `&mut Vec`. (P1)(B1)(514450e) — same ownership issue.
+- `tools/custom_brush.rs:79` — `all_runs` accumulator per stroke → scratch `&mut Vec<RunSegment>`. (P1)(B1)(514450e) — same ownership issue.
+- `tools/stamp_brush.rs:161` — per-row `before` Vec in `stamp_at` → scratch buffer. (P1)(B1)(514450e) — `before` Vec consumed by `compress_run` into undo record, ownership transfer unavoidable.
 
 ## Implemented
 
