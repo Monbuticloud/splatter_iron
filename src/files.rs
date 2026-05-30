@@ -9,6 +9,7 @@ use std::path::Path;
 use bytemuck::cast_slice;
 use eframe::egui::Color32;
 use image::ImageEncoder;
+use rayon::prelude::*;
 
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
