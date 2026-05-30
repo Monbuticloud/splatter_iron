@@ -317,6 +317,10 @@ pub enum UnsavedWarningAction {
 pub enum ProgressState {
     /// No operation in progress.
     Idle,
+    /// Saving the canvas to disk (either autosave or manual save).
+    Saving,
+    /// Periodic autosave in progress.
+    Autosaving,
     /// Exporting an image file.
     Exporting,
     /// Loading a `.splattercanvas` file.
