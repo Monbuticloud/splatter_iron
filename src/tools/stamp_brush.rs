@@ -107,6 +107,7 @@ fn stamp_at(
     drag_processed: &mut [u32],
     drag_stamp_value: u32,
     runs: &mut Vec<RunSegment>,
+    scratch_src_x: &mut Vec<u32>,
     dirty_rect: &mut DirtyRect,
 ) {
     let half_w = output_w / 2;
@@ -145,12 +146,12 @@ fn stamp_at(
     let color_a = color.a() as u32;
 
     // Precompute source-x mapping for each output column (O(width) once).
-    let src_x_map: Vec<u32> = (left..=right)
-        .map(|x| {
-            ((((x as i64) - out_left) as f64 * stamp_width as f64 / output_w as f64).round() as u32)
-                .min(stamp_width - 1)
-        })
-        .collect();
+    scratch_src_x.clear();
+    scratch_src_x.reserve((right - left + 1) as usize);
+    scratch_src_x.extend((left..=right).map(|x| {
+        ((((x as i64) - out_left) as f64 * stamp_width as f64 / output_w as f64).round() as u32)
+            .min(stamp_width - 1)
+    }));
     // Also precompute a floating-point version for bilinear.
     let float_scale_x = stamp_width as f64 / output_w as f64;
     let float_scale_y = stamp_height as f64 / output_h as f64;
@@ -197,7 +198,7 @@ fn stamp_at(
             // Sample from stamp image
             let mut stamp_pixel = match sampling {
                 StampSampling::Nearest => {
-                    sample_nearest(_x_idx, &src_x_map, src_y, stamp_pixels, stamp_width)
+                    sample_nearest(_x_idx, scratch_src_x.as_slice(), src_y, stamp_pixels, stamp_width)
                 }
                 StampSampling::Bilinear => {
                     let src_x_f = ((x as i64) - out_left) as f64 * float_scale_x;
@@ -327,6 +328,7 @@ pub fn draw_stamp_line(
     };
 
     let mut runs: Vec<RunSegment> = Vec::new();
+    let mut scratch_src_x: Vec<u32> = Vec::new();
     let mut dirty_rect = DirtyRect::empty();
 
     let dx = end_x as i64 - start_x as i64;
@@ -368,6 +370,7 @@ pub fn draw_stamp_line(
             drag_processed,
             drag_stamp_value,
             &mut runs,
+            &mut scratch_src_x,
             &mut dirty_rect,
         );
     }
