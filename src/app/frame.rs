@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use eframe::egui;
+use eframe::egui_wgpu::wgpu;
 
 use crate::app::MyApp;
 use crate::app::PendingStamp;
@@ -160,5 +161,65 @@ impl MyApp {
         } else if needs_blend || self.document.canvas.rendered_layers.is_none() {
             self.document.render_to_texture(ui);
         }
+    }
+
+    /// Recreate the wgpu GPU texture after a canvas resize.
+    ///
+    /// Uses `update_egui_texture_from_wgpu_texture` to keep the same
+    /// `egui::TextureId`, avoiding stale entries in the renderer's map.
+    ///
+    /// If the canvas dimensions exceed the device's `max_texture_dimension_2d`,
+    /// an error is pushed to `displayed_error_list` and the texture is not
+    /// recreated (the old texture remains, now stale).
+    ///
+    /// # Panics
+    ///
+    /// Panics in debug builds if the renderer lock cannot be acquired within
+    /// 10 seconds (parking_lot deadlock detection). Panics if the wgpu device
+    /// has been lost.
+    pub(crate) fn recreate_gpu_texture(&mut self, frame: &mut eframe::Frame) {
+        let Some(render_state) = frame.wgpu_render_state() else {
+            return;
+        };
+        let Some(gpu) = &mut self.gpu_texture else {
+            return;
+        };
+        let width = self.document.canvas.width;
+        let height = self.document.canvas.height;
+        let max_dim = render_state.device.limits().max_texture_dimension_2d;
+        if width > max_dim || height > max_dim {
+            self.ui.errors.list.push(
+                format!(
+                    "Canvas too large for GPU: {width}×{height} exceeds device max \
+                 texture dimension of {max_dim}. The display may be incomplete."
+                )
+            );
+            return;
+        }
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+        gpu.texture = render_state.device.create_texture(
+            &(wgpu::TextureDescriptor {
+                label: Some("splatter_iron_canvas"),
+                size,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            })
+        );
+        let view = gpu.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let mut renderer = render_state.renderer.write();
+        renderer.update_egui_texture_from_wgpu_texture(
+            &render_state.device,
+            &view,
+            wgpu::FilterMode::Linear,
+            gpu.texture_id
+        );
     }
 }
