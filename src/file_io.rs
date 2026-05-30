@@ -136,6 +136,9 @@ pub struct FileIO {
     pub load_in_flight: bool,
     /// `true` while an async import thread is running.
     pub import_in_flight: bool,
+    /// `true` when the most recently triggered async save is an autosave.
+    /// Used by the UI to display "Autosaving…" vs "Saving…" in the status bar.
+    pub autosave_in_flight: bool,
 }
 
 impl std::fmt::Debug for FileIO {
@@ -148,6 +151,7 @@ impl std::fmt::Debug for FileIO {
             .field("export_in_flight", &self.export_in_flight)
             .field("load_in_flight", &self.load_in_flight)
             .field("import_in_flight", &self.import_in_flight)
+            .field("autosave_in_flight", &self.autosave_in_flight)
             .finish()
     }
 }
@@ -189,6 +193,7 @@ impl FileIO {
             load_import_receiver,
             load_in_flight: false,
             import_in_flight: false,
+            autosave_in_flight: false,
             app_local_data_directory,
             loaded_stamp_data: None,
             loaded_brush_data: None,
