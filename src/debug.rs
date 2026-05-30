@@ -1,7 +1,7 @@
-//! Debug utilities for development builds.
+//! Debug utilities gated behind the `debug-snapshot` feature.
 //!
-//! Provides `debug_snapshot` which dumps application state via `dbg!`
-//! when compiled in debug mode.  No-ops in release builds.
+//! Provides `debug_snapshot` which dumps application state via `dbg!`.
+//! Only compiled when `feature = "debug-snapshot"` is enabled.
 
 use crate::app::MyApp;
 

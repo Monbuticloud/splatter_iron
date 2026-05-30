@@ -1,10 +1,9 @@
 //! Tests for the [`debug_snapshot`] utility.
 //!
-//! Verifies the function compiles.  The actual `dbg!` output is only
-//! produced in debug builds; in release builds the function body is a
-//! no-op.  We cannot call `debug_snapshot` in a test because it requires
-//! a `&MyApp` reference that cannot be constructed without an eframe
-//! context.
+//! Only compiled when `feature = "debug-snapshot"` is enabled.
+//! Verifies the function compiles.  We cannot call `debug_snapshot` in
+//! a test because it requires a `&MyApp` reference that cannot be
+//! constructed without an eframe context.
 
 /// Ensure the module is accessible.
 #[test]

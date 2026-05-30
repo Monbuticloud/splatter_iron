@@ -1,9 +1,9 @@
 # debug
 
-Debug utilities for development builds.
+Debug utilities gated behind the `debug-snapshot` feature.
 
-Provides `debug_snapshot` which dumps application state via `dbg!`
-when compiled in debug mode.  No-ops in release builds.
+Provides `debug_snapshot` which dumps application state via `dbg!`.
+Only compiled when `feature = "debug-snapshot"` is enabled.
 
 ## `debug_snapshot`
 
@@ -21,6 +21,5 @@ Dump a snapshot of the application state using `dbg!`.
 
 ### Notes
 
-- Only active in debug builds (`#[cfg(debug_assertions)]`).
-- In release builds the function body compiles to a no-op.
+- Feature flag: `debug-snapshot`.
 - Panics only via the inner `dbg!` macro (no additional panics).

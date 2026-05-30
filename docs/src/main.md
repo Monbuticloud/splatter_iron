@@ -49,7 +49,7 @@ pattern.
 | `brush_library`      | `src/brush_library.rs`      | `BrushEntry`, `add_brush` — custom brush tip library                                   |
 | `brush_params`       | `src/brush_params.rs`       | `BrushStrokeParams` — shared parameter bundle for line-drawing functions               |
 | `canvas`             | `src/canvas.rs`             | `Canvas`, `Layer`, `CurrentTool`, `RenderState`, `DirtyRectList`                       |
-| `debug`              | `src/debug.rs`              | `debug_snapshot` — `dbg!` helper gated behind `#[cfg(debug_assertions)]`               |
+| `debug`              | `src/debug.rs`              | `debug_snapshot` — `dbg!` helper gated behind `feature = "debug-snapshot"`              |
 | `document`           | `src/document.rs`           | `Document` — canvas + layer stack + save path                                          |
 | `file_io`            | `src/file_io.rs`            | `FileIO` — async file dialogs via mpsc channels                                        |
 | `files`              | `src/files.rs`              | `save_canvas`, `load_canvas`, `export_as_image` — zstd-compressed JSON I/O             |
