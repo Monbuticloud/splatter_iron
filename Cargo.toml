@@ -30,6 +30,9 @@ image = { version = "0.25.10", features = [
 ] }
 # type-layout = "0.2"
 
+[features]
+debug-snapshot = []
+
 [dev-dependencies]
 tempfile = "3.19.1"
 
