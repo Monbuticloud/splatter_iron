@@ -81,6 +81,10 @@ fn sample_bilinear(
 /// re-processing pixels already covered by an earlier stamp position in
 /// the same stroke, and a `drag_processed` buffer per-drag-gesture to
 /// avoid re-painting alpha-overlay pixels across frames.
+// SAFETY: 18 parameters are intentional — `stamp_at` is the hottest inner
+// loop for stamp rendering; collecting into a struct would add allocation
+// overhead on every pixel. This is one of two codebase-wide exceptions
+// documented in AGENTS.md.
 #[inline]
 #[allow(clippy::too_many_arguments)]
 fn stamp_at(
