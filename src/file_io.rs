@@ -9,7 +9,10 @@ use std::sync::mpsc;
 use chrono::Local;
 use eframe::egui::Color32;
 
+use crate::app::ARCHIVE_EXTENSION;
+use crate::app::ARCHIVE_FILTER_NAME;
 use crate::app::CANVAS_EXTENSION;
+use crate::app::DEFAULT_ARCHIVE_NAME;
 use crate::app::DEFAULT_CANVAS_NAME;
 use crate::app::EXPORT_FORMATS;
 use crate::app::FILE_FILTER_NAME;
@@ -44,6 +47,10 @@ pub enum PendingFileAction {
     LoadStamp,
     /// Open a native "open" dialog to load a brush file (.abr, .gbr, .brush).
     LoadBrush,
+    /// Open a native "save" dialog and export as xz-compressed `.splatterarchive`.
+    ExportArchive,
+    /// Open a native "open" dialog and import a `.splatterarchive` file.
+    ImportArchive,
 }
 
 /// Message sent back from the file-dialog thread to the UI thread.
@@ -78,6 +85,8 @@ pub enum LoadImportResult {
     Loaded(Canvas, String),
     /// Image imported as a new canvas.
     Imported(Vec<Layer>, u32, u32),
+    /// Canvas imported from a `.splatterarchive` file.
+    ArchiveImported(Canvas),
     /// Operation failed with an error message.
     Failed(String),
 }
@@ -89,6 +98,8 @@ pub enum SaveResult {
     Autosave,
     /// Manual save completed to the given path.
     ManualSave(PathBuf),
+    /// Archive autosave completed successfully (path not surfaced).
+    ArchiveAutosave,
     /// Save failed with an error message.
     Failed(String),
 }
@@ -139,6 +150,8 @@ pub struct FileIO {
     /// `true` when the most recently triggered async save is an autosave.
     /// Used by the UI to display "Autosaving…" vs "Saving…" in the status bar.
     pub autosave_in_flight: bool,
+    /// `true` while an archive autosave (`.splatterarchive`) is in flight.
+    pub archive_autosave_in_flight: bool,
 }
 
 impl std::fmt::Debug for FileIO {
@@ -194,6 +207,7 @@ impl FileIO {
             load_in_flight: false,
             import_in_flight: false,
             autosave_in_flight: false,
+            archive_autosave_in_flight: false,
             app_local_data_directory,
             loaded_stamp_data: None,
             loaded_brush_data: None,
@@ -349,6 +363,39 @@ impl FileIO {
                     }
                 });
             }
+            PendingFileAction::ExportArchive => {
+                self.pending_file_action = Some(PendingFileAction::ExportArchive);
+                std::thread::spawn(move || {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(
+                            ARCHIVE_FILTER_NAME,
+                            &[ARCHIVE_EXTENSION.trim_start_matches('.')],
+                        )
+                        .set_file_name(DEFAULT_ARCHIVE_NAME)
+                        .save_file()
+                    {
+                        let _ = sender.send(DialogResult::Picked(path));
+                    } else {
+                        send_cancelled(&sender);
+                    }
+                });
+            }
+            PendingFileAction::ImportArchive => {
+                self.pending_file_action = Some(PendingFileAction::ImportArchive);
+                std::thread::spawn(move || {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(
+                            ARCHIVE_FILTER_NAME,
+                            &[ARCHIVE_EXTENSION.trim_start_matches('.')],
+                        )
+                        .pick_file()
+                    {
+                        let _ = sender.send(DialogResult::Picked(path));
+                    } else {
+                        send_cancelled(&sender);
+                    }
+                });
+            }
         }
     }
 
@@ -447,6 +494,19 @@ impl FileIO {
                         PendingFileAction::LoadBrush => {
                             // Handled exclusively by the BrushTips variant above.
                         }
+                        PendingFileAction::ExportArchive => {
+                            let path_string = path.display().to_string();
+                            let final_path = if path_string.ends_with(ARCHIVE_EXTENSION) {
+                                path
+                            } else {
+                                PathBuf::from(format!("{path_string}{ARCHIVE_EXTENSION}"))
+                            };
+                            let canvas = &*document.canvas;
+                            self.trigger_async_export_archive(canvas.clone(), final_path);
+                        }
+                        PendingFileAction::ImportArchive => {
+                            self.trigger_async_import_archive(path);
+                        }
                     }
                 }
             }
@@ -508,6 +568,37 @@ impl FileIO {
                 SaveKind::ManualSave(PathBuf::from(&document.savefile_path)),
             );
         }
+    }
+
+    /// Spawn a background thread to serialize and write a timestamped
+    /// `.splatterarchive` autosave file under `AUTOSAVE_DIRECTORY`.
+    ///
+    /// Results are sent via [`save_result_sender`] as [`SaveResult::ArchiveAutosave`]
+    /// (or `Failed`). The archive autosave is a separate stream from the regular
+    /// `.splattercanvas` autosave.
+    ///
+    /// # Parameters
+    ///
+    /// * `document` — The document whose canvas will be archived.
+    pub fn trigger_async_autosave_archive(&mut self, document: &Document) {
+        self.archive_autosave_in_flight = true;
+        let canvas = document.canvas.clone();
+        let path = self
+            .app_local_data_directory
+            .join(AUTOSAVE_DIRECTORY)
+            .join(format!(
+                "{}{}",
+                Local::now().format(AUTOSAVE_DATE_FORMAT),
+                ARCHIVE_EXTENSION,
+            ));
+        let sender = self.save_result_sender.clone();
+        std::thread::spawn(move || {
+            let result = match crate::files::save_canvas_to_path_xz(&canvas, &path) {
+                Ok(()) => SaveResult::ArchiveAutosave,
+                Err(error) => SaveResult::Failed(format!("Archive autosave failed: {error}")),
+            };
+            let _ = sender.send(result);
+        });
     }
 
     /// Spawn a background thread to encode and write the exported image.
@@ -582,6 +673,48 @@ impl FileIO {
         });
     }
 
+    /// Spawn a background thread to serialize and write an xz-compressed
+    /// `.splatterarchive` file (one-shot archive export).
+    ///
+    /// Takes an already-cloned [`Canvas`] (cheap [`Arc`] clone) so the UI
+    /// thread can continue drawing while compression runs on a background
+    /// thread. Sends the result via [`export_result_sender`]; poll with
+    /// [`poll_export_results`](Self::poll_export_results).
+    ///
+    /// # Parameters
+    ///
+    /// * `canvas` — The canvas to serialize (cloned from [`Document`]).
+    /// * `path` — Destination file path for the `.splatterarchive` file.
+    pub fn trigger_async_export_archive(&mut self, canvas: Canvas, path: PathBuf) {
+        self.export_in_flight = true;
+        let sender = self.export_result_sender.clone();
+        std::thread::spawn(move || {
+            let result = crate::files::save_canvas_to_path_xz(&canvas, &path);
+            let _ = sender.send(result);
+        });
+    }
+
+    /// Spawn a background thread to read and deserialize a `.splatterarchive` file.
+    ///
+    /// Sends the result via the load/import channel.
+    ///
+    /// # Parameters
+    ///
+    /// * `path` — The file path to load.
+    pub fn trigger_async_import_archive(&mut self, path: PathBuf) {
+        self.load_in_flight = true;
+        let sender = self.load_import_sender.clone();
+        std::thread::spawn(move || {
+            let result = match crate::files::load_canvas_from_path_xz(&path) {
+                Ok(canvas) => LoadImportResult::ArchiveImported(canvas),
+                Err(error) => {
+                    LoadImportResult::Failed(format!("Failed to import archive: {error}"))
+                }
+            };
+            let _ = sender.send(result);
+        });
+    }
+
     /// Poll for completed async load or import results and apply them.
     ///
     /// For a loaded canvas, replaces the document canvas and sets the save path.
@@ -619,6 +752,11 @@ impl FileIO {
                         rendered_layers: None,
                         dirty_rect,
                     };
+                    document.replace_canvas(canvas, undo);
+                }
+                LoadImportResult::ArchiveImported(mut canvas) => {
+                    self.load_in_flight = false;
+                    canvas.dirty_rect.request_full_blend();
                     document.replace_canvas(canvas, undo);
                 }
                 LoadImportResult::Failed(message) => {
@@ -662,26 +800,37 @@ impl FileIO {
     /// * `document` — The document to update save-path / dirty-flag on.
     /// * `error_list` — Error list to push failure messages into.
     pub fn poll_save_results(&mut self, document: &mut Document, error_list: &mut Vec<String>) {
-        let mut had_result = false;
+        let mut had_regular_result = false;
+        let mut had_archive_autosave = false;
         while let Ok(result) = self.save_result_receiver.try_recv() {
-            had_result = true;
             match result {
                 SaveResult::Autosave => {
+                    had_regular_result = true;
                     document.dirty_since_last_autosave = false;
                 }
                 SaveResult::ManualSave(path) => {
+                    had_regular_result = true;
                     document.savefile_path = path.display().to_string();
                     document.dirty_since_last_autosave = false;
                     document.canvas_mut().dirty_rect.request_full_blend();
                 }
+                SaveResult::ArchiveAutosave => {
+                    had_archive_autosave = true;
+                }
                 SaveResult::Failed(message) => {
                     error_list.push(format!("Save failed: {message}"));
+                    // Could be from either stream; clear both to be safe.
+                    had_regular_result = true;
+                    had_archive_autosave = true;
                 }
             }
         }
-        if had_result {
+        if had_regular_result {
             document.save_state = crate::document::SaveState::Idle;
             self.autosave_in_flight = false;
+        }
+        if had_archive_autosave {
+            self.archive_autosave_in_flight = false;
         }
     }
 }
