@@ -57,4 +57,44 @@ impl MyApp {
             self.ui.errors.list.clear();
         }
     }
+
+    /// Show the "Large Canvas Warning" confirmation dialog.
+    pub(crate) fn show_large_canvas_warning(&mut self, ui: &mut egui::Ui) {
+        let Some((w, h)) = self.ui.dialogs.pending_large_canvas else {
+            return;
+        };
+        let mut open = true;
+        let estimated = estimate_canvas_memory(w, h);
+        let estimated_mb = estimated / (1024 * 1024);
+        egui::Window
+            ::new("Large Canvas Warning")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .open(&mut open)
+            .show(ui, |ui| {
+                ui.label(
+                    format!(
+                        "This canvas ({w}×{h}) may use up to ~{estimated_mb} MB of RAM.\n\
+                     Proceed? This cannot be undone."
+                    )
+                );
+                ui.horizontal(|ui| {
+                    if ui.button("Yes, create").clicked() {
+                        let canvas = Canvas::new(w, h);
+                        self.document.replace_canvas(canvas, &mut self.undo);
+                        self.ui.previous_tool = None;
+                        self.ui.previous_cursor_position = None;
+                        self.ui.dialogs.show_new_canvas_dialog = false;
+                        self.ui.dialogs.pending_large_canvas = None;
+                    }
+                    if ui.button("Cancel").clicked() {
+                        self.ui.dialogs.pending_large_canvas = None;
+                    }
+                });
+            });
+        if !open {
+            self.ui.dialogs.pending_large_canvas = None;
+        }
+    }
 }
