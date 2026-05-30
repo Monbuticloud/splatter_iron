@@ -108,13 +108,39 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            os-short: linux
+            exe: ""
+          - os: macos-latest
+            os-short: macos
+            exe: ""
+          - os: windows-latest
+            os-short: windows
+            exe: .exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: splatter-iron
-      - run: cargo test
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - run: cargo build
+      - run: cargo nextest run --message-format junit > test-results.xml
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os-short }}
+          path: test-results.xml
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: splatter_iron-${{ matrix.os-short }}
+          path: target/debug/splatter_iron${{ matrix.exe }}
 
   ci-cron:
     if: github.event_name == 'schedule'
