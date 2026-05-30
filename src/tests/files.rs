@@ -481,3 +481,125 @@ fn load_wrong_layer_size_rejected() {
         "mismatched layer pixel count should be rejected"
     );
 }
+
+// ---------------------------------------------------------------------------
+// XZ-compressed `.splatterarchive` format round-trip tests
+// ---------------------------------------------------------------------------
+
+/// Save and load a checkerboard canvas via xz compression; all pixels identical.
+#[test]
+fn save_load_xz_roundtrip_identical_pixels() {
+    let original = checkerboard_4x4();
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.splatterarchive");
+    files::save_canvas_to_path_xz(&original, &path).expect("save xz");
+    let loaded = files::load_canvas_from_path_xz(&path).expect("load xz");
+    assert_eq!(loaded.width, original.width);
+    assert_eq!(loaded.height, original.height);
+    assert_eq!(loaded.pixels.len(), original.pixels.len());
+    for (i, (orig_p, load_p)) in original.pixels[0]
+        .pixels
+        .iter()
+        .zip(loaded.pixels[0].pixels.iter())
+        .enumerate()
+    {
+        assert_eq!(orig_p, load_p, "pixel {i} differs");
+    }
+}
+
+/// Save and load a 2-layer canvas via xz; both layers survive.
+#[test]
+fn save_load_xz_roundtrip_multi_layer() {
+    let canvas = Canvas {
+        pixels: vec![
+            Layer {
+                pixels: vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); 9],
+                ..Default::default()
+            },
+            Layer {
+                pixels: vec![Color32::from_rgba_premultiplied(0, 0, 255, 255); 9],
+                ..Default::default()
+            },
+        ],
+        height: 3,
+        width: 3,
+        output_rgba: Arc::new(Vec::new()),
+        rendered_layers: None,
+        dirty_rect: DirtyRectList::new(),
+    };
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.splatterarchive");
+    files::save_canvas_to_path_xz(&canvas, &path).expect("save xz");
+    let loaded = files::load_canvas_from_path_xz(&path).expect("load xz");
+    assert_eq!(loaded.pixels.len(), 2);
+    for (i, (a, b)) in canvas.pixels[0]
+        .pixels
+        .iter()
+        .zip(loaded.pixels[0].pixels.iter())
+        .enumerate()
+    {
+        assert_eq!(a, b, "layer 0 pixel {i}");
+    }
+    for (i, (a, b)) in canvas.pixels[1]
+        .pixels
+        .iter()
+        .zip(loaded.pixels[1].pixels.iter())
+        .enumerate()
+    {
+        assert_eq!(a, b, "layer 1 pixel {i}");
+    }
+}
+
+/// Save and load transparent/semi-transparent pixels via xz.
+#[test]
+fn save_load_xz_roundtrip_transparent() {
+    let canvas = Canvas {
+        pixels: vec![Layer {
+            pixels: vec![
+                Color32::TRANSPARENT,
+                Color32::from_rgba_premultiplied(255, 0, 0, 128),
+                Color32::TRANSPARENT,
+            ],
+            ..Default::default()
+        }],
+        height: 1,
+        width: 3,
+        output_rgba: Arc::new(Vec::new()),
+        rendered_layers: None,
+        dirty_rect: DirtyRectList::new(),
+    };
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.splatterarchive");
+    files::save_canvas_to_path_xz(&canvas, &path).expect("save xz");
+    let loaded = files::load_canvas_from_path_xz(&path).expect("load xz");
+    assert_eq!(loaded.pixels[0].pixels.len(), 3);
+}
+
+/// Loading non-xz data should return an error.
+#[test]
+fn invalid_data_xz_returns_error() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("bad.splatterarchive");
+    std::fs::write(&path, b"this is not xz-compressed json").expect("write bad data");
+    let result = files::load_canvas_from_path_xz(&path);
+    assert!(result.is_err());
+}
+
+/// Loading empty xz data should return an error.
+#[test]
+fn empty_data_xz_returns_error() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("empty.splatterarchive");
+    std::fs::write(&path, []).expect("write empty file");
+    let result = files::load_canvas_from_path_xz(&path);
+    assert!(result.is_err());
+}
+
+/// Xz output bytes should differ from zstd output for the same canvas.
+#[test]
+fn xz_vs_zstd_produce_different_bytes() {
+    let original = checkerboard_4x4();
+    let xz_bytes = files::save_canvas_to_bytes_xz(&original).expect("save xz");
+    let zstd_bytes = crate::files::save_canvas_to_bytes(&original).expect("save zstd");
+    assert_ne!(xz_bytes, zstd_bytes, "xz and zstd should produce different output");
+}
