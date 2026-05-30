@@ -23,5 +23,6 @@ pub mod square_brush;
 pub mod stamp_brush;
 pub mod stamp_library;
 pub mod tool_configuration;
+pub mod persistence;
 pub mod undo;
 pub mod undo_history;
