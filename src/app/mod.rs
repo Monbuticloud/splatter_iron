@@ -592,7 +592,6 @@ impl eframe::App for MyApp {
         self.show_stamp_naming_dialog(ui);
         self.show_brush_naming_dialog(ui);
         self.show_toast(ui);
-        self.show_progress_indicator(ui);
 
         // Update window title to reflect unsaved changes.
         let filename = if self.document.savefile_path.is_empty() {
