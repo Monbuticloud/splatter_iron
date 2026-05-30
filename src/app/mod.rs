@@ -568,47 +568,7 @@ impl MyApp {
         is_quitting
     }
 
-    /// Show the error-list window (dismiss, copy, dismiss-all).
-    fn show_error_window(&mut self, ui: &mut egui::Ui) {
-        if self.ui.errors.list.is_empty() {
-            return;
-        }
-        let mut open = true;
-        let mut to_dismiss: Vec<usize> = Vec::new();
-        egui::Window
-            ::new("Error")
-            .collapsible(false)
-            .resizable(false)
-            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-            .open(&mut open)
-            .show(ui, |ui| {
-                for (index, msg) in self.ui.errors.list.iter().enumerate() {
-                    ui.label(format!("Error: {msg}"));
-                    ui.horizontal(|ui| {
-                        if ui.button("Dismiss").clicked() {
-                            to_dismiss.push(index);
-                        }
-                        if ui.button("Copy error").clicked() {
-                            ui.ctx().copy_text(msg.clone());
-                        }
-                    });
-                }
-                ui.horizontal(|ui| {
-                    if ui.button("Dismiss All").clicked() {
-                        to_dismiss.extend(0..self.ui.errors.list.len());
-                    }
-                });
-            });
 
-        to_dismiss.sort_unstable_by(|a, b| b.cmp(a));
-        to_dismiss.dedup();
-        for i in to_dismiss {
-            self.ui.errors.list.remove(i);
-        }
-        if !open {
-            self.ui.errors.list.clear();
-        }
-    }
 
     /// Show the "Large Canvas Warning" confirmation dialog.
     fn show_large_canvas_warning(&mut self, ui: &mut egui::Ui) {

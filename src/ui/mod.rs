@@ -2,6 +2,7 @@
 //! and central canvas interaction.
 
 mod center;
+mod dialogs;
 mod left;
 mod right;
 mod top;
