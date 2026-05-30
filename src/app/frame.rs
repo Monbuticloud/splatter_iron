@@ -10,10 +10,12 @@ use eframe::egui_wgpu::wgpu;
 use crate::app::MyApp;
 use crate::app::PendingStamp;
 use crate::app::ProgressState;
+use crate::app::AUTOSAVE_INTERVAL_MINUTES;
 use crate::app::REPAINT_DELAY_MULTIPLIER;
 use crate::app::UNFOCUSED_SLEEP_MILLISECONDS;
 use crate::canvas::RenderState;
 use crate::document::SaveState;
+use crate::file_io::SaveKind;
 
 impl MyApp {
     /// Poll file-dialog and save-result channels and transfer loaded
@@ -221,5 +223,18 @@ impl MyApp {
             wgpu::FilterMode::Linear,
             gpu.texture_id
         );
+    }
+
+    /// Trigger an autosave if the canvas is dirty and enough time has elapsed.
+    pub(crate) fn handle_autosave(&mut self) {
+        if
+            self.document.dirty_since_last_autosave &&
+            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >=
+                Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
+        {
+            self.ui.last_autosave_time = self.ui.time_elapsed;
+            self.ui.times_autosaved += 1;
+            self.file_io.trigger_async_save(&mut self.document, SaveKind::Autosave);
+        }
     }
 }

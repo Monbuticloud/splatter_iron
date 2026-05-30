@@ -22,7 +22,6 @@ use crate::canvas::RenderState;
 use crate::document::Document;
 use crate::file_io::FileIO;
 use crate::file_io::PendingFileAction;
-use crate::file_io::SaveKind;
 use crate::stamp_library::StampEntry;
 use crate::tool_configuration::ToolConfiguration;
 use crate::undo_history::UndoHistory;
@@ -1062,18 +1061,7 @@ impl MyApp {
         }
     }
 
-    /// Trigger an autosave if the canvas is dirty and enough time has elapsed.
-    fn handle_autosave(&mut self) {
-        if
-            self.document.dirty_since_last_autosave &&
-            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >=
-                Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
-        {
-            self.ui.last_autosave_time = self.ui.time_elapsed;
-            self.ui.times_autosaved += 1;
-            self.file_io.trigger_async_save(&mut self.document, SaveKind::Autosave);
-        }
-    }
+
 }
 
 impl eframe::App for MyApp {
