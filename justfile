@@ -6,9 +6,9 @@ fmt:
 clippy:
     cargo clippy --all-targets
 
-# Run tests
+# Run tests (uses nextest for JUnit output in CI)
 test:
-    cargo test
+    cargo nextest run
 
 # Test with debug-snapshot feature
 test-debug:
