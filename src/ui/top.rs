@@ -7,11 +7,8 @@ use crate::app::UnsavedWarningAction;
 use crate::file_io::PendingFileAction;
 
 impl MyApp {
-    /// Render the top toolbar with Save, Load, New, Export, Import,
-    /// Undo/Redo buttons, and Close.
-    ///
-    /// Returns `true` if Close was pressed, signaling the app to quit.
-    /// Render the top menu bar with Save, Load, New, and Export actions.
+    /// Render the top menu bar with Save, Load, New, Export, Import,
+    /// Undo/Redo buttons, keyboard shortcuts, and Close.
     ///
     /// Returns `true` if the user triggered a quit action.
     ///
