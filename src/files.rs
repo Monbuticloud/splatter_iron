@@ -21,6 +21,42 @@ const COMPRESSION_LEVEL: i32 = 10;
 const MAX_DECOMPRESSED_BYTES: u64 = 512 * 1024 * 1024;
 const JPEG_QUALITY: u8 = 100;
 
+fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
+    let decoder = zstd::Decoder::new(reader)?;
+    let limited = decoder.take(MAX_DECOMPRESSED_BYTES);
+    let mut canvas: Canvas = serde_json::from_reader(limited).map_err(|e| {
+        if e.classify() == serde_json::error::Category::Eof {
+            anyhow::anyhow!(
+                "decompressed data exceeds {} bytes",
+                MAX_DECOMPRESSED_BYTES,
+            )
+        } else {
+            e.into()
+        }
+    })?;
+
+    if canvas.width == 0 || canvas.height == 0 {
+        anyhow::bail!(
+            "invalid canvas dimensions: {}x{}",
+            canvas.width,
+            canvas.height,
+        );
+    }
+
+    let expected = (canvas.width as usize).saturating_mul(canvas.height as usize);
+    for (i, layer) in canvas.pixels.iter().enumerate() {
+        if layer.pixels.len() != expected {
+            anyhow::bail!(
+                "layer {i}: expected {expected} pixels, got {}",
+                layer.pixels.len(),
+            );
+        }
+    }
+
+    canvas.dirty_rect.request_full_blend();
+    Ok(canvas)
+}
+
 /// Read the raw bytes of a file from disk.
 ///
 /// # Parameters
@@ -46,46 +82,7 @@ pub fn load_bytes_from_file(path: &Path) -> Result<Vec<u8>, std::io::Error> {
 /// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
 /// or if the canvas has invalid dimensions or mismatched layer sizes.
 pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
-    let mut decompressed = Vec::new();
-    let mut decoder = zstd::Decoder::new(data)?;
-    let mut buf = [0u8; 8192];
-    loop {
-        let n = decoder.read(&mut buf)?;
-        if n == 0 {
-            break;
-        }
-        if decompressed.len() + n > MAX_DECOMPRESSED_BYTES as usize {
-            anyhow::bail!(
-                "decompressed data exceeds {} bytes",
-                MAX_DECOMPRESSED_BYTES,
-            );
-        }
-        decompressed.extend_from_slice(&buf[..n]);
-    }
-    let mut canvas: Canvas = serde_json::from_slice(&decompressed)?;
-
-    // Validate dimensions
-    if canvas.width == 0 || canvas.height == 0 {
-        anyhow::bail!(
-            "invalid canvas dimensions: {}x{}",
-            canvas.width,
-            canvas.height,
-        );
-    }
-
-    // Validate each layer has the correct number of pixels
-    let expected = (canvas.width as usize).saturating_mul(canvas.height as usize);
-    for (i, layer) in canvas.pixels.iter().enumerate() {
-        if layer.pixels.len() != expected {
-            anyhow::bail!(
-                "layer {i}: expected {expected} pixels, got {}",
-                layer.pixels.len(),
-            );
-        }
-    }
-
-    canvas.dirty_rect.request_full_blend();
-    Ok(canvas)
+    read_canvas(data)
 }
 
 /// Serialize a `Canvas` to zstd-compressed JSON bytes without writing to disk.
