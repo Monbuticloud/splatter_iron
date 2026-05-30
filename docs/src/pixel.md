@@ -115,7 +115,7 @@ sequentially since dirty rects are typically small).
 ## `fn blend_layers()`
 
 ```rust
-pub fn blend_layers(layers: &[&[Color32]], output: &mut [u8])
+pub fn blend_layers(layers: &[(&[Color32], u8)], output: &mut [u8])
 ```
 
 Composite multiple premultiplied layers into a single RGBA byte buffer.
@@ -143,7 +143,7 @@ and the single-layer fast path (`memcpy`) run on the calling thread.
 
 ```rust
 pub fn blend_region(
-    layers: &[&[Color32]],
+    layers: &[(&[Color32], u8)],
     output: &mut [u8],
     canvas_width: u32,
     min_x: u32,
