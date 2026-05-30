@@ -20,6 +20,7 @@ chrono = "0.4.44"
 serde_json = "1.0.150"
 rfd = "0.17.2"
 wide = "1.4.0"
+xz2 = { version = "0.1.7", features = ["static"] }
 # rand = "0.10.1"
 mimalloc = { version = "0.1.51", features = ["local_dynamic_tls"] }
 # target = "2.1.0"
