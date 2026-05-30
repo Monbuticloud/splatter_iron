@@ -73,8 +73,8 @@ pub enum SaveKind {
 /// is [`Send`] (avoids `Canvas`'s non-Send `TextureHandle` field). The UI
 /// thread reconstructs a `Canvas` from the layers when the result is polled.
 pub enum LoadImportResult {
-    /// Canvas loaded from a `.splattercanvas` file.
-    Loaded(Vec<Layer>, u32, u32, String),
+    /// Canvas loaded from a `.splattercanvas` file, plus the source path.
+    Loaded(Canvas, String),
     /// Image imported as a new canvas.
     Imported(Vec<Layer>, u32, u32),
     /// Operation failed with an error message.
