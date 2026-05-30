@@ -100,16 +100,32 @@ pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
 /// # Errors
 ///
 /// Returns an error if JSON serialization or zstd compression fails.
-pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
-    use std::io::Write;
-    let json = serde_json::to_vec(canvas)?;
+fn write_canvas(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
     let thread_count = std::thread::available_parallelism()
         .map(|count| count.get() as u32)
         .unwrap_or(1);
-    let mut encoder = zstd::stream::Encoder::new(Vec::new(), COMPRESSION_LEVEL)?;
+    let mut encoder = zstd::stream::Encoder::new(writer, COMPRESSION_LEVEL)?;
     encoder.multithread(thread_count)?;
-    encoder.write_all(&json)?;
-    let compressed = encoder.finish()?;
+    serde_json::to_writer(&mut encoder, canvas)?;
+    encoder.finish()?;
+    Ok(())
+}
+
+/// Serialize a `Canvas` to zstd-compressed JSON bytes without writing to disk.
+///
+/// Uses multi-threaded zstd compression. This is the CPU-heavy part of saving
+/// and should be called on a background thread.
+///
+/// # Parameters
+///
+/// * `canvas` — The canvas to serialize.
+///
+/// # Errors
+///
+/// Returns an error if JSON serialization or zstd compression fails.
+pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
+    let mut compressed = Vec::new();
+    write_canvas(canvas, &mut compressed)?;
     Ok(compressed)
 }
 
