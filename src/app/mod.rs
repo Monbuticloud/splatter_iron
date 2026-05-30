@@ -42,6 +42,13 @@ pub const FILE_FILTER_NAME: &str = "SplatterCanvas";
 /// Default save-file name used when no path has been set.
 pub const DEFAULT_CANVAS_NAME: &str = "canvas.splattercanvas";
 
+/// File extension for archive files (xz-compressed JSON).
+pub const ARCHIVE_EXTENSION: &str = ".splatterarchive";
+/// File-dialog filter name for `.splatterarchive` files.
+pub const ARCHIVE_FILTER_NAME: &str = "SplatterArchive";
+/// Default export name for archive files.
+pub const DEFAULT_ARCHIVE_NAME: &str = "canvas.splatterarchive";
+
 /// Preset canvas sizes shown in the "New Canvas" dialog.
 pub(crate) const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
     ("XS", 800, 600),
