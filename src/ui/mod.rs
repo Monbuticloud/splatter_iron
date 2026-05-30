@@ -4,5 +4,6 @@
 mod center;
 mod dialogs;
 mod left;
+mod panels;
 mod right;
 mod top;

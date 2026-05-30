@@ -7,7 +7,6 @@ use std::time::Duration;
 use std::time::Instant;
 
 use directories::ProjectDirs;
-use eframe::egui::Panel;
 use eframe::egui::{ self };
 use serde::Deserialize;
 use serde::Serialize;
@@ -550,22 +549,6 @@ impl MyApp {
 
 // --- Frame-helper methods (called once per frame from `ui()`) ---
 
-impl MyApp {
-
-
-
-
-    /// Render all four panels (top, left, right, centre) and return whether
-    /// the user requested to quit (via the top panel).
-    fn show_panels(&mut self, ui: &mut egui::Ui) -> bool {
-        let is_quitting = Panel::top("top").show_inside(ui, |ui| self.show_top_panel(ui)).inner;
-
-        Panel::left("side").show_inside(ui, |ui| self.show_left_panel(ui));
-        Panel::right("right").show_inside(ui, |ui| self.show_right_panel(ui));
-        egui::CentralPanel::default().show_inside(ui, |ui| self.show_central_panel(ui));
-
-        is_quitting
-    }
 
 
 
@@ -577,14 +560,7 @@ impl MyApp {
 
 
 
-
-
-
-
-
-
-
-
+    impl MyApp {
     /// Add a file path to the recent-files list (dedup, max 10, most recent first).
     fn push_recent_file(&mut self, path: PathBuf) {
         if path.as_os_str().is_empty() {
