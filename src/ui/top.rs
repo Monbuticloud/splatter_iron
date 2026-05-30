@@ -146,7 +146,7 @@ impl MyApp {
             let recent_response = ui.add_enabled(has_recent, egui::Button::new("Recent"));
             if has_recent {
                 recent_response.context_menu(|ui| {
-                    for path in self.ui.recent_files.clone() {
+                    for path in &self.ui.recent_files {
                         if ui.button(path.display().to_string()).clicked() {
                             self.guard_unsaved(UnsavedWarningAction::LoadPath(path));
                             ui.ctx().request_repaint();
