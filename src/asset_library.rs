@@ -16,18 +16,22 @@ use crate::pixel;
 pub trait AssetEntry: Sized {
     /// Display name.
     fn name(&self) -> &str;
+    /// Mutable reference to the display name.
     fn name_mut(&mut self) -> &mut String;
     /// On-disk PNG filename (relative to the library directory).
     fn filename(&self) -> &str;
+    /// Mutable reference to the on-disk PNG filename.
     fn filename_mut(&mut self) -> &mut String;
     /// Premultiplied-alpha pixel data (row-major).
     fn pixels(&self) -> &[Color32];
+    /// Mutable reference to the premultiplied-alpha pixel buffer.
     fn pixels_mut(&mut self) -> &mut Vec<Color32>;
     /// Image dimensions in pixels.
     fn width(&self) -> u32;
     fn height(&self) -> u32;
     /// Cached egui texture for preview rendering.
     fn texture_handle(&self) -> &Option<TextureHandle>;
+    /// Mutable reference to the cached egui preview texture.
     fn texture_handle_mut(&mut self) -> &mut Option<TextureHandle>;
 
     /// Name of the subdirectory within the data directory (e.g. `"brushes"`).
