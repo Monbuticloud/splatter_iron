@@ -17,7 +17,7 @@ Renders a vertical panel containing the following sections:
 | ---------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | **Color Selector**     | `color_edit_button_srgba`                                                              | `tool_configuration.current_color`                                 |
 | **Undo/Redo Strength** | `DragValue` (range 1–1000)                                                             | `tool_configuration.undo_redo_steps_multiplier`                    |
-| **Brush Settings**     | `DragValue` for radius (0–350), checkbox for Brush Preview, checkbox for Alpha Overlay | `tool_configuration.radius`, `show_brush_preview`, `alpha_overlay` |
+| **Brush Settings**     | `DragValue` for radius (0–1000), checkbox for Brush Preview, checkbox for Alpha Overlay, checkbox for Stabilize, slider for Smoothing (0–100) | `tool_configuration.radius`, `show_brush_preview`, `alpha_overlay`, `stabilization_enabled`, `stabilization_smoothing` |
 | **Save Path**          | `text_edit_singleline`                                                                 | `document.savefile_path`                                           |
 
 ### Layer management

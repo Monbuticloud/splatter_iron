@@ -18,6 +18,8 @@ The struct is a plain data container with no methods except [`Default`]. Ownersh
 | `previous_cursor_position`   | `Option<(u32, u32)>`  | Cursor coordinates from the previous frame, in pixel space. Used to compute the brush preview position and to enable per-frame cursor movement deltas. `None` if no previous frame data exists                                                                      |
 | `show_brush_preview`         | `bool`                | Whether to render the brush size preview indicator on the canvas. When true, a semi-transparent outline (square or circle, matching the current tool) is drawn at the cursor position                                                                               |
 | `undo_redo_steps_multiplier` | `usize`               | Multiplier applied to undo/redo step count during fast-scroll (e.g., holding Ctrl+Shift+Scroll). A value of 1 means one step per scroll tick; higher values accelerate undoing/redoing through many strokes quickly                                                 |
+| `stabilization_enabled`      | `bool`                | Whether brush stabilization (lerped virtual cursor) is active. When enabled, the virtual cursor trails the real cursor with a smooth exponential ease for jitter-free strokes                                                                                        |
+| `stabilization_smoothing`    | `f32`                 | Smoothing strength (0.0–100.0). Higher values make the virtual cursor lag further behind the real cursor, producing smoother but more delayed strokes. Default 30.0 gives a gentle smoothing that's noticeable but not sluggish                                      |
 
 ### Eraser toggle
 
@@ -46,8 +48,10 @@ Provides sensible defaults for the initial application state. Rust's `#[derive(D
 | `alpha_overlay`              | `false`                                                | Opaque painting is the expected default; users opt into alpha blending consciously                                                                                     |
 | `previous_tool`              | `None`                                                 | No previous tool exists on startup                                                                                                                                     |
 | `previous_cursor_position`   | `None`                                                 | No cursor history exists on startup                                                                                                                                    |
-| `show_brush_preview`         | `true`                                                 | Brush preview provides essential visual feedback on brush position and size                                                                                            |
+| `show_brush_preview`         | `true`                                                | Brush preview provides essential visual feedback on brush position and size                                                                                            |
 | `undo_redo_steps_multiplier` | `1`                                                    | One step per scroll tick provides fine-grained control. Users can scroll multiple ticks to undo/redo several steps, with each tick corresponding to exactly one stroke |
+| `stabilization_enabled`      | `false`                                                | Stabilization is opt-in; disabled by default to preserve the direct 1:1 cursor feel                                                                                    |
+| `stabilization_smoothing`    | `30.0`                                                 | 30.0 provides a gentle smoothing that's noticeable but not sluggish. Full range is 0.0 (snappy) to 100.0 (frozen)                                                      |
 
 ### Why manual `Default` instead of derive
 

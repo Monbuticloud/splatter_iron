@@ -47,15 +47,19 @@ Right-clicking the canvas opens a context menu with:
 When `tool_configuration.show_brush_preview` is true and the cursor hovers over
 the canvas, a preview overlay is rendered:
 
+- **Faint dot**: A small grey dot (radius 2.5 px, 31 % gray) is drawn at the
+  **raw** (non-stabilized) cursor position to show where the mouse actually is.
 - **Circle/CircleEraser**: A circle stroke at the brush radius centred on the
-  cursor position, drawn with `PREVIEW_STROKE_WIDTH` (1.0 px).
+  (stabilized) cursor position, drawn with `PREVIEW_STROKE_WIDTH` (1.0 px).
 - **Square/SquareEraser**: A filled rectangle with 20 % fill alpha
   (`PREVIEW_FILL_ALPHA_FACTOR`) and a 1 px border stroke. The fill colour is
   derived from the current brush colour at reduced alpha.
 - **BucketFill**: No preview overlay.
 
 The preview position is computed by mapping the mouse UV coordinates to pixel
-coordinates on the canvas.
+coordinates on the canvas, then passing through `stabilized_pixel()` when
+stabilization is enabled. The faint dot always tracks the raw mouse position,
+while the brush preview follows the virtual (stabilized) cursor.
 
 ### Render state management
 
@@ -77,19 +81,48 @@ When `CurrentTool::BucketFill` is selected and the canvas is clicked:
 
 When the user drags on the canvas (for any non-BucketFill tool):
 
-1. Convert the pointer position to pixel coordinates.
-2. Call `apply_stroke(pixel_x, pixel_y)`.
-3. If a stroke was applied:
+1. Convert the pointer position to raw pixel coordinates.
+2. When stabilization is enabled, call `stabilized_pixel(raw_x, raw_y, dt)` to
+   compute a virtual cursor position using a framerate-independent exponential
+   ease. On the first drag frame the virtual cursor snaps to the real position;
+   on subsequent frames it lerps toward it.
+3. Call `apply_stroke(stabilized_x, stabilized_y)` with the (possibly stabilized)
+   coordinates.
+4. If a stroke was applied:
    - **First frame** (`previous_cursor_position` is `None`): Initialise the
      drag accumulator in `UndoHistory` via `init_drag_accumulator`, then extend
      it with the stroke's runs.
    - **Subsequent frames**: Extend the accumulator with each new stroke's runs.
-4. Store the current `(pixel_x, pixel_y)` and `current_tool` in
-   `previous_cursor_position` / `previous_tool`.
+5. Store the current **stabilized** `(stab_x, stab_y)` in
+   `previous_cursor_position` (so the next frame's line interpolation uses
+   virtual→virtual, not virtual→real).
 
 When the drag ends (`response.dragged()` is false), the drag accumulator is
 finalised via `UndoHistory::finalize_drag_accumulator` and the previous-position
-state is reset.
+and stabilized-cursor state is reset.
+
+## `MyApp::stabilized_pixel`
+
+```rust
+fn stabilized_pixel(&mut self, raw_x: u32, raw_y: u32, dt: f32) -> (u32, u32)
+```
+
+Computes a virtual cursor position by lerping toward the real cursor each
+frame using a framerate-independent exponential ease. Called during both
+brush preview and drag strokes to produce smoothed cursor coordinates.
+
+### Behaviour
+
+- **Stabilization disabled** (`stabilization_enabled == false`): Returns `(raw_x, raw_y)` unchanged.
+- **First frame of drag** (`previous_cursor_position.is_none()`): Snaps the
+  virtual cursor to the real position so strokes start immediately with no
+  delay. Also initialises `stabilized_cursor` if it was `None`.
+- **Subsequent frames**: Computes `lerp_factor = 1.0 - exp(-rate * dt)` where
+  `rate = 100.0 * max(0.01, 1.0 - smoothing/100.0)`, then updates the virtual
+  position: `virtual += lerp_factor * (real - virtual)`.
+
+The `stabilized_cursor` field is reset to `None` when the drag ends (in the
+`else` branch of the drag handler).
 
 ## `MyApp::apply_stroke`
 
