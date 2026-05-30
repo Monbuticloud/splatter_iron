@@ -26,7 +26,6 @@
 
 ### Performance
 
-- `export_as_image` pixel-by-pixel loop — `src/files.rs:247` → use `bytemuck` cast + parallel iteration. (P1)(B1)(aef7235)
 - `compress_run` allocates `Vec<Color32>` before RLE check — `src/undo.rs:52` → defer allocation via iterator/callback. (P2)(B1)(aef7235)
 - bucket fill lacks visited-stamp dedup — `src/tools/bucket_fill.rs:34` → reuse `apply_visited_runs`. (P2)(B2)(aef7235)
 - `stamp_circle_positions` uses `f64::sqrt` per row — `src/tools/circle_brush.rs:312` → integer midpoint-circle increment. (P2)(B1)(aef7235)

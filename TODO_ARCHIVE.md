@@ -9,7 +9,7 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 
 ## Implemented
 
--
+- `export_as_image` pixel-by-pixel loop — `src/files.rs:247` → replaced with `bytemuck` cast + rayon `par_chunks_mut` (P1)(B1)(aef7235)(b049292)
 
 ## Outdated
 
