@@ -13,6 +13,7 @@ use crate::app::DEFAULT_CANVAS_NAME;
 use crate::app::EXPORT_FORMATS;
 use crate::app::FILE_FILTER_NAME;
 use crate::app::IMPORT_EXTENSIONS;
+use crate::canvas::Canvas;
 use crate::canvas::Layer;
 use crate::document::Document;
 use crate::files::ExportStrategy;
