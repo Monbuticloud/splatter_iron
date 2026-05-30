@@ -614,31 +614,7 @@ impl MyApp {
 impl MyApp {
 
 
-    /// Recreate the GPU texture if dimensions changed, then blend and upload.
-    fn sync_gpu_texture(&mut self, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
-        if let Some(gpu) = &self.gpu_texture {
-            let texture_size = gpu.texture.size();
-            if
-                texture_size.width != self.document.canvas.width ||
-                texture_size.height != self.document.canvas.height
-            {
-                self.recreate_gpu_texture(frame);
-            }
-        }
 
-        let needs_blend = self.document.canvas.dirty_rect.needs_reblend();
-
-        if self.gpu_texture.is_some() {
-            if needs_blend {
-                let dirty = self.document.blend_to_output();
-                if let Some(ref gpu) = self.gpu_texture {
-                    self.document.upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
-                }
-            }
-        } else if needs_blend || self.document.canvas.rendered_layers.is_none() {
-            self.document.render_to_texture(ui);
-        }
-    }
 
     /// Render all four panels (top, left, right, centre) and return whether
     /// the user requested to quit (via the top panel).
