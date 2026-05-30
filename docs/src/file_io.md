@@ -47,7 +47,7 @@ Result sent back via channel when an async save completes. Received by `poll_sav
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Autosave`            | Autosave completed successfully. `poll_save_results` sets `document.dirty_since_last_autosave = false` in response.                                                             |
 | `ManualSave(PathBuf)` | Manual save completed to the given path. `poll_save_results` updates `document.savefile_path` and sets `render_next_frame = true`.                                              |
-| `Failed(String)`      | Save failed at either serialization (`save_canvas_to_bytes`) or file-write (`save_bytes_to_file`) stage. The string is a human-readable error message pushed to the error list. |
+| `Failed(String)`      | Save failed at the serialization stage. The string is a human-readable error message pushed to the error list. |
 
 Derives `Debug`.
 
@@ -139,7 +139,7 @@ Called once per frame (before egui layout) to process completed file dialog resu
 **Operation details per `Picked` action:**
 
 - **Save:** Appends `CANVAS_EXTENSION` if missing. Calls `trigger_async_save(document, SaveKind::ManualSave(path))`.
-- **Load:** Reads via `crate::files::load_data_from_file`, deserializes via `load_app_from_data`, replaces the canvas, and sets `document.savefile_path` to the loaded file's path.
+- **Load:** Reads via `crate::files::load_canvas_from_path`, replaces the canvas, and sets `document.savefile_path` to the loaded file's path.
 - **Import:** Calls `crate::files::import_image_as_canvas` and replaces the canvas (no save-path update).
 - **Export:** Skips if `output_rgba` is empty. Appends the default extension if missing. Calls `crate::files::export_as_image` with the format and dimensions from the canvas.
 
@@ -153,9 +153,9 @@ pub fn trigger_async_save(&self, document: &Document, kind: SaveKind)
 
 Spawns a background thread to serialize and write the canvas to disk. Clones the canvas to avoid borrowing the `Document` across threads. The thread pipeline is:
 
-1. `crate::files::save_canvas_to_bytes(&canvas)` — serializes to zstd-compressed JSON bytes.
-2. `crate::files::save_bytes_to_file(&data, &path)` — writes bytes to disk.
-3. Sends a `SaveResult` back via `save_result_sender`.
+1. `crate::files::save_canvas_to_path(&canvas, &path)` — streams JSON directly
+   through zstd compression into the file. No intermediate `Vec<u8>` allocations.
+2. Sends a `SaveResult` back via `save_result_sender`.
 
 **Parameters:**
 
@@ -164,7 +164,7 @@ Spawns a background thread to serialize and write the canvas to disk. Clones the
   - `Autosave` — Path is `{app_local_data_directory}/autosaves/{timestamp}.splattercanvas` where timestamp uses `AUTOSAVE_DATE_FORMAT` (`%Y-%m-%d_%H-%M-%S`).
   - `ManualSave(path)` — Uses the provided `PathBuf` directly.
 
-**Failure modes:** Returns `SaveResult::Failed` with a descriptive string if serialization fails (stage 1) or file write fails (stage 2). The error is prefixed with `"Serialisation failed: "` or `"Write failed: "` respectively.
+**Failure modes:** Returns `SaveResult::Failed` with a descriptive string if serialization or file write fails. The error is prefixed with `"Serialisation failed: "`.
 
 ### `FileIO::save_to_current_path`
 

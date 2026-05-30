@@ -26,18 +26,20 @@ Serialize the `Canvas` struct to JSON via `serde_json`, then compress with
 **zstd** at level 10:
 
 ```rust
-pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
-    let json = serde_json::to_vec(canvas)?;
-    let mut encoder = zstd::stream::Encoder::new(Vec::new(), COMPRESSION_LEVEL)?;
-    encoder.multithread(thread_count)?;
-    encoder.write_all(&json)?;
-    let compressed = encoder.finish()?;
-    Ok(compressed)
+// Streaming writer: JSON → zstd → File (or any Write), no intermediate Vec.
+fn write_canvas(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
+    let mut encoder = zstd::stream::Encoder::new(writer, COMPRESSION_LEVEL)?;
+    encoder.multithread(n)?;
+    serde_json::to_writer(&mut encoder, canvas)?;
+    encoder.finish()?;
+    Ok(())
 }
 
-pub fn load_app_from_data(data: &[u8]) -> anyhow::Result<Canvas> {
-    let decompressed = zstd::decode_all(data)?;
-    let canvas = serde_json::from_slice(&decompressed)?;
+// Streaming reader: File → zstd → serde, no intermediate Vec.
+fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
+    let decoder = zstd::Decoder::new(reader)?;
+    let limited = decoder.take(MAX_DECOMPRESSED_BYTES);
+    let canvas = serde_json::from_reader(limited)?;
     Ok(canvas)
 }
 ```
@@ -79,10 +81,10 @@ good compression on repetitive pixel data, and multi-threaded encoding via
   so forward-compatible.
 - **Positive:** JSON is human-readable after decompression — `zstd -d file.zst
   | jq .` works for debugging.
-- **Negative:** JSON is ~3–5× larger than binary formats before compression.
-  Most of this is redundant: `"pixels":[...]` with 3M values consumes
-  ~50 MB of JSON text per layer.
-- **Negative:** Serialization allocates a temporary `Vec<u8>` for JSON output
-  before compression — peak memory is ~2× the serialized size during save.
+- **Negative (mitigated):** JSON is ~3–5× larger than binary formats. Most of
+  this is redundant: `"pixels":[...]` with 3M values consumes ~50 MB of JSON
+  text per layer. However, `serde_json::to_writer` streams directly into the
+  zstd encoder, so the raw JSON is never materialized in memory — peak usage
+  is just the ztd internal buffers (~MB) plus the destination writer.
 - **Negative:** zstd level 10 is CPU-intensive for large canvases; must run on
   a background thread (see ADR-0008).
