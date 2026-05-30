@@ -141,7 +141,8 @@ fn write_canvas(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
 /// Serialize a `Canvas` to zstd-compressed JSON bytes without writing to disk.
 ///
 /// Uses multi-threaded zstd compression. This is the CPU-heavy part of saving
-/// and should be called on a background thread.
+/// and should be called on a background thread. Internally streams JSON
+/// directly into the zstd encoder — no intermediate JSON `Vec<u8>`.
 ///
 /// # Parameters
 ///
