@@ -4,7 +4,6 @@
 
 use std::sync::Arc;
 use std::time::Duration;
-use std::time::Instant;
 
 use eframe::egui::Color32;
 use eframe::egui::Pos2;
@@ -823,7 +822,7 @@ impl MyApp {
                     ProgressState::Idle => {
                         if let Some((msg, expiry)) = &self.ui.last_status_message {
                             if expiry.elapsed() < Duration::from_secs(2) {
-                                (msg, false)
+                                (*msg, false)
                             } else {
                                 self.ui.last_status_message = None;
                                 return;

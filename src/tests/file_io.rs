@@ -39,7 +39,7 @@ fn test_file_io() -> (FileIO, mpsc::Sender<DialogResult>, mpsc::Sender<SaveResul
 
 #[test]
 fn poll_save_results_autosave_clears_dirty() {
-    let (file_io, _, save_sender) = test_file_io();
+    let (mut file_io, _, save_sender) = test_file_io();
     let mut document = Document::new(Canvas::new(10, 10));
     document.dirty_since_last_autosave = true;
     let mut errors = Vec::new();
@@ -53,7 +53,7 @@ fn poll_save_results_autosave_clears_dirty() {
 
 #[test]
 fn poll_save_results_manual_save_sets_path() {
-    let (file_io, _, save_sender) = test_file_io();
+    let (mut file_io, _, save_sender) = test_file_io();
     let mut document = Document::new(Canvas::new(10, 10));
     let mut errors = Vec::new();
     let path = PathBuf::from("/tmp/test.splattercanvas");
@@ -70,7 +70,7 @@ fn poll_save_results_manual_save_sets_path() {
 
 #[test]
 fn poll_save_results_failed_appends_error() {
-    let (file_io, _, save_sender) = test_file_io();
+    let (mut file_io, _, save_sender) = test_file_io();
     let mut document = Document::new(Canvas::new(10, 10));
     let mut errors = Vec::new();
 
@@ -84,7 +84,7 @@ fn poll_save_results_failed_appends_error() {
 
 #[test]
 fn poll_save_results_no_messages_is_noop() {
-    let (file_io, _, _) = test_file_io();
+    let (mut file_io, _, _) = test_file_io();
     let mut document = Document::new(Canvas::new(10, 10));
     let mut errors = Vec::new();
 
@@ -352,7 +352,7 @@ fn poll_dialog_results_cancelled_clears_pending() {
 /// `poll_save_results` with manual save sets document path even if it's empty.
 #[test]
 fn poll_save_results_manual_save_empty_path() {
-    let (file_io, _, save_sender) = test_file_io();
+    let (mut file_io, _, save_sender) = test_file_io();
     let mut document = Document::new(Canvas::new(10, 10));
     let mut errors = Vec::new();
 
