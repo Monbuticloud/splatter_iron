@@ -11,6 +11,7 @@ use crate::app::MEMORY_WARNING_THRESHOLD;
 use crate::app::MyApp;
 use crate::app::NEW_CANVAS_PRESETS;
 use crate::app::PendingStamp;
+use crate::app::ProgressState;
 use crate::app::UnsavedWarningAction;
 use crate::canvas::Canvas;
 use crate::file_io::PendingFileAction;
@@ -426,5 +427,49 @@ impl MyApp {
         } else if !open {
             self.ui.dialogs.pending_brushes = None;
         }
+    }
+
+    /// Show a brief toast notification (auto-dismissed after 2 seconds).
+    pub(crate) fn show_toast(&mut self, ui: &mut egui::Ui) {
+        let Some((message, triggered_at)) = &self.ui.toasts.message.clone() else {
+            return;
+        };
+        if triggered_at.elapsed() < std::time::Duration::from_secs(2) {
+            egui::Area
+                ::new(egui::Id::new("stamp_toast"))
+                .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
+                .show(ui, |ui| {
+                    ui.label(
+                        egui::RichText
+                            ::new(message)
+                            .color(egui::Color32::WHITE)
+                            .background_color(egui::Color32::from_black_alpha(180))
+                    );
+                });
+        } else {
+            self.ui.toasts.message = None;
+        }
+    }
+
+    /// Show a progress indicator in the bottom-right corner when an async
+    /// operation is in-flight.
+    pub(crate) fn show_progress_indicator(&mut self, ui: &mut egui::Ui) {
+        let label = match self.ui.progress {
+            ProgressState::Idle => {
+                return;
+            }
+            ProgressState::Exporting => "Exporting…",
+            ProgressState::Loading => "Loading…",
+            ProgressState::Importing => "Importing…",
+        };
+        egui::Area
+            ::new(egui::Id::new("progress_indicator"))
+            .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.add(egui::Spinner::new());
+                    ui.label(label);
+                });
+            });
     }
 }
