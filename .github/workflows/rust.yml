@@ -129,6 +129,11 @@ jobs:
           path: |
             tarpaulin-report.html
             cobertura.xml
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: cobertura.xml
+          fail_ci_if_error: false
 
   test:
     if: github.event_name != 'schedule'
