@@ -30,6 +30,10 @@ impl std::fmt::Debug for StampEntry {
 }
 
 impl StampEntry {
+    /// Return the egui texture ID for this stamp's preview thumbnail.
+    ///
+    /// Returns `None` if the texture has not been created yet
+    /// (e.g. before the first call to [`Library::create_textures`]).
     pub fn texture_id(&self) -> Option<egui::TextureId> {
         self.texture_handle.as_ref().map(|h| h.id())
     }
