@@ -267,4 +267,36 @@ impl MyApp {
             self.ui.dialogs.pending_unsaved_action = None;
         }
     }
+
+    /// If the document has unsaved changes, store the action for later
+    /// resolution; otherwise execute it immediately.
+    pub(crate) fn guard_unsaved(&mut self, action: UnsavedWarningAction) {
+        if self.document.dirty_since_last_autosave {
+            self.ui.dialogs.pending_unsaved_action = Some(action);
+        } else {
+            self.execute_unsaved_action(action);
+        }
+    }
+
+    /// Execute a deferred destructive action after the user has resolved the
+    /// unsaved-changes warning (or after a save completes).
+    pub(crate) fn execute_unsaved_action(&mut self, action: UnsavedWarningAction) {
+        match action {
+            UnsavedWarningAction::Quit => {
+                self.ui.should_close = true;
+            }
+            UnsavedWarningAction::NewCanvas => {
+                self.ui.dialogs.show_new_canvas_dialog = true;
+            }
+            UnsavedWarningAction::Load => {
+                self.file_io.queue_file_action(PendingFileAction::Load);
+            }
+            UnsavedWarningAction::Import => {
+                self.file_io.queue_file_action(PendingFileAction::Import);
+            }
+            UnsavedWarningAction::LoadPath(path) => {
+                self.file_io.queue_load_direct(path);
+            }
+        }
+    }
 }

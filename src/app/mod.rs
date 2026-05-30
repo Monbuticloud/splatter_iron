@@ -21,7 +21,6 @@ use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
 use crate::document::Document;
 use crate::file_io::FileIO;
-use crate::file_io::PendingFileAction;
 use crate::stamp_library::StampEntry;
 use crate::tool_configuration::ToolConfiguration;
 use crate::undo_history::UndoHistory;
@@ -578,37 +577,7 @@ impl MyApp {
 
 
 
-    /// If the document has unsaved changes, store the action for later
-    /// resolution; otherwise execute it immediately.
-    pub(crate) fn guard_unsaved(&mut self, action: UnsavedWarningAction) {
-        if self.document.dirty_since_last_autosave {
-            self.ui.dialogs.pending_unsaved_action = Some(action);
-        } else {
-            self.execute_unsaved_action(action);
-        }
-    }
 
-    /// Execute a deferred destructive action after the user has resolved the
-    /// unsaved-changes warning (or after a save completes).
-    fn execute_unsaved_action(&mut self, action: UnsavedWarningAction) {
-        match action {
-            UnsavedWarningAction::Quit => {
-                self.ui.should_close = true;
-            }
-            UnsavedWarningAction::NewCanvas => {
-                self.ui.dialogs.show_new_canvas_dialog = true;
-            }
-            UnsavedWarningAction::Load => {
-                self.file_io.queue_file_action(PendingFileAction::Load);
-            }
-            UnsavedWarningAction::Import => {
-                self.file_io.queue_file_action(PendingFileAction::Import);
-            }
-            UnsavedWarningAction::LoadPath(path) => {
-                self.file_io.queue_load_direct(path);
-            }
-        }
-    }
 
     /// Show the stamp-naming dialog when a new stamp has been loaded.
     fn show_stamp_naming_dialog(&mut self, ui: &mut egui::Ui) {
