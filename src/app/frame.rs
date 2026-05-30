@@ -21,6 +21,13 @@ impl MyApp {
     /// Poll file-dialog and save-result channels and transfer loaded
     /// stamp/brush data into pending-dialog state.
     pub(crate) fn poll_file_results(&mut self, ctx: &egui::Context) {
+        // Capture save state before polling, to detect completion.
+        let was_saving = matches!(
+            self.ui.progress,
+            ProgressState::Saving | ProgressState::Autosaving
+        );
+        let was_autosave = self.ui.progress == ProgressState::Autosaving;
+
         self.file_io.poll_dialog_results(
             &mut self.document,
             &mut self.undo,
@@ -43,12 +50,26 @@ impl MyApp {
         );
 
         // Track async operation progress.
+        // Priority: load > import > export > save > idle.
         if self.file_io.load_in_flight {
             self.ui.progress = ProgressState::Loading;
         } else if self.file_io.import_in_flight {
             self.ui.progress = ProgressState::Importing;
         } else if self.file_io.export_in_flight {
             self.ui.progress = ProgressState::Exporting;
+        } else if self.document.save_state == SaveState::InFlight {
+            self.ui.progress = if self.file_io.autosave_in_flight {
+                ProgressState::Autosaving
+            } else {
+                ProgressState::Saving
+            };
+        } else if was_saving {
+            // Save just completed this frame — set brief flash message.
+            self.ui.last_status_message = Some((
+                if was_autosave { "Autosaved" } else { "Saved" },
+                std::time::Instant::now(),
+            ));
+            self.ui.progress = ProgressState::Idle;
         } else {
             self.ui.progress = ProgressState::Idle;
         }
@@ -234,6 +255,7 @@ impl MyApp {
         {
             self.ui.last_autosave_time = self.ui.time_elapsed;
             self.ui.times_autosaved += 1;
+            self.ui.progress = ProgressState::Autosaving;
             self.file_io.trigger_async_save(&mut self.document, SaveKind::Autosave);
         }
     }
