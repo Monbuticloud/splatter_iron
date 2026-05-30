@@ -20,7 +20,7 @@
 
 ## Format
 
-(Change)(PX)(BX)(Since what commit (use hash))\)
+(Change)(PX)(BX)(Time when TODO was made, use latest commit (use hash))
 
 ## Ideas
 
