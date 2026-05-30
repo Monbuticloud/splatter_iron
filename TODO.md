@@ -54,14 +54,6 @@
 
 -
 
-## Denied
-
--
-
 ## Implementing
-
--
-
-## Implemented
 
 -
