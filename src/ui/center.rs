@@ -239,12 +239,18 @@ impl MyApp {
                 local_position.y / response.rect.height(),
             );
 
-                let pixel_x = (uv.x * (self.document.canvas.width as f32))
-                    .floor()
-                    .min((self.document.canvas.width - 1) as f32) as u32;
-                let pixel_y = (uv.y * (self.document.canvas.height as f32))
-                    .floor()
-                    .min((self.document.canvas.height - 1) as f32) as u32;
+            let raw_pixel_x = (uv.x * (self.document.canvas.width as f32))
+                .floor()
+                .min((self.document.canvas.width - 1) as f32) as u32;
+            let raw_pixel_y = (uv.y * (self.document.canvas.height as f32))
+                .floor()
+                .min((self.document.canvas.height - 1) as f32) as u32;
+
+            let dt = ui.input(|i| i.unstable_dt);
+            let (pixel_x, pixel_y) = self.stabilized_pixel(raw_pixel_x, raw_pixel_y, dt);
+
+            // Faint dot at the raw (non-stabilized) cursor position.
+            ui.painter().circle_filled(hover_pos, 2.5, Color32::from_gray(80));
 
             match self.tool_configuration.current_tool {
                 CurrentTool::Circle | CurrentTool::CircleEraser => {
