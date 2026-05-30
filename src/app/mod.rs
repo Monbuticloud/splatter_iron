@@ -339,6 +339,9 @@ pub struct UIState {
     pub previous_tool: Option<CurrentTool>,
     /// Cursor position from the previous frame (used for brush preview).
     pub previous_cursor_position: Option<(u32, u32)>,
+    /// Virtual cursor position in float-pixel space for brush stabilization.
+    /// `None` when stabilization is disabled or no cursor has been placed yet.
+    pub stabilized_cursor: Option<(f32, f32)>,
     /// Multiplier applied to undo/redo step count during fast-scroll.
     pub undo_redo_steps_multiplier: usize,
     /// Maximum 2D texture dimension supported by the GPU device.
@@ -380,6 +383,7 @@ impl Default for UIState {
             max_texture_dimension: 8192,
             previous_tool: None,
             previous_cursor_position: None,
+            stabilized_cursor: None,
             undo_redo_steps_multiplier: 1,
             recent_files: Vec::new(),
             last_export_format: 1,
