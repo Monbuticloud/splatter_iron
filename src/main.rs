@@ -5,6 +5,7 @@
 //! Application entry point: installs the MiMalloc global allocator, resolves
 //! the platform data directory, and launches the eframe GUI event loop.
 
+#[cfg(feature = "debug-snapshot")]
 mod debug;
 mod app;
 mod asset_library;

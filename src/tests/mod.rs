@@ -14,6 +14,7 @@ pub mod canvas;
 pub mod circle_brush;
 pub mod common;
 pub mod custom_brush;
+#[cfg(feature = "debug-snapshot")]
 pub mod debug;
 pub mod document;
 pub mod file_io;
