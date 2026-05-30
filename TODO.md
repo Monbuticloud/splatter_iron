@@ -31,7 +31,6 @@
 - bucket fill lacks visited-stamp dedup — `src/tools/bucket_fill.rs:34` → reuse `apply_visited_runs`. (P2)(B2)(aef7235)
 - `stamp_circle_positions` uses `f64::sqrt` per row — `src/tools/circle_brush.rs:312` → integer midpoint-circle increment. (P2)(B1)(aef7235)
 - grid overlay redraws all lines every frame — `src/ui/center.rs:120-148` → cache as shape or vertex buffer. (P3)(B1)(aef7235)
-- `ActiveWake` render state runs at unlimited FPS — `src/canvas.rs:370` → cap with a frame-budget limiter to save battery/heat. (P3)(B1)(59653a1)
 - adaptive render quality — reduce blend resolution when zoomed far out. (P3)(B1)(59653a1)
 
 ### Architecture
@@ -64,7 +63,7 @@
 
 - `#[allow(clippy::..)]` missing inline justification — `src/ui/center.rs:296`, `src/tools/stamp_brush.rs:85` — add inline comment per AGENTS.md. (P1)(B1)(59653a1)
 - `unwrap()` calls without justification — `src/ui/dialogs.rs:224,411` — add safety comment or replace with `if let`. (P1)(B1)(59653a1)
-- missing `# Errors` doc sections — `src/tools/brush_parsers.rs:72,158,256,316,340,359,390`, `src/files.rs:211` — 8 `Result` fns lacking `# Errors`. (P2)(B1)(59653a1)
+- missing `# Errors` doc sections — `src/tools/brush_parsers.rs:72,158,256,316,340,359,390` — 7 `Result` fns lacking `# Errors`. (P2)(B1)(59653a1)
 - misplaced docstring — `src/app/mod.rs:75-78`: `/// File-extension list...` attributed to `PersistedConfig` instead of `IMPORT_EXTENSIONS`. (P2)(B1)(59653a1)
 - duplicate docstring — `src/ui/center.rs:40-46` — first sentence appears twice. (P3)(B1)(59653a1)
 - unused imports — `src/debug.rs:7`, `src/file_io.rs:4`, `src/tools/custom_brush.rs:9`, `src/ui/dialogs.rs:13`. (P3)(B1)(59653a1)
