@@ -11,6 +11,7 @@ use eframe::egui::{ self };
 use serde::Deserialize;
 use serde::Serialize;
 use eframe::egui_wgpu::wgpu;
+#[cfg(feature = "debug-snapshot")]
 use crate::debug::debug_snapshot;
 
 use crate::asset_library::Library;
@@ -562,6 +563,7 @@ impl eframe::App for MyApp {
     ///
     /// When the viewport is unfocused, sleeps to reduce CPU usage.
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        #[cfg(feature = "debug-snapshot")]
         debug_snapshot(&self);
         self.poll_file_results(ui.ctx());
 
