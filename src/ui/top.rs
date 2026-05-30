@@ -89,6 +89,7 @@ impl MyApp {
             if self.document.savefile_path.is_empty() {
                 self.file_io.queue_file_action(PendingFileAction::Save);
             } else {
+                self.ui.progress = crate::app::ProgressState::Saving;
                 self.file_io.save_to_current_path(&mut self.document);
             }
             ui.ctx().request_repaint();
@@ -112,6 +113,7 @@ impl MyApp {
                 if self.document.savefile_path.is_empty() {
                     self.file_io.queue_file_action(PendingFileAction::Save);
                 } else {
+                    self.ui.progress = crate::app::ProgressState::Saving;
                     self.file_io.save_to_current_path(&mut self.document);
                 }
                 ui.ctx().request_repaint();
