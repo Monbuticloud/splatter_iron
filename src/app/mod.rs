@@ -547,28 +547,7 @@ impl MyApp {
 
 }
 
-// --- Frame-helper methods (called once per frame from `ui()`) ---
 
-
-
-
-
-
-
-
-
-
-
-
-    impl MyApp {
-
-
-
-
-
-
-
-}
 
 impl eframe::App for MyApp {
     /// Called every frame by eframe.
