@@ -64,9 +64,10 @@ The compression decision uses a threshold constant `RLE_SHORT_RUN_THRESHOLD = 8`
 
 ## `enum UndoRecord`
 
-`UndoRecord` encodes a single drawing stroke in a form sufficient to both undo (restore before-pixels) and redo (reapply after-pixels). It carries all metadata needed to locate the affected pixels and reconstruct both states.
+`UndoRecord` encodes a single change in a form sufficient to both undo (restore before-pixels) and redo (reapply after-pixels). It carries all metadata needed to locate the affected pixels and reconstruct both states.
 
-Currently only the `Run` variant is defined. The enum is structured as a single-variant enum to allow future addition of alternative record types (e.g., full-layer snapshots, transform records) without breaking callers.
+Five variants are defined: `Run` (per-pixel brush stroke), `AddLayer`, `DeleteLayer`,
+`MoveLayer` (layer reorder), and `ModifyLayer` (visibility, opacity, or name change).
 
 ### Variant: `UndoRecord::Run`
 
