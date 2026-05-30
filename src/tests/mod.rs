@@ -4,14 +4,17 @@
 //! correctness, edge cases, and invariants under controlled conditions.
 
 pub mod app;
+pub mod asset_library;
 pub mod brush_common;
 pub mod brush_library;
+pub mod brush_params;
 pub mod brush_parsers;
 pub mod bucket_fill;
 pub mod canvas;
 pub mod circle_brush;
 pub mod common;
 pub mod custom_brush;
+pub mod debug;
 pub mod document;
 pub mod file_io;
 pub mod files;
