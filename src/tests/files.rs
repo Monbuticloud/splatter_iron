@@ -26,7 +26,10 @@ fn checkerboard_4x4() -> Canvas {
         }
     }
     Canvas {
-        pixels: vec![Layer { pixels, ..Default::default() }],
+        pixels: vec![Layer {
+            pixels,
+            ..Default::default()
+        }],
         height: 4,
         width: 4,
         output_rgba: Arc::new(Vec::new()),
@@ -416,7 +419,10 @@ fn export_tiff_roundtrip() {
 #[test]
 fn load_zero_width_canvas_rejected() {
     let canvas = Canvas {
-        pixels: vec![Layer { pixels: vec![Color32::TRANSPARENT; 1], ..Default::default() }],
+        pixels: vec![Layer {
+            pixels: vec![Color32::TRANSPARENT; 1],
+            ..Default::default()
+        }],
         height: 1,
         width: 0,
         output_rgba: Arc::new(Vec::new()),
@@ -436,7 +442,10 @@ fn load_zero_width_canvas_rejected() {
 #[test]
 fn load_zero_height_canvas_rejected() {
     let canvas = Canvas {
-        pixels: vec![Layer { pixels: vec![], ..Default::default() }],
+        pixels: vec![Layer {
+            pixels: vec![],
+            ..Default::default()
+        }],
         height: 0,
         width: 1,
         output_rgba: Arc::new(Vec::new()),
@@ -601,5 +610,8 @@ fn xz_vs_zstd_produce_different_bytes() {
     let original = checkerboard_4x4();
     let xz_bytes = files::save_canvas_to_bytes_xz(&original).expect("save xz");
     let zstd_bytes = crate::files::save_canvas_to_bytes(&original).expect("save zstd");
-    assert_ne!(xz_bytes, zstd_bytes, "xz and zstd should produce different output");
+    assert_ne!(
+        xz_bytes, zstd_bytes,
+        "xz and zstd should produce different output"
+    );
 }

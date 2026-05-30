@@ -84,6 +84,12 @@ fn debug_output() {
     let debug = format!("{params:?}");
     assert!(debug.contains("start_x: 0"), "debug should include start_x");
     assert!(debug.contains("end_y: 4"), "debug should include end_y");
-    assert!(debug.contains("visited.len: 100"), "debug should include visited.len");
-    assert!(debug.contains("drag_processed.len: 100"), "debug should include drag_processed.len");
+    assert!(
+        debug.contains("visited.len: 100"),
+        "debug should include visited.len"
+    );
+    assert!(
+        debug.contains("drag_processed.len: 100"),
+        "debug should include drag_processed.len"
+    );
 }

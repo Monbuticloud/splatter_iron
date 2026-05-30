@@ -44,10 +44,7 @@ fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
     let limited = decoder.take(MAX_DECOMPRESSED_BYTES);
     let mut canvas: Canvas = serde_json::from_reader(limited).map_err(|e| {
         if e.classify() == serde_json::error::Category::Eof {
-            anyhow::anyhow!(
-                "decompressed data exceeds {} bytes",
-                MAX_DECOMPRESSED_BYTES,
-            )
+            anyhow::anyhow!("decompressed data exceeds {} bytes", MAX_DECOMPRESSED_BYTES,)
         } else {
             e.into()
         }
@@ -198,10 +195,7 @@ fn read_canvas_xz(reader: impl Read) -> anyhow::Result<Canvas> {
     let limited = decoder.take(MAX_DECOMPRESSED_BYTES);
     let mut canvas: Canvas = serde_json::from_reader(limited).map_err(|e| {
         if e.classify() == serde_json::error::Category::Eof {
-            anyhow::anyhow!(
-                "decompressed data exceeds {} bytes",
-                MAX_DECOMPRESSED_BYTES,
-            )
+            anyhow::anyhow!("decompressed data exceeds {} bytes", MAX_DECOMPRESSED_BYTES,)
         } else {
             e.into()
         }
@@ -368,7 +362,10 @@ impl ExportStrategy for DefaultExportStrategy {
         let Some(format) = image::ImageFormat::from_extension(
             path.extension().and_then(|ext| ext.to_str()).unwrap_or(""),
         ) else {
-            anyhow::bail!("Cannot determine image format from path: {}", path.display());
+            anyhow::bail!(
+                "Cannot determine image format from path: {}",
+                path.display()
+            );
         };
         export_as_image(premultiplied_rgba, width, height, path, format)
     }
@@ -592,7 +589,10 @@ pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
     let mut dirty_rect = DirtyRectList::new();
     dirty_rect.request_full_blend();
     Ok(Canvas {
-        pixels: vec![Layer { pixels, ..Default::default() }],
+        pixels: vec![Layer {
+            pixels,
+            ..Default::default()
+        }],
         height: height_u32,
         width: width_u32,
         output_rgba: Arc::new(Vec::new()),

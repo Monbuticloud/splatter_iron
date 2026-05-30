@@ -6,9 +6,9 @@
 use eframe::egui::Color32;
 
 use crate::brush_params::BrushStrokeParams;
-use crate::tool_configuration::StampSampling;
 use crate::tests::common::red;
 use crate::tests::common::small_canvas;
+use crate::tool_configuration::StampSampling;
 use crate::tools::custom_brush;
 
 /// 2x2 white tip for testing.

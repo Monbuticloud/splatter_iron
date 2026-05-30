@@ -244,10 +244,7 @@ pub fn draw_square(
 ///
 /// Panics if `params.layer >= params.canvas.pixels.len()`.
 #[inline]
-pub fn draw_square_line(
-    params: BrushStrokeParams<'_>,
-    brush_radius: u32,
-) -> UndoRecord {
+pub fn draw_square_line(params: BrushStrokeParams<'_>, brush_radius: u32) -> UndoRecord {
     let BrushStrokeParams {
         start_x,
         start_y,

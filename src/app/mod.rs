@@ -6,13 +6,13 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
-use directories::ProjectDirs;
-use eframe::egui::{ self };
-use serde::Deserialize;
-use serde::Serialize;
-use eframe::egui_wgpu::wgpu;
 #[cfg(feature = "debug-snapshot")]
 use crate::debug::debug_snapshot;
+use directories::ProjectDirs;
+use eframe::egui::{self};
+use eframe::egui_wgpu::wgpu;
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::asset_library::Library;
 use crate::brush_library::BrushEntry;
@@ -91,25 +91,8 @@ pub struct PersistedConfig {
 }
 
 pub const IMPORT_EXTENSIONS: &[&str] = &[
-    "avif",
-    "png",
-    "jpg",
-    "jpeg",
-    "webp",
-    "gif",
-    "tiff",
-    "tif",
-    "tga",
-    "ico",
-    "pnm",
-    "pgm",
-    "ppm",
-    "pbm",
-    "pam",
-    "qoi",
-    "exr",
-    "hdr",
-    "ff",
+    "avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif", "tga", "ico", "pnm", "pgm", "ppm",
+    "pbm", "pam", "qoi", "exr", "hdr", "ff",
 ];
 
 /// File extension list and image format for an export target.
@@ -478,16 +461,16 @@ impl MyApp {
         let canvas = Canvas::default();
         let pixel_count = (canvas.width * canvas.height) as usize;
 
-        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME).expect(
-            "Couldn't resolve app dir"
-        );
+        let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME)
+            .expect("Couldn't resolve app dir");
         let data_dir = project_dirs.data_dir().to_path_buf();
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
         std::fs::create_dir_all(&data_dir.join("autosaves")).expect("Couldn't create autosave dir");
 
         // Query the device's max 2D texture dimension for the new-canvas slider.
         // Falls back to 8192 (WebGPU minimum) when the wgpu backend is unavailable.
-        let max_texture_dimension = creation_context.wgpu_render_state
+        let max_texture_dimension = creation_context
+            .wgpu_render_state
             .as_ref()
             .map(|rs| rs.device.limits().max_texture_dimension_2d)
             .unwrap_or(8192);
@@ -495,39 +478,42 @@ impl MyApp {
         let stamp_library: Library<StampEntry> = Library::load_from_disk(&data_dir);
         let brush_library: Library<BrushEntry> = Library::load_from_disk(&data_dir);
 
-        let gpu_texture = creation_context.wgpu_render_state.as_ref().map(|render_state| {
-            let width = canvas.width;
-            let height = canvas.height;
-            let size = wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            };
-            let texture = render_state.device.create_texture(
-                &(wgpu::TextureDescriptor {
-                    label: Some("splatter_iron_canvas"),
-                    size,
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    dimension: wgpu::TextureDimension::D2,
-                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
-                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                    view_formats: &[],
-                })
-            );
-            let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-            let mut renderer = render_state.renderer.write();
-            let texture_id = renderer.register_native_texture(
-                &render_state.device,
-                &view,
-                wgpu::FilterMode::Linear
-            );
-            GpuTexture {
-                texture,
-                texture_id,
-                queue: Arc::new(render_state.queue.clone()),
-            }
-        });
+        let gpu_texture = creation_context
+            .wgpu_render_state
+            .as_ref()
+            .map(|render_state| {
+                let width = canvas.width;
+                let height = canvas.height;
+                let size = wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                };
+                let texture = render_state.device.create_texture(
+                    &(wgpu::TextureDescriptor {
+                        label: Some("splatter_iron_canvas"),
+                        size,
+                        mip_level_count: 1,
+                        sample_count: 1,
+                        dimension: wgpu::TextureDimension::D2,
+                        format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                        view_formats: &[],
+                    }),
+                );
+                let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+                let mut renderer = render_state.renderer.write();
+                let texture_id = renderer.register_native_texture(
+                    &render_state.device,
+                    &view,
+                    wgpu::FilterMode::Linear,
+                );
+                GpuTexture {
+                    texture,
+                    texture_id,
+                    queue: Arc::new(render_state.queue.clone()),
+                }
+            });
 
         let (tool_configuration, recent_files) = data_dir
             .join("config.json")
@@ -536,8 +522,7 @@ impl MyApp {
             .ok()
             .filter(|&exists| exists)
             .and_then(|_| {
-                std::fs::File
-                    ::open(data_dir.join("config.json"))
+                std::fs::File::open(data_dir.join("config.json"))
                     .ok()
                     .and_then(|file| {
                         let p: PersistedConfig = serde_json::from_reader(file).ok()?;
@@ -556,7 +541,7 @@ impl MyApp {
                 save_result_sender,
                 save_result_receiver,
                 data_dir,
-                std::sync::Arc::new(crate::files::DefaultExportStrategy)
+                std::sync::Arc::new(crate::files::DefaultExportStrategy),
             ),
             ui: UIState {
                 max_texture_dimension,
@@ -568,10 +553,7 @@ impl MyApp {
             brush_library,
         }
     }
-
 }
-
-
 
 impl eframe::App for MyApp {
     /// Called every frame by eframe.
@@ -607,8 +589,7 @@ impl eframe::App for MyApp {
         let filename = if self.document.savefile_path.is_empty() {
             "Untitled"
         } else {
-            std::path::Path
-                ::new(&self.document.savefile_path)
+            std::path::Path::new(&self.document.savefile_path)
                 .file_name()
                 .and_then(std::ffi::OsStr::to_str)
                 .unwrap_or("Untitled")

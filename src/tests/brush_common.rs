@@ -70,7 +70,11 @@ fn alpha_overlay_blends() {
     );
     assert!(!runs.is_empty());
     // Every pixel should have been modified (blended)
-    assert!(pixels.iter().all(|p| *p != Color32::from_rgba_premultiplied(255, 0, 0, 255)));
+    assert!(
+        pixels
+            .iter()
+            .all(|p| *p != Color32::from_rgba_premultiplied(255, 0, 0, 255))
+    );
 }
 
 /// `apply_visited_runs` skips already processed pixels in alpha-overlay mode.

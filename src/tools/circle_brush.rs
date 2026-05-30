@@ -349,10 +349,7 @@ fn stamp_circle_positions(
 ///
 /// Panics if `params.layer >= params.canvas.pixels.len()`.
 #[inline]
-pub fn draw_circle_line(
-    params: BrushStrokeParams<'_>,
-    geo_radius: u32,
-) -> UndoRecord {
+pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoRecord {
     let BrushStrokeParams {
         start_x,
         start_y,

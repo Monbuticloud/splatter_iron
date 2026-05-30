@@ -36,8 +36,9 @@ impl MyApp {
             if ui.input(|i| i.key_pressed(egui::Key::C) && !i.modifiers.command) {
                 self.tool_configuration.current_tool = CurrentTool::Circle;
             }
-            if ui.input(|i| i.key_pressed(egui::Key::E) && !i.modifiers.command && !i.modifiers.shift)
-            {
+            if ui.input(|i| {
+                i.key_pressed(egui::Key::E) && !i.modifiers.command && !i.modifiers.shift
+            }) {
                 let is_eraser = matches!(
                     self.tool_configuration.current_tool,
                     CurrentTool::SquareEraser | CurrentTool::CircleEraser
@@ -51,7 +52,9 @@ impl MyApp {
                     self.tool_configuration.current_tool = CurrentTool::SquareEraser;
                 }
             }
-            if ui.input(|i| i.key_pressed(egui::Key::E) && i.modifiers.shift && !i.modifiers.command) {
+            if ui
+                .input(|i| i.key_pressed(egui::Key::E) && i.modifiers.shift && !i.modifiers.command)
+            {
                 let is_eraser = matches!(
                     self.tool_configuration.current_tool,
                     CurrentTool::SquareEraser | CurrentTool::CircleEraser

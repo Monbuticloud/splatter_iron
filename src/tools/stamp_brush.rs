@@ -197,9 +197,13 @@ fn stamp_at(
 
             // Sample from stamp image
             let mut stamp_pixel = match sampling {
-                StampSampling::Nearest => {
-                    sample_nearest(_x_idx, scratch_src_x.as_slice(), src_y, stamp_pixels, stamp_width)
-                }
+                StampSampling::Nearest => sample_nearest(
+                    _x_idx,
+                    scratch_src_x.as_slice(),
+                    src_y,
+                    stamp_pixels,
+                    stamp_width,
+                ),
                 StampSampling::Bilinear => {
                     let src_x_f = ((x as i64) - out_left) as f64 * float_scale_x;
                     sample_bilinear(src_x_f, src_y_f, stamp_pixels, stamp_width, stamp_height)

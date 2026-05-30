@@ -142,7 +142,10 @@ fn save_config_roundtrip() {
     assert_eq!(loaded.tool_configuration.current_tool, CurrentTool::Circle);
     assert_eq!(loaded.tool_configuration.current_color, Color32::RED);
     assert_eq!(loaded.tool_configuration.radius, 50);
-    assert_eq!(loaded.recent_files, vec![PathBuf::from("/recent/file.splattercanvas")]);
+    assert_eq!(
+        loaded.recent_files,
+        vec![PathBuf::from("/recent/file.splattercanvas")]
+    );
 }
 
 /// `save_config` with an empty recent-files list still writes a valid file.
@@ -173,7 +176,10 @@ fn handle_config_save_waits_for_interval() {
         std::fs::remove_file(&config_path).expect("remove config before test");
     }
     app.handle_config_save();
-    assert!(!config_path.exists(), "should not save before interval elapses");
+    assert!(
+        !config_path.exists(),
+        "should not save before interval elapses"
+    );
 }
 
 /// `handle_config_save` saves after the autosave interval elapses.

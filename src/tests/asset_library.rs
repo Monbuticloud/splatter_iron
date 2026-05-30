@@ -32,19 +32,43 @@ impl std::fmt::Debug for TestEntry {
 }
 
 impl AssetEntry for TestEntry {
-    fn name(&self) -> &str { &self.name }
-    fn name_mut(&mut self) -> &mut String { &mut self.name }
-    fn filename(&self) -> &str { &self.filename }
-    fn filename_mut(&mut self) -> &mut String { &mut self.filename }
-    fn pixels(&self) -> &[Color32] { &self.pixels }
-    fn pixels_mut(&mut self) -> &mut Vec<Color32> { &mut self.pixels }
-    fn width(&self) -> u32 { self.width }
-    fn height(&self) -> u32 { self.height }
-    fn texture_handle(&self) -> &Option<TextureHandle> { &self.texture_handle }
-    fn texture_handle_mut(&mut self) -> &mut Option<TextureHandle> { &mut self.texture_handle }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn name_mut(&mut self) -> &mut String {
+        &mut self.name
+    }
+    fn filename(&self) -> &str {
+        &self.filename
+    }
+    fn filename_mut(&mut self) -> &mut String {
+        &mut self.filename
+    }
+    fn pixels(&self) -> &[Color32] {
+        &self.pixels
+    }
+    fn pixels_mut(&mut self) -> &mut Vec<Color32> {
+        &mut self.pixels
+    }
+    fn width(&self) -> u32 {
+        self.width
+    }
+    fn height(&self) -> u32 {
+        self.height
+    }
+    fn texture_handle(&self) -> &Option<TextureHandle> {
+        &self.texture_handle
+    }
+    fn texture_handle_mut(&mut self) -> &mut Option<TextureHandle> {
+        &mut self.texture_handle
+    }
 
-    fn dir_name() -> &'static str { "test_assets" }
-    fn json_field_name() -> &'static str { "test_assets" }
+    fn dir_name() -> &'static str {
+        "test_assets"
+    }
+    fn json_field_name() -> &'static str {
+        "test_assets"
+    }
 
     fn extra_index_fields(&self) -> Vec<(&'static str, serde_json::Value)> {
         Vec::new()

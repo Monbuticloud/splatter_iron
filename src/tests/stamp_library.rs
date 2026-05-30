@@ -3,8 +3,8 @@
 use eframe::egui::Context;
 
 use crate::asset_library::Library;
-use crate::stamp_library::add_stamp;
 use crate::stamp_library::StampEntry;
+use crate::stamp_library::add_stamp;
 use crate::tests::common::red;
 
 /// Add one stamp and verify it is selected.
@@ -18,7 +18,14 @@ fn add_stamp_increments_count() {
     assert!(lib.selected().is_none());
 
     let (pixels, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"test".to_string(), pixels, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "test".to_string(),
+        pixels,
+        w,
+        h,
+        &Context::default(),
+    );
 
     assert_eq!(lib.len(), 1);
     assert!(lib.selected().is_some());
@@ -34,7 +41,14 @@ fn remove_stamp_decrements_count() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (pixels, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"to_remove".to_string(), pixels, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "to_remove".to_string(),
+        pixels,
+        w,
+        h,
+        &Context::default(),
+    );
     assert_eq!(lib.len(), 1);
 
     lib.remove(0);
@@ -49,10 +63,17 @@ fn select_switches_active_stamp() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (p1, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"first".to_string(), p1, w, h, &Context::default());
+    add_stamp(&mut lib, "first".to_string(), p1, w, h, &Context::default());
 
     let (p2, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"second".to_string(), p2, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "second".to_string(),
+        p2,
+        w,
+        h,
+        &Context::default(),
+    );
 
     lib.select(0);
     assert_eq!(lib.selected_index(), Some(0));
@@ -72,7 +93,14 @@ fn persistence_round_trip() {
     {
         let mut lib = Library::<StampEntry>::load_from_disk(&dir);
         let (pixels, w, h) = (vec![red(); 4], 2, 2);
-        add_stamp(&mut lib,"persist".to_string(), pixels, w, h, &Context::default());
+        add_stamp(
+            &mut lib,
+            "persist".to_string(),
+            pixels,
+            w,
+            h,
+            &Context::default(),
+        );
     }
 
     // Reload
@@ -90,7 +118,14 @@ fn remove_last_stamp_clears_selection() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (pixels, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"only".to_string(), pixels, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "only".to_string(),
+        pixels,
+        w,
+        h,
+        &Context::default(),
+    );
     assert!(lib.selected().is_some());
 
     lib.remove(0);
@@ -104,7 +139,14 @@ fn get_valid_index() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (pixels, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"get_test".to_string(), pixels, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "get_test".to_string(),
+        pixels,
+        w,
+        h,
+        &Context::default(),
+    );
 
     let entry = lib.get(0);
     assert!(entry.is_some());
@@ -128,9 +170,9 @@ fn entries_returns_all() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (p1, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"a".to_string(), p1, w, h, &Context::default());
+    add_stamp(&mut lib, "a".to_string(), p1, w, h, &Context::default());
     let (p2, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"b".to_string(), p2, w, h, &Context::default());
+    add_stamp(&mut lib, "b".to_string(), p2, w, h, &Context::default());
 
     let entries = lib.entries();
     assert_eq!(entries.len(), 2);
@@ -153,7 +195,14 @@ fn selected_mut_allows_mutation() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (pixels, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"mutable".to_string(), pixels, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "mutable".to_string(),
+        pixels,
+        w,
+        h,
+        &Context::default(),
+    );
 
     let entry = lib.selected_mut().expect("should have selected");
     entry.name = "mutated".to_string();
@@ -175,7 +224,14 @@ fn remove_out_of_bounds_noop() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (pixels, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"survivor".to_string(), pixels, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "survivor".to_string(),
+        pixels,
+        w,
+        h,
+        &Context::default(),
+    );
     assert_eq!(lib.len(), 1);
 
     lib.remove(5);
@@ -190,7 +246,14 @@ fn select_out_of_bounds_noop() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (pixels, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"pickme".to_string(), pixels, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "pickme".to_string(),
+        pixels,
+        w,
+        h,
+        &Context::default(),
+    );
     assert_eq!(lib.selected_index(), Some(0));
 
     lib.select(42);
@@ -208,11 +271,18 @@ fn remove_middle_preserves_order() {
     let mut lib = Library::<StampEntry>::load_from_disk(&dir);
 
     let (p1, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"first".to_string(), p1, w, h, &Context::default());
+    add_stamp(&mut lib, "first".to_string(), p1, w, h, &Context::default());
     let (p2, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"second".to_string(), p2, w, h, &Context::default());
+    add_stamp(
+        &mut lib,
+        "second".to_string(),
+        p2,
+        w,
+        h,
+        &Context::default(),
+    );
     let (p3, w, h) = (vec![red(); 4], 2, 2);
-    add_stamp(&mut lib,"third".to_string(), p3, w, h, &Context::default());
+    add_stamp(&mut lib, "third".to_string(), p3, w, h, &Context::default());
 
     lib.remove(1);
     assert_eq!(lib.len(), 2);

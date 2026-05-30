@@ -18,13 +18,13 @@ use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
 use crate::file_io::PendingFileAction;
 use crate::pixel;
+use crate::tool_configuration::StampTintMode;
 use crate::tools::bucket_fill::draw_bucket_fill;
 use crate::tools::circle_brush::draw_circle;
 use crate::tools::circle_brush::draw_circle_line;
 use crate::tools::custom_brush::draw_custom_brush_line;
 use crate::tools::square_brush::draw_square;
 use crate::tools::square_brush::draw_square_line;
-use crate::tool_configuration::StampTintMode;
 use crate::tools::stamp_brush::draw_stamp_line;
 use crate::undo::UndoRecord;
 
@@ -134,7 +134,10 @@ impl MyApp {
             while x < cw as f32 {
                 let screen_x = canvas_rect.min.x + x * sx;
                 ui.painter().line_segment(
-                    [egui::pos2(screen_x, canvas_rect.top()), egui::pos2(screen_x, canvas_rect.bottom())],
+                    [
+                        egui::pos2(screen_x, canvas_rect.top()),
+                        egui::pos2(screen_x, canvas_rect.bottom()),
+                    ],
                     grid_stroke,
                 );
                 x += grid as f32;
@@ -144,7 +147,10 @@ impl MyApp {
             while y < ch as f32 {
                 let screen_y = canvas_rect.min.y + y * sy;
                 ui.painter().line_segment(
-                    [egui::pos2(canvas_rect.left(), screen_y), egui::pos2(canvas_rect.right(), screen_y)],
+                    [
+                        egui::pos2(canvas_rect.left(), screen_y),
+                        egui::pos2(canvas_rect.right(), screen_y),
+                    ],
                     grid_stroke,
                 );
                 y += grid as f32;
@@ -253,7 +259,8 @@ impl MyApp {
             let (pixel_x, pixel_y) = self.stabilized_pixel(raw_pixel_x, raw_pixel_y, dt);
 
             // Faint dot at the raw (non-stabilized) cursor position.
-            ui.painter().circle_filled(hover_pos, 2.5, Color32::from_gray(80));
+            ui.painter()
+                .circle_filled(hover_pos, 2.5, Color32::from_gray(80));
 
             match self.tool_configuration.current_tool {
                 CurrentTool::Circle | CurrentTool::CircleEraser => {
@@ -274,7 +281,7 @@ impl MyApp {
                     );
                 }
 
-            CurrentTool::Square | CurrentTool::SquareEraser => {
+                CurrentTool::Square | CurrentTool::SquareEraser => {
                     let half_radius = self.tool_configuration.radius;
 
                     let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
@@ -405,10 +412,12 @@ impl MyApp {
 
                 let pixel_x = (uv.x * (self.document.canvas.width as f32))
                     .floor()
-                    .min((self.document.canvas.width - 1) as f32) as u32;
+                    .min((self.document.canvas.width - 1) as f32)
+                    as u32;
                 let pixel_y = (uv.y * (self.document.canvas.height as f32))
                     .floor()
-                    .min((self.document.canvas.height - 1) as f32) as u32;
+                    .min((self.document.canvas.height - 1) as f32)
+                    as u32;
 
                 let canvas = Arc::make_mut(&mut self.document.canvas);
                 canvas.dirty_rect.request_full_blend();
@@ -425,9 +434,7 @@ impl MyApp {
             }
         }
 
-        if response.clicked()
-            && self.tool_configuration.current_tool == CurrentTool::Eyedropper
-        {
+        if response.clicked() && self.tool_configuration.current_tool == CurrentTool::Eyedropper {
             if let Some(position) = response.interact_pointer_pos() {
                 let local_position = position - response.rect.min;
                 let uv = egui::vec2(
@@ -436,10 +443,12 @@ impl MyApp {
                 );
                 let pixel_x = (uv.x * (self.document.canvas.width as f32))
                     .floor()
-                    .min((self.document.canvas.width - 1) as f32) as u32;
+                    .min((self.document.canvas.width - 1) as f32)
+                    as u32;
                 let pixel_y = (uv.y * (self.document.canvas.height as f32))
                     .floor()
-                    .min((self.document.canvas.height - 1) as f32) as u32;
+                    .min((self.document.canvas.height - 1) as f32)
+                    as u32;
                 let w = self.document.canvas.width;
                 let index = ((pixel_y * w + pixel_x) as usize) * 4;
                 let rgba = &self.document.canvas.output_rgba;
@@ -470,10 +479,12 @@ impl MyApp {
 
                 let raw_x = (uv.x * (self.document.canvas.width as f32))
                     .floor()
-                    .min((self.document.canvas.width - 1) as f32) as u32;
+                    .min((self.document.canvas.width - 1) as f32)
+                    as u32;
                 let raw_y = (uv.y * (self.document.canvas.height as f32))
                     .floor()
-                    .min((self.document.canvas.height - 1) as f32) as u32;
+                    .min((self.document.canvas.height - 1) as f32)
+                    as u32;
 
                 if !matches!(
                     self.tool_configuration.current_tool,
@@ -581,7 +592,7 @@ impl MyApp {
                 let first_frame = self.ui.previous_cursor_position.is_none();
                 let previous_position = self.ui.previous_cursor_position;
 
-                    if first_frame {
+                if first_frame {
                     if alpha_overlay {
                         self.undo.advance_drag_stamp();
                         let stamp = self.undo.next_stamp();
@@ -741,8 +752,7 @@ impl MyApp {
                         entry.width,
                         entry.height,
                         self.tool_configuration.radius,
-                        self.tool_configuration.stamp_tint_mode
-                            == StampTintMode::Tinted,
+                        self.tool_configuration.stamp_tint_mode == StampTintMode::Tinted,
                         self.tool_configuration.stamp_sampling,
                     )
                 })
@@ -787,8 +797,7 @@ impl MyApp {
                         entry.height,
                         self.tool_configuration.radius,
                         entry.spacing,
-                        self.tool_configuration.brush_tint_mode
-                            == StampTintMode::Tinted,
+                        self.tool_configuration.brush_tint_mode == StampTintMode::Tinted,
                         self.tool_configuration.brush_sampling,
                     )
                 })
@@ -835,9 +844,7 @@ impl MyApp {
                 if spinner {
                     ui.add(egui::Spinner::new());
                 }
-                ui.label(
-                    egui::RichText::new(label).color(egui::Color32::from_gray(180)),
-                );
+                ui.label(egui::RichText::new(label).color(egui::Color32::from_gray(180)));
             });
         });
     }

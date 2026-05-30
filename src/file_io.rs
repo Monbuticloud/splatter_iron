@@ -109,7 +109,6 @@ pub enum SaveResult {
 /// Holds channel pairs for receiving dialog results and save outcomes,
 /// plus the app's local data directory path for autosaves.
 pub struct FileIO {
-
     /// File action queued for the next background thread iteration.
     pub pending_file_action: Option<PendingFileAction>,
     /// Channel sender for dispatching dialog requests to the background thread.

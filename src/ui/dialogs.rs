@@ -6,12 +6,12 @@ use std::time::Instant;
 
 use eframe::egui;
 
-use crate::app::estimate_canvas_memory;
 use crate::app::MEMORY_WARNING_THRESHOLD;
 use crate::app::MyApp;
 use crate::app::NEW_CANVAS_PRESETS;
 use crate::app::PendingStamp;
 use crate::app::UnsavedWarningAction;
+use crate::app::estimate_canvas_memory;
 use crate::canvas::Canvas;
 use crate::file_io::PendingFileAction;
 
@@ -23,8 +23,7 @@ impl MyApp {
         }
         let mut open = true;
         let mut to_dismiss: Vec<usize> = Vec::new();
-        egui::Window
-            ::new("Error")
+        egui::Window::new("Error")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -66,19 +65,16 @@ impl MyApp {
         let mut open = true;
         let estimated = estimate_canvas_memory(w, h);
         let estimated_mb = estimated / (1024 * 1024);
-        egui::Window
-            ::new("Large Canvas Warning")
+        egui::Window::new("Large Canvas Warning")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .open(&mut open)
             .show(ui, |ui| {
-                ui.label(
-                    format!(
-                        "This canvas ({w}×{h}) may use up to ~{estimated_mb} MB of RAM.\n\
+                ui.label(format!(
+                    "This canvas ({w}×{h}) may use up to ~{estimated_mb} MB of RAM.\n\
                      Proceed? This cannot be undone."
-                    )
-                );
+                ));
                 ui.horizontal(|ui| {
                     if ui.button("Yes, create").clicked() {
                         let canvas = Canvas::new(w, h);
@@ -103,15 +99,21 @@ impl MyApp {
         let Some(index) = self.ui.dialogs.show_delete_layer_dialog else {
             return;
         };
-        let layer_name = self.document.canvas.pixels
+        let layer_name = self
+            .document
+            .canvas
+            .pixels
             .get(index)
             .map(|l| {
-                if l.name.is_empty() { format!("Layer {index}") } else { l.name.clone() }
+                if l.name.is_empty() {
+                    format!("Layer {index}")
+                } else {
+                    l.name.clone()
+                }
             })
             .unwrap_or_default();
         let mut open = true;
-        egui::Window
-            ::new("Delete Layer")
+        egui::Window::new("Delete Layer")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -139,8 +141,7 @@ impl MyApp {
             return;
         }
         let mut open = true;
-        egui::Window
-            ::new("New Canvas")
+        egui::Window::new("New Canvas")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -157,31 +158,28 @@ impl MyApp {
                 ui.separator();
                 ui.label("Custom:");
                 ui.add(
-                    egui::Slider
-                        ::new(
-                            &mut self.ui.dialogs.new_canvas_width,
-                            4..=self.ui.max_texture_dimension
-                        )
-                        .text("Width")
+                    egui::Slider::new(
+                        &mut self.ui.dialogs.new_canvas_width,
+                        4..=self.ui.max_texture_dimension,
+                    )
+                    .text("Width"),
                 );
                 ui.add(
-                    egui::Slider
-                        ::new(
-                            &mut self.ui.dialogs.new_canvas_height,
-                            4..=self.ui.max_texture_dimension
-                        )
-                        .text("Height")
+                    egui::Slider::new(
+                        &mut self.ui.dialogs.new_canvas_height,
+                        4..=self.ui.max_texture_dimension,
+                    )
+                    .text("Height"),
                 );
                 ui.horizontal(|ui| {
                     if ui.button("Create").clicked() {
                         if self.document.dirty_since_last_autosave {
-                            self.ui.dialogs.pending_unsaved_action = Some(
-                                UnsavedWarningAction::NewCanvas
-                            );
+                            self.ui.dialogs.pending_unsaved_action =
+                                Some(UnsavedWarningAction::NewCanvas);
                         } else {
                             let mem = estimate_canvas_memory(
                                 self.ui.dialogs.new_canvas_width,
-                                self.ui.dialogs.new_canvas_height
+                                self.ui.dialogs.new_canvas_height,
                             );
                             if mem > MEMORY_WARNING_THRESHOLD {
                                 self.ui.dialogs.pending_large_canvas = Some((
@@ -191,7 +189,7 @@ impl MyApp {
                             } else {
                                 let canvas = Canvas::new(
                                     self.ui.dialogs.new_canvas_width,
-                                    self.ui.dialogs.new_canvas_height
+                                    self.ui.dialogs.new_canvas_height,
                                 );
                                 self.document.replace_canvas(canvas, &mut self.undo);
                                 self.ui.previous_tool = None;
@@ -227,15 +225,13 @@ impl MyApp {
         } else {
             format!(
                 "\"{}\" has unsaved changes. What would you like to do?",
-                std::path::Path
-                    ::new(&self.document.savefile_path)
+                std::path::Path::new(&self.document.savefile_path)
                     .file_name()
                     .map(|s| s.to_string_lossy())
                     .unwrap_or_default()
             )
         };
-        egui::Window
-            ::new("Unsaved Changes")
+        egui::Window::new("Unsaved Changes")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -307,8 +303,7 @@ impl MyApp {
         let mut open = true;
         let mut cancelled = false;
         let label = format!("Size: {}×{}", pending.width, pending.height);
-        egui::Window
-            ::new("Name Your Stamp")
+        egui::Window::new("Name Your Stamp")
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
@@ -317,7 +312,7 @@ impl MyApp {
                 ui.horizontal(|ui| {
                     ui.label("Name:");
                     ui.add(
-                        egui::TextEdit::singleline(&mut pending.name).id_source("stamp_name_text")
+                        egui::TextEdit::singleline(&mut pending.name).id_source("stamp_name_text"),
                     );
                 });
                 ui.label(&label);
@@ -335,12 +330,10 @@ impl MyApp {
                         stamp_pixels,
                         stamp_w,
                         stamp_h,
-                        ui.ctx()
+                        ui.ctx(),
                     );
-                    self.ui.toasts.message = Some((
-                        format!("Stamp \"{stamp_name}\" added"),
-                        Instant::now(),
-                    ));
+                    self.ui.toasts.message =
+                        Some((format!("Stamp \"{stamp_name}\" added"), Instant::now()));
                 }
             });
         if open && !cancelled {
@@ -356,29 +349,29 @@ impl MyApp {
         let mut open = true;
         let mut confirmed = false;
         let mut cancelled = false;
-        egui::Window
-            ::new("Name Your Brushes")
+        egui::Window::new("Name Your Brushes")
             .collapsible(false)
             .resizable(true)
             .default_size([400.0, 300.0])
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .open(&mut open)
             .show(ui, |ui| {
-                ui.label(format!("{} brush(es) imported — edit names below:", brushes.len()));
+                ui.label(format!(
+                    "{} brush(es) imported — edit names below:",
+                    brushes.len()
+                ));
                 ui.separator();
 
                 let mut names_to_remove: Vec<usize> = Vec::new();
-                egui::ScrollArea
-                    ::vertical()
+                egui::ScrollArea::vertical()
                     .max_height(ui.available_height() - 40.0)
                     .show(ui, |ui| {
                         for (i, brush) in brushes.iter_mut().enumerate() {
                             ui.horizontal(|ui| {
                                 ui.add(
-                                    egui::TextEdit
-                                        ::singleline(&mut brush.name)
+                                    egui::TextEdit::singleline(&mut brush.name)
                                         .desired_width(150.0)
-                                        .id_source(format!("brush_name_{i}"))
+                                        .id_source(format!("brush_name_{i}")),
                                 );
                                 ui.label(format!("{}×{}", brush.width, brush.height));
                                 if ui.button("Remove").clicked() {
@@ -419,7 +412,7 @@ impl MyApp {
                         brush.width,
                         brush.height,
                         brush.spacing,
-                        ui.ctx()
+                        ui.ctx(),
                     );
                 }
             }
@@ -435,20 +428,17 @@ impl MyApp {
             return;
         };
         if triggered_at.elapsed() < std::time::Duration::from_secs(2) {
-            egui::Area
-                ::new(egui::Id::new("stamp_toast"))
+            egui::Area::new(egui::Id::new("stamp_toast"))
                 .anchor(egui::Align2::RIGHT_BOTTOM, [-10.0, -10.0])
                 .show(ui, |ui| {
                     ui.label(
-                        egui::RichText
-                            ::new(message)
+                        egui::RichText::new(message)
                             .color(egui::Color32::WHITE)
-                            .background_color(egui::Color32::from_black_alpha(180))
+                            .background_color(egui::Color32::from_black_alpha(180)),
                     );
                 });
         } else {
             self.ui.toasts.message = None;
         }
     }
-
 }

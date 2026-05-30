@@ -7,10 +7,10 @@ use std::time::Duration;
 use eframe::egui;
 use eframe::egui_wgpu::wgpu;
 
+use crate::app::AUTOSAVE_INTERVAL_MINUTES;
 use crate::app::MyApp;
 use crate::app::PendingStamp;
 use crate::app::ProgressState;
-use crate::app::AUTOSAVE_INTERVAL_MINUTES;
 use crate::app::REPAINT_DELAY_MULTIPLIER;
 use crate::app::UNFOCUSED_SLEEP_MILLISECONDS;
 use crate::canvas::RenderState;
@@ -33,7 +33,8 @@ impl MyApp {
             &mut self.undo,
             &mut self.ui.errors.list,
         );
-        self.file_io.poll_save_results(&mut self.document, &mut self.ui.errors.list);
+        self.file_io
+            .poll_save_results(&mut self.document, &mut self.ui.errors.list);
 
         // Execute deferred action after save completes.
         if self.document.save_state == SaveState::Idle {
@@ -104,8 +105,7 @@ impl MyApp {
         // Track recently saved/loaded files.
         if !self.document.savefile_path.is_empty() {
             let path = PathBuf::from(&self.document.savefile_path);
-            let is_already_tracked =
-                self.ui.recent_files.first().is_some_and(|p| p == &path);
+            let is_already_tracked = self.ui.recent_files.first().is_some_and(|p| p == &path);
             if !is_already_tracked {
                 self.push_recent_file(path);
                 self.save_config();
@@ -120,22 +120,15 @@ impl MyApp {
     /// be skipped (viewport unfocused or frozen).
     pub(crate) fn update_render_state(&mut self, ui: &mut egui::Ui) -> bool {
         if !ui.ctx().input(|i| i.viewport().focused.unwrap_or(true)) {
-            std::thread::sleep(std::time::Duration::from_millis(UNFOCUSED_SLEEP_MILLISECONDS));
+            std::thread::sleep(std::time::Duration::from_millis(
+                UNFOCUSED_SLEEP_MILLISECONDS,
+            ));
             self.ui.render_state = RenderState::UnfocusedFrozen;
             return true;
         }
-        let predicted_delta_time = Duration::from_secs_f32(
-            ui
-                .ctx()
-                .input(|i| i.predicted_dt)
-                .max(0.0)
-        );
-        let real_delta_time = Duration::from_secs_f32(
-            ui
-                .ctx()
-                .input(|i| i.stable_dt)
-                .max(0.0)
-        );
+        let predicted_delta_time =
+            Duration::from_secs_f32(ui.ctx().input(|i| i.predicted_dt).max(0.0));
+        let real_delta_time = Duration::from_secs_f32(ui.ctx().input(|i| i.stable_dt).max(0.0));
 
         self.ui.time_elapsed += real_delta_time;
 
@@ -164,9 +157,8 @@ impl MyApp {
     pub(crate) fn sync_gpu_texture(&mut self, frame: &mut eframe::Frame, ui: &mut egui::Ui) {
         if let Some(gpu) = &self.gpu_texture {
             let texture_size = gpu.texture.size();
-            if
-                texture_size.width != self.document.canvas.width ||
-                texture_size.height != self.document.canvas.height
+            if texture_size.width != self.document.canvas.width
+                || texture_size.height != self.document.canvas.height
             {
                 self.recreate_gpu_texture(frame);
             }
@@ -178,7 +170,8 @@ impl MyApp {
             if needs_blend {
                 let dirty = self.document.blend_to_output();
                 if let Some(ref gpu) = self.gpu_texture {
-                    self.document.upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
+                    self.document
+                        .upload_to_gpu(&gpu.queue, &gpu.texture, &dirty);
                 }
             }
         } else if needs_blend || self.document.canvas.rendered_layers.is_none() {
@@ -211,12 +204,10 @@ impl MyApp {
         let height = self.document.canvas.height;
         let max_dim = render_state.device.limits().max_texture_dimension_2d;
         if width > max_dim || height > max_dim {
-            self.ui.errors.list.push(
-                format!(
-                    "Canvas too large for GPU: {width}×{height} exceeds device max \
+            self.ui.errors.list.push(format!(
+                "Canvas too large for GPU: {width}×{height} exceeds device max \
                  texture dimension of {max_dim}. The display may be incomplete."
-                )
-            );
+            ));
             return;
         }
         let size = wgpu::Extent3d {
@@ -234,36 +225,43 @@ impl MyApp {
                 format: wgpu::TextureFormat::Rgba8UnormSrgb,
                 usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
                 view_formats: &[],
-            })
+            }),
         );
-        let view = gpu.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = gpu
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
         let mut renderer = render_state.renderer.write();
         renderer.update_egui_texture_from_wgpu_texture(
             &render_state.device,
             &view,
             wgpu::FilterMode::Linear,
-            gpu.texture_id
+            gpu.texture_id,
         );
     }
 
     /// Trigger an autosave if the canvas is dirty and enough time has elapsed.
     pub(crate) fn handle_autosave(&mut self) {
-        if
-            self.document.dirty_since_last_autosave &&
-            self.ui.time_elapsed.saturating_sub(self.ui.last_autosave_time) >=
-                Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
+        if self.document.dirty_since_last_autosave
+            && self
+                .ui
+                .time_elapsed
+                .saturating_sub(self.ui.last_autosave_time)
+                >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
         {
             self.ui.last_autosave_time = self.ui.time_elapsed;
             self.ui.times_autosaved += 1;
             self.ui.progress = ProgressState::Autosaving;
-            self.file_io.trigger_async_save(&mut self.document, SaveKind::Autosave);
+            self.file_io
+                .trigger_async_save(&mut self.document, SaveKind::Autosave);
         }
 
         // Separate archive autosave stream — same interval, independent timer.
-        if
-            self.document.dirty_since_last_autosave &&
-            self.ui.time_elapsed.saturating_sub(self.ui.last_archive_autosave_time) >=
-                Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
+        if self.document.dirty_since_last_autosave
+            && self
+                .ui
+                .time_elapsed
+                .saturating_sub(self.ui.last_archive_autosave_time)
+                >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
         {
             self.ui.last_archive_autosave_time = self.ui.time_elapsed;
             self.file_io.trigger_async_autosave_archive(&self.document);

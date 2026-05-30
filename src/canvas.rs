@@ -272,7 +272,6 @@ pub struct Canvas {
     /// When empty, a full re-blend is needed (e.g. after layer reorder).
     #[serde(skip)]
     pub dirty_rect: DirtyRectList,
-
 }
 
 impl std::fmt::Debug for Canvas {

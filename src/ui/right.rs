@@ -62,8 +62,7 @@ impl MyApp {
 
         ui.label("Undo/Redo Strength");
         ui.add(
-            egui::DragValue::new(&mut self.ui.undo_redo_steps_multiplier)
-                .range(UNDO_REDO_RANGE),
+            egui::DragValue::new(&mut self.ui.undo_redo_steps_multiplier).range(UNDO_REDO_RANGE),
         )
         .on_hover_text("Number of paint strokes per undo or redo step (max 100)");
 
@@ -95,9 +94,7 @@ impl MyApp {
             )
             .text("Smoothing"),
         )
-        .on_hover_text(
-            "Higher values make the virtual cursor lag further behind the real cursor"
-        );
+        .on_hover_text("Higher values make the virtual cursor lag further behind the real cursor");
 
         ui.separator();
         ui.label("Save Path:");
@@ -133,54 +130,47 @@ impl MyApp {
                     }
 
                     // Layer header (collapsing)
-                    let response = egui::CollapsingHeader::new(header_label)
-                        .show(ui, |ui| {
-                            // Editable name
-                            let mut name = layer.name.clone();
-                            let resp = ui.text_edit_singleline(&mut name);
-                            if resp.lost_focus() && name != layer.name {
-                                pending_layer_action =
-                                    Some(LayerAction::Rename(i, name));
-                            }
+                    let response = egui::CollapsingHeader::new(header_label).show(ui, |ui| {
+                        // Editable name
+                        let mut name = layer.name.clone();
+                        let resp = ui.text_edit_singleline(&mut name);
+                        if resp.lost_focus() && name != layer.name {
+                            pending_layer_action = Some(LayerAction::Rename(i, name));
+                        }
 
-                            // Opacity slider
-                            let mut opacity = layer.opacity;
-                            if ui
-                                .add(
-                                    egui::Slider::new(&mut opacity, 0..=255)
-                                        .text("Opacity"),
-                                )
-                                .changed()
-                            {
-                                pending_opacity = Some((i, opacity));
-                            }
+                        // Opacity slider
+                        let mut opacity = layer.opacity;
+                        if ui
+                            .add(egui::Slider::new(&mut opacity, 0..=255).text("Opacity"))
+                            .changed()
+                        {
+                            pending_opacity = Some((i, opacity));
+                        }
 
-                            // Action buttons
-                            let delete_button = ui.button("Delete");
-                            if delete_button.clicked() {
-                                pending_layer_action = Some(LayerAction::Delete(i));
-                            }
+                        // Action buttons
+                        let delete_button = ui.button("Delete");
+                        if delete_button.clicked() {
+                            pending_layer_action = Some(LayerAction::Delete(i));
+                        }
 
-                            let move_up_button = ui.button("Move Up");
-                            if move_up_button.clicked() && i > 0 {
-                                pending_layer_action = Some(LayerAction::MoveUp(i));
-                            }
+                        let move_up_button = ui.button("Move Up");
+                        if move_up_button.clicked() && i > 0 {
+                            pending_layer_action = Some(LayerAction::MoveUp(i));
+                        }
 
-                            let move_down_button = ui.button("Move Down");
-                            if move_down_button.clicked()
-                                && i < self.document.canvas.pixels.len() - 1
-                            {
-                                pending_layer_action = Some(LayerAction::MoveDown(i));
-                            }
+                        let move_down_button = ui.button("Move Down");
+                        if move_down_button.clicked() && i < self.document.canvas.pixels.len() - 1 {
+                            pending_layer_action = Some(LayerAction::MoveDown(i));
+                        }
 
-                            let select_button = ui.button("Select");
-                            if select_button.clicked() {
-                                pending_layer_action = Some(LayerAction::Select(i));
-                            }
-                            if i == self.document.current_layer {
-                                ui.label("Currently Selected");
-                            }
-                        });
+                        let select_button = ui.button("Select");
+                        if select_button.clicked() {
+                            pending_layer_action = Some(LayerAction::Select(i));
+                        }
+                        if i == self.document.current_layer {
+                            ui.label("Currently Selected");
+                        }
+                    });
                     // Click on the header selects the layer
                     if response.header_response.clicked() {
                         pending_layer_action = Some(LayerAction::Select(i));
@@ -190,7 +180,8 @@ impl MyApp {
 
             // Apply opacity change (needs mutable access to canvas).
             if let Some((index, opacity)) = pending_opacity {
-                self.document.set_layer_opacity(index, opacity, &mut self.undo);
+                self.document
+                    .set_layer_opacity(index, opacity, &mut self.undo);
             }
 
             // Apply deferred layer actions.

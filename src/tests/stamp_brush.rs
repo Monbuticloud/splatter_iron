@@ -6,10 +6,10 @@
 use eframe::egui::Color32;
 
 use crate::brush_params::BrushStrokeParams;
-use crate::tool_configuration::StampSampling;
 use crate::tests::common::blue;
 use crate::tests::common::red;
 use crate::tests::common::small_canvas;
+use crate::tool_configuration::StampSampling;
 use crate::tools::stamp_brush;
 
 /// Build a 2×2 stamp: top-left red, top-right green, bottom-left blue,
@@ -586,10 +586,7 @@ fn zero_width_stamp_returns_empty_undo() {
         crate::undo::UndoRecord::Run { runs, .. } => runs,
         _ => unreachable!("stamp always produces Run"),
     };
-    assert!(
-        runs.is_empty(),
-        "zero-width stamp should have no runs"
-    );
+    assert!(runs.is_empty(), "zero-width stamp should have no runs");
 }
 
 /// Zero-height stamp should return an empty undo record without panicking.
@@ -624,8 +621,5 @@ fn zero_height_stamp_returns_empty_undo() {
         crate::undo::UndoRecord::Run { runs, .. } => runs,
         _ => unreachable!("stamp always produces Run"),
     };
-    assert!(
-        runs.is_empty(),
-        "zero-height stamp should have no runs"
-    );
+    assert!(runs.is_empty(), "zero-height stamp should have no runs");
 }

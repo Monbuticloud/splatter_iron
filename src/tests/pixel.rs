@@ -196,7 +196,15 @@ fn blend_region_two_layers() {
     let mut region_out = vec![0u8; pixel_count * 4];
 
     pixel::blend_layers(&[(&bottom[..], 255), (&top[..], 255)], &mut full_out);
-    pixel::blend_region(&[(&bottom[..], 255), (&top[..], 255)], &mut region_out, width, 1, 1, 4, 4);
+    pixel::blend_region(
+        &[(&bottom[..], 255), (&top[..], 255)],
+        &mut region_out,
+        width,
+        1,
+        1,
+        4,
+        4,
+    );
 
     for y in 0..height {
         for x in 0..width {
@@ -236,7 +244,10 @@ fn blend_layers_three_layers() {
     let middle = vec![Color32::from_rgba_premultiplied(0, 255, 0, 255); pixel_count];
     let top = vec![Color32::from_rgba_premultiplied(0, 0, 255, 255); pixel_count];
     let mut output = vec![0u8; pixel_count * 4];
-    pixel::blend_layers(&[(&bottom[..], 255), (&middle[..], 255), (&top[..], 255)], &mut output);
+    pixel::blend_layers(
+        &[(&bottom[..], 255), (&middle[..], 255), (&top[..], 255)],
+        &mut output,
+    );
     for i in 0..pixel_count {
         assert_eq!(output[i * 4], 0, "red channel at {i}");
         assert_eq!(output[i * 4 + 1], 0, "green channel at {i}");

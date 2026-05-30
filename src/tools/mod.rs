@@ -1,9 +1,9 @@
 //! Brush and fill tool implementations.
 
-/// `.abr`, `.gbr`, and `.brush` file format parsers.
-pub mod brush_parsers;
 /// Shared brush utilities (visited-pixel run capture).
 pub mod brush_common;
+/// `.abr`, `.gbr`, and `.brush` file format parsers.
+pub mod brush_parsers;
 /// Scanline flood-fill tool implementation.
 pub mod bucket_fill;
 /// Midpoint-circle brush tool implementation.

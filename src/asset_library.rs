@@ -85,10 +85,7 @@ impl<T: AssetEntry> Library<T> {
         if index_path.exists() {
             if let Ok(json) = std::fs::read_to_string(&index_path) {
                 if let Ok(root) = serde_json::from_str::<serde_json::Value>(&json) {
-                    if let Some(arr) = root
-                        .get(T::json_field_name())
-                        .and_then(|v| v.as_array())
-                    {
+                    if let Some(arr) = root.get(T::json_field_name()).and_then(|v| v.as_array()) {
                         for item in arr {
                             let name = item
                                 .get("name")
@@ -100,37 +97,22 @@ impl<T: AssetEntry> Library<T> {
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("")
                                 .to_string();
-                            let w = item
-                                .get("w")
-                                .and_then(|v| v.as_u64())
-                                .unwrap_or(0) as u32;
-                            let h = item
-                                .get("h")
-                                .and_then(|v| v.as_u64())
-                                .unwrap_or(0) as u32;
+                            let w = item.get("w").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                            let h = item.get("h").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
 
                             let png_path = dir.join(&filename);
                             if let Ok(img) = image::open(&png_path) {
                                 let rgba = img.to_rgba8();
                                 let (img_w, img_h) = rgba.dimensions();
-                                let mut pixels =
-                                    Vec::with_capacity((img_w * img_h) as usize);
+                                let mut pixels = Vec::with_capacity((img_w * img_h) as usize);
                                 for pixel in rgba.pixels() {
                                     let straight = Color32::from_rgba_unmultiplied(
-                                        pixel[0],
-                                        pixel[1],
-                                        pixel[2],
-                                        pixel[3],
+                                        pixel[0], pixel[1], pixel[2], pixel[3],
                                     );
                                     pixels.push(straight);
                                 }
-                                let extra = item
-                                    .as_object()
-                                    .cloned()
-                                    .unwrap_or_default();
-                                entries.push(T::from_parts(
-                                    name, filename, pixels, w, h, &extra,
-                                ));
+                                let extra = item.as_object().cloned().unwrap_or_default();
+                                entries.push(T::from_parts(name, filename, pixels, w, h, &extra));
                             }
                         }
                     }
@@ -159,8 +141,7 @@ impl<T: AssetEntry> Library<T> {
                     [entry.width() as usize, entry.height() as usize],
                     &raw,
                 );
-                let tex =
-                    ctx.load_texture(entry.name(), image, egui::TextureOptions::LINEAR);
+                let tex = ctx.load_texture(entry.name(), image, egui::TextureOptions::LINEAR);
                 *entry.texture_handle_mut() = Some(tex);
             }
         }

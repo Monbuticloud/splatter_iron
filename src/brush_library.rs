@@ -43,22 +43,49 @@ impl BrushEntry {
 }
 
 impl AssetEntry for BrushEntry {
-    fn name(&self) -> &str { &self.name }
-    fn name_mut(&mut self) -> &mut String { &mut self.name }
-    fn filename(&self) -> &str { &self.filename }
-    fn filename_mut(&mut self) -> &mut String { &mut self.filename }
-    fn pixels(&self) -> &[Color32] { &self.pixels }
-    fn pixels_mut(&mut self) -> &mut Vec<Color32> { &mut self.pixels }
-    fn width(&self) -> u32 { self.width }
-    fn height(&self) -> u32 { self.height }
-    fn texture_handle(&self) -> &Option<TextureHandle> { &self.texture_handle }
-    fn texture_handle_mut(&mut self) -> &mut Option<TextureHandle> { &mut self.texture_handle }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn name_mut(&mut self) -> &mut String {
+        &mut self.name
+    }
+    fn filename(&self) -> &str {
+        &self.filename
+    }
+    fn filename_mut(&mut self) -> &mut String {
+        &mut self.filename
+    }
+    fn pixels(&self) -> &[Color32] {
+        &self.pixels
+    }
+    fn pixels_mut(&mut self) -> &mut Vec<Color32> {
+        &mut self.pixels
+    }
+    fn width(&self) -> u32 {
+        self.width
+    }
+    fn height(&self) -> u32 {
+        self.height
+    }
+    fn texture_handle(&self) -> &Option<TextureHandle> {
+        &self.texture_handle
+    }
+    fn texture_handle_mut(&mut self) -> &mut Option<TextureHandle> {
+        &mut self.texture_handle
+    }
 
-    fn dir_name() -> &'static str { "brushes" }
-    fn json_field_name() -> &'static str { "brushes" }
+    fn dir_name() -> &'static str {
+        "brushes"
+    }
+    fn json_field_name() -> &'static str {
+        "brushes"
+    }
 
     fn extra_index_fields(&self) -> Vec<(&'static str, serde_json::Value)> {
-        vec![("spacing", serde_json::Value::Number(serde_json::Number::from(self.spacing)))]
+        vec![(
+            "spacing",
+            serde_json::Value::Number(serde_json::Number::from(self.spacing)),
+        )]
     }
 
     fn from_parts(
@@ -69,10 +96,7 @@ impl AssetEntry for BrushEntry {
         h: u32,
         extra: &serde_json::Map<String, serde_json::Value>,
     ) -> Self {
-        let spacing = extra
-            .get("spacing")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(25) as u8;
+        let spacing = extra.get("spacing").and_then(|v| v.as_u64()).unwrap_or(25) as u8;
         Self {
             name,
             filename,
