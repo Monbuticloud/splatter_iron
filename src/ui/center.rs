@@ -4,6 +4,7 @@
 
 use std::sync::Arc;
 use std::time::Duration;
+use std::time::Instant;
 
 use eframe::egui::Color32;
 use eframe::egui::Pos2;
@@ -12,6 +13,7 @@ use eframe::egui::{self};
 use egui::epaint::StrokeKind;
 
 use crate::app::MyApp;
+use crate::app::ProgressState;
 use crate::brush_params::BrushStrokeParams;
 use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
@@ -40,7 +42,8 @@ impl MyApp {
     /// Render the central canvas panel.
     ///
     /// Only renders if a texture exists (wgpu or fallback). Delegates
-    /// interaction handling to `handle_canvas_interaction`.
+    /// interaction handling to `handle_canvas_interaction` and
+    /// renders a persistent status bar below the canvas.
     /// Render the central canvas panel where brush strokes and interaction occur.
     ///
     /// No-op when neither a GPU texture nor an egui-managed texture is available.
@@ -52,6 +55,7 @@ impl MyApp {
         if self.gpu_texture.is_some() || self.document.canvas.rendered_layers.is_some() {
             self.handle_canvas_interaction(ui);
         }
+        self.show_canvas_status_line(ui);
     }
 
     /// Process mouse interaction on the canvas texture.
@@ -791,6 +795,52 @@ impl MyApp {
                 })
             }
         }
+    }
+
+    /// Draw a persistent status bar below the canvas showing canvas dimensions,
+    /// zoom level, and any in-flight file operation (save, export, load, import).
+    fn show_canvas_status_line(&mut self, ui: &mut egui::Ui) {
+        ui.separator();
+        ui.horizontal(|ui| {
+            // Left: canvas dimensions.
+            ui.label(format!(
+                "{}×{}",
+                self.document.canvas.width, self.document.canvas.height
+            ));
+            ui.separator();
+
+            // Center: zoom level.
+            ui.label(format!("{:>3.0}%", self.ui.zoom * 100.0));
+
+            // Right: activity status (right-aligned).
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let (label, spinner) = match self.ui.progress {
+                    ProgressState::Saving => ("Saving…", true),
+                    ProgressState::Autosaving => ("Autosaving…", true),
+                    ProgressState::Exporting => ("Exporting…", true),
+                    ProgressState::Loading => ("Loading…", true),
+                    ProgressState::Importing => ("Importing…", true),
+                    ProgressState::Idle => {
+                        if let Some((msg, expiry)) = &self.ui.last_status_message {
+                            if expiry.elapsed() < Duration::from_secs(2) {
+                                (msg, false)
+                            } else {
+                                self.ui.last_status_message = None;
+                                return;
+                            }
+                        } else {
+                            return;
+                        }
+                    }
+                };
+                if spinner {
+                    ui.add(egui::Spinner::new());
+                }
+                ui.label(
+                    egui::RichText::new(label).color(egui::Color32::from_gray(180)),
+                );
+            });
+        });
     }
 }
 
