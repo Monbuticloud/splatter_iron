@@ -87,24 +87,15 @@ pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
     read_canvas(data)
 }
 
-/// Serialize a `Canvas` to zstd-compressed JSON bytes without writing to disk.
-///
-/// Uses multi-threaded zstd compression. This is the CPU-heavy part of saving
-/// and should be called on a background thread.
-///
-/// # Parameters
-///
-/// * `canvas` — The canvas to serialize.
-///
-/// # Errors
-///
-/// Returns an error if JSON serialization or zstd compression fails.
 /// Serialize a `Canvas` into any `std::io::Write` by streaming JSON directly
 /// into a multi-threaded zstd encoder.
 ///
 /// Eliminates the intermediate `serde_json::to_vec` allocation — JSON is
 /// serialized incrementally into the zstd compressor, which in turn writes
 /// compressed frames into `writer`.
+///
+/// Uses multi-threaded zstd compression. This is the CPU-heavy part of saving
+/// and should be called on a background thread.
 ///
 /// # Parameters
 ///
