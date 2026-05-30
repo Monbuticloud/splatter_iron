@@ -43,7 +43,7 @@ pub const FILE_FILTER_NAME: &str = "SplatterCanvas";
 pub const DEFAULT_CANVAS_NAME: &str = "canvas.splattercanvas";
 
 /// Preset canvas sizes shown in the "New Canvas" dialog.
-const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
+pub(crate) const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
     ("XS", 800, 600),
     ("S", 1280, 960),
     ("M", 2000, 1500),
@@ -52,25 +52,25 @@ const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
 ];
 
 // --- Performance constants ---
-const UNFOCUSED_SLEEP_MILLISECONDS: u64 = 50;
+pub(crate) const UNFOCUSED_SLEEP_MILLISECONDS: u64 = 50;
 
 // --- Memory warning threshold ---
 /// Threshold (in bytes) above which creating a new canvas shows a
 /// confirmation dialog. 500 MB is a safe boundary — output_rgba + one layer
 /// + blend buffer at 8000×8000 is ~768 MB.
-const MEMORY_WARNING_THRESHOLD: u64 = 500_000_000;
+pub(crate) const MEMORY_WARNING_THRESHOLD: u64 = 500_000_000;
 
 /// Estimate the minimum memory footprint (bytes) for a canvas of the given
 /// dimensions: output_rgba (w×h×4) + one layer (w×h×4) + blend buffer
 /// overhead (w×h×4). The actual footprint is higher with multiple layers.
-fn estimate_canvas_memory(width: u32, height: u32) -> u64 {
+pub(crate) fn estimate_canvas_memory(width: u32, height: u32) -> u64 {
     let pixels = u64::from(width) * u64::from(height);
     pixels * 12
 }
-const REPAINT_DELAY_MULTIPLIER: u32 = 5;
+pub(crate) const REPAINT_DELAY_MULTIPLIER: u32 = 5;
 
 // --- Autosave interval ---
-const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
+pub(crate) const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 
 // --- Image import extensions ---
 /// File-extension list accepted by the image-import dialog (19 formats).
