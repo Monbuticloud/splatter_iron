@@ -45,6 +45,50 @@ jobs:
       - name: Run CI pipeline
         run: just ci
 
+  check-linux:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: splatter-iron
+      - name: cargo check
+        run: cargo check
+
+  test-linux:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: splatter-iron
+      - name: cargo test
+        run: cargo test
+
+  test-mac:
+    if: github.event_name != 'schedule'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: splatter-iron
+      - name: cargo test
+        run: cargo test
+
+  test-windows:
+    if: github.event_name != 'schedule'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: splatter-iron
+      - name: cargo test
+        run: cargo test
+
   ci-cron:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
