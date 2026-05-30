@@ -502,6 +502,19 @@ impl MyApp {
         }
     }
 
+    /// Apply brush stabilization: compute a virtual cursor position by
+    /// lerping toward the real cursor each frame with framerate-independent
+    /// exponential ease. On the first drag frame the virtual cursor snaps
+    /// to the real position so strokes start immediately.
+    ///
+    /// # Parameters
+    ///
+    /// * `raw_x`, `raw_y` — Raw mouse pixel coordinates.
+    /// * `dt` — Frame delta time in seconds.
+    ///
+    /// # Returns
+    ///
+    /// Stabilized pixel coordinates.
     fn stabilized_pixel(&mut self, raw_x: u32, raw_y: u32, dt: f32) -> (u32, u32) {
         if !self.tool_configuration.stabilization_enabled {
             return (raw_x, raw_y);
