@@ -252,38 +252,43 @@ pub fn export_as_image(
     path: &Path,
     format: image::ImageFormat,
 ) -> anyhow::Result<()> {
-    let mut img = image::RgbaImage::new(width, height);
+    let total_pixels = (width * height) as usize;
+    if total_pixels == 0 {
+        anyhow::bail!("cannot export an image with zero pixels");
+    }
+    let premultiplied: &[Color32] = bytemuck::cast_slice(premultiplied_rgba);
     let is_jpeg = format == image::ImageFormat::Jpeg;
 
-    for y in 0..height {
-        for x in 0..width {
-            let pixel_index = ((y * width + x) as usize) * 4;
-            let red = premultiplied_rgba[pixel_index];
-            let green = premultiplied_rgba[pixel_index + 1];
-            let blue = premultiplied_rgba[pixel_index + 2];
-            let alpha = premultiplied_rgba[pixel_index + 3];
+    let mut raw_output = vec![0u8; total_pixels * 4];
 
-            let (final_red, final_green, final_blue, final_alpha) = if is_jpeg {
+    raw_output
+        .par_chunks_mut(4)
+        .enumerate()
+        .for_each(|(i, pixel)| {
+            let c = premultiplied[i];
+            let (fr, fg, fb, fa) = if is_jpeg {
                 // Blend premultiplied RGBA against white background:
                 // fully transparent (a=0,r=0) -> white (255,255,255)
                 // For premultiplied over white: r' = r + (255 - a) (clamped)
-                let inverse_alpha = (255u8).wrapping_sub(alpha); // 255 - a
+                let inv_a = 255u8.wrapping_sub(c.a());
                 (
-                    red.saturating_add(inverse_alpha),
-                    green.saturating_add(inverse_alpha),
-                    blue.saturating_add(inverse_alpha),
-                    255u8,
+                    c.r().saturating_add(inv_a),
+                    c.g().saturating_add(inv_a),
+                    c.b().saturating_add(inv_a),
+                    255,
                 )
             } else {
-                let premultiplied = Color32::from_rgba_premultiplied(red, green, blue, alpha);
-                let straight = unpremultiply(premultiplied);
+                let straight = unpremultiply(c);
                 (straight.r(), straight.g(), straight.b(), straight.a())
             };
+            pixel[0] = fr;
+            pixel[1] = fg;
+            pixel[2] = fb;
+            pixel[3] = fa;
+        });
 
-            let rgba = image::Rgba([final_red, final_green, final_blue, final_alpha]);
-            img.put_pixel(x, y, rgba);
-        }
-    }
+    let mut img = image::RgbaImage::from_raw(width, height, raw_output)
+        .expect("dimensions match allocated pixel count");
 
     let file = std::fs::File::create(path)?;
     let writer = BufWriter::new(file);
