@@ -15,6 +15,8 @@ use crate::canvas::Canvas;
 /// Every `draw_*_line` function in `src/tools/` takes this bundle
 /// plus tool-specific arguments, reducing visible boilerplate and
 /// making signatures easier to read.
+///
+/// Construct instances via [`BrushStrokeParams::builder`].
 pub struct BrushStrokeParams<'a> {
     /// Column of the line start point.
     pub start_x: u32,
@@ -40,6 +42,94 @@ pub struct BrushStrokeParams<'a> {
     pub drag_processed: &'a mut [u32],
     /// Current drag-scoped stamp value.
     pub drag_stamp_value: u32,
+}
+
+/// Builder for [`BrushStrokeParams`].
+///
+/// Captures the invariant fields (canvas, color, layer, scratch buffers)
+/// once, then lets callers override only start/end position and
+/// alpha_overlay per line segment.
+pub(crate) struct BrushStrokeParamsBuilder<'a> {
+    start_x: u32,
+    start_y: u32,
+    end_x: u32,
+    end_y: u32,
+    canvas: &'a mut Canvas,
+    color: Color32,
+    layer: usize,
+    visited: &'a mut [u32],
+    stamp: u32,
+    alpha_overlay: bool,
+    drag_processed: &'a mut [u32],
+    drag_stamp_value: u32,
+}
+
+impl<'a> BrushStrokeParams<'a> {
+    /// Start building with the stroke-invariant fields.
+    pub(crate) fn builder(
+        canvas: &'a mut Canvas,
+        color: Color32,
+        layer: usize,
+        visited: &'a mut [u32],
+        stamp: u32,
+        drag_processed: &'a mut [u32],
+        drag_stamp_value: u32,
+    ) -> BrushStrokeParamsBuilder<'a> {
+        BrushStrokeParamsBuilder {
+            start_x: 0,
+            start_y: 0,
+            end_x: 0,
+            end_y: 0,
+            canvas,
+            color,
+            layer,
+            visited,
+            stamp,
+            alpha_overlay: false,
+            drag_processed,
+            drag_stamp_value,
+        }
+    }
+}
+
+impl<'a> BrushStrokeParamsBuilder<'a> {
+    /// Set the line start point.
+    pub(crate) fn start(mut self, x: u32, y: u32) -> Self {
+        self.start_x = x;
+        self.start_y = y;
+        self
+    }
+
+    /// Set the line end point.
+    pub(crate) fn end(mut self, x: u32, y: u32) -> Self {
+        self.end_x = x;
+        self.end_y = y;
+        self
+    }
+
+    /// Set alpha-overlay mode (default: `false`).
+    pub(crate) fn alpha_overlay(mut self, v: bool) -> Self {
+        self.alpha_overlay = v;
+        self
+    }
+
+    /// Finalise and produce a [`BrushStrokeParams`].
+    pub(crate) fn build(self) -> BrushStrokeParams<'a> {
+        BrushStrokeParams {
+            start_x: self.start_x,
+            start_y: self.start_y,
+            end_x: self.end_x,
+            end_y: self.end_y,
+            canvas: self.canvas,
+            color: self.color,
+            layer: self.layer,
+            visited: self.visited,
+            stamp: self.stamp,
+            alpha_overlay: self.alpha_overlay,
+            drag_processed: self.drag_processed,
+            drag_stamp_value: self.drag_stamp_value,
+        }
+    }
 }
 
 impl std::fmt::Debug for BrushStrokeParams<'_> {

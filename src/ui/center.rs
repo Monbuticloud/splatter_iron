@@ -533,26 +533,25 @@ impl MyApp {
                 let first_frame = self.ui.previous_cursor_position.is_none();
                 let previous_position = self.ui.previous_cursor_position;
 
-                if first_frame {
+                    if first_frame {
                     if alpha_overlay {
                         self.undo.advance_drag_stamp();
                         let stamp = self.undo.next_stamp();
                         let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_square_line(
-                            BrushStrokeParams {
-                                start_x: pixel_x,
-                                start_y: pixel_y,
-                                end_x: pixel_x,
-                                end_y: pixel_y,
+                            BrushStrokeParams::builder(
                                 canvas,
                                 color,
-                                layer: self.document.current_layer,
+                                self.document.current_layer,
                                 visited,
                                 stamp,
-                                alpha_overlay: true,
                                 drag_processed,
-                                drag_stamp_value: ds_val,
-                            },
+                                ds_val,
+                            )
+                            .start(pixel_x, pixel_y)
+                            .end(pixel_x, pixel_y)
+                            .alpha_overlay(true)
+                            .build(),
                             self.tool_configuration.radius,
                         ))
                     } else {
@@ -576,20 +575,19 @@ impl MyApp {
                     let stamp = self.undo.next_stamp();
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_square_line(
-                        BrushStrokeParams {
-                            start_x: previous_x,
-                            start_y: previous_y,
-                            end_x: pixel_x,
-                            end_y: pixel_y,
+                        BrushStrokeParams::builder(
                             canvas,
                             color,
-                            layer: self.document.current_layer,
+                            self.document.current_layer,
                             visited,
                             stamp,
-                            alpha_overlay,
                             drag_processed,
-                            drag_stamp_value: ds_val,
-                        },
+                            ds_val,
+                        )
+                        .start(previous_x, previous_y)
+                        .end(pixel_x, pixel_y)
+                        .alpha_overlay(alpha_overlay)
+                        .build(),
                         self.tool_configuration.radius,
                     ))
                 } else {
@@ -607,20 +605,19 @@ impl MyApp {
                         let stamp = self.undo.next_stamp();
                         let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_circle_line(
-                            BrushStrokeParams {
-                                start_x: pixel_x,
-                                start_y: pixel_y,
-                                end_x: pixel_x,
-                                end_y: pixel_y,
+                            BrushStrokeParams::builder(
                                 canvas,
                                 color,
-                                layer: self.document.current_layer,
+                                self.document.current_layer,
                                 visited,
                                 stamp,
-                                alpha_overlay: true,
                                 drag_processed,
-                                drag_stamp_value: ds_val,
-                            },
+                                ds_val,
+                            )
+                            .start(pixel_x, pixel_y)
+                            .end(pixel_x, pixel_y)
+                            .alpha_overlay(true)
+                            .build(),
                             self.tool_configuration.radius,
                         ))
                     } else {
@@ -638,20 +635,19 @@ impl MyApp {
                     let stamp = self.undo.next_stamp();
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_circle_line(
-                        BrushStrokeParams {
-                            start_x: previous_x,
-                            start_y: previous_y,
-                            end_x: pixel_x,
-                            end_y: pixel_y,
+                        BrushStrokeParams::builder(
                             canvas,
                             color,
-                            layer: self.document.current_layer,
+                            self.document.current_layer,
                             visited,
                             stamp,
-                            alpha_overlay,
                             drag_processed,
-                            drag_stamp_value: ds_val,
-                        },
+                            ds_val,
+                        )
+                        .start(previous_x, previous_y)
+                        .end(pixel_x, pixel_y)
+                        .alpha_overlay(alpha_overlay)
+                        .build(),
                         self.tool_configuration.radius,
                     ))
                 } else {
@@ -680,20 +676,19 @@ impl MyApp {
                 self.stamp_library.selected().map(|entry| {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_stamp_line(
-                        BrushStrokeParams {
-                            start_x,
-                            start_y,
-                            end_x: pixel_x,
-                            end_y: pixel_y,
+                        BrushStrokeParams::builder(
                             canvas,
                             color,
-                            layer: self.document.current_layer,
+                            self.document.current_layer,
                             visited,
                             stamp,
-                            alpha_overlay,
                             drag_processed,
-                            drag_stamp_value: ds_val,
-                        },
+                            ds_val,
+                        )
+                        .start(start_x, start_y)
+                        .end(pixel_x, pixel_y)
+                        .alpha_overlay(alpha_overlay)
+                        .build(),
                         &entry.pixels,
                         entry.width,
                         entry.height,
@@ -726,20 +721,19 @@ impl MyApp {
                 self.brush_library.selected().map(|entry| {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_custom_brush_line(
-                        BrushStrokeParams {
-                            start_x,
-                            start_y,
-                            end_x: pixel_x,
-                            end_y: pixel_y,
+                        BrushStrokeParams::builder(
                             canvas,
                             color,
-                            layer: self.document.current_layer,
+                            self.document.current_layer,
                             visited,
                             stamp,
-                            alpha_overlay,
                             drag_processed,
-                            drag_stamp_value: ds_val,
-                        },
+                            ds_val,
+                        )
+                        .start(start_x, start_y)
+                        .end(pixel_x, pixel_y)
+                        .alpha_overlay(alpha_overlay)
+                        .build(),
                         &entry.pixels,
                         entry.width,
                         entry.height,
