@@ -576,63 +576,7 @@ impl MyApp {
 
 
 
-    /// Show the unsaved-changes warning when a destructive action is triggered
-    /// while the canvas has unsaved modifications.
-    ///
-    /// Offers Save (save then proceed), Discard (lose changes and proceed),
-    /// and Cancel (do nothing). The deferred action is stored in
-    /// `pending_unsaved_action` and cleared on resolution.
-    fn show_unsaved_changes_warning(&mut self, ui: &mut egui::Ui) {
-        if self.ui.dialogs.pending_unsaved_action.is_none() {
-            return;
-        }
-        let action = self.ui.dialogs.pending_unsaved_action.as_ref().unwrap().clone();
-        let mut open = true;
-        let mut resolved = false;
-        let label: String = if self.document.savefile_path.is_empty() {
-            "You have unsaved changes. What would you like to do?".to_string()
-        } else {
-            format!(
-                "\"{}\" has unsaved changes. What would you like to do?",
-                std::path::Path
-                    ::new(&self.document.savefile_path)
-                    .file_name()
-                    .map(|s| s.to_string_lossy())
-                    .unwrap_or_default()
-            )
-        };
-        egui::Window
-            ::new("Unsaved Changes")
-            .collapsible(false)
-            .resizable(false)
-            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
-            .open(&mut open)
-            .show(ui, |ui| {
-                ui.label(&label);
-                ui.horizontal(|ui| {
-                    if ui.button("Save").clicked() {
-                        if self.document.savefile_path.is_empty() {
-                            self.ui.dialogs.pending_after_save = Some(action.clone());
-                            self.file_io.queue_file_action(PendingFileAction::Save);
-                        } else {
-                            self.file_io.save_to_current_path(&mut self.document);
-                            self.ui.dialogs.pending_after_save = Some(action.clone());
-                        }
-                        resolved = true;
-                    }
-                    if !resolved && ui.button("Don't Save").clicked() {
-                        self.execute_unsaved_action(action.clone());
-                        resolved = true;
-                    }
-                    if !resolved && ui.button("Cancel").clicked() {
-                        resolved = true;
-                    }
-                });
-            });
-        if !open || resolved {
-            self.ui.dialogs.pending_unsaved_action = None;
-        }
-    }
+
 
     /// If the document has unsaved changes, store the action for later
     /// resolution; otherwise execute it immediately.
