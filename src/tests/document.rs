@@ -468,3 +468,11 @@ fn set_layer_opacity_triggers_blend() {
     document.set_layer_opacity(0, 128, &mut UndoHistory::new(100));
     assert!(document.canvas_mut().dirty_rect.needs_reblend());
 }
+
+/// `rename_layer` changes the layer name.
+#[test]
+fn rename_layer_changes_name() {
+    let mut document = small_document();
+    document.rename_layer(0, "Background".to_string(), &mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[0].name, "Background");
+}
