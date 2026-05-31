@@ -372,3 +372,12 @@ fn parse_abr_computed_explicit_spacing() {
     let tips = parse_abr(&buf).expect("should parse with explicit spacing");
     assert_eq!(tips[0].spacing, 10);
 }
+
+/// `parse_brush_file` with no extension returns an error.
+#[test]
+fn parse_brush_file_no_extension() {
+    let path = std::path::Path::new("no_ext");
+    let result = crate::tools::brush_parsers::parse_brush_file(path);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("no extension"));
+}
