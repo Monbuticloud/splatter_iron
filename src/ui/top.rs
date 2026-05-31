@@ -336,6 +336,31 @@ mod tests {
         ));
     }
 
+    /// Pressing `E` toggles eraser tool (non-eraser -> SquareEraser).
+    #[test]
+    fn key_e_toggles_eraser_on_non_eraser() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.current_tool = crate::canvas::CurrentTool::Square;
+
+        {
+            let mut harness = egui_kittest::Harness::new_ui(|ui| {
+                app.show_top_panel(ui);
+            });
+            harness.key_press(egui::Key::E);
+            harness.step();
+        }
+
+        assert!(matches!(
+            app.tool_configuration.current_tool,
+            crate::canvas::CurrentTool::SquareEraser
+        ));
+        assert!(matches!(
+            app.ui.previous_tool,
+            Some(crate::canvas::CurrentTool::Square)
+        ));
+    }
+
     /// All toolbar buttons render without panic.
     #[test]
     fn show_top_panel_renders_buttons() {
