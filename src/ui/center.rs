@@ -930,6 +930,7 @@ fn stamp_tip_preview(
 
 #[cfg(test)]
 mod tests {
+    use super::stamp_tip_preview;
     use super::uv_to_pixel;
     use super::zoom_around_point;
     use super::PREVIEW_FILL_ALPHA_FACTOR;
@@ -1081,5 +1082,49 @@ mod tests {
             egui::vec2(500.0, 500.0),
         );
         assert_eq!(result, egui::vec2(50.0, 75.0));
+    }
+
+    #[test]
+    fn stamp_tip_preview_renders_without_panicking() {
+        egui::__run_test_ui(|ui| {
+            let response =
+                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            stamp_tip_preview(
+                ui,
+                &response,
+                5,
+                5,
+                egui::vec2(100.0, 100.0),
+                None,
+                32,
+                32,
+                10,
+                100,
+                100,
+                egui::Color32::WHITE,
+            );
+        });
+    }
+
+    #[test]
+    fn stamp_tip_preview_with_texture_does_not_panic() {
+        egui::__run_test_ui(|ui| {
+            let response =
+                ui.allocate_response(egui::vec2(200.0, 200.0), egui::Sense::click());
+            stamp_tip_preview(
+                ui,
+                &response,
+                50,
+                50,
+                egui::vec2(200.0, 200.0),
+                None,
+                64,
+                48,
+                20,
+                100,
+                100,
+                egui::Color32::RED,
+            );
+        });
     }
 }
