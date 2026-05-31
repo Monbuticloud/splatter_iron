@@ -94,6 +94,10 @@ fn compute_canvas_rect(
     (draw_size, Rect::from_min_size(canvas_pos, draw_size))
 }
 
+/// Draw a circle brush preview at the cursor position.
+///
+/// Renders a circle outline at the stabilized cursor position with the
+/// current brush radius and color.
 fn draw_circle_preview(
     ui: &egui::Ui,
     response: &egui::Response,
