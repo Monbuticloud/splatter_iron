@@ -387,3 +387,190 @@ pub fn blend_region(
         blend_pixel_range(layers, output, pixel_start, pixel_count, false);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── unpremultiply ─────────────────────────────────────────
+
+    #[test]
+    fn unpremultiply_opaque_unchanged() {
+        let c = Color32::from_rgba_premultiplied(200, 100, 50, 255);
+        assert_eq!(unpremultiply(c), c);
+    }
+
+    #[test]
+    fn unpremultiply_transparent_unchanged() {
+        let c = Color32::TRANSPARENT;
+        assert_eq!(unpremultiply(c), c);
+    }
+
+    #[test]
+    fn unpremultiply_semi_transparent_corrects_rgb() {
+        // Straight: (200, 100, 50, 128) → premultiplied: (100, 50, 25, 128)
+        let premul = Color32::from_rgba_premultiplied(100, 50, 25, 128);
+        let straight = unpremultiply(premul);
+        assert!(straight.r() >= 199 && straight.r() <= 201);
+        assert!(straight.g() >= 99 && straight.g() <= 101);
+        assert!(straight.b() >= 49 && straight.b() <= 51);
+        assert_eq!(straight.a(), 128);
+    }
+
+    // ── premultiply ────────────────────────────────────────────
+
+    #[test]
+    fn premultiply_opaque_unchanged() {
+        let c = Color32::from_rgba_unmultiplied(200, 100, 50, 255);
+        assert_eq!(premultiply(c), c);
+    }
+
+    #[test]
+    fn premultiply_transparent_returns_transparent() {
+        let c = Color32::from_rgba_unmultiplied(200, 100, 50, 0);
+        assert_eq!(premultiply(c), Color32::TRANSPARENT);
+    }
+
+    #[test]
+    fn premultiply_semi_transparent_scales_rgb() {
+        let c = Color32::from_rgba_unmultiplied(200, 100, 50, 128);
+        let p = premultiply(c);
+        // Premultiplied values must be ≤ straight values.
+        assert!(p.r() <= 200);
+        assert!(p.g() <= 100);
+        assert!(p.b() <= 50);
+        assert_eq!(p.a(), 128);
+    }
+
+    // ── alpha_blend ────────────────────────────────────────────
+
+    #[test]
+    fn alpha_blend_opaque_source_covers_dest() {
+        let dest = Color32::from_rgba_premultiplied(10, 20, 30, 40);
+        let src = Color32::from_rgba_premultiplied(200, 100, 50, 255);
+        assert_eq!(alpha_blend(dest, src), src);
+    }
+
+    #[test]
+    fn alpha_blend_transparent_source_leaves_dest_unchanged() {
+        let dest = Color32::from_rgba_premultiplied(200, 100, 50, 255);
+        let src = Color32::TRANSPARENT;
+        let result = alpha_blend(dest, src);
+        // Transparent over opaque: fixed-point rounding gives 254, not 255.
+        assert!(
+            result.r() == 200 || result.r() == 199,
+            "expected ~200, got {}",
+            result.r()
+        );
+        assert!(
+            result.g() == 100 || result.g() == 99,
+            "expected ~100, got {}",
+            result.g()
+        );
+        assert!(
+            result.b() == 50 || result.b() == 49,
+            "expected ~50, got {}",
+            result.b()
+        );
+        assert!(
+            result.a() == 255 || result.a() == 254,
+            "expected ~255, got {}",
+            result.a()
+        );
+    }
+
+    #[test]
+    fn alpha_blend_semi_transparent_combines() {
+        let dest = Color32::from_rgba_premultiplied(50, 50, 50, 128);
+        let src = Color32::from_rgba_premultiplied(200, 100, 50, 128);
+        let result = alpha_blend(dest, src);
+        // Alpha: 128 + (128 * 127 + 128) >> 8 = 128 + 64 = 192
+        assert_eq!(result.a(), 192);
+    }
+
+    // ── blend_layers ───────────────────────────────────────────
+
+    #[test]
+    fn blend_layers_single_opaque_passthrough() {
+        let pixels = vec![
+            Color32::from_rgba_premultiplied(100, 200, 50, 255),
+            Color32::from_rgba_premultiplied(50, 100, 200, 255),
+        ];
+        let layers: &[(&[Color32], u8)] = &[(pixels.as_slice(), 255)];
+        let mut out = vec![0u8; pixels.len() * 4];
+        blend_layers(layers, &mut out);
+        // Manually flatten Color32 slices to compare byte-by-byte.
+        assert_eq!(out.len(), pixels.len() * 4);
+        for (i, &color) in pixels.iter().enumerate() {
+            let arr = color.to_array();
+            assert_eq!(out[i * 4..i * 4 + 4], arr);
+        }
+    }
+
+    #[test]
+    fn blend_layers_two_opaque_top_wins() {
+        let bottom = vec![Color32::from_rgba_premultiplied(10, 20, 30, 40)];
+        let top = vec![Color32::from_rgba_premultiplied(200, 100, 50, 255)];
+        let layers: &[(&[Color32], u8)] = &[(bottom.as_slice(), 255), (top.as_slice(), 255)];
+        let mut out = vec![0u8; 4];
+        blend_layers(layers, &mut out);
+        assert_eq!(out.as_slice(), top[0].to_array());
+    }
+
+    #[test]
+    fn blend_layers_with_opacity_scales() {
+        let bottom = vec![Color32::from_rgba_premultiplied(100, 0, 0, 255)];
+        let top = vec![Color32::from_rgba_premultiplied(0, 200, 0, 255)];
+        // Top layer at 50% opacity → effectively (0, 100, 0, 128)
+        let layers: &[(&[Color32], u8)] = &[(bottom.as_slice(), 255), (top.as_slice(), 128)];
+        let mut out = vec![0u8; 4];
+        blend_layers(layers, &mut out);
+        // 50% opacity scales top to ~(0, 100, 0, 128)
+        // Blended over red (100, 0, 0, 255):
+        //   R: 0 + (100 * 127 / 255) ≈ 49
+        //   G: 100 + (0 * 127 / 255) ≈ 100
+        //   B: 0 + (0 * 127 / 255) ≈ 0
+        //   A: 128 + (255 * 127 / 255) ≈ 255
+        assert_eq!(out[3], 255);
+        assert!(out[1] >= 98 && out[1] <= 102);
+    }
+
+    #[test]
+    #[should_panic(expected = "blend_layers: at least one layer required")]
+    fn blend_layers_empty_panics() {
+        blend_layers(&[], &mut []);
+    }
+
+    #[test]
+    #[should_panic]
+    fn blend_layers_wrong_output_length_panics() {
+        let pixels = vec![Color32::from_rgba_premultiplied(255, 255, 255, 255)];
+        blend_layers(&[(pixels.as_slice(), 255)], &mut [0u8; 3]);
+    }
+
+    // ── blend_region ───────────────────────────────────────────
+
+    #[test]
+    fn blend_region_empty_layers_noop() {
+        let mut out = [0u8; 16];
+        blend_region(&[], &mut out, 4, 0, 0, 3, 3);
+        // No panic, output unchanged.
+        assert_eq!(out, [0u8; 16]);
+    }
+
+    #[test]
+    fn blend_region_single_layer_writes_subset() {
+        let pixels = vec![
+            Color32::from_rgba_premultiplied(1, 0, 0, 255),
+            Color32::from_rgba_premultiplied(2, 0, 0, 255),
+            Color32::from_rgba_premultiplied(3, 0, 0, 255),
+            Color32::from_rgba_premultiplied(4, 0, 0, 255),
+        ];
+        let mut out = vec![0u8; 16];
+        // Blend rows 0..1, cols 1..2 (pixels 1..2 exclusive → pixel index 1)
+        blend_region(&[(pixels.as_slice(), 255)], &mut out, 2, 1, 0, 1, 0);
+        assert_eq!(out[4..8], pixels[1].to_array());
+        // Other pixels untouched.
+        assert_eq!(out[0..4], [0u8; 4]);
+    }
+}
