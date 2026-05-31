@@ -401,3 +401,17 @@ fn parse_brush_file_read_failure() {
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Failed to read file"));
 }
+
+/// `parse_brush_file` with a valid GBR v2 file returns a single tip with the file stem name.
+#[test]
+fn parse_brush_file_gbr_single_tip_named_by_stem() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("my_brush.gbr");
+    let gbr_data = make_gbr_v2_rgba();
+    std::fs::write(&path, &gbr_data).expect("write gbr");
+    let tips = crate::tools::brush_parsers::parse_brush_file(&path).expect("parse gbr");
+    assert_eq!(tips.len(), 1);
+    assert_eq!(tips[0].name, "my_brush");
+    assert_eq!(tips[0].width, 2);
+    assert_eq!(tips[0].height, 2);
+}
