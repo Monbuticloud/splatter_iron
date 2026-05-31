@@ -35,6 +35,7 @@ image = { version = "0.25.10", features = [
 debug-snapshot = []
 
 [dev-dependencies]
+egui_kittest = "0.34"
 tempfile = "3.19.1"
 
 [profile.dev]
