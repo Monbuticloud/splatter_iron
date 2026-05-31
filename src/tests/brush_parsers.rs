@@ -392,3 +392,12 @@ fn parse_brush_file_unsupported_format() {
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Unsupported brush format"));
 }
+
+/// `parse_brush_file` with a non-existent file returns a read error.
+#[test]
+fn parse_brush_file_read_failure() {
+    let path = std::path::Path::new("/nonexistent/path/test.gbr");
+    let result = crate::tools::brush_parsers::parse_brush_file(path);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Failed to read file"));
+}
