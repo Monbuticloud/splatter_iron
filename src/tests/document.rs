@@ -476,3 +476,18 @@ fn rename_layer_changes_name() {
     document.rename_layer(0, "Background".to_string(), &mut UndoHistory::new(100));
     assert_eq!(document.canvas.pixels[0].name, "Background");
 }
+
+/// `blend_to_output` skips invisible layers.
+#[test]
+fn blend_to_output_skips_invisible_layers() {
+    let mut document = small_document();
+    document.add_layer(&mut UndoHistory::new(100));
+    // Paint a red pixel on layer 1
+    document.canvas_mut().pixels[1].pixels[0] = Color32::RED;
+    // Hide layer 1 and blend
+    document.canvas_mut().pixels[1].visible = false;
+    document.canvas_mut().dirty_rect.request_full_blend();
+    document.blend_to_output();
+    // Output should show the transparent layer 0 (not red)
+    assert_eq!(document.canvas.output_rgba[0..4].to_vec(), vec![0, 0, 0, 0]);
+}
