@@ -459,3 +459,12 @@ fn set_layer_opacity_boundary_values() {
     document.set_layer_opacity(0, 255, &mut UndoHistory::new(100));
     assert_eq!(document.canvas.pixels[0].opacity, 255);
 }
+
+/// `set_layer_opacity` requests a full re-blend.
+#[test]
+fn set_layer_opacity_triggers_blend() {
+    let mut document = small_document();
+    document.canvas_mut().dirty_rect.clear();
+    document.set_layer_opacity(0, 128, &mut UndoHistory::new(100));
+    assert!(document.canvas_mut().dirty_rect.needs_reblend());
+}
