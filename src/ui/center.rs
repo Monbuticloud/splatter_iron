@@ -156,40 +156,15 @@ impl MyApp {
 
         // Draw grid overlay if enabled.
         if self.tool_configuration.show_grid {
-            let grid = self.tool_configuration.grid_size.max(1);
-            let cw = self.document.canvas.width;
-            let ch = self.document.canvas.height;
-            let sx = draw_size.x / cw as f32;
-            let sy = draw_size.y / ch as f32;
-            let grid_color = egui::Color32::from_gray(128);
-            let grid_stroke = egui::Stroke::new(1.0, grid_color);
-
-            // Vertical lines
-            let mut x = grid as f32;
-            while x < cw as f32 {
-                let screen_x = canvas_rect.min.x + x * sx;
-                ui.painter().line_segment(
-                    [
-                        egui::pos2(screen_x, canvas_rect.top()),
-                        egui::pos2(screen_x, canvas_rect.bottom()),
-                    ],
-                    grid_stroke,
-                );
-                x += grid as f32;
-            }
-            // Horizontal lines
-            let mut y = grid as f32;
-            while y < ch as f32 {
-                let screen_y = canvas_rect.min.y + y * sy;
-                ui.painter().line_segment(
-                    [
-                        egui::pos2(canvas_rect.left(), screen_y),
-                        egui::pos2(canvas_rect.right(), screen_y),
-                    ],
-                    grid_stroke,
-                );
-                y += grid as f32;
-            }
+            draw_grid_overlay(
+                ui,
+                true,
+                self.tool_configuration.grid_size,
+                canvas_rect,
+                draw_size,
+                self.document.canvas.width,
+                self.document.canvas.height,
+            );
         }
 
         response.context_menu(|ui| {
@@ -872,6 +847,57 @@ impl MyApp {
                 ui.label(egui::RichText::new(label).color(egui::Color32::from_gray(180)));
             });
         });
+    }
+}
+
+/// Draw a grid overlay on the canvas.
+///
+/// Draws vertical and horizontal lines at `grid_size` pixel intervals within the
+/// canvas rectangle `canvas_rect`, using screen-space scaling derived from
+/// `draw_size` and canvas dimensions `cw` × `ch`.
+fn draw_grid_overlay(
+    ui: &egui::Ui,
+    show_grid: bool,
+    grid_size: u32,
+    canvas_rect: Rect,
+    draw_size: egui::Vec2,
+    cw: u32,
+    ch: u32,
+) {
+    if !show_grid {
+        return;
+    }
+    let grid_size = grid_size.max(1);
+    let sx = draw_size.x / cw as f32;
+    let sy = draw_size.y / ch as f32;
+    let grid_color = egui::Color32::from_gray(128);
+    let grid_stroke = egui::Stroke::new(1.0, grid_color);
+
+    // Vertical lines
+    let mut x = grid_size as f32;
+    while x < cw as f32 {
+        let screen_x = canvas_rect.min.x + x * sx;
+        ui.painter().line_segment(
+            [
+                egui::pos2(screen_x, canvas_rect.top()),
+                egui::pos2(screen_x, canvas_rect.bottom()),
+            ],
+            grid_stroke,
+        );
+        x += grid_size as f32;
+    }
+    // Horizontal lines
+    let mut y = grid_size as f32;
+    while y < ch as f32 {
+        let screen_y = canvas_rect.min.y + y * sy;
+        ui.painter().line_segment(
+            [
+                egui::pos2(canvas_rect.left(), screen_y),
+                egui::pos2(canvas_rect.right(), screen_y),
+            ],
+            grid_stroke,
+        );
+        y += grid_size as f32;
     }
 }
 
