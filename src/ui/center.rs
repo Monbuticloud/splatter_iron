@@ -49,6 +49,29 @@ fn uv_to_pixel(uv: egui::Vec2, canvas_width: u32, canvas_height: u32) -> (u32, u
     (pixel_x, pixel_y)
 }
 
+/// Compute the pan offset that keeps a cursor point anchored on the canvas
+/// when the zoom level changes. This adjusts `pan_offset` so the pixel
+/// under the cursor stays in the same screen position.
+fn zoom_around_point(
+    old_zoom: f32,
+    new_zoom: f32,
+    hover_pos: egui::Pos2,
+    canvas_pos: egui::Pos2,
+    base_size: egui::Vec2,
+    available: egui::Vec2,
+) -> egui::Vec2 {
+    let old_draw = base_size * old_zoom;
+    let frac_x = (hover_pos.x - canvas_pos.x) / old_draw.x;
+    let frac_y = (hover_pos.y - canvas_pos.y) / old_draw.y;
+    let new_draw = base_size * new_zoom;
+    let nx = (available.x - new_draw.x) / 2.0;
+    let ny = (available.y - new_draw.y) / 2.0;
+    egui::vec2(
+        hover_pos.x - nx - frac_x * new_draw.x,
+        hover_pos.y - ny - frac_y * new_draw.y,
+    )
+}
+
 impl MyApp {
     /// Render the central canvas panel.
     ///
@@ -231,14 +254,14 @@ impl MyApp {
                 self.ui.zoom = (old_zoom * zoom_input).clamp(MIN_ZOOM, MAX_ZOOM);
                 if self.ui.zoom != old_zoom {
                     if let Some(hover) = response.hover_pos() {
-                        let old_draw = base_size * old_zoom;
-                        let frac_x = (hover.x - canvas_pos.x) / old_draw.x;
-                        let frac_y = (hover.y - canvas_pos.y) / old_draw.y;
-                        let new_draw = base_size * self.ui.zoom;
-                        let nx = (available.x - new_draw.x) / 2.0;
-                        let ny = (available.y - new_draw.y) / 2.0;
-                        self.ui.pan_offset.x = hover.x - nx - frac_x * new_draw.x;
-                        self.ui.pan_offset.y = hover.y - ny - frac_y * new_draw.y;
+                        self.ui.pan_offset = zoom_around_point(
+                            old_zoom,
+                            self.ui.zoom,
+                            hover,
+                            canvas_pos,
+                            base_size,
+                            available,
+                        );
                     }
                     ui.ctx().request_repaint();
                 }
@@ -908,6 +931,7 @@ fn stamp_tip_preview(
 #[cfg(test)]
 mod tests {
     use super::uv_to_pixel;
+    use super::zoom_around_point;
     use eframe::egui;
 
     #[test]
@@ -957,5 +981,65 @@ mod tests {
             uv_to_pixel(egui::Vec2::new(2.0, 3.0), 100, 200),
             (99, 199)
         );
+    }
+
+    #[test]
+    fn zoom_unchanged_returns_zero_pan() {
+        let result = zoom_around_point(
+            1.0, 1.0,
+            egui::pos2(250.0, 250.0),
+            egui::pos2(150.0, 150.0),
+            egui::vec2(200.0, 200.0),
+            egui::vec2(500.0, 500.0),
+        );
+        assert_eq!(result, egui::Vec2::ZERO);
+    }
+
+    #[test]
+    fn zoom_in_from_center_returns_zero_pan() {
+        let result = zoom_around_point(
+            1.0, 2.0,
+            egui::pos2(250.0, 250.0),
+            egui::pos2(150.0, 150.0),
+            egui::vec2(200.0, 200.0),
+            egui::vec2(500.0, 500.0),
+        );
+        assert_eq!(result, egui::Vec2::ZERO);
+    }
+
+    #[test]
+    fn zoom_in_from_top_left_adjusts_pan() {
+        let result = zoom_around_point(
+            1.0, 2.0,
+            egui::pos2(150.0, 150.0),
+            egui::pos2(150.0, 150.0),
+            egui::vec2(200.0, 200.0),
+            egui::vec2(500.0, 500.0),
+        );
+        assert_eq!(result, egui::vec2(100.0, 100.0));
+    }
+
+    #[test]
+    fn zoom_out_from_center_returns_zero_pan() {
+        let result = zoom_around_point(
+            1.0, 0.5,
+            egui::pos2(250.0, 250.0),
+            egui::pos2(150.0, 150.0),
+            egui::vec2(200.0, 200.0),
+            egui::vec2(500.0, 500.0),
+        );
+        assert_eq!(result, egui::Vec2::ZERO);
+    }
+
+    #[test]
+    fn zoom_in_from_offset_adjusts_pan_proportionally() {
+        let result = zoom_around_point(
+            1.0, 2.0,
+            egui::pos2(200.0, 175.0),
+            egui::pos2(150.0, 150.0),
+            egui::vec2(200.0, 200.0),
+            egui::vec2(500.0, 500.0),
+        );
+        assert_eq!(result, egui::vec2(50.0, 75.0));
     }
 }
