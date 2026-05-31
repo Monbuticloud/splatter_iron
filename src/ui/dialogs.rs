@@ -447,7 +447,6 @@ impl MyApp {
 mod tests {
     use crate::app::PendingStamp;
     use crate::app::UnsavedWarningAction;
-    use eframe::egui;
     use egui_kittest::kittest::Queryable;
 
     /// Helper: create an app with a temp data dir.
@@ -646,5 +645,133 @@ mod tests {
 
         drop(harness);
         assert!(app.ui.dialogs.pending_large_canvas.is_none());
+    }
+
+    // --- show_stamp_naming_dialog ---
+
+    #[test]
+    fn show_stamp_naming_dialog_renders() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.pending_stamp_name = Some(PendingStamp {
+            name: "mystamp".into(),
+            pixels: vec![],
+            width: 32,
+            height: 32,
+            spacing: 0,
+        });
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_stamp_naming_dialog(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Name Your Stamp");
+        harness.get_by_label("Size: 32×32");
+        harness.get_by_label("Cancel");
+        harness.get_by_label("Add Stamp");
+    }
+
+    #[test]
+    fn show_stamp_naming_dialog_cancel_clears_pending() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.pending_stamp_name = Some(PendingStamp {
+            name: "test".into(),
+            pixels: vec![],
+            width: 16,
+            height: 16,
+            spacing: 0,
+        });
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_stamp_naming_dialog(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Cancel").click();
+        harness.step();
+
+        drop(harness);
+        assert!(app.ui.dialogs.pending_stamp_name.is_none());
+    }
+
+    // --- show_brush_naming_dialog ---
+
+    #[test]
+    fn show_brush_naming_dialog_renders() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.pending_brushes = Some(vec![PendingStamp {
+            name: "brush1".into(),
+            pixels: vec![],
+            width: 8,
+            height: 8,
+            spacing: 50,
+        }]);
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_brush_naming_dialog(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Name Your Brushes");
+        harness.get_by_label("Cancel");
+        harness.get_by_label("Import All");
+    }
+
+    #[test]
+    fn show_brush_naming_dialog_cancel_clears_pending() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.pending_brushes = Some(vec![PendingStamp {
+            name: "b".into(),
+            pixels: vec![],
+            width: 4,
+            height: 4,
+            spacing: 25,
+        }]);
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_brush_naming_dialog(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Cancel").click();
+        harness.step();
+
+        drop(harness);
+        assert!(app.ui.dialogs.pending_brushes.is_none());
+    }
+
+    // --- show_toast ---
+
+    use std::time::Instant;
+
+    #[test]
+    fn show_toast_renders_message() {
+        let (mut app, _dir) = test_app();
+        app.ui.toasts.message = Some(("Hello world".into(), Instant::now()));
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_toast(ui);
+        });
+        harness.step();
+
+        let _msg = harness.get_by_label("Hello world");
+    }
+
+    #[test]
+    fn show_toast_expired_clears_message() {
+        let (mut app, _dir) = test_app();
+        // 99 seconds ago — well past the 2-second expiry.
+        let past = Instant::now()
+            .checked_sub(std::time::Duration::from_secs(99))
+            .unwrap();
+        app.ui.toasts.message = Some(("Expired".into(), past));
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_toast(ui);
+        });
+        harness.step();
+
+        drop(harness);
+        assert!(app.ui.toasts.message.is_none());
     }
 }
