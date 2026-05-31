@@ -273,6 +273,27 @@ mod tests {
         ));
     }
 
+    /// Pressing `C` switches to Circle tool.
+    #[test]
+    fn key_c_selects_circle_tool() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.current_tool = crate::canvas::CurrentTool::Square;
+
+        {
+            let mut harness = egui_kittest::Harness::new_ui(|ui| {
+                app.show_top_panel(ui);
+            });
+            harness.key_press(egui::Key::C);
+            harness.step();
+        }
+
+        assert!(matches!(
+            app.tool_configuration.current_tool,
+            crate::canvas::CurrentTool::Circle
+        ));
+    }
+
     /// All toolbar buttons render without panic.
     #[test]
     fn show_top_panel_renders_buttons() {
