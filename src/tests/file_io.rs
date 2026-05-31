@@ -483,6 +483,27 @@ fn poll_load_import_results_archive_imported_replaces_canvas() {
     assert!(document.canvas.dirty_rect.needs_reblend());
 }
 
+/// `poll_dialog_results` with `ExportArchive` action should trigger async export
+/// and clear the pending action.
+#[test]
+fn poll_dialog_results_export_archive_triggers_export() {
+    let (mut file_io, dialog_sender, _) = test_file_io();
+    file_io.pending_file_action = Some(PendingFileAction::ExportArchive);
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    let dir = tempfile::tempdir().expect("temp dir");
+    let archive_path = dir.path().join("test.splatterarchive");
+    dialog_sender
+        .send(DialogResult::Picked(archive_path))
+        .unwrap();
+    file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+
+    assert!(file_io.pending_file_action.is_none());
+    assert!(errors.is_empty());
+}
+
 /// `autosave_directory` returns `{data_dir}/autosaves`.
 #[test]
 fn autosave_directory_path() {
