@@ -381,3 +381,14 @@ fn parse_brush_file_no_extension() {
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("no extension"));
 }
+
+/// `parse_brush_file` with an unsupported extension returns an error.
+#[test]
+fn parse_brush_file_unsupported_format() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("test.xyz");
+    std::fs::write(&path, b"dummy").expect("write dummy file");
+    let result = crate::tools::brush_parsers::parse_brush_file(&path);
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Unsupported brush format"));
+}
