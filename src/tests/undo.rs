@@ -214,6 +214,25 @@ fn undo_apply_modify_layer_restores_old() {
     assert_eq!(canvas.pixels[0].name, "old_name");
 }
 
+/// `redo_apply` for `ModifyLayer` applies new properties.
+#[test]
+fn redo_apply_modify_layer_applies_new() {
+    let mut canvas = small_white_canvas();
+    let record = UndoRecord::ModifyLayer {
+        index: 0,
+        old_visible: true,
+        old_opacity: 128,
+        old_name: "old_name".to_string(),
+        new_visible: false,
+        new_opacity: 255,
+        new_name: "new_name".to_string(),
+    };
+    undo::redo_apply(&mut canvas, &record);
+    assert!(!canvas.pixels[0].visible);
+    assert_eq!(canvas.pixels[0].opacity, 255);
+    assert_eq!(canvas.pixels[0].name, "new_name");
+}
+
 /// `undo_apply` with a uniform run stored as `BeforePixels::All` should restore correctly.
 #[test]
 fn undo_apply_before_pixels_all_restores() {
