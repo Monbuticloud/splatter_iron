@@ -499,6 +499,14 @@ fn debug_before_pixels_all_format() {
     assert!(s.contains("FF"), "debug should contain hex color, got: {s}");
 }
 
+/// `Debug` for `BeforePixels::Many` produces expected format with length.
+#[test]
+fn debug_before_pixels_many_format() {
+    let bp = crate::undo::BeforePixels::Many(vec![Color32::RED; 5]);
+    let s = format!("{bp:?}");
+    assert!(s.contains("Many") && s.contains("5"));
+}
+
 /// `redo_apply` with empty run.
 #[test]
 fn redo_apply_empty_run_noop() {
