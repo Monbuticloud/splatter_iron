@@ -312,6 +312,24 @@ fn undo_apply_delete_layer_restores_layer() {
     assert_eq!(canvas.pixels[0].name, "deleted");
 }
 
+/// `redo_apply` for `DeleteLayer` re-removes the layer.
+#[test]
+fn redo_apply_delete_layer_removes_layer() {
+    let mut canvas = small_white_canvas();
+    let record = UndoRecord::DeleteLayer {
+        index: 0,
+        layer: Box::new(crate::canvas::Layer {
+            pixels: vec![Color32::TRANSPARENT; 100],
+            name: "deleted".to_string(),
+            visible: true,
+            opacity: 255,
+        }),
+    };
+    undo::undo_apply(&mut canvas, &record);
+    undo::redo_apply(&mut canvas, &record);
+    assert_eq!(canvas.pixels.len(), 1);
+}
+
 /// `redo_apply` for `AddLayer` re-inserts the layer at the correct index.
 #[test]
 fn redo_apply_add_layer_restores_layer() {
