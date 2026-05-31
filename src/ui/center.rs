@@ -122,6 +122,10 @@ fn draw_circle_preview(
     );
 }
 
+/// Draw a square brush preview at the cursor position.
+///
+/// Renders a filled rectangle with the current brush radius and color,
+/// using a semi-transparent fill and an opaque border stroke.
 fn draw_square_preview(
     ui: &egui::Ui,
     response: &egui::Response,
