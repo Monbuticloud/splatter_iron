@@ -9,6 +9,7 @@ use crate::app::EXPORT_FORMATS;
 use crate::app::ExportInformation;
 use crate::app::IMPORT_EXTENSIONS;
 use crate::app::DialogState;
+use crate::app::ErrorState;
 use crate::app::PendingStamp;
 use crate::app::UIState;
 use crate::canvas::RenderState;
@@ -154,6 +155,13 @@ fn dialog_state_default() {
     assert!(state.pending_brushes.is_none());
     assert!(state.pending_unsaved_action.is_none());
     assert!(state.pending_after_save.is_none());
+}
+
+/// `ErrorState::default()` initialises with an empty list.
+#[test]
+fn error_state_default() {
+    let state = ErrorState::default();
+    assert!(state.list.is_empty());
 }
 
 /// `PersistedConfig` roundtrips through `serde_json`.
