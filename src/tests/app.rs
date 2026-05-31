@@ -9,6 +9,8 @@ use crate::app::DialogState;
 use crate::app::ErrorState;
 use crate::app::EXPORT_FORMATS;
 use crate::app::ExportInformation;
+use crate::app::CANVAS_EXTENSION;
+use crate::app::ARCHIVE_EXTENSION;
 use crate::app::IMPORT_EXTENSIONS;
 use crate::app::NEW_CANVAS_PRESETS;
 use crate::app::PendingStamp;
@@ -213,6 +215,18 @@ fn new_canvas_presets_are_valid() {
         assert!(*width > 0, "preset {name} width should be > 0");
         assert!(*height > 0, "preset {name} height should be > 0");
     }
+}
+
+/// App identity and file-extension constants have expected values.
+#[test]
+fn app_constants_are_correct() {
+    assert_eq!(crate::app::APP_QUALIFIER, "com");
+    assert_eq!(crate::app::APP_ORGANIZATION, "Monbuticloud");
+    assert_eq!(crate::app::APP_NAME, "SplatterIron");
+    assert!(CANVAS_EXTENSION.starts_with('.'));
+    assert!(ARCHIVE_EXTENSION.starts_with('.'));
+    assert_eq!(CANVAS_EXTENSION, ".splattercanvas");
+    assert_eq!(ARCHIVE_EXTENSION, ".splatterarchive");
 }
 
 /// `PersistedConfig` roundtrips through `serde_json`.
