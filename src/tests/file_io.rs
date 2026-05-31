@@ -364,3 +364,11 @@ fn poll_save_results_manual_save_empty_path() {
     // Path should be set to empty string representation
     assert!(errors.is_empty());
 }
+
+/// `autosave_directory` returns `{data_dir}/autosaves`.
+#[test]
+fn autosave_directory_path() {
+    let (file_io, _, _) = test_file_io();
+    let expected = PathBuf::from("/tmp").join("autosaves");
+    assert_eq!(file_io.autosave_directory(), expected);
+}
