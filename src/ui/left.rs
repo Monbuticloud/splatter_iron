@@ -262,7 +262,9 @@ impl MyApp {
 mod tests {
     use super::SELECTED_TOOL_COLOR;
     use super::THUMBNAIL_SIZE;
+    use super::MyApp;
     use eframe::egui;
+    use egui_kittest::kittest::Queryable;
 
     #[test]
     fn selected_tool_color_is_purple() {
@@ -272,5 +274,56 @@ mod tests {
     #[test]
     fn thumbnail_size_is_positive() {
         assert!(THUMBNAIL_SIZE > 0.0);
+    }
+
+    #[test]
+    fn render_gallery_shows_entry_names() {
+        let mut cmd_select = None;
+        let mut cmd_delete = None;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            MyApp::render_gallery(
+                ui,
+                2,
+                Some(0),
+                |i| match i {
+                    0 => ("Alpha".into(), None, 32, 32),
+                    _ => ("Beta".into(), None, 64, 64),
+                },
+                &mut cmd_select,
+                &mut cmd_delete,
+            );
+        });
+        harness.run();
+
+        // get_by_label panics if not found; we assert by not panicking.
+        let _alpha = harness.get_by_label("Alpha");
+        let _beta = harness.get_by_label("Beta");
+        let _sz32 = harness.get_by_label("32×32");
+        let _sz64 = harness.get_by_label("64×64");
+    }
+
+    #[test]
+    fn render_gallery_click_delete_removes_entry() {
+        let mut cmd_select: Option<usize> = None;
+        let mut cmd_delete: Option<usize> = None;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            MyApp::render_gallery(
+                ui,
+                1,
+                None,
+                |_i| ("First".into(), None, 10, 10),
+                &mut cmd_select,
+                &mut cmd_delete,
+            );
+        });
+        harness.run();
+
+        harness.get_by_label("Delete").click();
+        harness.run();
+
+        drop(harness);
+        assert_eq!(cmd_delete, Some(0));
     }
 }
