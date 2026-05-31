@@ -216,3 +216,84 @@ impl MyApp {
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::UNDO_REDO_RANGE;
+    use super::BRUSH_RADIUS_RANGE;
+    use super::LayerAction;
+
+    #[test]
+    fn undo_redo_range_start_less_than_or_equal_end() {
+        assert!(UNDO_REDO_RANGE.start() <= UNDO_REDO_RANGE.end());
+        assert!(*UNDO_REDO_RANGE.start() >= 1);
+        assert!(*UNDO_REDO_RANGE.end() <= 100);
+    }
+
+    #[test]
+    fn brush_radius_range_start_less_than_or_equal_end() {
+        assert!(BRUSH_RADIUS_RANGE.start() <= BRUSH_RADIUS_RANGE.end());
+        assert!(*BRUSH_RADIUS_RANGE.end() <= 1000);
+    }
+
+    #[test]
+    fn layer_action_delete_holds_index() {
+        let action = LayerAction::Delete(42);
+        if let LayerAction::Delete(index) = action {
+            assert_eq!(index, 42);
+        } else {
+            panic!("expected Delete variant");
+        }
+    }
+
+    #[test]
+    fn layer_action_move_up_holds_index() {
+        let action = LayerAction::MoveUp(1);
+        if let LayerAction::MoveUp(index) = action {
+            assert_eq!(index, 1);
+        } else {
+            panic!("expected MoveUp variant");
+        }
+    }
+
+    #[test]
+    fn layer_action_move_down_holds_index() {
+        let action = LayerAction::MoveDown(2);
+        if let LayerAction::MoveDown(index) = action {
+            assert_eq!(index, 2);
+        } else {
+            panic!("expected MoveDown variant");
+        }
+    }
+
+    #[test]
+    fn layer_action_select_holds_index() {
+        let action = LayerAction::Select(3);
+        if let LayerAction::Select(index) = action {
+            assert_eq!(index, 3);
+        } else {
+            panic!("expected Select variant");
+        }
+    }
+
+    #[test]
+    fn layer_action_toggle_visible_holds_index() {
+        let action = LayerAction::ToggleVisible(4);
+        if let LayerAction::ToggleVisible(index) = action {
+            assert_eq!(index, 4);
+        } else {
+            panic!("expected ToggleVisible variant");
+        }
+    }
+
+    #[test]
+    fn layer_action_rename_holds_index_and_name() {
+        let action = LayerAction::Rename(5, "test".into());
+        if let LayerAction::Rename(index, name) = action {
+            assert_eq!(index, 5);
+            assert_eq!(name, "test");
+        } else {
+            panic!("expected Rename variant");
+        }
+    }
+}
