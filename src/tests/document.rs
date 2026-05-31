@@ -410,3 +410,13 @@ fn toggle_layer_visible_hides_layer() {
     document.toggle_layer_visible(1, &mut UndoHistory::new(100));
     assert!(!document.canvas.pixels[1].visible);
 }
+
+/// `toggle_layer_visible` refuses to hide the last visible layer.
+#[test]
+fn toggle_layer_visible_keeps_last_visible() {
+    let mut document = small_document();
+    assert!(document.canvas.pixels[0].visible);
+    // Only one layer visible — should not be hidden
+    document.toggle_layer_visible(0, &mut UndoHistory::new(100));
+    assert!(document.canvas.pixels[0].visible, "last visible layer stays visible");
+}
