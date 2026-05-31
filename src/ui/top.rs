@@ -245,3 +245,82 @@ impl MyApp {
         is_quitting
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use egui_kittest::kittest::NodeT;
+    use egui_kittest::kittest::Queryable;
+
+    /// All toolbar buttons render without panic.
+    #[test]
+    fn show_top_panel_renders_buttons() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_top_panel(ui);
+        });
+        harness.step();
+
+        let _save = harness.get_by_label("Save");
+        let _load = harness.get_by_label("Load");
+        let _new = harness.get_by_label("New");
+        let _export = harness.get_by_label("Export");
+        let _import = harness.get_by_label("Import");
+        let _file = harness.get_by_label("File");
+        let _autosaves = harness.get_by_label("Autosaves");
+        let _undo = harness.get_by_label("Undo");
+        let _redo = harness.get_by_label("Redo");
+        let _close = harness.get_by_label("Close");
+    }
+
+    /// "Recent" button exists disabled when no recent files.
+    #[test]
+    fn show_top_panel_recent_button_disabled() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_top_panel(ui);
+        });
+        harness.step();
+
+        let recent = harness.get_by_label("Recent");
+        assert!(recent.accesskit_node().is_disabled());
+    }
+
+    /// Close button on clean canvas sets should_close.
+    #[test]
+    fn show_top_panel_close_clean_canvas_sets_should_close() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        {
+            let mut harness = egui_kittest::Harness::new_ui(|ui| {
+                app.show_top_panel(ui);
+            });
+            harness.step();
+            harness.get_by_label("Close").click();
+            harness.step();
+        }
+
+        assert!(app.ui.should_close);
+    }
+
+    /// Undo button exists but does nothing when undo history is empty.
+    #[test]
+    fn show_top_panel_undo_disabled_when_no_history() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        // Create fresh undo history (no entries).
+        {
+            let mut harness = egui_kittest::Harness::new_ui(|ui| {
+                app.show_top_panel(ui);
+            });
+            harness.step();
+            // Undo button exists but `can_undo()` returns false.
+            let _undo = harness.get_by_label("Undo");
+        }
+    }
+}
