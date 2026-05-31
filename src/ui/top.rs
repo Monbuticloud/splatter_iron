@@ -294,6 +294,27 @@ mod tests {
         ));
     }
 
+    /// Pressing `G` switches to BucketFill tool.
+    #[test]
+    fn key_g_selects_bucket_fill_tool() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.current_tool = crate::canvas::CurrentTool::Circle;
+
+        {
+            let mut harness = egui_kittest::Harness::new_ui(|ui| {
+                app.show_top_panel(ui);
+            });
+            harness.key_press(egui::Key::G);
+            harness.step();
+        }
+
+        assert!(matches!(
+            app.tool_configuration.current_tool,
+            crate::canvas::CurrentTool::BucketFill
+        ));
+    }
+
     /// All toolbar buttons render without panic.
     #[test]
     fn show_top_panel_renders_buttons() {
