@@ -94,6 +94,30 @@ fn compute_canvas_rect(
     (draw_size, Rect::from_min_size(canvas_pos, draw_size))
 }
 
+fn draw_circle_preview(
+    ui: &egui::Ui,
+    response: &egui::Response,
+    pixel_x: u32,
+    pixel_y: u32,
+    draw_size: egui::Vec2,
+    radius: u32,
+    color: Color32,
+    canvas_width: u32,
+    canvas_height: u32,
+) {
+    let center_screen_x = response.rect.min.x
+        + (pixel_x as f32) * (draw_size.x / (canvas_width as f32));
+    let center_screen_y = response.rect.min.y
+        + (pixel_y as f32) * (draw_size.y / (canvas_height as f32));
+    let screen_radius = (radius as f32) * (draw_size.x / (canvas_width as f32));
+
+    ui.painter().circle_stroke(
+        Pos2::new(center_screen_x, center_screen_y),
+        screen_radius,
+        egui::Stroke::new(PREVIEW_STROKE_WIDTH, color),
+    );
+}
+
 impl MyApp {
     /// Render the central canvas panel.
     ///
@@ -294,20 +318,16 @@ impl MyApp {
 
             match self.tool_configuration.current_tool {
                 CurrentTool::Circle | CurrentTool::CircleEraser => {
-                    let center_screen_x = response.rect.min.x
-                        + (pixel_x as f32) * (draw_size.x / (self.document.canvas.width as f32));
-                    let center_screen_y = response.rect.min.y
-                        + (pixel_y as f32) * (draw_size.y / (self.document.canvas.height as f32));
-                    let screen_radius = (self.tool_configuration.radius as f32)
-                        * (draw_size.x / (self.document.canvas.width as f32));
-
-                    ui.painter().circle_stroke(
-                        Pos2::new(center_screen_x, center_screen_y),
-                        screen_radius,
-                        egui::Stroke::new(
-                            PREVIEW_STROKE_WIDTH,
-                            self.tool_configuration.current_color,
-                        ),
+                    draw_circle_preview(
+                        ui,
+                        &response,
+                        pixel_x,
+                        pixel_y,
+                        draw_size,
+                        self.tool_configuration.radius,
+                        self.tool_configuration.current_color,
+                        self.document.canvas.width,
+                        self.document.canvas.height,
                     );
                 }
 
