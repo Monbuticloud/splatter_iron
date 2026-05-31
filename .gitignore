@@ -5,4 +5,4 @@ zig
 profile.json.gz
 .DS_Store
 docs/deps
-.DS_Store
+cobertura.xml
