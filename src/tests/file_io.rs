@@ -442,6 +442,26 @@ fn poll_save_results_manual_save_empty_path() {
     assert!(errors.is_empty());
 }
 
+/// `poll_save_results` with `ArchiveAutosave` leaves dirty flag unchanged but clears
+/// `archive_autosave_in_flight`.
+#[test]
+fn poll_save_results_archive_autosave_does_not_clear_dirty() {
+    let (mut file_io, _, save_sender) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    document.dirty_since_last_autosave = true;
+    let mut errors = Vec::new();
+    file_io.archive_autosave_in_flight = true;
+
+    save_sender.send(SaveResult::ArchiveAutosave).unwrap();
+    file_io.poll_save_results(&mut document, &mut errors);
+
+    assert!(document.dirty_since_last_autosave,
+        "archive autosave should not clear dirty flag");
+    assert!(!file_io.archive_autosave_in_flight,
+        "archive_autosave_in_flight should be cleared");
+    assert!(errors.is_empty());
+}
+
 /// `autosave_directory` returns `{data_dir}/autosaves`.
 #[test]
 fn autosave_directory_path() {
