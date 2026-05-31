@@ -1032,6 +1032,7 @@ mod tests {
     use super::compute_canvas_rect;
     use super::draw_circle_preview;
     use super::draw_grid_overlay;
+    use super::draw_square_preview;
     use super::stamp_tip_preview;
     use super::uv_to_pixel;
     use super::zoom_around_point;
@@ -1086,6 +1087,25 @@ mod tests {
             let response =
                 ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
             draw_circle_preview(
+                ui,
+                &response,
+                5,
+                5,
+                egui::vec2(100.0, 100.0),
+                10,
+                egui::Color32::RED,
+                100,
+                100,
+            );
+        });
+    }
+
+    #[test]
+    fn draw_square_preview_renders_without_panic() {
+        egui::__run_test_ui(|ui| {
+            let response =
+                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            draw_square_preview(
                 ui,
                 &response,
                 5,
