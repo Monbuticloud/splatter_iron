@@ -11,6 +11,7 @@ use crate::app::EXPORT_FORMATS;
 use crate::app::ExportInformation;
 use crate::app::IMPORT_EXTENSIONS;
 use crate::app::PendingStamp;
+use crate::app::ProgressState;
 use crate::app::ToastState;
 use crate::app::UIState;
 use crate::app::UnsavedWarningAction;
@@ -187,6 +188,20 @@ fn unsaved_warning_action_variants() {
     assert_eq!(format!("{load:?}"), "Load");
     assert_eq!(format!("{import:?}"), "Import");
     assert!(format!("{load_path:?}").contains("test.splattercanvas"));
+}
+
+/// `ProgressState` variants are distinct and Debug produces variant names.
+#[test]
+fn progress_state_variants() {
+    assert_ne!(ProgressState::Idle, ProgressState::Saving);
+    assert_ne!(ProgressState::Autosaving, ProgressState::Exporting);
+    assert_ne!(ProgressState::Loading, ProgressState::Importing);
+    assert_eq!(format!("{:?}", ProgressState::Idle), "Idle");
+    assert_eq!(format!("{:?}", ProgressState::Saving), "Saving");
+    assert_eq!(format!("{:?}", ProgressState::Autosaving), "Autosaving");
+    assert_eq!(format!("{:?}", ProgressState::Exporting), "Exporting");
+    assert_eq!(format!("{:?}", ProgressState::Loading), "Loading");
+    assert_eq!(format!("{:?}", ProgressState::Importing), "Importing");
 }
 
 /// `PersistedConfig` roundtrips through `serde_json`.
