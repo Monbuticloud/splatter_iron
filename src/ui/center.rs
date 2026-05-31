@@ -1072,6 +1072,25 @@ mod tests {
     }
 
     #[test]
+    fn draw_circle_preview_zero_radius_does_not_panic() {
+        egui::__run_test_ui(|ui| {
+            let response =
+                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            draw_circle_preview(
+                ui,
+                &response,
+                50,
+                50,
+                egui::vec2(100.0, 100.0),
+                0,
+                egui::Color32::BLUE,
+                100,
+                100,
+            );
+        });
+    }
+
+    #[test]
     fn preview_fill_alpha_is_between_zero_and_one() {
         assert!(PREVIEW_FILL_ALPHA_FACTOR > 0.0 && PREVIEW_FILL_ALPHA_FACTOR < 1.0);
     }
