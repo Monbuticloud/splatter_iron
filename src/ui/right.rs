@@ -222,6 +222,7 @@ mod tests {
     use super::UNDO_REDO_RANGE;
     use super::BRUSH_RADIUS_RANGE;
     use super::LayerAction;
+    use egui_kittest::kittest::Queryable;
 
     #[test]
     fn undo_redo_range_start_less_than_or_equal_end() {
@@ -295,5 +296,35 @@ mod tests {
         } else {
             panic!("expected Rename variant");
         }
+    }
+
+    #[test]
+    fn show_right_panel_renders_settings_headers() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_right_panel(ui);
+        });
+        harness.step();
+
+        let _settings = harness.get_by_label("Settings");
+        let _color = harness.get_by_label("Color Selector");
+        let _brush = harness.get_by_label("::Brush Settings::");
+        let _add = harness.get_by_label("Add Layer");
+    }
+
+    #[test]
+    fn show_right_panel_renders_layer_zero() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_right_panel(ui);
+        });
+        harness.step();
+
+        // Default layer shows "Layer 1" (1-indexed display)
+        harness.get_by_label("Layer 1");
     }
 }
