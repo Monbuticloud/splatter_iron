@@ -6,57 +6,22 @@
 //! `handle_config_save` respects the autosave interval.
 
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::mpsc;
 use std::time::Duration;
 
 use eframe::egui::Color32;
 
 use crate::app::MyApp;
 use crate::app::PersistedConfig;
-use crate::app::UIState;
-use crate::asset_library::Library;
-use crate::canvas::Canvas;
 use crate::canvas::CurrentTool;
-use crate::document::Document;
-use crate::file_io::FileIO;
-use crate::files::DefaultExportStrategy;
-use crate::tool_configuration::ToolConfiguration;
-use crate::undo_history::UndoHistory;
+use crate::tests::common::create_test_app;
 
-/// Build a `MyApp` rooted at `data_dir` so persistence methods write
-/// into the temporary directory. The returned `TempDir` must stay alive
-/// for the lifetime of the app.
+/// Build a `MyApp` rooted at a temp directory. The returned `TempDir` must
+/// stay alive for the lifetime of the app.
 fn app_with_temp_data_dir() -> (MyApp, tempfile::TempDir) {
     let dir = tempfile::tempdir().expect("temp dir");
-    let data_dir = dir.path().to_path_buf();
-    let canvas = Canvas::new(10, 10);
-    let pixel_count = (canvas.width * canvas.height) as usize;
-    let (dialog_tx, dialog_rx) = mpsc::channel();
-    let (save_tx, save_rx) = mpsc::channel();
-
-    let app = MyApp {
-        document: Document::new(canvas),
-        tool_configuration: ToolConfiguration::default(),
-        undo: UndoHistory::new(pixel_count),
-        file_io: FileIO::new(
-            dialog_tx,
-            dialog_rx,
-            save_tx,
-            save_rx,
-            data_dir.clone(),
-            Arc::new(DefaultExportStrategy),
-        ),
-        ui: UIState::default(),
-        gpu_texture: None,
-        stamp_library: Library::load_from_disk(&data_dir),
-        brush_library: Library::load_from_disk(&data_dir),
-    };
-
+    let app = create_test_app(dir.path().to_path_buf());
     (app, dir)
 }
-
-// --- push_recent_file ---
 
 /// Adding an empty path is a no-op.
 #[test]

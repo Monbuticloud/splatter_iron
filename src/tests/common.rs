@@ -3,13 +3,51 @@
 //! Used by all other test modules to reduce boilerplate when constructing
 //! predictable input state.
 
-use eframe::egui::Color32;
-
-use crate::canvas::Canvas;
-use crate::canvas::DirtyRectList;
+use std::path::PathBuf;
+use std::sync::mpsc;
 use std::sync::Arc;
 
+use eframe::egui::Color32;
+
+use crate::app::MyApp;
+use crate::app::UIState;
+use crate::asset_library::Library;
+use crate::canvas::Canvas;
+use crate::canvas::DirtyRectList;
 use crate::canvas::Layer;
+use crate::document::Document;
+use crate::file_io::FileIO;
+use crate::files::DefaultExportStrategy;
+use crate::tool_configuration::ToolConfiguration;
+use crate::undo_history::UndoHistory;
+
+/// Build a `MyApp` rooted at `data_dir` so persistence methods write
+/// into the temporary directory. The returned `TempDir` must stay alive
+/// for the lifetime of the app.
+pub fn create_test_app(data_dir: PathBuf) -> MyApp {
+    let canvas = Canvas::new(10, 10);
+    let pixel_count = (canvas.width * canvas.height) as usize;
+    let (dialog_tx, dialog_rx) = mpsc::channel();
+    let (save_tx, save_rx) = mpsc::channel();
+
+    MyApp {
+        document: Document::new(canvas),
+        tool_configuration: ToolConfiguration::default(),
+        undo: UndoHistory::new(pixel_count),
+        file_io: FileIO::new(
+            dialog_tx,
+            dialog_rx,
+            save_tx,
+            save_rx,
+            data_dir.clone(),
+            Arc::new(DefaultExportStrategy),
+        ),
+        ui: UIState::default(),
+        gpu_texture: None,
+        stamp_library: Library::load_from_disk(&data_dir),
+        brush_library: Library::load_from_disk(&data_dir),
+    }
+}
 
 /// Build a 10×10 single-layer transparent canvas for use in tests.
 ///
