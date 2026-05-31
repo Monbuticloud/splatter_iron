@@ -37,6 +37,18 @@ const ACTIVE_DURATION_MILLISECONDS: u64 = 550;
 const CANVAS_BORDER_WIDTH: f32 = 2.0;
 const CANVAS_BORDER_COLOR: Color32 = Color32::from_rgb(128, 0, 128);
 
+/// Convert UV coordinates (0..1) to canvas pixel coordinates, clamped to
+/// the valid pixel range.
+fn uv_to_pixel(uv: egui::Vec2, canvas_width: u32, canvas_height: u32) -> (u32, u32) {
+    let pixel_x = (uv.x * (canvas_width as f32))
+        .floor()
+        .min((canvas_width - 1) as f32) as u32;
+    let pixel_y = (uv.y * (canvas_height as f32))
+        .floor()
+        .min((canvas_height - 1) as f32) as u32;
+    (pixel_x, pixel_y)
+}
+
 impl MyApp {
     /// Render the central canvas panel.
     ///
@@ -248,12 +260,11 @@ impl MyApp {
                 local_position.y / response.rect.height(),
             );
 
-            let raw_pixel_x = (uv.x * (self.document.canvas.width as f32))
-                .floor()
-                .min((self.document.canvas.width - 1) as f32) as u32;
-            let raw_pixel_y = (uv.y * (self.document.canvas.height as f32))
-                .floor()
-                .min((self.document.canvas.height - 1) as f32) as u32;
+            let (raw_pixel_x, raw_pixel_y) = uv_to_pixel(
+                uv,
+                self.document.canvas.width,
+                self.document.canvas.height,
+            );
 
             let dt = ui.input(|i| i.unstable_dt);
             let (pixel_x, pixel_y) = self.stabilized_pixel(raw_pixel_x, raw_pixel_y, dt);
@@ -410,14 +421,11 @@ impl MyApp {
                     local_position.y / response.rect.height(),
                 );
 
-                let pixel_x = (uv.x * (self.document.canvas.width as f32))
-                    .floor()
-                    .min((self.document.canvas.width - 1) as f32)
-                    as u32;
-                let pixel_y = (uv.y * (self.document.canvas.height as f32))
-                    .floor()
-                    .min((self.document.canvas.height - 1) as f32)
-                    as u32;
+                let (pixel_x, pixel_y) = uv_to_pixel(
+                    uv,
+                    self.document.canvas.width,
+                    self.document.canvas.height,
+                );
 
                 let canvas = Arc::make_mut(&mut self.document.canvas);
                 canvas.dirty_rect.request_full_blend();
@@ -441,14 +449,11 @@ impl MyApp {
                     local_position.x / response.rect.width(),
                     local_position.y / response.rect.height(),
                 );
-                let pixel_x = (uv.x * (self.document.canvas.width as f32))
-                    .floor()
-                    .min((self.document.canvas.width - 1) as f32)
-                    as u32;
-                let pixel_y = (uv.y * (self.document.canvas.height as f32))
-                    .floor()
-                    .min((self.document.canvas.height - 1) as f32)
-                    as u32;
+                let (pixel_x, pixel_y) = uv_to_pixel(
+                    uv,
+                    self.document.canvas.width,
+                    self.document.canvas.height,
+                );
                 let w = self.document.canvas.width;
                 let index = ((pixel_y * w + pixel_x) as usize) * 4;
                 let rgba = &self.document.canvas.output_rgba;
@@ -477,14 +482,11 @@ impl MyApp {
                     local_position.y / response.rect.height(),
                 );
 
-                let raw_x = (uv.x * (self.document.canvas.width as f32))
-                    .floor()
-                    .min((self.document.canvas.width - 1) as f32)
-                    as u32;
-                let raw_y = (uv.y * (self.document.canvas.height as f32))
-                    .floor()
-                    .min((self.document.canvas.height - 1) as f32)
-                    as u32;
+                let (raw_x, raw_y) = uv_to_pixel(
+                    uv,
+                    self.document.canvas.width,
+                    self.document.canvas.height,
+                );
 
                 if !matches!(
                     self.tool_configuration.current_tool,
@@ -901,4 +903,59 @@ fn stamp_tip_preview(
         egui::Stroke::new(PREVIEW_STROKE_WIDTH, border_color),
         StrokeKind::Middle,
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::uv_to_pixel;
+    use eframe::egui;
+
+    #[test]
+    fn uv_top_left_returns_zero_zero() {
+        assert_eq!(uv_to_pixel(egui::Vec2::ZERO, 100, 200), (0, 0));
+    }
+
+    #[test]
+    fn uv_bottom_right_returns_max_minus_one() {
+        assert_eq!(
+            uv_to_pixel(egui::Vec2::new(1.0, 1.0), 100, 200),
+            (99, 199)
+        );
+    }
+
+    #[test]
+    fn uv_center_returns_half_dimensions() {
+        assert_eq!(
+            uv_to_pixel(egui::Vec2::new(0.5, 0.5), 100, 200),
+            (50, 100)
+        );
+    }
+
+    #[test]
+    fn uv_quarter_returns_correct_coordinates() {
+        assert_eq!(
+            uv_to_pixel(egui::Vec2::new(0.25, 0.75), 100, 200),
+            (25, 150)
+        );
+    }
+
+    #[test]
+    fn uv_one_by_one_canvas() {
+        assert_eq!(
+            uv_to_pixel(egui::Vec2::new(0.0, 0.0), 1, 1),
+            (0, 0)
+        );
+        assert_eq!(
+            uv_to_pixel(egui::Vec2::new(1.0, 1.0), 1, 1),
+            (0, 0)
+        );
+    }
+
+    #[test]
+    fn uv_clamps_above_one() {
+        assert_eq!(
+            uv_to_pixel(egui::Vec2::new(2.0, 3.0), 100, 200),
+            (99, 199)
+        );
+    }
 }
