@@ -430,3 +430,13 @@ fn toggle_layer_visible_shows_hidden_layer() {
     document.toggle_layer_visible(1, &mut UndoHistory::new(100));
     assert!(document.canvas.pixels[1].visible);
 }
+
+/// `toggle_layer_visible` requests a full re-blend.
+#[test]
+fn toggle_layer_visible_triggers_blend() {
+    let mut document = small_document();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.canvas_mut().dirty_rect.clear();
+    document.toggle_layer_visible(1, &mut UndoHistory::new(100));
+    assert!(document.canvas_mut().dirty_rect.needs_reblend());
+}
