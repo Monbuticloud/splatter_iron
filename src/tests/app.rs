@@ -11,6 +11,7 @@ use crate::app::IMPORT_EXTENSIONS;
 use crate::app::DialogState;
 use crate::app::ErrorState;
 use crate::app::PendingStamp;
+use crate::app::ToastState;
 use crate::app::UIState;
 use crate::canvas::RenderState;
 
@@ -162,6 +163,13 @@ fn dialog_state_default() {
 fn error_state_default() {
     let state = ErrorState::default();
     assert!(state.list.is_empty());
+}
+
+/// `ToastState::default()` initialises with no message.
+#[test]
+fn toast_state_default() {
+    let state = ToastState::default();
+    assert!(state.message.is_none());
 }
 
 /// `PersistedConfig` roundtrips through `serde_json`.
