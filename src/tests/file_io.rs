@@ -302,6 +302,27 @@ fn queue_file_action_save_sets_pending() {
     let _ = file_io.pending_file_action.take();
 }
 
+/// `poll_load_import_results` with Failed appends error and clears flight flags.
+#[test]
+fn poll_load_import_results_failed_appends_error() {
+    let (mut file_io, _, _) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    file_io
+        .load_import_sender
+        .send(crate::file_io::LoadImportResult::Failed(
+            "import failed".to_string(),
+        ))
+        .unwrap();
+    file_io.poll_load_import_results(&mut document, &mut undo, &mut errors);
+
+    assert!(errors.iter().any(|e| e.contains("import failed")));
+    assert!(!file_io.load_in_flight);
+    assert!(!file_io.import_in_flight);
+}
+
 /// `queue_file_action` with LoadStamp should set pending_file_action.
 #[test]
 fn queue_file_action_load_stamp_sets_pending() {
