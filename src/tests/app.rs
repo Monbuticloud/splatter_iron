@@ -10,6 +10,7 @@ use crate::app::ErrorState;
 use crate::app::EXPORT_FORMATS;
 use crate::app::ExportInformation;
 use crate::app::IMPORT_EXTENSIONS;
+use crate::app::NEW_CANVAS_PRESETS;
 use crate::app::PendingStamp;
 use crate::app::ProgressState;
 use crate::app::ToastState;
@@ -202,6 +203,16 @@ fn progress_state_variants() {
     assert_eq!(format!("{:?}", ProgressState::Exporting), "Exporting");
     assert_eq!(format!("{:?}", ProgressState::Loading), "Loading");
     assert_eq!(format!("{:?}", ProgressState::Importing), "Importing");
+}
+
+/// `NEW_CANVAS_PRESETS` entries have non-empty names and non-zero dimensions.
+#[test]
+fn new_canvas_presets_are_valid() {
+    for (name, width, height) in NEW_CANVAS_PRESETS {
+        assert!(!name.is_empty(), "preset name should be non-empty");
+        assert!(*width > 0, "preset {name} width should be > 0");
+        assert!(*height > 0, "preset {name} height should be > 0");
+    }
 }
 
 /// `PersistedConfig` roundtrips through `serde_json`.
