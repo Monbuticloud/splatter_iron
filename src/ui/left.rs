@@ -257,3 +257,20 @@ impl MyApp {
             });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::SELECTED_TOOL_COLOR;
+    use super::THUMBNAIL_SIZE;
+    use eframe::egui;
+
+    #[test]
+    fn selected_tool_color_is_purple() {
+        assert_eq!(SELECTED_TOOL_COLOR, egui::Color32::from_rgb(128, 0, 128));
+    }
+
+    #[test]
+    fn thumbnail_size_is_positive() {
+        assert!(THUMBNAIL_SIZE > 0.0);
+    }
+}
