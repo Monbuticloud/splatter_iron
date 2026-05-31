@@ -311,6 +311,15 @@ fn queue_file_action_load_stamp_sets_pending() {
     let _ = file_io.pending_file_action.take();
 }
 
+/// `queue_file_action` with Export sets pending_file_action.
+#[test]
+fn queue_file_action_export_sets_pending() {
+    let (mut file_io, _, _) = test_file_io();
+    file_io.queue_file_action(PendingFileAction::Export(0));
+    assert!(file_io.pending_file_action.is_some());
+    let _ = file_io.pending_file_action.take();
+}
+
 /// `save_to_current_path` with a non-empty path should call trigger_async_save.
 #[test]
 fn save_to_current_path_non_empty_triggers_save() {
