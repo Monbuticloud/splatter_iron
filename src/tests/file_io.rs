@@ -462,6 +462,27 @@ fn poll_save_results_archive_autosave_does_not_clear_dirty() {
     assert!(errors.is_empty());
 }
 
+/// `poll_load_import_results` with `ArchiveImported` replaces the document canvas.
+#[test]
+fn poll_load_import_results_archive_imported_replaces_canvas() {
+    let (mut file_io, _, _) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    let imported = Canvas::new(5, 7);
+    file_io
+        .load_import_sender
+        .send(crate::file_io::LoadImportResult::ArchiveImported(imported))
+        .unwrap();
+    file_io.poll_load_import_results(&mut document, &mut undo, &mut errors);
+
+    assert!(errors.is_empty(), "errors: {errors:?}");
+    assert_eq!(document.canvas.width, 5);
+    assert_eq!(document.canvas.height, 7);
+    assert!(document.canvas.dirty_rect.needs_reblend());
+}
+
 /// `autosave_directory` returns `{data_dir}/autosaves`.
 #[test]
 fn autosave_directory_path() {
