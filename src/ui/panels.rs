@@ -20,3 +20,28 @@ impl MyApp {
         is_quitting
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use egui_kittest::kittest::Queryable;
+
+    #[test]
+    fn show_panels_renders_all_panels() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_panels(ui);
+        });
+        harness.step();
+
+        // Top panel buttons
+        harness.get_by_label("Save");
+        // Left panel buttons
+        harness.get_by_label("Square Tool");
+        // Right panel labels
+        harness.get_by_label("Settings");
+        // Status line in centre panel
+        harness.get_by_label("10×10");
+    }
+}
