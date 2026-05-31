@@ -364,6 +364,20 @@ fn poll_export_results_success_returns_true() {
     assert!(!file_io.export_in_flight);
 }
 
+/// `poll_export_results` pushes errors to the error list.
+#[test]
+fn poll_export_results_error_appends() {
+    let (mut file_io, _, _) = test_file_io();
+    let mut errors = Vec::new();
+    let error: anyhow::Result<()> = Err(anyhow::anyhow!("export failed"));
+    file_io
+        .export_result_sender
+        .send(error)
+        .expect("send error");
+    assert!(file_io.poll_export_results(&mut errors));
+    assert!(errors.iter().any(|e| e.contains("export failed")));
+}
+
 /// `poll_save_results` with manual save sets document path even if it's empty.
 #[test]
 fn poll_save_results_manual_save_empty_path() {
