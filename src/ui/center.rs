@@ -932,7 +932,47 @@ fn stamp_tip_preview(
 mod tests {
     use super::uv_to_pixel;
     use super::zoom_around_point;
+    use super::PREVIEW_FILL_ALPHA_FACTOR;
+    use super::PREVIEW_STROKE_WIDTH;
+    use super::ZOOM_SENSITIVITY;
+    use super::MIN_ZOOM;
+    use super::MAX_ZOOM;
+    use super::ACTIVE_DURATION_MILLISECONDS;
+    use super::CANVAS_BORDER_WIDTH;
+    use super::CANVAS_BORDER_COLOR;
     use eframe::egui;
+
+    #[test]
+    fn preview_fill_alpha_is_between_zero_and_one() {
+        assert!(PREVIEW_FILL_ALPHA_FACTOR > 0.0 && PREVIEW_FILL_ALPHA_FACTOR < 1.0);
+    }
+
+    #[test]
+    fn preview_stroke_width_is_positive() {
+        assert!(PREVIEW_STROKE_WIDTH > 0.0);
+    }
+
+    #[test]
+    fn zoom_sensitivity_is_small_positive() {
+        assert!(ZOOM_SENSITIVITY > 0.0 && ZOOM_SENSITIVITY < 1.0);
+    }
+
+    #[test]
+    fn zoom_bounds_are_valid() {
+        assert!(MIN_ZOOM > 0.0);
+        assert!(MAX_ZOOM > MIN_ZOOM);
+    }
+
+    #[test]
+    fn active_duration_is_positive() {
+        assert!(ACTIVE_DURATION_MILLISECONDS > 0);
+    }
+
+    #[test]
+    fn canvas_border_is_valid() {
+        assert!(CANVAS_BORDER_WIDTH > 0.0);
+        assert_eq!(CANVAS_BORDER_COLOR, egui::Color32::from_rgb(128, 0, 128));
+    }
 
     #[test]
     fn uv_top_left_returns_zero_zero() {
