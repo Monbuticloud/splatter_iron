@@ -326,4 +326,54 @@ mod tests {
         drop(harness);
         assert_eq!(cmd_delete, Some(0));
     }
+
+    #[test]
+    fn show_left_panel_renders_tool_buttons() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_left_panel(ui);
+        });
+        harness.run();
+
+        harness.get_by_label("Square Tool");
+        harness.get_by_label("Circle Tool");
+        harness.get_by_label("Square Eraser");
+        harness.get_by_label("Circle Eraser");
+        harness.get_by_label("Bucket Fill");
+        harness.get_by_label("Stamp Tool");
+        harness.get_by_label("Custom Brush");
+        harness.get_by_label("Pan (H)");
+    }
+
+    #[test]
+    fn show_left_panel_stamp_tool_shows_load_button() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.current_tool = crate::canvas::CurrentTool::Stamp;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_left_panel(ui);
+        });
+        harness.run();
+
+        harness.get_by_label("Load Stamp Image...");
+        harness.get_by_label("No stamps loaded.");
+    }
+
+    #[test]
+    fn show_left_panel_brush_tool_shows_import_button() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.current_tool = crate::canvas::CurrentTool::CustomBrush;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_left_panel(ui);
+        });
+        harness.run();
+
+        harness.get_by_label("Import Brush...");
+        harness.get_by_label("No brushes imported.");
+    }
 }
