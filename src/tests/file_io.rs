@@ -504,6 +504,33 @@ fn poll_dialog_results_export_archive_triggers_export() {
     assert!(errors.is_empty());
 }
 
+/// `trigger_async_load` with a non-existent file sends a `Failed` result.
+#[test]
+fn trigger_async_load_nonexistent_file_fails() {
+    let (mut file_io, _, _) = test_file_io();
+    let mut document = Document::new(Canvas::new(10, 10));
+    let mut undo = UndoHistory::new(100);
+    let mut errors = Vec::new();
+
+    let dir = tempfile::tempdir().expect("temp dir");
+    let missing = dir.path().join("does_not_exist.splattercanvas");
+    file_io.pending_file_action = Some(PendingFileAction::Load);
+    file_io
+        .dialog_sender
+        .send(DialogResult::Picked(missing))
+        .unwrap();
+    file_io.poll_dialog_results(&mut document, &mut undo, &mut errors);
+    // Wait for the async load thread to complete.
+    for _ in 0..100 {
+        file_io.poll_load_import_results(&mut document, &mut undo, &mut errors);
+        if !errors.is_empty() || document.canvas.width != 10 {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(!errors.is_empty(), "expected load error for missing file");
+}
+
 /// `autosave_directory` returns `{data_dir}/autosaves`.
 #[test]
 fn autosave_directory_path() {
