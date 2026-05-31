@@ -1,18 +1,19 @@
 //! Tests for application-level constants, UI state defaults, and export
 //! format metadata.
 
-use eframe::egui::Color32;
-
 use std::path::PathBuf;
 
+use eframe::egui::Color32;
+
+use crate::app::DialogState;
+use crate::app::ErrorState;
 use crate::app::EXPORT_FORMATS;
 use crate::app::ExportInformation;
 use crate::app::IMPORT_EXTENSIONS;
-use crate::app::DialogState;
-use crate::app::ErrorState;
 use crate::app::PendingStamp;
 use crate::app::ToastState;
 use crate::app::UIState;
+use crate::app::UnsavedWarningAction;
 use crate::canvas::RenderState;
 
 /// Default UIState should have IdleThrottled render state, zero elapsed
@@ -170,6 +171,22 @@ fn error_state_default() {
 fn toast_state_default() {
     let state = ToastState::default();
     assert!(state.message.is_none());
+}
+
+/// Each `UnsavedWarningAction` variant can be constructed and has stable Debug output.
+#[test]
+fn unsaved_warning_action_variants() {
+    let quit = UnsavedWarningAction::Quit;
+    let new_canvas = UnsavedWarningAction::NewCanvas;
+    let load = UnsavedWarningAction::Load;
+    let import = UnsavedWarningAction::Import;
+    let load_path = UnsavedWarningAction::LoadPath(PathBuf::from("/tmp/test.splattercanvas"));
+
+    assert_eq!(format!("{quit:?}"), "Quit");
+    assert_eq!(format!("{new_canvas:?}"), "NewCanvas");
+    assert_eq!(format!("{load:?}"), "Load");
+    assert_eq!(format!("{import:?}"), "Import");
+    assert!(format!("{load_path:?}").contains("test.splattercanvas"));
 }
 
 /// `PersistedConfig` roundtrips through `serde_json`.
