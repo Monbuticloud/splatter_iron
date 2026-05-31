@@ -1005,6 +1005,20 @@ mod tests {
     }
 
     #[test]
+    fn compute_canvas_rect_pan_offset_shifts_position() {
+        let available = egui::vec2(500.0, 500.0);
+        let base_size = egui::vec2(200.0, 200.0);
+        let (draw_size, rect) = compute_canvas_rect(
+            available,
+            base_size,
+            1.0,
+            egui::vec2(50.0, -30.0),
+        );
+        assert_eq!(draw_size, base_size);
+        assert_eq!(rect.min, egui::pos2(200.0, 120.0));
+    }
+
+    #[test]
     fn preview_fill_alpha_is_between_zero_and_one() {
         assert!(PREVIEW_FILL_ALPHA_FACTOR > 0.0 && PREVIEW_FILL_ALPHA_FACTOR < 1.0);
     }
