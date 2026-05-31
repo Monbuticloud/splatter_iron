@@ -248,8 +248,30 @@ impl MyApp {
 
 #[cfg(test)]
 mod tests {
+    use eframe::egui;
     use egui_kittest::kittest::NodeT;
     use egui_kittest::kittest::Queryable;
+
+    /// Pressing `S` switches to Square tool (no command modifier).
+    #[test]
+    fn key_s_selects_square_tool() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.current_tool = crate::canvas::CurrentTool::Circle;
+
+        {
+            let mut harness = egui_kittest::Harness::new_ui(|ui| {
+                app.show_top_panel(ui);
+            });
+            harness.key_press(egui::Key::S);
+            harness.step();
+        }
+
+        assert!(matches!(
+            app.tool_configuration.current_tool,
+            crate::canvas::CurrentTool::Square
+        ));
+    }
 
     /// All toolbar buttons render without panic.
     #[test]
