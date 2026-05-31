@@ -941,7 +941,9 @@ mod tests {
     use super::ACTIVE_DURATION_MILLISECONDS;
     use super::CANVAS_BORDER_WIDTH;
     use super::CANVAS_BORDER_COLOR;
+    use crate::app::ProgressState;
     use eframe::egui;
+    use egui_kittest::kittest::Queryable;
 
     #[test]
     fn preview_fill_alpha_is_between_zero_and_one() {
@@ -1126,5 +1128,61 @@ mod tests {
                 egui::Color32::RED,
             );
         });
+    }
+
+    #[test]
+    fn status_line_shows_default_dimensions_and_zoom() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_canvas_status_line(ui);
+        });
+        harness.run();
+
+        let _dims = harness.get_by_label("10×10");
+        let _zoom = harness.get_by_label("100%");
+    }
+
+    #[test]
+    fn status_line_shows_saving_progress() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.ui.progress = ProgressState::Saving;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_canvas_status_line(ui);
+        });
+        harness.step();
+
+        let _saving = harness.get_by_label("Saving…");
+    }
+
+    #[test]
+    fn status_line_shows_exporting_progress() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.ui.progress = ProgressState::Exporting;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_canvas_status_line(ui);
+        });
+        harness.step();
+
+        let _exporting = harness.get_by_label("Exporting…");
+    }
+
+    #[test]
+    fn status_line_shows_custom_zoom() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.ui.zoom = 2.5;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_canvas_status_line(ui);
+        });
+        harness.run();
+
+        let _zoom = harness.get_by_label("250%");
     }
 }
