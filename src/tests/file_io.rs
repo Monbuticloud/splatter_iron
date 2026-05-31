@@ -349,6 +349,21 @@ fn poll_dialog_results_cancelled_clears_pending() {
     assert!(errors.is_empty());
 }
 
+/// `poll_export_results` returns true when a result is received (success).
+#[test]
+fn poll_export_results_success_returns_true() {
+    let (mut file_io, _, _) = test_file_io();
+    let mut errors = Vec::new();
+    // Send a success result via the export channel
+    file_io
+        .export_result_sender
+        .send(Ok(()))
+        .expect("send success");
+    assert!(file_io.poll_export_results(&mut errors));
+    assert!(errors.is_empty());
+    assert!(!file_io.export_in_flight);
+}
+
 /// `poll_save_results` with manual save sets document path even if it's empty.
 #[test]
 fn poll_save_results_manual_save_empty_path() {
