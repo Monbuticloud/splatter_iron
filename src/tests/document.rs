@@ -440,3 +440,12 @@ fn toggle_layer_visible_triggers_blend() {
     document.toggle_layer_visible(1, &mut UndoHistory::new(100));
     assert!(document.canvas_mut().dirty_rect.needs_reblend());
 }
+
+/// `set_layer_opacity` changes the layer opacity.
+#[test]
+fn set_layer_opacity_changes_opacity() {
+    let mut document = small_document();
+    assert_eq!(document.canvas.pixels[0].opacity, 255);
+    document.set_layer_opacity(0, 128, &mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[0].opacity, 128);
+}
