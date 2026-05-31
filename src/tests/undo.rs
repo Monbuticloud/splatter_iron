@@ -490,6 +490,15 @@ fn undo_apply_empty_run_noop() {
     );
 }
 
+/// `Debug` for `BeforePixels::All` produces expected format.
+#[test]
+fn debug_before_pixels_all_format() {
+    let bp = crate::undo::BeforePixels::All(Color32::RED);
+    let s = format!("{bp:?}");
+    assert!(s.starts_with("All("), "debug output: {s}");
+    assert!(s.contains("FF"), "debug should contain hex color, got: {s}");
+}
+
 /// `redo_apply` with empty run.
 #[test]
 fn redo_apply_empty_run_noop() {
