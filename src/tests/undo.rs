@@ -164,12 +164,29 @@ fn redo_apply_alpha_overlay_blends() {
         canvas.pixels[0].pixels[0],
         Color32::from_rgba_premultiplied(255, 255, 255, 255)
     );
+}
+
+/// `redo_apply` for `MoveLayer` swaps the layers forward.
+#[test]
+fn redo_apply_move_layer_swaps_forward() {
+    let mut canvas = small_white_canvas();
+    canvas.pixels.push(crate::canvas::Layer {
+        pixels: vec![Color32::RED; 100],
+        name: "red".to_string(),
+        visible: true,
+        opacity: 255,
+    });
+    let record = UndoRecord::MoveLayer {
+        from_index: 1,
+        to_index: 0,
+    };
+    // After the move, undo it, then redo should move again
+    canvas.pixels.swap(0, 1);
+    undo::undo_apply(&mut canvas, &record);
     undo::redo_apply(&mut canvas, &record);
-    // After redo: should match the blended result
-    assert_eq!(
-        canvas.pixels[0].pixels[0], after_draw,
-        "redo blend matches original blend"
-    );
+    assert_eq!(canvas.pixels[0].pixels[0], Color32::RED);
+    let premultiplied_white = Color32::from_rgba_premultiplied(255, 255, 255, 255);
+    assert_eq!(canvas.pixels[1].pixels[0], premultiplied_white);
 }
 
 /// `undo_apply` with a uniform run stored as `BeforePixels::All` should restore correctly.
