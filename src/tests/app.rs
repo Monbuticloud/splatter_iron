@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use crate::app::EXPORT_FORMATS;
 use crate::app::ExportInformation;
 use crate::app::IMPORT_EXTENSIONS;
+use crate::app::DialogState;
 use crate::app::PendingStamp;
 use crate::app::UIState;
 use crate::canvas::RenderState;
@@ -138,6 +139,21 @@ fn estimate_canvas_memory_returns_product() {
     assert_eq!(crate::app::estimate_canvas_memory(100, 100), 120_000);
     assert_eq!(crate::app::estimate_canvas_memory(1, 1), 12);
     assert_eq!(crate::app::estimate_canvas_memory(0, 0), 0);
+}
+
+/// `DialogState::default()` initialises all fields to their expected defaults.
+#[test]
+fn dialog_state_default() {
+    let state = DialogState::default();
+    assert!(state.show_delete_layer_dialog.is_none());
+    assert!(!state.show_new_canvas_dialog);
+    assert_eq!(state.new_canvas_width, 2000);
+    assert_eq!(state.new_canvas_height, 1500);
+    assert!(state.pending_large_canvas.is_none());
+    assert!(state.pending_stamp_name.is_none());
+    assert!(state.pending_brushes.is_none());
+    assert!(state.pending_unsaved_action.is_none());
+    assert!(state.pending_after_save.is_none());
 }
 
 /// `PersistedConfig` roundtrips through `serde_json`.
