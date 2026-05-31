@@ -1002,6 +1002,7 @@ fn stamp_tip_preview(
 #[cfg(test)]
 mod tests {
     use super::compute_canvas_rect;
+    use super::draw_circle_preview;
     use super::draw_grid_overlay;
     use super::stamp_tip_preview;
     use super::uv_to_pixel;
@@ -1049,6 +1050,25 @@ mod tests {
         let (draw_size, rect) = compute_canvas_rect(available, base_size, 2.0, egui::Vec2::ZERO);
         assert_eq!(draw_size, egui::vec2(400.0, 400.0));
         assert_eq!(rect.min, egui::pos2(50.0, 50.0));
+    }
+
+    #[test]
+    fn draw_circle_preview_renders_without_panic() {
+        egui::__run_test_ui(|ui| {
+            let response =
+                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            draw_circle_preview(
+                ui,
+                &response,
+                5,
+                5,
+                egui::vec2(100.0, 100.0),
+                10,
+                egui::Color32::RED,
+                100,
+                100,
+            );
+        });
     }
 
     #[test]
