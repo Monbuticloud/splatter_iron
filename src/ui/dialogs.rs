@@ -442,3 +442,209 @@ impl MyApp {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::app::PendingStamp;
+    use crate::app::UnsavedWarningAction;
+    use eframe::egui;
+    use egui_kittest::kittest::Queryable;
+
+    /// Helper: create an app with a temp data dir.
+    fn test_app() -> (crate::app::MyApp, tempfile::TempDir) {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        (app, dir)
+    }
+
+    // --- show_error_window ---
+
+    #[test]
+    fn show_error_window_renders_errors() {
+        let (mut app, _dir) = test_app();
+        app.ui.errors.list.push("test error".into());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_error_window(ui);
+        });
+        harness.step();
+
+        let _error = harness.get_by_label("Error: test error");
+        let _dismiss = harness.get_by_label("Dismiss");
+        let _copy = harness.get_by_label("Copy error");
+        let _all = harness.get_by_label("Dismiss All");
+    }
+
+    #[test]
+    fn show_error_window_dismiss_clears_error() {
+        let (mut app, _dir) = test_app();
+        app.ui.errors.list.push("single error".into());
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_error_window(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Dismiss").click();
+        harness.step();
+
+        drop(harness);
+        assert!(app.ui.errors.list.is_empty());
+    }
+
+    // --- show_delete_layer_dialog ---
+
+    #[test]
+    fn show_delete_layer_dialog_renders() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.show_delete_layer_dialog = Some(0);
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_delete_layer_dialog(ui);
+        });
+        harness.step();
+
+        let _delete = harness.get_by_label("Delete");
+        let _cancel = harness.get_by_label("Cancel");
+    }
+
+    #[test]
+    fn show_delete_layer_dialog_cancel_clears_flag() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.show_delete_layer_dialog = Some(0);
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_delete_layer_dialog(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Cancel").click();
+        harness.step();
+
+        drop(harness);
+        assert!(app.ui.dialogs.show_delete_layer_dialog.is_none());
+    }
+
+    // --- show_new_canvas_dialog ---
+
+    #[test]
+    fn show_new_canvas_dialog_renders_presets() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.show_new_canvas_dialog = true;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_new_canvas_dialog(ui);
+        });
+        harness.step();
+
+        let _create = harness.get_by_label("Create");
+        let _cancel = harness.get_by_label("Cancel");
+    }
+
+    #[test]
+    fn show_new_canvas_dialog_cancel_closes() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.show_new_canvas_dialog = true;
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_new_canvas_dialog(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Cancel").click();
+        harness.step();
+
+        drop(harness);
+        assert!(!app.ui.dialogs.show_new_canvas_dialog);
+    }
+
+    // --- show_unsaved_changes_warning ---
+
+    #[test]
+    fn show_unsaved_changes_warning_renders() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.pending_unsaved_action = Some(UnsavedWarningAction::Quit);
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_unsaved_changes_warning(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Unsaved Changes");
+        harness.get_by_label("Cancel");
+    }
+
+    // --- guard_unsaved / execute_unsaved_action ---
+
+    #[test]
+    fn guard_unsaved_dirty_stores_action() {
+        let (mut app, _dir) = test_app();
+        app.document.dirty_since_last_autosave = true;
+
+        app.guard_unsaved(UnsavedWarningAction::Quit);
+
+        assert!(matches!(
+            app.ui.dialogs.pending_unsaved_action,
+            Some(UnsavedWarningAction::Quit)
+        ));
+    }
+
+    #[test]
+    fn guard_unsaved_clean_executes_directly() {
+        let (mut app, _dir) = test_app();
+        app.document.dirty_since_last_autosave = false;
+        app.ui.should_close = false;
+
+        app.guard_unsaved(UnsavedWarningAction::Quit);
+
+        assert!(app.ui.dialogs.pending_unsaved_action.is_none());
+        assert!(app.ui.should_close);
+    }
+
+    #[test]
+    fn execute_unsaved_action_quit_sets_should_close() {
+        let (mut app, _dir) = test_app();
+        app.execute_unsaved_action(UnsavedWarningAction::Quit);
+        assert!(app.ui.should_close);
+    }
+
+    #[test]
+    fn execute_unsaved_action_new_canvas_opens_dialog() {
+        let (mut app, _dir) = test_app();
+        app.execute_unsaved_action(UnsavedWarningAction::NewCanvas);
+        assert!(app.ui.dialogs.show_new_canvas_dialog);
+    }
+
+    // --- show_large_canvas_warning ---
+
+    #[test]
+    fn show_large_canvas_warning_renders() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.pending_large_canvas = Some((100, 100));
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_large_canvas_warning(ui);
+        });
+        harness.step();
+
+        let _yes = harness.get_by_label("Yes, create");
+        let _cancel = harness.get_by_label("Cancel");
+    }
+
+    #[test]
+    fn show_large_canvas_warning_cancel_clears_flag() {
+        let (mut app, _dir) = test_app();
+        app.ui.dialogs.pending_large_canvas = Some((200, 200));
+
+        let mut harness = egui_kittest::Harness::new_ui(|ui| {
+            app.show_large_canvas_warning(ui);
+        });
+        harness.step();
+
+        harness.get_by_label("Cancel").click();
+        harness.step();
+
+        drop(harness);
+        assert!(app.ui.dialogs.pending_large_canvas.is_none());
+    }
+}
