@@ -1158,6 +1158,25 @@ mod tests {
     }
 
     #[test]
+    fn draw_square_preview_transparent_color_no_panic() {
+        egui::__run_test_ui(|ui| {
+            let response =
+                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            draw_square_preview(
+                ui,
+                &response,
+                10,
+                10,
+                egui::vec2(100.0, 100.0),
+                5,
+                egui::Color32::TRANSPARENT,
+                50,
+                50,
+            );
+        });
+    }
+
+    #[test]
     fn preview_fill_alpha_is_between_zero_and_one() {
         assert!(PREVIEW_FILL_ALPHA_FACTOR > 0.0 && PREVIEW_FILL_ALPHA_FACTOR < 1.0);
     }
