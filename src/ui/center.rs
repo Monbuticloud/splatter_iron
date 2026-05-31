@@ -977,6 +977,7 @@ fn stamp_tip_preview(
 
 #[cfg(test)]
 mod tests {
+    use super::compute_canvas_rect;
     use super::draw_grid_overlay;
     use super::stamp_tip_preview;
     use super::uv_to_pixel;
@@ -992,6 +993,16 @@ mod tests {
     use crate::app::ProgressState;
     use eframe::egui;
     use egui_kittest::kittest::Queryable;
+
+    #[test]
+    fn compute_canvas_rect_default_zoom_centers_canvas() {
+        let available = egui::vec2(500.0, 500.0);
+        let base_size = egui::vec2(200.0, 200.0);
+        let (draw_size, rect) = compute_canvas_rect(available, base_size, 1.0, egui::Vec2::ZERO);
+        assert_eq!(draw_size, base_size);
+        assert_eq!(rect.min, egui::pos2(150.0, 150.0));
+        assert_eq!(rect.max, egui::pos2(350.0, 350.0));
+    }
 
     #[test]
     fn preview_fill_alpha_is_between_zero_and_one() {
