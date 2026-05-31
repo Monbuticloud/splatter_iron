@@ -72,6 +72,14 @@ fn zoom_around_point(
     )
 }
 
+/// Compute the canvas draw size and screen rectangle from layout parameters.
+///
+/// Centers the canvas within the available area, applies zoom and pan offset.
+///
+/// # Returns
+///
+/// A tuple of `(draw_size, canvas_rect)` where `draw_size` is the scaled
+/// canvas size and `canvas_rect` is the screen-space rectangle.
 fn compute_canvas_rect(
     available: egui::Vec2,
     base_size: egui::Vec2,
