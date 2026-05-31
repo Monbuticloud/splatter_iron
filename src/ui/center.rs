@@ -956,6 +956,7 @@ fn stamp_tip_preview(
 
 #[cfg(test)]
 mod tests {
+    use super::draw_grid_overlay;
     use super::stamp_tip_preview;
     use super::uv_to_pixel;
     use super::zoom_around_point;
@@ -1210,5 +1211,78 @@ mod tests {
         harness.run();
 
         let _zoom = harness.get_by_label("250%");
+    }
+
+    #[test]
+    fn draw_grid_overlay_disabled_no_panic() {
+        egui::__run_test_ui(|ui| {
+            let rect = egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(100.0, 100.0),
+            );
+            draw_grid_overlay(ui, false, 10, rect, egui::vec2(100.0, 100.0), 100, 100);
+        });
+    }
+
+    #[test]
+    fn draw_grid_overlay_enabled_no_panic() {
+        egui::__run_test_ui(|ui| {
+            let rect = egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(100.0, 100.0),
+            );
+            draw_grid_overlay(ui, true, 10, rect, egui::vec2(100.0, 100.0), 50, 50);
+        });
+    }
+
+    #[test]
+    fn draw_grid_overlay_grid_size_zero_clamped() {
+        egui::__run_test_ui(|ui| {
+            let rect = egui::Rect::from_min_size(
+                egui::pos2(0.0, 0.0),
+                egui::vec2(100.0, 100.0),
+            );
+            draw_grid_overlay(ui, true, 0, rect, egui::vec2(100.0, 100.0), 50, 50);
+        });
+    }
+
+    #[test]
+    fn stabilized_pixel_disabled_returns_raw() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.stabilization_enabled = false;
+
+        let (sx, sy) = app.stabilized_pixel(42, 73, 0.016);
+        assert_eq!(sx, 42);
+        assert_eq!(sy, 73);
+    }
+
+    #[test]
+    fn stabilized_pixel_first_frame_returns_raw() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.stabilization_enabled = true;
+        // No previous_cursor_position (first frame).
+
+        let (sx, sy) = app.stabilized_pixel(42, 73, 0.016);
+        assert_eq!(sx, 42);
+        assert_eq!(sy, 73);
+    }
+
+    #[test]
+    fn stabilized_pixel_lerp_on_subsequent_frame() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
+        app.tool_configuration.stabilization_enabled = true;
+        app.tool_configuration.stabilization_smoothing = 50.0;
+        // Pre-set stabilized cursor to origin, previous cursor to simulate
+        // an ongoing drag.
+        app.ui.stabilized_cursor = Some((0.0, 0.0));
+        app.ui.previous_cursor_position = Some((0, 0));
+
+        let (sx, sy) = app.stabilized_pixel(100, 200, 0.016);
+        // Lerp should shift from 0,0 toward 100,200 but not reach it.
+        assert!(sx > 0 && sx < 100);
+        assert!(sy > 0 && sy < 200);
     }
 }
