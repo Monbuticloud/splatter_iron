@@ -330,6 +330,29 @@ fn redo_apply_delete_layer_removes_layer() {
     assert_eq!(canvas.pixels.len(), 1);
 }
 
+/// `undo_apply` for `MoveLayer` swaps the layers back.
+#[test]
+fn undo_apply_move_layer_swaps_back() {
+    let mut canvas = small_white_canvas();
+    // Add a second layer so we have something to swap
+    canvas.pixels.push(crate::canvas::Layer {
+        pixels: vec![Color32::RED; 100],
+        name: "red".to_string(),
+        visible: true,
+        opacity: 255,
+    });
+    let record = UndoRecord::MoveLayer {
+        from_index: 1,
+        to_index: 0,
+    };
+    // Simulate: layer 1 was moved to index 0 (from=1, to=0 means moved up)
+    canvas.pixels.swap(0, 1);
+    undo::undo_apply(&mut canvas, &record);
+    let premultiplied_white = Color32::from_rgba_premultiplied(255, 255, 255, 255);
+    assert_eq!(canvas.pixels[0].pixels[0], premultiplied_white);
+    assert_eq!(canvas.pixels[1].pixels[0], Color32::RED);
+}
+
 /// `redo_apply` for `AddLayer` re-inserts the layer at the correct index.
 #[test]
 fn redo_apply_add_layer_restores_layer() {
