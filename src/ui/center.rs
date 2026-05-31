@@ -122,6 +122,76 @@ fn draw_circle_preview(
     );
 }
 
+fn draw_square_preview(
+    ui: &egui::Ui,
+    response: &egui::Response,
+    pixel_x: u32,
+    pixel_y: u32,
+    draw_size: egui::Vec2,
+    radius: u32,
+    color: Color32,
+    canvas_width: u32,
+    canvas_height: u32,
+) {
+    let half_radius = radius;
+
+    let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
+    let preview_end_x =
+        ((pixel_x + half_radius).min(canvas_width - 1) as f32) + 1.0;
+    let preview_start_y = pixel_y.saturating_sub(half_radius) as f32;
+    let preview_end_y =
+        ((pixel_y + half_radius).min(canvas_height - 1) as f32) + 1.0;
+
+    let screen_x = response.rect.min.x
+        + preview_start_x * (draw_size.x / (canvas_width as f32));
+    let screen_y = response.rect.min.y
+        + preview_start_y * (draw_size.y / (canvas_height as f32));
+    let screen_w = (preview_end_x - preview_start_x)
+        * (draw_size.x / (canvas_width as f32));
+    let screen_h = (preview_end_y - preview_start_y)
+        * (draw_size.y / (canvas_height as f32));
+
+    let preview_rect = Rect::from_min_size(
+        Pos2::new(screen_x, screen_y),
+        egui::vec2(screen_w, screen_h),
+    );
+
+    let brush_alpha = color.a();
+    let fill_color = if brush_alpha == 0 {
+        Color32::TRANSPARENT
+    } else {
+        // SAFETY: `brush_alpha ≤ 255`, `PREVIEW_FILL_ALPHA_FACTOR ≈ 0.5`,
+        // so float result ≤ 127.5 → truncation to u8 is safe;
+        // all intermediates are non-negative → no sign loss.
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let preview_alpha =
+            ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
+        Color32::from_rgba_premultiplied(
+            ((color.r() as u32
+                * preview_alpha as u32)
+                / brush_alpha as u32) as u8,
+            ((color.g() as u32
+                * preview_alpha as u32)
+                / brush_alpha as u32) as u8,
+            ((color.b() as u32
+                * preview_alpha as u32)
+                / brush_alpha as u32) as u8,
+            preview_alpha,
+        )
+    };
+    ui.painter().rect_filled(preview_rect, 0.0, fill_color);
+
+    ui.painter().rect_stroke(
+        preview_rect,
+        0.0,
+        egui::Stroke::new(
+            PREVIEW_STROKE_WIDTH,
+            color,
+        ),
+        StrokeKind::Middle,
+    );
+}
+
 impl MyApp {
     /// Render the central canvas panel.
     ///
@@ -336,62 +406,16 @@ impl MyApp {
                 }
 
                 CurrentTool::Square | CurrentTool::SquareEraser => {
-                    let half_radius = self.tool_configuration.radius;
-
-                    let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
-                    let preview_end_x =
-                        ((pixel_x + half_radius).min(self.document.canvas.width - 1) as f32) + 1.0;
-                    let preview_start_y = pixel_y.saturating_sub(half_radius) as f32;
-                    let preview_end_y =
-                        ((pixel_y + half_radius).min(self.document.canvas.height - 1) as f32) + 1.0;
-
-                    let screen_x = response.rect.min.x
-                        + preview_start_x * (draw_size.x / (self.document.canvas.width as f32));
-                    let screen_y = response.rect.min.y
-                        + preview_start_y * (draw_size.y / (self.document.canvas.height as f32));
-                    let screen_w = (preview_end_x - preview_start_x)
-                        * (draw_size.x / (self.document.canvas.width as f32));
-                    let screen_h = (preview_end_y - preview_start_y)
-                        * (draw_size.y / (self.document.canvas.height as f32));
-
-                    let preview_rect = Rect::from_min_size(
-                        Pos2::new(screen_x, screen_y),
-                        egui::vec2(screen_w, screen_h),
-                    );
-
-                    let brush_alpha = self.tool_configuration.current_color.a();
-                    let fill_color = if brush_alpha == 0 {
-                        Color32::TRANSPARENT
-                    } else {
-                        // SAFETY: `brush_alpha ≤ 255`, `PREVIEW_FILL_ALPHA_FACTOR ≈ 0.5`,
-                        // so float result ≤ 127.5 → truncation to u8 is safe;
-                        // all intermediates are non-negative → no sign loss.
-                        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                        let preview_alpha =
-                            ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
-                        Color32::from_rgba_premultiplied(
-                            ((self.tool_configuration.current_color.r() as u32
-                                * preview_alpha as u32)
-                                / brush_alpha as u32) as u8,
-                            ((self.tool_configuration.current_color.g() as u32
-                                * preview_alpha as u32)
-                                / brush_alpha as u32) as u8,
-                            ((self.tool_configuration.current_color.b() as u32
-                                * preview_alpha as u32)
-                                / brush_alpha as u32) as u8,
-                            preview_alpha,
-                        )
-                    };
-                    ui.painter().rect_filled(preview_rect, 0.0, fill_color);
-
-                    ui.painter().rect_stroke(
-                        preview_rect,
-                        0.0,
-                        egui::Stroke::new(
-                            PREVIEW_STROKE_WIDTH,
-                            self.tool_configuration.current_color,
-                        ),
-                        StrokeKind::Middle,
+                    draw_square_preview(
+                        ui,
+                        &response,
+                        pixel_x,
+                        pixel_y,
+                        draw_size,
+                        self.tool_configuration.radius,
+                        self.tool_configuration.current_color,
+                        self.document.canvas.width,
+                        self.document.canvas.height,
                     );
                 }
                 CurrentTool::BucketFill => {}
