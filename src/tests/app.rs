@@ -3,6 +3,8 @@
 
 use eframe::egui::Color32;
 
+use std::path::PathBuf;
+
 use crate::app::EXPORT_FORMATS;
 use crate::app::ExportInformation;
 use crate::app::IMPORT_EXTENSIONS;
@@ -132,4 +134,21 @@ fn estimate_canvas_memory_returns_product() {
     assert_eq!(crate::app::estimate_canvas_memory(100, 100), 120_000);
     assert_eq!(crate::app::estimate_canvas_memory(1, 1), 12);
     assert_eq!(crate::app::estimate_canvas_memory(0, 0), 0);
+}
+
+/// `PersistedConfig` roundtrips through `serde_json`.
+#[test]
+fn persisted_config_roundtrip() {
+    let cfg = crate::app::PersistedConfig {
+        tool_configuration: crate::tool_configuration::ToolConfiguration::default(),
+        recent_files: vec![PathBuf::from("/tmp/test.splattercanvas")],
+    };
+    let json = serde_json::to_string(&cfg).expect("serialize");
+    let deserialized: crate::app::PersistedConfig =
+        serde_json::from_str(&json).expect("deserialize");
+    assert_eq!(deserialized.recent_files.len(), 1);
+    assert_eq!(
+        deserialized.recent_files[0],
+        PathBuf::from("/tmp/test.splattercanvas")
+    );
 }
