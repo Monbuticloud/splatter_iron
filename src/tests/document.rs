@@ -449,3 +449,13 @@ fn set_layer_opacity_changes_opacity() {
     document.set_layer_opacity(0, 128, &mut UndoHistory::new(100));
     assert_eq!(document.canvas.pixels[0].opacity, 128);
 }
+
+/// `set_layer_opacity` accepts boundary values 0 and 255.
+#[test]
+fn set_layer_opacity_boundary_values() {
+    let mut document = small_document();
+    document.set_layer_opacity(0, 0, &mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[0].opacity, 0);
+    document.set_layer_opacity(0, 255, &mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[0].opacity, 255);
+}
