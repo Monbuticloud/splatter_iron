@@ -400,3 +400,13 @@ fn delete_layer_first() {
     assert_eq!(document.canvas.pixels.len(), 2);
     // Original layers: [0, 1, 2] -> after delete 0: [1, 2]
 }
+
+/// `toggle_layer_visible` makes a visible layer invisible.
+#[test]
+fn toggle_layer_visible_hides_layer() {
+    let mut document = small_document();
+    document.add_layer(&mut UndoHistory::new(100));
+    assert!(document.canvas.pixels[1].visible);
+    document.toggle_layer_visible(1, &mut UndoHistory::new(100));
+    assert!(!document.canvas.pixels[1].visible);
+}
