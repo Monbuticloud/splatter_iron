@@ -30,6 +30,10 @@ fn ui_state_default_values() {
     assert_eq!(state.dialogs.new_canvas_width, 2000);
     assert_eq!(state.dialogs.new_canvas_height, 1500);
     assert!(state.dialogs.pending_stamp_name.is_none());
+    assert!(state.dialogs.pending_large_canvas.is_none());
+    assert!(state.dialogs.pending_unsaved_action.is_none());
+    assert!(state.dialogs.pending_after_save.is_none());
+    assert!(state.dialogs.pending_brushes.is_none());
     assert!(state.toasts.message.is_none());
 }
 
