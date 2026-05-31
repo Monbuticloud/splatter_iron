@@ -72,6 +72,20 @@ fn zoom_around_point(
     )
 }
 
+fn compute_canvas_rect(
+    available: egui::Vec2,
+    base_size: egui::Vec2,
+    zoom: f32,
+    pan_offset: egui::Vec2,
+) -> (egui::Vec2, Rect) {
+    let draw_size = base_size * zoom;
+    let canvas_pos = egui::pos2(
+        (available.x - draw_size.x) / 2.0 + pan_offset.x,
+        (available.y - draw_size.y) / 2.0 + pan_offset.y,
+    );
+    (draw_size, Rect::from_min_size(canvas_pos, draw_size))
+}
+
 impl MyApp {
     /// Render the central canvas panel.
     ///
@@ -115,13 +129,12 @@ impl MyApp {
         let available = ui.available_size();
         let scale = (available.x / canvas_pixel_size.x).min(available.y / canvas_pixel_size.y);
         let base_size = canvas_pixel_size * scale;
-        let draw_size = base_size * self.ui.zoom;
-
-        let canvas_pos = egui::pos2(
-            (available.x - draw_size.x) / 2.0 + self.ui.pan_offset.x,
-            (available.y - draw_size.y) / 2.0 + self.ui.pan_offset.y,
+        let (draw_size, canvas_rect) = compute_canvas_rect(
+            available,
+            base_size,
+            self.ui.zoom,
+            self.ui.pan_offset,
         );
-        let canvas_rect = Rect::from_min_size(canvas_pos, draw_size);
 
         let cursor = if self.tool_configuration.current_tool == CurrentTool::Pan {
             egui::CursorIcon::Grab
@@ -233,7 +246,7 @@ impl MyApp {
                             old_zoom,
                             self.ui.zoom,
                             hover,
-                            canvas_pos,
+                            canvas_rect.min,
                             base_size,
                             available,
                         );
