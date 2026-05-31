@@ -276,6 +276,24 @@ fn redo_apply_corrupt_run_panics() {
     undo::redo_apply(&mut canvas, &corrupt);
 }
 
+/// `undo_apply` for `AddLayer` removes the inserted layer.
+#[test]
+fn undo_apply_add_layer_removes_layer() {
+    let mut canvas = small_white_canvas();
+    let record = UndoRecord::AddLayer {
+        index: 0,
+        layer: Box::new(crate::canvas::Layer {
+            pixels: vec![Color32::TRANSPARENT; 100],
+            name: "test".to_string(),
+            visible: true,
+            opacity: 255,
+        }),
+    };
+    assert_eq!(canvas.pixels.len(), 1);
+    undo::undo_apply(&mut canvas, &record);
+    assert_eq!(canvas.pixels.len(), 0);
+}
+
 /// `undo_apply` with `BeforePixels::Many` containing wrong number of pixels
 /// should panic (slice length mismatch).
 #[test]
