@@ -420,3 +420,13 @@ fn toggle_layer_visible_keeps_last_visible() {
     document.toggle_layer_visible(0, &mut UndoHistory::new(100));
     assert!(document.canvas.pixels[0].visible, "last visible layer stays visible");
 }
+
+/// `toggle_layer_visible` makes an invisible layer visible again.
+#[test]
+fn toggle_layer_visible_shows_hidden_layer() {
+    let mut document = small_document();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.canvas_mut().pixels[1].visible = false;
+    document.toggle_layer_visible(1, &mut UndoHistory::new(100));
+    assert!(document.canvas.pixels[1].visible);
+}
