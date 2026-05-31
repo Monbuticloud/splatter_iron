@@ -59,6 +59,35 @@ fn construction_and_field_access() {
     assert_eq!(params.drag_stamp_value, 7);
 }
 
+/// Builder constructs `BrushStrokeParams` with default alpha_overlay = false.
+#[test]
+fn builder_with_defaults() {
+    let mut c = canvas();
+    let mut visited = vec![0u32; 100];
+    let mut drag = vec![0u32; 100];
+
+    let params = BrushStrokeParams::builder(
+        &mut c,
+        Color32::RED,
+        0,
+        &mut visited,
+        42,
+        &mut drag,
+        7,
+    )
+    .start(1, 2)
+    .end(5, 6)
+    .build();
+
+    assert_eq!(params.start_x, 1);
+    assert_eq!(params.start_y, 2);
+    assert_eq!(params.end_x, 5);
+    assert_eq!(params.end_y, 6);
+    assert!(!params.alpha_overlay, "default alpha_overlay should be false");
+    assert_eq!(params.stamp, 42);
+    assert_eq!(params.drag_stamp_value, 7);
+}
+
 /// Debug output contains key field information.
 #[test]
 fn debug_output() {
