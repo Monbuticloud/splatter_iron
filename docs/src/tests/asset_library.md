@@ -41,3 +41,7 @@ Selecting with an out-of-bounds index leaves the current selection unchanged.
 ## `get_out_of_bounds_none`
 
 `get` with an out-of-bounds index returns `None`.
+
+## `entries_empty`
+
+`entries()` on an empty library returns an empty slice.
