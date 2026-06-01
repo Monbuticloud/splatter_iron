@@ -50,6 +50,7 @@ const fn default_opacity() -> u8 {
 }
 
 impl Default for Layer {
+    /// Creates an empty, visible, fully opaque layer with no name.
     fn default() -> Self {
         Self {
             pixels: Vec::new(),
