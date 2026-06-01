@@ -266,11 +266,13 @@ impl Document {
     /// * `undo` — Undo history to push the record onto.
     pub fn add_layer(&mut self, undo: &mut UndoHistory) {
         let layer_index = self.canvas.pixels.len();
+        let layer_number = self.next_layer_number;
+        self.next_layer_number += 1;
         let width = self.canvas.width;
         let height = self.canvas.height;
         let layer = Layer {
             pixels: vec![Color32::TRANSPARENT; (width * height) as usize],
-            name: format!("Layer {}", layer_index + 1),
+            name: format!("Layer {layer_number}"),
             visible: true,
             opacity: 255,
             mode: crate::canvas::LayerMode::Normal,
