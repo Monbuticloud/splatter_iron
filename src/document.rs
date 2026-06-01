@@ -244,9 +244,10 @@ impl Document {
         }
     }
 
-    /// Append a new transparent layer to the canvas.
+    /// Append a new transparent layer to the canvas and select it.
     ///
     /// Pushes an [`UndoRecord::AddLayer`] so that the addition can be undone.
+    /// Updates `current_layer` to point at the newly inserted layer.
     ///
     /// # Parameters
     ///
