@@ -1,6 +1,6 @@
 # SplatterIron
 
-**Lightweight, GPU-accelerated digital painting application** built with Rust.
+**Lightweight, GPU-accelerated digital painting application** built with Rust. For when you don't need GIMP's features, but when MSPaint isn't enough.
 
 > **MSRV**: Rust 1.96.0 (stable) — pinned in `rust-toolchain.toml`
 >
@@ -99,14 +99,15 @@ cargo clippy
 **Tool switching** (no modifier): `S` / `C` / `E` (toggle eraser) / `Shift+E` (circle eraser) / `G` / `T` / `B` / `I` / `H`
 
 **File operations** (`Cmd`):
-| Shortcut | Action |
-|---|---|
-| `Cmd+N` | New canvas |
-| `Cmd+O` | Open `.splattercanvas` |
-| `Cmd+S` | Save |
-| `Cmd+Shift+S` | Save As |
-| `Cmd+I` | Import image |
-| `Cmd+E` | Export (last format) |
+
+| Shortcut      | Action                 |
+| ------------- | ---------------------- |
+| `Cmd+N`       | New canvas             |
+| `Cmd+O`       | Open `.splattercanvas` |
+| `Cmd+S`       | Save                   |
+| `Cmd+Shift+S` | Save As                |
+| `Cmd+I`       | Import image           |
+| `Cmd+E`       | Export (last format)   |
 
 **Canvas**: scroll wheel / pinch to zoom, double-click to reset zoom to 100%, drag with Pan tool to pan.
 
@@ -114,7 +115,7 @@ cargo clippy
 
 ## Benchmarks
 
-Preliminary memory comparison: SplatterIron vs. GIMP at 2000×2000 canvas, single layer, macOS.
+Preliminary memory comparison: SplatterIron vs. GIMP at 2000×2000 canvas, single layer, macOS. (SplatterIron only contains a sub-set of Gimp's features, so this benchmark might be unfair)
 
 | Application  | Real Memory | Canvas    | Layers | Focused | OS    |
 | ------------ | ----------- | --------- | ------ | ------- | ----- |
