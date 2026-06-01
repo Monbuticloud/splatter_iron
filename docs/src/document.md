@@ -216,10 +216,10 @@ pub fn add_layer(&mut self, undo: &mut UndoHistory)
 
 ## `Document::delete_layer(index)`
 
-Removes the layer at the given index and clamps `current_layer` to the new layer
-count. Does **not** guard against deleting the last remaining layer — that
-invariant is enforced by the UI layer (which should disable the delete button
-when only one layer exists).
+Removes the layer at the given index and adjusts `current_layer` to account for
+the removed entry. Does **not** guard against deleting the last remaining
+layer — that invariant is enforced by the UI layer (which should disable the
+delete button when only one layer exists).
 
 ### Signature
 
@@ -238,9 +238,12 @@ pub fn delete_layer(&mut self, index: usize, undo: &mut UndoHistory)
 
 1. Removes the entry via `self.canvas_mut().pixels.remove(index)`.
 2. Adjusts `current_layer`:
-   - If the removed layer was below the active layer, `current_layer` is
-     decremented by 1 (via `saturating_sub(1)`).
-   - The result is clamped to `[0, layers.len() - 1]` with `min()`.
+   - If `index <= current_layer` (deleted layer at or below the active one),
+     `current_layer` is decremented by 1 (via `saturating_sub(1)`).
+   - If `index > current_layer` (deleted layer above the active one),
+     `current_layer` is unchanged.
+   - The result is clamped to `[0, layers.len() - 1]` with `min()` so it never
+     exceeds the new layer count.
 3. Pushes `UndoRecord::DeleteLayer` onto the undo stack.
 4. Calls `self.canvas_mut().dirty_rect.request_full_blend()`.
 

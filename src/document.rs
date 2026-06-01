@@ -277,7 +277,11 @@ impl Document {
 
     /// Remove the layer at `index` and adjust `current_layer` if needed.
     ///
-    /// `current_layer` is clamped to `[0, layers.len() - 1]` after removal.
+    /// If the deleted layer is at or below the current layer
+    /// (`index <= current_layer`), `current_layer` is decremented by 1.
+    /// If the deleted layer is above the current layer (`index > current_layer`),
+    /// `current_layer` is left unchanged.
+    /// The result is clamped to `[0, layers.len() - 1]`.
     /// Does NOT guard against deleting the last layer — the UI layer handles that.
     /// Pushes an [`UndoRecord::DeleteLayer`] so the deletion can be undone.
     ///
