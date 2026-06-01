@@ -50,6 +50,7 @@ Result sent back via channel when an async save completes. Received by `poll_sav
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Autosave`            | Autosave completed successfully. `poll_save_results` sets `document.dirty_since_last_autosave = false` in response.                                                             |
 | `ManualSave(PathBuf)` | Manual save completed to the given path. `poll_save_results` updates `document.savefile_path` and sets `render_next_frame = true`.                                              |
+| `ArchiveAutosave`     | Archive autosave completed successfully. `poll_save_results` resets the archive autosave timer in response.                                                                         |
 | `Failed(String)`      | Save failed at the serialization stage. The string is a human-readable error message pushed to the error list. |
 
 Derives `Debug`.
