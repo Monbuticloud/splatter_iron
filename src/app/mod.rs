@@ -59,6 +59,8 @@ pub(crate) const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
 ];
 
 // --- Performance constants ---
+/// Sleep duration (ms) while the window is unfocused, used by
+/// `RenderState::UnfocusedFrozen` to minimise repaint overhead.
 pub(crate) const UNFOCUSED_SLEEP_MILLISECONDS: u64 = 50;
 
 // --- Memory warning threshold ---
