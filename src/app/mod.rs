@@ -88,7 +88,6 @@ pub(crate) const REPAINT_DELAY_MULTIPLIER: u32 = 5;
 pub(crate) const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 
 // --- Image import extensions ---
-/// File-extension list accepted by the image-import dialog (19 formats).
 /// Serialization wrapper for tool config + recent files.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PersistedConfig {
