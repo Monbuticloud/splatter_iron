@@ -58,18 +58,22 @@ impl Document {
     /// Create a new `Document` wrapping the given canvas.
     ///
     /// Initializes with an empty save path, current layer 0,
-    /// and `dirty_since_last_autosave = false`.
+    /// `dirty_since_last_autosave = false`, and `next_layer_number` set to
+    /// one past the number of pre-existing layers so that the first new
+    /// layer gets a name one higher than the existing count.
     ///
     /// # Parameters
     ///
     /// * `canvas` — The canvas to wrap.
     pub fn new(canvas: Canvas) -> Self {
+        let layer_count = canvas.pixels.len();
         Self {
             canvas: Arc::new(canvas),
             savefile_path: String::new(),
             current_layer: 0,
             dirty_since_last_autosave: false,
             save_state: SaveState::Idle,
+            next_layer_number: layer_count + 1,
         }
     }
 
