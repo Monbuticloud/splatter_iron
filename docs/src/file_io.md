@@ -142,6 +142,7 @@ Called once per frame (before egui layout) to process completed file dialog resu
 
 - **`StampPixels`** — Stores decoded pixels, dimensions, and name in `self.loaded_stamp_data` for the frame loop to present a naming dialog. Clears `pending_file_action`.
 - **`BrushTips`** — Stores parsed brush tips in `self.loaded_brush_data` for the frame loop. Clears `pending_file_action`.
+- **`Cancelled`** — Clears `pending_file_action` without any other action.
 - **`Error(msg)`** — Pushes `msg` to `error_list`. Clears `pending_file_action`.
 - **`Picked(path)`** — Matches against `pending_file_action` to determine the operation.
 
@@ -156,7 +157,9 @@ Called once per frame (before egui layout) to process completed file dialog resu
 - **Save:** Appends `CANVAS_EXTENSION` if missing. Calls `trigger_async_save(document, SaveKind::ManualSave(path))`.
 - **Load:** Reads via `crate::files::load_canvas_from_path`, replaces the canvas, and sets `document.savefile_path` to the loaded file's path.
 - **Import:** Calls `crate::files::import_image_as_canvas` and replaces the canvas (no save-path update).
-- **Export:** Skips if `output_rgba` is empty. Appends the default extension if missing. Calls `crate::files::export_as_image` with the format and dimensions from the canvas.
+- **Export:** Skips if `output_rgba` is empty. Appends the default extension if missing. Calls `trigger_async_export` with the canvas pixels, dimensions, and format index.
+- **ExportArchive:** Appends `ARCHIVE_EXTENSION` (`.splatterarchive`) if missing. Clones the canvas and calls `trigger_async_export_archive`.
+- **ImportArchive:** Calls `trigger_async_import_archive` with the selected path.
 
 After processing, `pending_file_action` is consumed (set to `None`).
 
@@ -198,7 +201,7 @@ Useful for keyboard shortcuts (e.g. Ctrl+S) that re-save to the same path withou
 ### `FileIO::poll_save_results`
 
 ```rust
-pub fn poll_save_results(&self, document: &mut Document, error_list: &mut Vec<String>)
+pub fn poll_save_results(&mut self, document: &mut Document, error_list: &mut Vec<String>)
 ```
 
 Called once per frame to process completed async save results. Drains the `save_result_receiver` channel with `try_recv()` and updates document state or pushes errors accordingly.
@@ -212,30 +215,104 @@ Called once per frame to process completed async save results. Drains the `save_
 
 Non-blocking: uses `try_recv()` so it will not stall the frame if no save has completed.
 
-## `PendingFileAction::LoadStamp`
+### `FileIO::poll_export_results`
 
-Opens native open dialog filtered for image files; decodes into pixels and sends StampPixels result.
+```rust
+pub fn poll_export_results(&mut self, error_list: &mut Vec<String>) -> bool
+```
 
-## `PendingFileAction::LoadBrush`
+Called once per frame to check for completed async export operations. Drains the `export_result_receiver` channel. Returns `true` if any export completed (success or failure).
 
-Opens native open dialog for .abr/.gbr files; parses and sends BrushTips result.
+**Parameters:**
 
-## `DialogResult::StampPixels`
+- `error_list` — A `Vec<String>` where `Err` results are pushed as `"Export failed: {message}"`.
 
-Decoded stamp image from bg thread: pix Vec<Color32>, width, height, name stem.
+### `FileIO::poll_load_import_results`
 
-## `DialogResult::BrushTips`
+```rust
+pub fn poll_load_import_results(
+    &mut self,
+    document: &mut Document,
+    undo: &mut UndoHistory,
+    error_list: &mut Vec<String>,
+)
+```
 
-Parsed brush tips Vec<BrushTip> from ABR/GBR file.
+Called once per frame to process completed async load/import operations. Drains the `load_import_receiver` channel with `try_recv()`.
 
-## `DialogResult::Error`
+**Parameters:**
 
-Error message from bg file operation, pushed to UI error list.
+- `document` — The `Document` to modify with the loaded/imported canvas.
+- `undo` — The `UndoHistory` to clear on load/import.
+- `error_list` — Error messages from failed operations are pushed here.
 
-## `FileIO.loaded_stamp_data`
+### `FileIO::queue_load_direct`
 
-Holds decoded stamp image data after poll_dialog_results processing, consumed by app frame for naming dialog.
+```rust
+pub fn queue_load_direct(&mut self, path: PathBuf)
+```
 
-## `FileIO.loaded_brush_data`
+Queues a load operation for a specific path without opening a file dialog. Spawns a thread that reads and deserialises the canvas, then sends the result via the load-import channel.
 
-Holds parsed brush tips after poll_dialog_results processing, consumed by app frame for naming dialog.
+### `FileIO::trigger_async_load`
+
+```rust
+pub fn trigger_async_load(&mut self, path: PathBuf)
+```
+
+Spawns a background thread to load a `.splattercanvas` file and deserialise it into a `Canvas`. Sends `LoadImportResult::Loaded(Canvas)` on success or `LoadImportResult::Failed(String)` on error via the load-import channel.
+
+### `FileIO::trigger_async_import`
+
+```rust
+pub fn trigger_async_import(&mut self, path: PathBuf)
+```
+
+Spawns a background thread to import an image file as a new `Canvas`. Sends `LoadImportResult::Imported(Canvas)` on success or `LoadImportResult::Failed(String)` on error.
+
+### `FileIO::trigger_async_export`
+
+```rust
+pub fn trigger_async_export(
+    &mut self,
+    canvas: &Canvas,
+    path: PathBuf,
+    format_idx: usize,
+)
+```
+
+Spawns a background thread to export the canvas as an image in the given format. Sends `Ok(())` on success or `Err(...)` via the export channel.
+
+### `FileIO::trigger_async_export_archive`
+
+```rust
+pub fn trigger_async_export_archive(&mut self, canvas: Canvas, path: PathBuf)
+```
+
+Spawns a background thread to serialise the canvas as a `.splatterarchive` file. Sends the result via the load-import channel.
+
+### `FileIO::trigger_async_import_archive`
+
+```rust
+pub fn trigger_async_import_archive(&mut self, path: PathBuf)
+```
+
+Spawns a background thread to read and deserialise a `.splatterarchive` file. Sends `LoadImportResult::ArchiveImported(Canvas)` on success.
+
+### `FileIO::trigger_async_autosave_archive`
+
+```rust
+pub fn trigger_async_autosave_archive(&mut self, document: &Document)
+```
+
+Spawns a background thread to save an archive autosave (`.splatterarchive`) with timestamped name to the autosave directory. Sends `SaveResult::ArchiveAutosave` on success.
+
+### `FileIO::autosave_directory`
+
+```rust
+pub fn autosave_directory(&self) -> PathBuf
+```
+
+Returns the path to the autosave subdirectory under `app_local_data_directory`.
+
+
