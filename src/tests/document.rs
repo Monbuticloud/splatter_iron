@@ -58,6 +58,20 @@ fn add_layer_selects_new_layer() {
     assert_eq!(document.current_layer, 1, "add_layer selects the new layer");
 }
 
+/// `add_layer` should produce unique default names even after layer deletion.
+#[test]
+fn add_layer_unique_names_after_delete() {
+    let mut document = small_document();
+    // Initial layer is "Layer 1" (named by Canvas::default)
+    document.add_layer(&mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[1].name, "Layer 2");
+    // Delete the original layer, leaving "Layer 2"
+    document.delete_layer(0, &mut UndoHistory::new(100));
+    // Add another layer — must not reuse "Layer 2"
+    document.add_layer(&mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[1].name, "Layer 3");
+}
+
 /// A newly added layer should match the canvas dimensions.
 #[test]
 fn add_layer_has_correct_size() {
