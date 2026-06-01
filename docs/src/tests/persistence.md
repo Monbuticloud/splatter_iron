@@ -29,3 +29,7 @@ Pushing 11 paths caps the list at 10, retaining the most recent 10.
 ## `config_path_ends_with_config_json`
 
 Verifies `config_path()` returns a path ending in `config.json` inside the data directory.
+
+## `save_config_roundtrip`
+
+Writes a config with `CurrentTool::Circle`, red color, and a recent file; reads it back and asserts all fields match.
