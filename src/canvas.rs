@@ -27,6 +27,16 @@ pub enum LayerMode {
     MaskDown,
 }
 
+impl std::fmt::Display for LayerMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Normal => write!(f, "Normal"),
+            Self::ClipDown => write!(f, "Clip Down"),
+            Self::MaskDown => write!(f, "Mask Down"),
+        }
+    }
+}
+
 /// Default layer mode for new and deserialized layers.
 const fn default_layer_mode() -> LayerMode {
     LayerMode::Normal
