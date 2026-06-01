@@ -151,13 +151,13 @@ impl MyApp {
                                 ui.selectable_value(&mut current_mode, LayerMode::Normal, "Normal");
                                 ui.selectable_value(
                                     &mut current_mode,
-                                    LayerMode::ClipDown,
-                                    "Clip Down"
+                                    LayerMode::ClippedDown,
+                                    "Clipped Down"
                                 );
                                 ui.selectable_value(
                                     &mut current_mode,
-                                    LayerMode::MaskDown,
-                                    "Mask Down"
+                                    LayerMode::MaskedDown,
+                                    "Masked Down"
                                 );
                             });
                         if current_mode != layer.mode {
@@ -320,10 +320,10 @@ mod tests {
 
     #[test]
     fn layer_action_set_mode_holds_index_and_mode() {
-        let action = LayerAction::SetMode(2, LayerMode::ClipDown);
+        let action = LayerAction::SetMode(2, LayerMode::ClippedDown);
         if let LayerAction::SetMode(index, mode) = action {
             assert_eq!(index, 2);
-            assert_eq!(mode, LayerMode::ClipDown);
+            assert_eq!(mode, LayerMode::ClippedDown);
         } else {
             panic!("expected SetMode variant");
         }

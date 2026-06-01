@@ -17,22 +17,22 @@ const DEFAULT_HEIGHT: u32 = 1500;
 pub enum LayerMode {
     /// Standard alpha-over compositing — no special interaction.
     Normal,
-    /// The layer's content is visible only where the nearest non-ClipDown layer
-    /// below (the "base") has non-zero alpha. Consecutive ClipDown layers all
+    /// The layer's content is visible only where the nearest non-ClippedDown layer
+    /// below (the "base") has non-zero alpha. Consecutive ClippedDown layers all
     /// reference the same base layer (Photoshop-style clipping mask).
-    ClipDown,
+    ClippedDown,
     /// The layer functions purely as an alpha mask for the layer immediately
     /// below. Its own RGB content is not rendered in the composite — only its
     /// alpha channel modulates the transparency of the layer beneath.
-    MaskDown,
+    MaskedDown,
 }
 
 impl std::fmt::Display for LayerMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Normal => write!(f, "Normal"),
-            Self::ClipDown => write!(f, "Clip Down"),
-            Self::MaskDown => write!(f, "Mask Down"),
+            Self::ClippedDown => write!(f, "Clipped Down"),
+            Self::MaskedDown => write!(f, "Masked Down"),
         }
     }
 }
