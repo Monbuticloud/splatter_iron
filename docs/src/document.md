@@ -14,6 +14,7 @@ save path, and coordinates GPU texture uploads.
 | `savefile_path`             | `String` | Filesystem path for the last save/load operation    |
 | `current_layer`             | `usize`  | Index into `canvas.pixels` for the active layer     |
 | `dirty_since_last_autosave` | `bool`   | Whether unsaved changes exist                       |
+| `save_state`                | `SaveState` | Current save state — `Idle` or `InFlight` while an async save runs |
 
 ### Invariants
 
