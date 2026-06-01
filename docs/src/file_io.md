@@ -184,7 +184,7 @@ Spawns a background thread to serialize and write the canvas to disk. Clones the
 ### `FileIO::save_to_current_path`
 
 ```rust
-pub fn save_to_current_path(&self, document: &Document)
+pub fn save_to_current_path(&mut self, document: &mut Document)
 ```
 
 Convenience method that saves to the document's existing `savefile_path` asynchronously. No-op if `savefile_path` is empty (i.e. the document has never been saved or loaded from a file).
