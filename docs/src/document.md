@@ -258,9 +258,10 @@ pub fn move_layer_up(&mut self, index: usize, undo: &mut UndoHistory)
 
 ### Parameters
 
-| Parameter | Type    | Description                       |
-| --------- | ------- | --------------------------------- |
-| `index`   | `usize` | Index of the layer to move upward |
+| Parameter | Type               | Description                       |
+| --------- | ------------------ | --------------------------------- |
+| `index`   | `usize`            | Index of the layer to move upward |
+| `undo`    | `&mut UndoHistory` | Undo history for the undo record  |
 
 ### Panics
 
@@ -290,9 +291,10 @@ pub fn move_layer_down(&mut self, index: usize, undo: &mut UndoHistory)
 
 ### Parameters
 
-| Parameter | Type    | Description                         |
-| --------- | ------- | ----------------------------------- |
-| `index`   | `usize` | Index of the layer to move downward |
+| Parameter | Type               | Description                         |
+| --------- | ------------------ | ----------------------------------- |
+| `index`   | `usize`            | Index of the layer to move downward |
+| `undo`    | `&mut UndoHistory` | Undo history for the undo record    |
 
 ### Panics
 
