@@ -7,3 +7,7 @@ Tests for `apply_visited_runs` in `brush_common`, covering empty-visit, full-vis
 ## `no_visited_pixels_returns_empty`
 
 Verifies that `apply_visited_runs` returns an empty run list when no pixels are marked visited.
+
+## `all_visited_produces_runs`
+
+Confirms that when all pixels are visited, `apply_visited_runs` produces one run per row and writes the brush color to every pixel.
