@@ -254,6 +254,7 @@ mod tests {
     use super::UNDO_REDO_RANGE;
     use super::BRUSH_RADIUS_RANGE;
     use super::LayerAction;
+    use crate::canvas::LayerMode;
     use egui_kittest::kittest::Queryable;
 
     #[test]
@@ -327,6 +328,17 @@ mod tests {
             assert_eq!(name, "test");
         } else {
             panic!("expected Rename variant");
+        }
+    }
+
+    #[test]
+    fn layer_action_set_mode_holds_index_and_mode() {
+        let action = LayerAction::SetMode(2, LayerMode::ClipDown);
+        if let LayerAction::SetMode(index, mode) = action {
+            assert_eq!(index, 2);
+            assert_eq!(mode, LayerMode::ClipDown);
+        } else {
+            panic!("expected SetMode variant");
         }
     }
 
