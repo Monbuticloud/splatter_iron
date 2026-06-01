@@ -98,8 +98,6 @@ pub enum SaveResult {
     Autosave,
     /// Manual save completed to the given path.
     ManualSave(PathBuf),
-    /// Archive autosave completed successfully (path not surfaced).
-    ArchiveAutosave,
     /// Save failed with an error message.
     Failed(String),
 }
@@ -149,8 +147,6 @@ pub struct FileIO {
     /// `true` when the most recently triggered async save is an autosave.
     /// Used by the UI to display "Autosaving…" vs "Saving…" in the status bar.
     pub autosave_in_flight: bool,
-    /// `true` while an archive autosave (`.splatterarchive`) is in flight.
-    pub archive_autosave_in_flight: bool,
 }
 
 impl std::fmt::Debug for FileIO {
@@ -206,7 +202,6 @@ impl FileIO {
             load_in_flight: false,
             import_in_flight: false,
             autosave_in_flight: false,
-            archive_autosave_in_flight: false,
             app_local_data_directory,
             loaded_stamp_data: None,
             loaded_brush_data: None,
@@ -569,37 +564,6 @@ impl FileIO {
         }
     }
 
-    /// Spawn a background thread to serialize and write a timestamped
-    /// `.splatterarchive` autosave file under `AUTOSAVE_DIRECTORY`.
-    ///
-    /// Results are sent via \[`save_result_sender`\] as [`SaveResult::ArchiveAutosave`]
-    /// (or `Failed`). The archive autosave is a separate stream from the regular
-    /// `.splattercanvas` autosave.
-    ///
-    /// # Parameters
-    ///
-    /// * `document` — The document whose canvas will be archived.
-    pub fn trigger_async_autosave_archive(&mut self, document: &Document) {
-        self.archive_autosave_in_flight = true;
-        let canvas = document.canvas.clone();
-        let path = self
-            .app_local_data_directory
-            .join(AUTOSAVE_DIRECTORY)
-            .join(format!(
-                "{}{}",
-                Local::now().format(AUTOSAVE_DATE_FORMAT),
-                ARCHIVE_EXTENSION,
-            ));
-        let sender = self.save_result_sender.clone();
-        std::thread::spawn(move || {
-            let result = match crate::files::save_canvas_to_path_xz(&canvas, &path) {
-                Ok(()) => SaveResult::ArchiveAutosave,
-                Err(error) => SaveResult::Failed(format!("Archive autosave failed: {error}")),
-            };
-            let _ = sender.send(result);
-        });
-    }
-
     /// Spawn a background thread to encode and write the exported image.
     ///
     /// Clones the blended RGBA buffer to avoid holding a reference across
@@ -799,37 +763,22 @@ impl FileIO {
     /// * `document` — The document to update save-path / dirty-flag on.
     /// * `error_list` — Error list to push failure messages into.
     pub fn poll_save_results(&mut self, document: &mut Document, error_list: &mut Vec<String>) {
-        let mut had_regular_result = false;
-        let mut had_archive_autosave = false;
         while let Ok(result) = self.save_result_receiver.try_recv() {
             match result {
                 SaveResult::Autosave => {
-                    had_regular_result = true;
                     document.dirty_since_last_autosave = false;
                 }
                 SaveResult::ManualSave(path) => {
-                    had_regular_result = true;
                     document.savefile_path = path.display().to_string();
                     document.dirty_since_last_autosave = false;
                     document.canvas_mut().dirty_rect.request_full_blend();
                 }
-                SaveResult::ArchiveAutosave => {
-                    had_archive_autosave = true;
-                }
                 SaveResult::Failed(message) => {
                     error_list.push(format!("Save failed: {message}"));
-                    // Could be from either stream; clear both to be safe.
-                    had_regular_result = true;
-                    had_archive_autosave = true;
                 }
             }
-        }
-        if had_regular_result {
             document.save_state = crate::document::SaveState::Idle;
             self.autosave_in_flight = false;
-        }
-        if had_archive_autosave {
-            self.archive_autosave_in_flight = false;
         }
     }
 }

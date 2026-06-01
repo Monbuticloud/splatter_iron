@@ -38,7 +38,7 @@
 - **Archive format**: `.splatterarchive` — higher compression ratio for long-term storage
 - **Image import**: 19 formats — AVIF, PNG, JPEG, WebP, GIF, TIFF, TGA, ICO, PNM, QOI, EXR, HDR, Farbfeld
 - **Image export**: 13 formats — AVIF, PNG, JPEG, WebP, GIF, TIFF, TGA, ICO, PNM, QOI, EXR, HDR, Farbfeld
-- **Autosave** every 2 minutes (both `.splattercanvas` and `.splatterarchive`) to `{data_dir}/autosaves/`
+- **Autosave** every 2 minutes to `{data_dir}/autosaves/`
 - **Config persistence**: tool settings and recent files saved automatically
 
 ### Undo / Redo

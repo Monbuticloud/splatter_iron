@@ -342,8 +342,6 @@ pub struct UIState {
     pub times_autosaved: u32,
     /// Wall-clock time when the last autosave completed.
     pub last_autosave_time: Duration,
-    /// Wall-clock time when the last archive autosave (`.splatterarchive`) completed.
-    pub last_archive_autosave_time: Duration,
     /// Tool selected before the current one (used for eraser toggle-back).
     pub previous_tool: Option<CurrentTool>,
     /// Cursor position from the previous frame (used for brush preview).
@@ -393,7 +391,6 @@ impl Default for UIState {
             time_elapsed: Duration::ZERO,
             times_autosaved: 0,
             last_autosave_time: Duration::ZERO,
-            last_archive_autosave_time: Duration::ZERO,
             max_texture_dimension: 8192,
             previous_tool: None,
             previous_cursor_position: None,

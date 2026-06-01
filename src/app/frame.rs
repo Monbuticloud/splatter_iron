@@ -254,18 +254,6 @@ impl MyApp {
             self.file_io
                 .trigger_async_save(&mut self.document, SaveKind::Autosave);
         }
-
-        // Separate archive autosave stream — same interval, independent timer.
-        if self.document.dirty_since_last_autosave
-            && self
-                .ui
-                .time_elapsed
-                .saturating_sub(self.ui.last_archive_autosave_time)
-                >= Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES)
-        {
-            self.ui.last_archive_autosave_time = self.ui.time_elapsed;
-            self.file_io.trigger_async_autosave_archive(&self.document);
-        }
     }
 }
 
