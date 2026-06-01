@@ -3,6 +3,8 @@
 //! Uses a minimal test entry type (`TestEntry`) to verify the generic
 //! machinery independently of brush/stamp specialisations.
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use eframe::egui::Color32;
 use eframe::egui::TextureHandle;
 
@@ -93,12 +95,11 @@ impl AssetEntry for TestEntry {
     }
 }
 
+static NEXT_ASSET_DIR: AtomicU64 = AtomicU64::new(0);
+
 fn tempdir() -> std::path::PathBuf {
-    let ts = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    let dir = std::env::temp_dir().join(format!("asset_lib_test_{ts}"));
+    let id = NEXT_ASSET_DIR.fetch_add(1, Ordering::SeqCst);
+    let dir = std::env::temp_dir().join(format!("asset_lib_test_{id}"));
     std::fs::create_dir_all(&dir).expect("create temp dir");
     dir
 }
