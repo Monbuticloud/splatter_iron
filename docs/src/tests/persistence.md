@@ -33,3 +33,7 @@ Verifies `config_path()` returns a path ending in `config.json` inside the data 
 ## `save_config_roundtrip`
 
 Writes a config with `CurrentTool::Circle`, red color, and a recent file; reads it back and asserts all fields match.
+
+## `save_config_empty_recent_files`
+
+Saves config when recent files is empty; verifies the saved JSON has an empty recent-files list.
