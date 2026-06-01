@@ -14,7 +14,8 @@ history, and file-IO subsystems for eframe.
 
 All app identity constants (`APP_QUALIFIER`, `APP_ORGANIZATION`, `APP_NAME`),
 canvas format constants (`CANVAS_EXTENSION`, `FILE_FILTER_NAME`,
-`DEFAULT_CANVAS_NAME`), `IMPORT_EXTENSIONS`, `EXPORT_FORMATS`,
+`DEFAULT_CANVAS_NAME`), archive format constants (`ARCHIVE_EXTENSION`,
+`ARCHIVE_FILTER_NAME`, `DEFAULT_ARCHIVE_NAME`), `IMPORT_EXTENSIONS`, `EXPORT_FORMATS`,
 `ExportInformation`, `PersistedConfig`, `PendingStamp`, `DialogState`,
 `ErrorState`, `ToastState`, `UnsavedWarningAction`, `ProgressState`, `UIState`,
 `GpuTexture`, and `MyApp` are defined here alongside `new()` and the
