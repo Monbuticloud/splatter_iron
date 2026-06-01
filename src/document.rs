@@ -254,6 +254,7 @@ impl Document {
             name: format!("Layer {}", layer_index + 1),
             visible: true,
             opacity: 255,
+            mode: crate::canvas::LayerMode::Normal,
         };
         undo.push_undo(UndoRecord::AddLayer {
             index: layer_index,
@@ -364,9 +365,11 @@ impl Document {
                 old_visible,
                 old_opacity: l.opacity,
                 old_name: l.name.clone(),
+                old_mode: l.mode,
                 new_visible,
                 new_opacity: l.opacity,
                 new_name: l.name.clone(),
+                new_mode: l.mode,
             });
             canvas.dirty_rect.request_full_blend();
         }
@@ -391,9 +394,11 @@ impl Document {
                 old_visible: l.visible,
                 old_opacity,
                 old_name: l.name.clone(),
+                old_mode: l.mode,
                 new_visible: l.visible,
                 new_opacity: opacity,
                 new_name: l.name.clone(),
+                new_mode: l.mode,
             });
             canvas.dirty_rect.request_full_blend();
         }
@@ -418,9 +423,11 @@ impl Document {
                 old_visible: l.visible,
                 old_opacity: l.opacity,
                 old_name,
+                old_mode: l.mode,
                 new_visible: l.visible,
                 new_opacity: l.opacity,
                 new_name: name,
+                new_mode: l.mode,
             });
         }
     }

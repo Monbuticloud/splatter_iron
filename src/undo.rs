@@ -6,6 +6,7 @@ use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::canvas::Layer;
+use crate::canvas::LayerMode;
 use crate::pixel::alpha_blend;
 
 /// Compressed storage for a run of before-pixels: either all the same color
@@ -99,7 +100,7 @@ pub enum UndoRecord {
         /// Target index after the move.
         to_index: usize,
     },
-    /// A layer's non-pixel properties (visibility, opacity, name) changed.
+    /// A layer's non-pixel properties (visibility, opacity, name, mode) changed.
     ModifyLayer {
         /// Index of the modified layer.
         index: usize,
@@ -107,10 +108,12 @@ pub enum UndoRecord {
         old_visible: bool,
         old_opacity: u8,
         old_name: String,
+        old_mode: LayerMode,
         /// Layer properties after the change.
         new_visible: bool,
         new_opacity: u8,
         new_name: String,
+        new_mode: LayerMode,
     },
 }
 
@@ -164,14 +167,17 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
             old_visible,
             old_opacity,
             old_name,
+            old_mode,
             new_visible: _,
             new_opacity: _,
             new_name: _,
+            new_mode: _,
         } => {
             let layer = &mut canvas.pixels[*index];
             layer.visible = *old_visible;
             layer.opacity = *old_opacity;
             layer.name.clone_from(old_name);
+            layer.mode = *old_mode;
         }
     }
 }
@@ -228,14 +234,17 @@ pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
             old_visible: _,
             old_opacity: _,
             old_name: _,
+            old_mode: _,
             new_visible,
             new_opacity,
             new_name,
+            new_mode,
         } => {
             let layer = &mut canvas.pixels[*index];
             layer.visible = *new_visible;
             layer.opacity = *new_opacity;
             layer.name.clone_from(new_name);
+            layer.mode = *new_mode;
         }
     }
 }

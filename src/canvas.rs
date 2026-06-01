@@ -12,6 +12,26 @@ use serde::Serialize;
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
 
+/// Determines how a layer interacts with the layer below it during compositing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LayerMode {
+    /// Standard alpha-over compositing — no special interaction.
+    Normal,
+    /// The layer's content is visible only where the nearest non-ClipDown layer
+    /// below (the "base") has non-zero alpha. Consecutive ClipDown layers all
+    /// reference the same base layer (Photoshop-style clipping mask).
+    ClipDown,
+    /// The layer functions purely as an alpha mask for the layer immediately
+    /// below. Its own RGB content is not rendered in the composite — only its
+    /// alpha channel modulates the transparency of the layer beneath.
+    MaskDown,
+}
+
+/// Default layer mode for new and deserialized layers.
+const fn default_layer_mode() -> LayerMode {
+    LayerMode::Normal
+}
+
 /// A single layer of pixels in the canvas.
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Layer {
@@ -26,6 +46,9 @@ pub struct Layer {
     /// Opacity multiplier (0–255) applied during compositing.
     #[serde(default = "default_opacity")]
     pub opacity: u8,
+    /// Compositing mode relative to the layer below.
+    #[serde(default = "default_layer_mode")]
+    pub mode: LayerMode,
 }
 
 impl std::fmt::Debug for Layer {
@@ -35,6 +58,7 @@ impl std::fmt::Debug for Layer {
             .field("name", &self.name)
             .field("visible", &self.visible)
             .field("opacity", &self.opacity)
+            .field("mode", &self.mode)
             .finish()
     }
 }
@@ -50,13 +74,14 @@ const fn default_opacity() -> u8 {
 }
 
 impl Default for Layer {
-    /// Creates an empty, visible, fully opaque layer with no name.
+    /// Creates an empty, visible, fully opaque, Normal-mode layer with no name.
     fn default() -> Self {
         Self {
             pixels: Vec::new(),
             name: String::new(),
             visible: true,
             opacity: 255,
+            mode: LayerMode::Normal,
         }
     }
 }
@@ -296,6 +321,7 @@ impl Default for Canvas {
             name: "Layer 1".to_string(),
             visible: true,
             opacity: 255,
+            mode: LayerMode::Normal,
         }];
         Self {
             pixels: layers,
@@ -331,6 +357,7 @@ impl Canvas {
                 name: "Layer 1".to_string(),
                 visible: true,
                 opacity: 255,
+                mode: LayerMode::Normal,
             }],
             width,
             height,

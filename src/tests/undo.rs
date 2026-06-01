@@ -175,7 +175,8 @@ fn redo_apply_move_layer_swaps_forward() {
         name: "red".to_string(),
         visible: true,
         opacity: 255,
-    });
+        mode: crate::canvas::LayerMode::Normal,
+        });
     let record = UndoRecord::MoveLayer {
         from_index: 1,
         to_index: 0,
@@ -201,6 +202,8 @@ fn undo_apply_modify_layer_restores_old() {
         new_visible: false,
         new_opacity: 255,
         new_name: "new_name".to_string(),
+        old_mode: crate::canvas::LayerMode::Normal,
+        new_mode: crate::canvas::LayerMode::Normal,
     };
     // First apply the change (as redo would)
     undo::redo_apply(&mut canvas, &record);
@@ -226,6 +229,8 @@ fn redo_apply_modify_layer_applies_new() {
         new_visible: false,
         new_opacity: 255,
         new_name: "new_name".to_string(),
+        old_mode: crate::canvas::LayerMode::Normal,
+        new_mode: crate::canvas::LayerMode::Normal,
     };
     undo::redo_apply(&mut canvas, &record);
     assert!(!canvas.pixels[0].visible);
@@ -348,6 +353,7 @@ fn undo_apply_add_layer_removes_layer() {
             name: "test".to_string(),
             visible: true,
             opacity: 255,
+            mode: crate::canvas::LayerMode::Normal,
         }),
     };
     assert_eq!(canvas.pixels.len(), 1);
@@ -366,6 +372,7 @@ fn undo_apply_delete_layer_restores_layer() {
             name: "deleted".to_string(),
             visible: true,
             opacity: 255,
+            mode: crate::canvas::LayerMode::Normal,
         }),
     };
     undo::undo_apply(&mut canvas, &record);
@@ -384,6 +391,7 @@ fn redo_apply_delete_layer_removes_layer() {
             name: "deleted".to_string(),
             visible: true,
             opacity: 255,
+            mode: crate::canvas::LayerMode::Normal,
         }),
     };
     undo::undo_apply(&mut canvas, &record);
@@ -401,7 +409,8 @@ fn undo_apply_move_layer_swaps_back() {
         name: "red".to_string(),
         visible: true,
         opacity: 255,
-    });
+        mode: crate::canvas::LayerMode::Normal,
+        });
     let record = UndoRecord::MoveLayer {
         from_index: 1,
         to_index: 0,
@@ -425,6 +434,7 @@ fn redo_apply_add_layer_restores_layer() {
             name: "test".to_string(),
             visible: true,
             opacity: 255,
+            mode: crate::canvas::LayerMode::Normal,
         }),
     };
     undo::undo_apply(&mut canvas, &record);
