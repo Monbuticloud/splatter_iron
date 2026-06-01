@@ -15,9 +15,9 @@ Renders a vertical panel containing the following sections:
 
 | Section                | Controls                                                                               | Bound field                                                        |
 | ---------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| **Color Selector**     | `color_edit_button_srgba`                                                              | `tool_configuration.current_color`                                 |
-| **Undo/Redo Strength** | `DragValue` (range 1–1000)                                                             | `tool_configuration.undo_redo_steps_multiplier`                    |
-| **Brush Settings**     | `DragValue` for radius (0–1000), checkbox for Brush Preview, checkbox for Alpha Overlay, checkbox for Stabilize, slider for Smoothing (0–100) | `tool_configuration.radius`, `show_brush_preview`, `alpha_overlay`, `stabilization_enabled`, `stabilization_smoothing` |
+| **Color Selector**     | Eyedropper toggle button + `color_edit_button_srgba`                                   | `tool_configuration.current_tool` / `current_color`                |
+| **Undo/Redo Strength** | `DragValue` (range 1–1000)                                                             | `ui_state.undo_redo_steps_multiplier`                    |
+| **Brush Settings**     | `DragValue` for radius (0–1000), checkboxes for Brush Preview, Alpha Overlay, Show Grid, Stabilize; sliders for Grid Size (1–500) and Smoothing (0–100) | `tool_configuration.radius`, `show_brush_preview`, `alpha_overlay`, `show_grid`, `grid_size`, `stabilization_enabled`, `stabilization_smoothing` |
 | **Save Path**          | `text_edit_singleline`                                                                 | `document.savefile_path`                                           |
 
 ### Layer management
@@ -28,12 +28,14 @@ An "Add Layer" button at the top of the layer section appends a new layer via
 
 Each layer header contains four action buttons:
 
-| Button        | Behaviour                                                                                                                                                                                          |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Delete**    | First click marks the layer as pending deletion. A second consecutive click on the same layer (confirmed by `ui.pending_layer_for_deletion`) deletes it, provided at least one layer would remain. |
-| **Move Up**   | Swaps with the layer above via `Document::move_layer_up(i)`. Disabled for `i == 0`.                                                                                                                |
-| **Move Down** | Swaps with the layer below via `Document::move_layer_down(i)`. Disabled for the bottom layer.                                                                                                      |
-| **Select**    | Sets `document.current_layer = i` via `Document::select_layer(i)`.                                                                                                                                 |
+| Button         | Behaviour                                                                                                                                                                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Delete**     | Queues a `LayerAction::Delete(i)` that is processed after the layer iteration loop. The action is deferred to avoid simultaneous borrows.                                                          |
+| **Move Up**    | Swaps with the layer above via `Document::move_layer_up(i)`. Disabled for `i == 0`.                                                                                                                |
+| **Move Down**  | Swaps with the layer below via `Document::move_layer_down(i)`. Disabled for the bottom layer.                                                                                                      |
+| **Visibility** | Toggles the layer's `visible` flag via `Document::toggle_layer_visible(i, undo)`.                                                                                                                  |
+| **Rename**     | Edits the layer name inline; the new name is sent as `LayerAction::Rename(i, name)` on focus loss.                                                                                                 |
+| **Opacity**    | Slider (0–255) that updates the layer's opacity via `Document::set_layer_opacity(i, opacity, undo)`.                                                                                               |
 
 The currently selected layer shows a "Currently Selected" label. Deleting a
 layer that is also the currently selected layer automatically adjusts
@@ -51,16 +53,9 @@ enum LayerAction {
     MoveUp(usize),
     MoveDown(usize),
     Select(usize),
+    ToggleVisible(usize),
+    Rename(usize, String),
 }
 ```
 
-### Deletion confirmation
 
-The delete action requires a two-click confirmation: the first click sets
-`ui.pending_layer_for_deletion = Some(index)`; the second click (with the
-same index) performs the deletion. Any other click (tool selection, drag,
-another layer's button) resets `pending_layer_for_deletion` to `None`.
-
-## `Brush radius range update`
-
-The radius DragValue range is now 0..=1000 (updated from 0-350 to support larger stamps and brush tips).
