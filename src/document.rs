@@ -260,6 +260,9 @@ impl Document {
     ///
     /// Pushes an [`UndoRecord::AddLayer`] so that the addition can be undone.
     /// Updates `current_layer` to point at the newly inserted layer.
+    /// The layer's default name is derived from [`Document::next_layer_number`]
+    /// which is incremented after each call so names remain unique across
+    /// add/delete cycles.
     ///
     /// # Parameters
     ///
