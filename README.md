@@ -52,7 +52,7 @@
 - Persistent stamp library — images stored and managed from the app
 - Persistent custom brush library — brush tips imported from files
 - Import GIMP `.gbr` (v1/v2) and Photoshop `.abr` (v6–10) brush files
-- Stamp scaling: nearest-neighbour or bilinear
+- Stamp scaling: nearest-neighbor or bilinear
 - Stamp tint: original colors or multiply by current brush color
 
 ---
@@ -159,4 +159,4 @@ cargo build --release
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`
 - **Atomic commits**: one logical unit per commit
 - **Pre-commit**: run `cargo test && cargo clippy`
-- Full contributor guide in [`AGENTS.md`](./AGENTS.md)
+- Full contributor guide in [`AGENTS.md`](./AGENTS.md), for agents and humans.
