@@ -57,3 +57,7 @@ Entries added to the library survive a reload from disk, confirming serialisatio
 ## `selected_mut_allows_mutation`
 
 `selected_mut()` returns a mutable reference that allows modifying the selected entry's fields.
+
+## `selected_mut_empty_none`
+
+`selected_mut()` on an empty library returns `None`.
