@@ -15,7 +15,8 @@ static NEXT_BRUSH_DIR: AtomicU64 = AtomicU64::new(0);
 
 fn tempdir() -> std::path::PathBuf {
     let id = NEXT_BRUSH_DIR.fetch_add(1, Ordering::SeqCst);
-    let dir = std::env::temp_dir().join(format!("brush_lib_test_{id}"));
+    let pid = std::process::id();
+    let dir = std::env::temp_dir().join(format!("brush_lib_test_{pid}_{id}"));
     std::fs::create_dir_all(&dir).expect("create temp dir");
     dir
 }
