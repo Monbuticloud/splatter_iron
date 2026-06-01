@@ -16,3 +16,7 @@ Constructs `BrushStrokeParams` directly and asserts all fields match.
 ## `builder_with_defaults`
 
 Uses the builder pattern with no alpha overlay override; verifies `alpha_overlay` defaults to `false`.
+
+## `builder_with_alpha_overlay`
+
+Builder with `.alpha_overlay(true)`; verifies the field is `true`.
