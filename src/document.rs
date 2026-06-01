@@ -11,6 +11,7 @@ use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
 use crate::canvas::Layer;
 use crate::pixel::BYTES_PER_PIXEL as RGBA_CHANNELS;
+use crate::pixel::LayerBlendInfo;
 use crate::pixel::{self};
 use crate::undo::UndoRecord;
 use crate::undo_history::UndoHistory;
@@ -110,12 +111,16 @@ impl Document {
         if canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
             canvas.output_rgba = Arc::new(vec![0; pixel_count * RGBA_CHANNELS]);
         }
-        // Collect pixel slices + opacity for visible layers only.
-        let layer_data: Vec<(&[Color32], u8)> = canvas
+        // Collect pixel slices, opacity, and mode for visible layers only.
+        let layer_data: Vec<LayerBlendInfo> = canvas
             .pixels
             .iter()
             .filter(|l| l.visible)
-            .map(|l| (l.pixels.as_slice(), l.opacity))
+            .map(|l| LayerBlendInfo {
+                pixels: l.pixels.as_slice(),
+                opacity: l.opacity,
+                mode: l.mode,
+            })
             .collect();
 
         let rects = canvas.dirty_rect.take_all();
