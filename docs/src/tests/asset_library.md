@@ -45,3 +45,7 @@ Selecting with an out-of-bounds index leaves the current selection unchanged.
 ## `entries_empty`
 
 `entries()` on an empty library returns an empty slice.
+
+## `entries_returns_all`
+
+`entries()` returns all added entries after multiple insertions.
