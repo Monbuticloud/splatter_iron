@@ -72,6 +72,23 @@ fn add_layer_unique_names_after_delete() {
     assert_eq!(document.canvas.pixels[1].name, "Layer 3");
 }
 
+/// Multiple add/delete cycles should never produce a duplicate default name.
+#[test]
+fn add_layer_unique_names_multiple_cycles() {
+    let mut document = small_document();
+    // Cycle 1: add Layer 2, delete Layer 1
+    document.add_layer(&mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[1].name, "Layer 2");
+    document.delete_layer(0, &mut UndoHistory::new(100));
+    // Cycle 2: add Layer 3, delete Layer 2
+    document.add_layer(&mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[1].name, "Layer 3");
+    document.delete_layer(0, &mut UndoHistory::new(100));
+    // Cycle 3: add Layer 4
+    document.add_layer(&mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[1].name, "Layer 4");
+}
+
 /// A newly added layer should match the canvas dimensions.
 #[test]
 fn add_layer_has_correct_size() {
