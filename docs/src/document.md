@@ -228,9 +228,10 @@ pub fn delete_layer(&mut self, index: usize, undo: &mut UndoHistory)
 
 ### Parameters
 
-| Parameter | Type    | Description                  |
-| --------- | ------- | ---------------------------- |
-| `index`   | `usize` | Index of the layer to remove |
+| Parameter | Type               | Description                      |
+| --------- | ------------------ | -------------------------------- |
+| `index`   | `usize`            | Index of the layer to remove     |
+| `undo`    | `&mut UndoHistory` | Undo history for the undo record |
 
 ### Behaviour
 
