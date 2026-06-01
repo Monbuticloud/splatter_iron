@@ -10,7 +10,7 @@ use crate::canvas::DirtyRect;
 use crate::tool_configuration::StampSampling;
 use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
-use crate::undo::compress_run;
+use crate::undo::compress_and_store;
 
 /// Nearest-neighbour sampling: take the closest source pixel.
 fn sample_nearest(
@@ -81,7 +81,7 @@ fn sample_bilinear(
 /// re-processing pixels already covered by an earlier stamp position in
 /// the same stroke, and a `drag_processed` buffer per-drag-gesture to
 /// avoid re-painting alpha-overlay pixels across frames.
-// SAFETY: 18 parameters are intentional — `stamp_at` is the hottest inner
+// SAFETY: 19 parameters are intentional — `stamp_at` is the hottest inner
 // loop for stamp rendering; collecting into a struct would add allocation
 // overhead on every pixel. This is one of two codebase-wide exceptions
 // documented in AGENTS.md.
@@ -107,6 +107,7 @@ fn stamp_at(
     drag_processed: &mut [u32],
     drag_stamp_value: u32,
     runs: &mut Vec<RunSegment>,
+    before_pixels: &mut Vec<Color32>,
     scratch_src_x: &mut Vec<u32>,
     dirty_rect: &mut DirtyRect,
 ) {
@@ -172,12 +173,14 @@ fn stamp_at(
             // Skip pixels already painted by an overlapping stamp in this stroke
             if visited[idx] == stamp {
                 if let Some(rs) = run_start.take() {
-                    let (rle_before, length) = compress_run(std::mem::take(&mut before));
+                    let (rle_before, length) =
+                        compress_and_store(&before, before_pixels);
                     runs.push(RunSegment {
                         start: rs,
                         length,
                         before: rle_before,
                     });
+                    before.clear();
                 }
                 continue;
             }
@@ -185,12 +188,14 @@ fn stamp_at(
             // If already processed in this alpha-overlay drag, close the run
             if alpha_overlay && drag_processed[idx] == drag_stamp_value {
                 if let Some(rs) = run_start.take() {
-                    let (rle_before, length) = compress_run(std::mem::take(&mut before));
+                    let (rle_before, length) =
+                        compress_and_store(&before, before_pixels);
                     runs.push(RunSegment {
                         start: rs,
                         length,
                         before: rle_before,
                     });
+                    before.clear();
                 }
                 continue;
             }
@@ -243,7 +248,7 @@ fn stamp_at(
         }
 
         if let Some(rs) = run_start.take() {
-            let (rle_before, length) = compress_run(before);
+            let (rle_before, length) = compress_and_store(&before, before_pixels);
             runs.push(RunSegment {
                 start: rs,
                 length,
@@ -334,6 +339,7 @@ pub fn draw_stamp_line(
     };
 
     let mut runs: Vec<RunSegment> = Vec::new();
+    let mut before_pixels: Vec<Color32> = Vec::new();
     let mut scratch_src_x: Vec<u32> = Vec::new();
     let mut dirty_rect = DirtyRect::empty();
 
@@ -376,6 +382,7 @@ pub fn draw_stamp_line(
             drag_processed,
             drag_stamp_value,
             &mut runs,
+            &mut before_pixels,
             &mut scratch_src_x,
             &mut dirty_rect,
         );
@@ -387,7 +394,7 @@ pub fn draw_stamp_line(
         layer_index: layer,
         color_after: color,
         runs,
-        before_pixels: Vec::new(),
+        before_pixels,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }

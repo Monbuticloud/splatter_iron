@@ -4,6 +4,7 @@
 use std::collections::VecDeque;
 
 use crate::canvas::Canvas;
+use crate::undo::BeforePixels;
 use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
 use crate::undo::redo_apply;
@@ -11,10 +12,17 @@ use crate::undo::undo_apply;
 
 const MAX_STROKE_STACK: usize = 1000;
 
-/// Holds accumulated run segments during an active drag gesture.
+/// Run segments and before-pixels from one drag frame.
+#[derive(Debug)]
+struct DragFrame {
+    runs: Vec<RunSegment>,
+    before_pixels: Vec<eframe::egui::Color32>,
+}
+
+/// Holds accumulated drag frames during an active drag gesture.
 #[derive(Debug)]
 struct DragAccumulator {
-    runs: Vec<RunSegment>,
+    frames: Vec<DragFrame>,
     layer_index: usize,
     width: u32,
     color_after: eframe::egui::Color32,
@@ -166,7 +174,7 @@ impl UndoHistory {
         is_alpha_overlay: bool,
     ) {
         self.drag_accumulator = Some(DragAccumulator {
-            runs: Vec::new(),
+            frames: Vec::new(),
             layer_index,
             width,
             color_after,
@@ -176,34 +184,53 @@ impl UndoHistory {
 
     /// Accumulate a frame's worth of run segments during a drag.
     ///
-    /// New runs are **prepended** before previously accumulated runs so that
-    /// `undo_apply` processes most-recent runs first. This ensures correct
-    /// undo for overlapping non-alpha paint (each step walks back through
-    /// intermediate states to the original). For alpha overlay, runs are
-    /// disjoint (guaranteed by `drag_processed`), so prepending has no
-    /// correctness impact.
+    /// Each frame stores both `runs` and its `before_pixels` buffer
+    /// separately. On finalize, frames are merged in reverse order
+    /// with offset adjustment for correct undo application.
     ///
     /// # Parameters
     ///
     /// * `runs` — Run segments captured during the current drag frame.
-    pub fn extend_drag_accumulator(&mut self, runs: Vec<RunSegment>) {
+    /// * `before_pixels` — Flat before-pixel buffer for this frame.
+    pub fn extend_drag_accumulator(
+        &mut self,
+        runs: Vec<RunSegment>,
+        before_pixels: Vec<eframe::egui::Color32>,
+    ) {
         if let Some(ref mut accumulator) = self.drag_accumulator {
-            let mut combined = runs;
-            combined.append(&mut accumulator.runs);
-            accumulator.runs = combined;
+            accumulator.frames.push(DragFrame { runs, before_pixels });
         }
     }
 
     /// Finish accumulating drag data and push the result as a single undo record.
     ///
+    /// Merges all stored frames in reverse order (most recent first for
+    /// correct undo of overlapping paint), adjusting `BeforePixels::Many`
+    /// offsets to point into the concatenated `before_pixels` buffer.
+    ///
     /// No-op if no drag was in progress.
     pub fn finalize_drag_accumulator(&mut self) {
         if let Some(accumulator) = self.drag_accumulator.take() {
+            let mut all_runs = Vec::new();
+            let mut all_before = Vec::new();
+
+            for frame in accumulator.frames.into_iter().rev() {
+                let mut frame = frame;
+                let offset_adjust = all_before.len() as u32;
+                for run in &mut frame.runs {
+                    if let BeforePixels::Many { offset, .. } = &mut run.before {
+                        *offset += offset_adjust;
+                    }
+                }
+                all_runs.append(&mut frame.runs);
+                all_before.append(&mut frame.before_pixels);
+            }
+
             let record = UndoRecord::Run {
                 layer_index: accumulator.layer_index,
                 color_after: accumulator.color_after,
-                runs: accumulator.runs,
-                before_pixels: Vec::new(),
+                runs: all_runs,
+                before_pixels: all_before,
                 compressed_before_pixels: None,
                 is_alpha_overlay: accumulator.is_alpha_overlay,
             };

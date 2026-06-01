@@ -10,7 +10,7 @@ use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
 use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
-use crate::undo::compress_run;
+use crate::undo::compress_and_store;
 
 /// Fill a rectangular region of a pixel slice without capturing undo data.
 ///
@@ -189,17 +189,14 @@ pub fn draw_square(
 
     // Capture runs (one per row) and fill in one pass
     let mut runs = Vec::with_capacity((end_y - start_y) as usize);
+    let mut before_pixels = Vec::new();
 
     for y in start_y..end_y {
         let row_start = (y as usize) * width;
         let start = row_start + (start_x as usize);
         let end = row_start + (end_x as usize);
-        let run_length = end - start;
 
-        let mut before = Vec::with_capacity(run_length);
-        before.extend_from_slice(&pixels[start..end]);
-        let (before, length) = compress_run(before);
-
+        let (before, length) = compress_and_store(&pixels[start..end], &mut before_pixels);
         runs.push(RunSegment {
             start: start as u32,
             length,
@@ -226,7 +223,7 @@ pub fn draw_square(
         layer_index: layer,
         color_after: color,
         runs,
-        before_pixels: Vec::new(),
+        before_pixels,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }
@@ -282,6 +279,7 @@ pub fn draw_square_line(params: BrushStrokeParams<'_>, brush_radius: u32) -> Und
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
+    let mut before_pixels = Vec::new();
 
     let runs = crate::tools::brush_common::apply_visited_runs(
         pixels,
@@ -293,6 +291,7 @@ pub fn draw_square_line(params: BrushStrokeParams<'_>, brush_radius: u32) -> Und
         alpha_overlay,
         drag_processed,
         drag_stamp_value,
+        &mut before_pixels,
     );
 
     canvas.dirty_rect.add(dirty_rect);
@@ -301,7 +300,7 @@ pub fn draw_square_line(params: BrushStrokeParams<'_>, brush_radius: u32) -> Und
         layer_index: layer,
         color_after: color,
         runs,
-        before_pixels: Vec::new(),
+        before_pixels,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }

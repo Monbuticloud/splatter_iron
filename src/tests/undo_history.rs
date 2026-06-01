@@ -218,17 +218,17 @@ fn drag_accumulator_full_lifecycle() {
     // Simulate a two-frame drag
     history.init_drag_accumulator(0, 10, red(), false);
     let record1 = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
-    let runs = match record1 {
-        UndoRecord::Run { runs, .. } => runs,
+    let (runs, bp) = match record1 {
+        UndoRecord::Run { runs, before_pixels, .. } => (runs, before_pixels),
         _ => unreachable!("draw_square always produces Run"),
     };
-    history.extend_drag_accumulator(runs);
+    history.extend_drag_accumulator(runs, bp);
     let record2 = square_brush::draw_square(3, 3, 6, 6, &mut canvas, red(), 0, false);
-    let runs = match record2 {
-        UndoRecord::Run { runs, .. } => runs,
+    let (runs, bp) = match record2 {
+        UndoRecord::Run { runs, before_pixels, .. } => (runs, before_pixels),
         _ => unreachable!("draw_square always produces Run"),
     };
-    history.extend_drag_accumulator(runs);
+    history.extend_drag_accumulator(runs, bp);
     history.finalize_drag_accumulator();
 
     assert!(history.can_undo(), "drag should produce one undo record");
@@ -296,7 +296,7 @@ fn max_stack_eviction_pops_oldest() {
 fn extend_drag_without_init_noop() {
     let mut history = UndoHistory::new(100);
     // No init was called — extending should not crash or create state
-    history.extend_drag_accumulator(Vec::new());
+    history.extend_drag_accumulator(Vec::new(), Vec::new());
     assert!(!history.can_undo());
 }
 
@@ -311,7 +311,7 @@ fn extend_drag_without_init_with_runs_noop() {
         length: 5,
         before: BeforePixels::All(Color32::RED),
     }];
-    history.extend_drag_accumulator(runs);
+    history.extend_drag_accumulator(runs, Vec::new());
     assert!(!history.can_undo());
 }
 

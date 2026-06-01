@@ -9,7 +9,7 @@ use eframe::egui::Color32;
 
 use crate::canvas::DirtyRect;
 use crate::undo::RunSegment;
-use crate::undo::compress_run;
+use crate::undo::compress_and_store;
 
 /// Apply color to all visited pixels within a dirty region, capture
 /// before-pixels, and return compressed run segments for undo.
@@ -30,6 +30,7 @@ use crate::undo::compress_run;
 /// * `alpha_overlay` — If true, alpha-blend instead of overwriting.
 /// * `drag_processed` — Per-pixel drag-stamp buffer (for alpha-overlay dedup).
 /// * `drag_stamp_value` — The current drag-stamp value.
+/// * `before_pixels` — Flat buffer receiving non-uniform before-pixel data.
 ///
 /// # Returns
 ///
@@ -50,6 +51,7 @@ pub fn apply_visited_runs(
     alpha_overlay: bool,
     drag_processed: &mut [u32],
     drag_stamp_value: u32,
+    before_pixels: &mut Vec<Color32>,
 ) -> Vec<RunSegment> {
     let mut runs: Vec<RunSegment> = Vec::new();
 
@@ -87,7 +89,7 @@ pub fn apply_visited_runs(
                 }
                 x += 1;
             }
-            let (rle_before, length) = compress_run(before);
+            let (rle_before, length) = compress_and_store(&before, before_pixels);
             runs.push(RunSegment {
                 start: run_start,
                 length,

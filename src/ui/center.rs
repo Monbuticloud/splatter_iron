@@ -573,6 +573,7 @@ impl MyApp {
                                 layer_index,
                                 color_after,
                                 runs,
+                                before_pixels,
                                 is_alpha_overlay,
                                 ..
                             } = stroke
@@ -583,10 +584,17 @@ impl MyApp {
                                     color_after,
                                     is_alpha_overlay,
                                 );
-                                self.undo.extend_drag_accumulator(runs);
+                                self.undo
+                                    .extend_drag_accumulator(runs, before_pixels);
                             }
-                        } else if let UndoRecord::Run { runs, .. } = stroke {
-                            self.undo.extend_drag_accumulator(runs);
+                        } else if let UndoRecord::Run {
+                            runs,
+                            before_pixels,
+                            ..
+                        } = stroke
+                        {
+                            self.undo
+                                .extend_drag_accumulator(runs, before_pixels);
                         }
                     }
                     self.ui.previous_cursor_position = Some((stab_x, stab_y));

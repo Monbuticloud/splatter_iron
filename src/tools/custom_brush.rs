@@ -9,6 +9,7 @@ use crate::brush_params::BrushStrokeParams;
 use crate::canvas::Canvas;
 use crate::tool_configuration::StampSampling;
 use crate::tools::stamp_brush::draw_stamp_line;
+use crate::undo::BeforePixels;
 use crate::undo::UndoRecord;
 
 /// Draw a custom brush tip (or interpolated tip line) onto a canvas layer.
@@ -77,6 +78,7 @@ pub fn draw_custom_brush_line(
     };
 
     let mut all_runs = Vec::new();
+    let mut all_before = Vec::new();
 
     for i in 0..num_steps {
         let t = if num_steps == 1 {
@@ -111,10 +113,19 @@ pub fn draw_custom_brush_line(
             sampling,
         );
         if let UndoRecord::Run {
-            runs: step_runs, ..
+            runs: mut step_runs,
+            before_pixels: step_before,
+            ..
         } = record
         {
+            let offset_adjust = all_before.len() as u32;
+            for run in &mut step_runs {
+                if let BeforePixels::Many { offset, .. } = &mut run.before {
+                    *offset += offset_adjust;
+                }
+            }
             all_runs.extend(step_runs);
+            all_before.extend(step_before);
         }
     }
 
@@ -122,7 +133,7 @@ pub fn draw_custom_brush_line(
         layer_index: layer,
         color_after: color,
         runs: all_runs,
-        before_pixels: Vec::new(),
+        before_pixels: all_before,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }

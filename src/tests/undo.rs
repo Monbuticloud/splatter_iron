@@ -20,16 +20,18 @@ use crate::undo::{self};
 #[test]
 fn compress_run_short_returns_many() {
     let pixels = vec![Color32::RED; 4];
-    let (before, length) = undo::compress_run(pixels.clone());
+    let mut buf = Vec::new();
+    let (before, length) = undo::compress_and_store(&pixels, &mut buf);
     assert_eq!(length, 4);
-    assert!(matches!(before, BeforePixels::Many(_)));
+    assert!(matches!(before, BeforePixels::Many { .. }));
 }
 
 /// Long uniform runs should be stored as `BeforePixels::All`.
 #[test]
 fn compress_run_uniform_long_returns_all() {
     let pixels = vec![Color32::GREEN; 20];
-    let (before, length) = undo::compress_run(pixels);
+    let mut buf = Vec::new();
+    let (before, length) = undo::compress_and_store(&pixels, &mut buf);
     assert_eq!(length, 20);
     let BeforePixels::All(c) = before else {
         panic!("expected All")
@@ -49,9 +51,10 @@ fn compress_run_mixed_long_returns_many() {
             }
         })
         .collect();
-    let (before, length) = undo::compress_run(pixels);
+    let mut buf = Vec::new();
+    let (before, length) = undo::compress_and_store(&pixels, &mut buf);
     assert_eq!(length, 20);
-    assert!(matches!(before, BeforePixels::Many(_)));
+    assert!(matches!(before, BeforePixels::Many { .. }));
 }
 
 /// A run at exactly the threshold length should still be `Many`.
@@ -59,7 +62,8 @@ fn compress_run_mixed_long_returns_many() {
 fn compress_run_threshold_boundary() {
     // RLE_SHORT_RUN_THRESHOLD = 8
     let uniform = vec![Color32::RED; 8];
-    let (_, length) = undo::compress_run(uniform);
+    let mut buf = Vec::new();
+    let (_, length) = undo::compress_and_store(&uniform, &mut buf);
     assert_eq!(length, 8, "len 8 should be short → Many");
 }
 
@@ -67,7 +71,8 @@ fn compress_run_threshold_boundary() {
 #[test]
 fn compress_run_just_above_threshold() {
     let uniform = vec![Color32::RED; 9];
-    let (before, length) = undo::compress_run(uniform);
+    let mut buf = Vec::new();
+    let (before, length) = undo::compress_and_store(&uniform, &mut buf);
     assert_eq!(length, 9);
     assert!(matches!(before, BeforePixels::All(_)));
 }
@@ -145,9 +150,10 @@ fn empty_square_produces_empty_runs() {
 /// An empty pixel vec should produce length 0 and `Many` variant.
 #[test]
 fn compress_run_empty_returns_many() {
-    let (before, length) = undo::compress_run(Vec::new());
+    let mut buf = Vec::new();
+    let (before, length) = undo::compress_and_store(&[], &mut buf);
     assert_eq!(length, 0);
-    assert!(matches!(before, BeforePixels::Many(_)));
+    assert!(matches!(before, BeforePixels::Many { .. }));
 }
 
 /// `redo_apply` with alpha overlay should blend instead of overwriting.
@@ -461,9 +467,9 @@ fn undo_apply_before_pixels_many_wrong_length_panics() {
         runs: vec![RunSegment {
             start: 0,
             length: 5,
-            before: BeforePixels::Many(vec![Color32::RED; 3]),
+            before: BeforePixels::Many { offset: 0, length: 3 },
         }],
-        before_pixels: Vec::new(),
+        before_pixels: vec![Color32::RED; 3],
         compressed_before_pixels: None,
         is_alpha_overlay: false,
     };
@@ -474,7 +480,8 @@ fn undo_apply_before_pixels_many_wrong_length_panics() {
 #[test]
 fn compress_run_identical_long() {
     let pixels = vec![Color32::from_rgba_premultiplied(42, 100, 200, 128); 15];
-    let (before, length) = undo::compress_run(pixels);
+    let mut buf = Vec::new();
+    let (before, length) = undo::compress_and_store(&pixels, &mut buf);
     assert_eq!(length, 15);
     assert!(
         matches!(before, BeforePixels::All(c) if c == Color32::from_rgba_premultiplied(42, 100, 200, 128))
@@ -517,12 +524,12 @@ fn debug_before_pixels_all_format() {
     assert!(s.contains("FF"), "debug should contain hex color, got: {s}");
 }
 
-/// `Debug` for `BeforePixels::Many` produces expected format with length.
+/// `Debug` for `BeforePixels::Many` produces expected format with offset and length.
 #[test]
 fn debug_before_pixels_many_format() {
-    let bp = crate::undo::BeforePixels::Many(vec![Color32::RED; 5]);
+    let bp = crate::undo::BeforePixels::Many { offset: 10, length: 5 };
     let s = format!("{bp:?}");
-    assert!(s.contains("Many") && s.contains("5"));
+    assert!(s.contains("Many") && s.contains("offset") && s.contains("length") && s.contains("5"));
 }
 
 /// `redo_apply` with empty run.

@@ -7,7 +7,7 @@ use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
 use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
-use crate::undo::compress_run;
+use crate::undo::compress_and_store;
 
 /// Fill a contiguous region of matching color starting from the seed point.
 ///
@@ -60,6 +60,7 @@ pub fn draw_bucket_fill(
     }
 
     let mut runs: Vec<RunSegment> = Vec::new();
+    let mut before_pixels: Vec<Color32> = Vec::new();
     let mut stack: Vec<(u32, u32)> = Vec::new();
     let mut min_x = u32::MAX;
     let mut min_y = u32::MAX;
@@ -85,9 +86,8 @@ pub fn draw_bucket_fill(
 
         let span_start = row_start + left_x as usize;
         let span_end = row_start + right_x as usize + 1;
-        let mut before_pixels = Vec::with_capacity(span_end - span_start);
-        before_pixels.extend_from_slice(&pixels[span_start..span_end]);
-        let (before, length) = compress_run(before_pixels);
+        let (before, length) =
+            compress_and_store(&pixels[span_start..span_end], &mut before_pixels);
         runs.push(RunSegment {
             start: span_start as u32,
             length,

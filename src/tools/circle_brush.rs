@@ -10,7 +10,7 @@ use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
 use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
-use crate::undo::compress_run;
+use crate::undo::compress_and_store;
 
 /// Fill a circular region without capturing undo data.
 ///
@@ -139,6 +139,7 @@ pub fn draw_circle(
 
     let pixels = &mut canvas.pixels[layer].pixels;
     let mut runs: Vec<RunSegment> = Vec::new();
+    let mut before_pixels = Vec::new();
 
     let rsq = (radius as u64) * (radius as u64);
     let mut delta_x = radius;
@@ -161,9 +162,8 @@ pub fn draw_circle(
             let row_start = (y as usize) * width;
             let start = row_start + span_start as usize;
             let end = row_start + span_end as usize + 1;
-            let mut before = Vec::with_capacity(end - start);
-            before.extend_from_slice(&pixels[start..end]);
-            let (before, length) = compress_run(before);
+            let (before, length) =
+                compress_and_store(&pixels[start..end], &mut before_pixels);
             runs.push(RunSegment {
                 start: start as u32,
                 length,
@@ -178,9 +178,8 @@ pub fn draw_circle(
                 let row_start = (y as usize) * width;
                 let start = row_start + span_start as usize;
                 let end = row_start + span_end as usize + 1;
-                let mut before = Vec::with_capacity(end - start);
-                before.extend_from_slice(&pixels[start..end]);
-                let (before, length) = compress_run(before);
+                let (before, length) =
+                    compress_and_store(&pixels[start..end], &mut before_pixels);
                 runs.push(RunSegment {
                     start: start as u32,
                     length,
@@ -214,7 +213,7 @@ pub fn draw_circle(
         layer_index: layer,
         color_after: color,
         runs,
-        before_pixels: Vec::new(),
+        before_pixels,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }
@@ -387,6 +386,7 @@ pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoR
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
+    let mut before_pixels = Vec::new();
 
     let runs = crate::tools::brush_common::apply_visited_runs(
         pixels,
@@ -398,6 +398,7 @@ pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoR
         alpha_overlay,
         drag_processed,
         drag_stamp_value,
+        &mut before_pixels,
     );
 
     canvas.dirty_rect.add(dirty_rect);
@@ -406,7 +407,7 @@ pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoR
         layer_index: layer,
         color_after: color,
         runs,
-        before_pixels: Vec::new(),
+        before_pixels,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }

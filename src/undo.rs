@@ -10,20 +10,29 @@ use crate::canvas::LayerMode;
 use crate::pixel::alpha_blend;
 
 /// Compressed storage for a run of before-pixels: either all the same color
-/// (`All`) or a full `Vec` of distinct colors (`Many`).
+/// (`All`) or an offset+length into a flat `before_pixels` buffer (`Many`).
 #[derive(Clone)]
 pub enum BeforePixels {
     /// Every pixel in the run had the same original color.
     All(Color32),
-    /// Pixels had distinct colors (run was compressed from a non-uniform span).
-    Many(Vec<Color32>),
+    /// Pixels had distinct colors (run refers into `UndoRecord::Run::before_pixels`).
+    Many {
+        /// Starting index in the flat `before_pixels` buffer.
+        offset: u32,
+        /// Number of contiguous pixels in this run.
+        length: u32,
+    },
 }
 
 impl std::fmt::Debug for BeforePixels {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::All(color) => f.debug_tuple("All").field(color).finish(),
-            Self::Many(pixels) => f.debug_tuple("Many").field(&pixels.len()).finish(),
+            Self::Many { offset, length } => f
+                .debug_struct("Many")
+                .field("offset", offset)
+                .field("length", length)
+                .finish(),
         }
     }
 }
@@ -41,25 +50,24 @@ pub struct RunSegment {
 
 const RLE_SHORT_RUN_THRESHOLD: u32 = 8;
 
-/// Compress a contiguous run of pixel data for efficient undo storage.
+/// Compress a contiguous run of pixel data into a flat `before_pixels` buffer.
 ///
-/// If the run is longer than 8 pixels and all pixels are identical, stores
-/// a single color (`BeforePixels::All`) instead of the full vector.
-/// Short or non-uniform runs store the full `Vec<Color32>`.
+/// If the run is shorter than 8 pixels or not all identical, appends the
+/// pixel data to `buf` and returns `BeforePixels::Many { offset, length }`.
+/// Uniform runs of 8+ pixels return `BeforePixels::All` without touching `buf`.
 ///
 /// # Parameters
 ///
-/// * `pixels` — Contiguous run of before-pixels to compress.
-pub fn compress_run(pixels: Vec<Color32>) -> (BeforePixels, u32) {
-    let length = pixels.len() as u32;
-    if length < RLE_SHORT_RUN_THRESHOLD {
-        return (BeforePixels::Many(pixels), length);
-    }
-    let first = pixels[0];
-    if pixels.iter().all(|&p| p == first) {
-        (BeforePixels::All(first), length)
+/// * `slice` — Contiguous run of before-pixels to compress.
+/// * `buf` — Flat buffer (ownership held by the enclosing `UndoRecord::Run`).
+pub fn compress_and_store(slice: &[Color32], buf: &mut Vec<Color32>) -> (BeforePixels, u32) {
+    let length = slice.len() as u32;
+    if length >= RLE_SHORT_RUN_THRESHOLD && slice.iter().all(|&p| p == slice[0]) {
+        (BeforePixels::All(slice[0]), length)
     } else {
-        (BeforePixels::Many(pixels), length)
+        let offset = buf.len() as u32;
+        buf.extend_from_slice(slice);
+        (BeforePixels::Many { offset, length }, length)
     }
 }
 
@@ -140,6 +148,7 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
         UndoRecord::Run {
             layer_index,
             runs,
+            before_pixels,
             ..
         } => {
             let layer = &mut canvas.pixels[*layer_index];
@@ -149,8 +158,10 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
                     BeforePixels::All(color) => {
                         layer.pixels[run.start as usize..end].fill(*color);
                     }
-                    BeforePixels::Many(pixels) => {
-                        layer.pixels[run.start as usize..end].copy_from_slice(pixels);
+                    BeforePixels::Many { offset, length } => {
+                        layer.pixels[run.start as usize..end].copy_from_slice(
+                            &before_pixels[*offset as usize..*offset as usize + *length as usize],
+                        );
                     }
                 }
             }
