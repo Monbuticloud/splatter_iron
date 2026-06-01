@@ -82,6 +82,9 @@ pub(crate) fn estimate_canvas_memory(width: u32, height: u32) -> u64 {
 pub(crate) const REPAINT_DELAY_MULTIPLIER: u32 = 5;
 
 // --- Autosave interval ---
+/// Interval (minutes) between automatic saves of the current canvas.
+/// The autosave loop in `MyApp` checks this duration against the last
+/// autosave timestamp to decide when to trigger a background save.
 pub(crate) const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 
 // --- Image import extensions ---
