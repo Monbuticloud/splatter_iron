@@ -49,6 +49,15 @@ fn add_layer_increases_count() {
     assert!(document.canvas_mut().dirty_rect.needs_reblend());
 }
 
+/// `add_layer` should select the newly added layer.
+#[test]
+fn add_layer_selects_new_layer() {
+    let mut document = small_document();
+    assert_eq!(document.current_layer, 0);
+    document.add_layer(&mut UndoHistory::new(100));
+    assert_eq!(document.current_layer, 1, "add_layer selects the new layer");
+}
+
 /// A newly added layer should match the canvas dimensions.
 #[test]
 fn add_layer_has_correct_size() {
