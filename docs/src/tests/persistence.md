@@ -25,3 +25,7 @@ Pushing a duplicate path moves it to position 0 and removes the older entry.
 ## `push_recent_file_truncates_at_ten`
 
 Pushing 11 paths caps the list at 10, retaining the most recent 10.
+
+## `config_path_ends_with_config_json`
+
+Verifies `config_path()` returns a path ending in `config.json` inside the data directory.
