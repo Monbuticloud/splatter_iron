@@ -348,3 +348,53 @@ A `&mut Canvas` referencing the underlying canvas data.
 ### Panics
 
 Does not panic in normal single-threaded use. `Arc::make_mut` would panic if the `Arc` had outstanding weak references with multiple strong references, but this codebase never creates weak references to the canvas.
+
+---
+
+## `Document::toggle_layer_visible(index, undo)`
+
+```rust
+pub fn toggle_layer_visible(&mut self, index: usize, undo: &mut UndoHistory)
+```
+
+Toggles the `visible` flag of the layer at `index`. Refuses to hide the last
+remaining visible layer (at least one layer must stay visible).
+
+**Parameters:**
+
+- `index` — Index of the layer to toggle.
+- `undo` — Undo history; a `ModifyLayer` record is pushed on successful toggle.
+
+---
+
+## `Document::set_layer_opacity(index, opacity, undo)`
+
+```rust
+pub fn set_layer_opacity(&mut self, index: usize, opacity: u8, undo: &mut UndoHistory)
+```
+
+Sets the opacity of the layer at `index`. A `ModifyLayer` record is pushed
+onto the undo stack with the previous opacity and visibility values.
+
+**Parameters:**
+
+- `index` — Index of the layer to modify.
+- `opacity` — New opacity value (0–255).
+- `undo` — Undo history for the `ModifyLayer` record.
+
+---
+
+## `Document::rename_layer(index, name, undo)`
+
+```rust
+pub fn rename_layer(&mut self, index: usize, name: String, undo: &mut UndoHistory)
+```
+
+Renames the layer at `index` to the given `name`. Pushes a `ModifyLayer`
+record onto the undo stack with the previous name, opacity, and visibility.
+
+**Parameters:**
+
+- `index` — Index of the layer to rename.
+- `name` — New layer name.
+- `undo` — Undo history for the `ModifyLayer` record.
