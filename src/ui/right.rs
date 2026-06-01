@@ -5,6 +5,7 @@ use eframe::egui;
 
 use crate::app::MyApp;
 use crate::canvas::CurrentTool;
+use crate::canvas::LayerMode;
 
 const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=100;
 const BRUSH_RADIUS_RANGE: std::ops::RangeInclusive<u32> = 0..=1000;
@@ -28,6 +29,8 @@ enum LayerAction {
     ToggleVisible(usize),
     /// Rename the layer at the given index.
     Rename(usize, String),
+    /// Set the compositing mode of the layer at the given index.
+    SetMode(usize, LayerMode),
 }
 
 impl MyApp {
@@ -147,6 +150,32 @@ impl MyApp {
                             pending_opacity = Some((i, opacity));
                         }
 
+                        // Compositing mode dropdown
+                        let mut current_mode = layer.mode;
+                        egui::ComboBox::from_id_salt(format!("layer_mode_{i}"))
+                            .selected_text(format!("{current_mode}"))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(
+                                    &mut current_mode,
+                                    LayerMode::Normal,
+                                    "Normal",
+                                );
+                                ui.selectable_value(
+                                    &mut current_mode,
+                                    LayerMode::ClipDown,
+                                    "Clip Down",
+                                );
+                                ui.selectable_value(
+                                    &mut current_mode,
+                                    LayerMode::MaskDown,
+                                    "Mask Down",
+                                );
+                            });
+                        if current_mode != layer.mode {
+                            pending_layer_action =
+                                Some(LayerAction::SetMode(i, current_mode));
+                        }
+
                         // Action buttons
                         let delete_button = ui.button("Delete");
                         if delete_button.clicked() {
@@ -210,6 +239,9 @@ impl MyApp {
                     }
                     LayerAction::Rename(index, new_name) => {
                         self.document.rename_layer(index, new_name, &mut self.undo);
+                    }
+                    LayerAction::SetMode(index, mode) => {
+                        self.document.set_layer_mode(index, mode, &mut self.undo);
                     }
                 }
             }
