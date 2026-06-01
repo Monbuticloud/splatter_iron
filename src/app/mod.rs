@@ -292,6 +292,7 @@ pub struct ToastState {
 }
 
 impl Default for ToastState {
+    /// No active toast notification.
     fn default() -> Self {
         Self { message: None }
     }
