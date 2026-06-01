@@ -21,3 +21,7 @@ Adding multiple entries preserves insertion order; the first-added entry is at i
 ## `remove_last_clears_selection`
 
 Removing the only entry in the library clears the selection and leaves the library empty.
+
+## `remove_middle_preserves_order`
+
+Removing a middle entry shifts later entries down and preserves the relative order of remaining entries.
