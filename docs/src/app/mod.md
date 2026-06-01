@@ -28,7 +28,7 @@ Constructor invoked once by eframe at startup.
 
 Steps:
 1. Creates mpsc channels for file-dialog and save-result communication.
-2. Builds a default `Canvas` (800×600) and computes pixel count for undo capacity.
+2. Builds a default `Canvas` (2000×1500) and computes pixel count for undo capacity.
 3. Resolves the platform data directory via `ProjectDirs`, creates `autosaves/`.
 4. Queries `max_texture_dimension_2d` from the wgpu device (falls back to 8192).
 5. Loads `StampLibrary` and `BrushLibrary` from disk.
