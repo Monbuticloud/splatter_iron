@@ -254,6 +254,8 @@ pub struct DialogState {
 }
 
 impl Default for DialogState {
+    /// All dialogs closed, default canvas dimensions (2000×1500),
+    /// no pending stamps, brushes, or unsaved-warning actions.
     fn default() -> Self {
         Self {
             show_delete_layer_dialog: None,
