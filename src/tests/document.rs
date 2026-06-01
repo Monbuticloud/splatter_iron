@@ -117,6 +117,35 @@ fn add_layer_all_names_unique() {
     );
 }
 
+/// `replace_canvas` must reset `next_layer_number` so that subsequent
+/// `add_layer` calls produce names aligned with the new canvas's layer count.
+#[test]
+fn replace_canvas_resets_next_layer_number() {
+    let mut document = small_document();
+    document.add_layer(&mut UndoHistory::new(100)); // Layer 2
+    let new_canvas = Canvas {
+        pixels: vec![
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 100],
+                ..Default::default()
+            },
+            Layer {
+                pixels: vec![Color32::TRANSPARENT; 100],
+                ..Default::default()
+            },
+        ],
+        height: 10,
+        width: 10,
+        output_rgba: Arc::new(Vec::new()),
+        rendered_layers: None,
+        dirty_rect: DirtyRectList::new(),
+    };
+    document.replace_canvas(new_canvas, &mut UndoHistory::new(100));
+    // Canvas has 2 layers, so next layer should be "Layer 3"
+    document.add_layer(&mut UndoHistory::new(100));
+    assert_eq!(document.canvas.pixels[2].name, "Layer 3");
+}
+
 /// A newly added layer should match the canvas dimensions.
 #[test]
 fn add_layer_has_correct_size() {
