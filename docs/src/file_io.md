@@ -83,16 +83,17 @@ pub fn new(
     save_result_sender: mpsc::Sender<SaveResult>,
     save_result_receiver: mpsc::Receiver<SaveResult>,
     app_local_data_directory: PathBuf,
+    export_strategy: Arc<dyn ExportStrategy + Send + Sync>,
 ) -> Self
-```
 
-Constructor that stores the two channel pairs and the app data directory. Initializes `pending_file_action` to `None`.
+Constructor that stores the channel pairs, the app data directory, and the export strategy. Initialises `pending_file_action` to `None` and creates internal channels for export and load-import results.
 
 **Parameters:**
 
 - `dialog_sender` / `dialog_receiver` — Channel pair for file-dialog results (background thread → UI thread).
 - `save_result_sender` / `save_result_receiver` — Channel pair for async save outcomes (background thread → UI thread).
 - `app_local_data_directory` — Base path under which the `autosaves/` subdirectory is created.
+- `export_strategy` — Strategy for writing file exports (e.g. `DefaultExportStrategy`), shared via `Arc` for cross-thread access.
 
 **Returns:** A fully initialized `FileIO` with no pending action. The channels are typically created by the caller (e.g. `app.rs`) via `mpsc::channel()` before passing them into `new`.
 
