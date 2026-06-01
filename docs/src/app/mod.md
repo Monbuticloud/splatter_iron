@@ -31,8 +31,9 @@ Steps:
 2. Builds a default `Canvas` (2000×1500) and computes pixel count for undo capacity.
 3. Resolves the platform data directory via `ProjectDirs`, creates `autosaves/`.
 4. Queries `max_texture_dimension_2d` from the wgpu device (falls back to 8192).
-5. Loads `StampLibrary` and `BrushLibrary` from disk.
-6. When wgpu is available, creates a GPU `Rgba8UnormSrgb` texture and registers
+5. Loads tool configuration and recent files from `config.json` via `load_config`.
+6. Loads `StampLibrary` and `BrushLibrary` from disk.
+7. When wgpu is available, creates a GPU `Rgba8UnormSrgb` texture and registers
    it with the egui_wgpu renderer.
 7. Assembles `MyApp` with the loaded/created subsystems and optional `GpuTexture`.
 
