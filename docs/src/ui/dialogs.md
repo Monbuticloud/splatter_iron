@@ -16,6 +16,5 @@ Modal and overlay dialog windows shown on top of the canvas.
 | `show_stamp_naming_dialog()`  | Name prompt for imported stamp images                      |
 | `show_brush_naming_dialog()`  | Batch name editor for imported brush tips                  |
 | `show_toast()`                | Transient notification (2-second auto-dismiss)             |
-| `show_progress_indicator()`   | Spinner overlay for in-flight async operations             |
 
 All methods are `pub(crate)` and called from `ui()` in `app/mod.rs`.
