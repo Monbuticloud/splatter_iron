@@ -249,6 +249,23 @@ fn delete_layer_preserves_current_when_above() {
     assert_eq!(document.canvas.pixels.len(), 2);
 }
 
+/// Deleting a layer above `current_layer` (with current_layer > 0) should
+/// leave `current_layer` unchanged.
+#[test]
+fn delete_layer_preserves_current_when_above_middle() {
+    let mut document = small_document();
+    document.add_layer(&mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100));
+    document.current_layer = 1;
+    // Delete layer at index 2 (above current_layer 1)
+    document.delete_layer(2, &mut UndoHistory::new(100));
+    assert_eq!(
+        document.current_layer, 1,
+        "unchanged when deleting above (middle)"
+    );
+    assert_eq!(document.canvas.pixels.len(), 2);
+}
+
 /// Deleting a layer below `current_layer` should decrement `current_layer`.
 #[test]
 fn delete_layer_decrements_current_when_below() {
