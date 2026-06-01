@@ -41,3 +41,7 @@ Saves config when recent files is empty; verifies the saved JSON has an empty re
 ## `handle_config_save_waits_for_interval`
 
 Immediately after construction, `time_elapsed` is 0 so `handle_config_save` should not write config.json.
+
+## `handle_config_save_saves_after_interval`
+
+Sets `time_elapsed` past the 2-minute interval and verifies `handle_config_save` writes config.json.
