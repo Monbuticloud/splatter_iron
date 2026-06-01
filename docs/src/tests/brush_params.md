@@ -20,3 +20,7 @@ Uses the builder pattern with no alpha overlay override; verifies `alpha_overlay
 ## `builder_with_alpha_overlay`
 
 Builder with `.alpha_overlay(true)`; verifies the field is `true`.
+
+## `debug_output`
+
+Verifies the `Debug` format includes `start_x`, `end_y`, `visited.len`, and `drag_processed.len`.
