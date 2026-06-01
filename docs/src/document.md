@@ -79,7 +79,7 @@ pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory)
 - `undo.clear()` is called, discarding all saved undo/redo records.
 - `undo.resize_visited(...)` reallocates the visited buffer to `width × height`
   of the new canvas.
-- `self.canvas_mut().render_next_frame` is set to `true` to force a re-render.
+- `self.canvas_mut().dirty_rect.request_full_blend()` is called to force a full re-composite.
 
 ---
 
@@ -252,7 +252,7 @@ Swaps the layer at `index` with the layer above it (`index - 1`) and updates
 ### Signature
 
 ```rust
-pub fn move_layer_up(&mut self, index: usize)
+pub fn move_layer_up(&mut self, index: usize, undo: &mut UndoHistory)
 ```
 
 ### Parameters
@@ -271,7 +271,8 @@ Panics if `index == 0` — there is no layer above to swap with. The caller
 - Gets a mutable canvas via `self.canvas_mut()` and swaps layers with
   `canvas.pixels.swap(index, index - 1)`.
 - Sets `current_layer = index - 1` (the layer moves with the swap).
-- Sets `canvas.render_next_frame = true`.
+- Pushes `UndoRecord::MoveLayer` onto the undo stack.
+- Calls `canvas_mut().dirty_rect.request_full_blend()`.
 
 ---
 
@@ -283,7 +284,7 @@ Swaps the layer at `index` with the layer below it (`index + 1`) and updates
 ### Signature
 
 ```rust
-pub fn move_layer_down(&mut self, index: usize)
+pub fn move_layer_down(&mut self, index: usize, undo: &mut UndoHistory)
 ```
 
 ### Parameters
@@ -302,7 +303,8 @@ Panics if `index >= pixels.len() - 1` — there is no layer below. The caller
 - Gets a mutable canvas via `self.canvas_mut()` and swaps layers with
   `canvas.pixels.swap(index, index + 1)`.
 - Sets `current_layer = index + 1` (the layer moves with the swap).
-- Sets `canvas.render_next_frame = true`.
+- Pushes `UndoRecord::MoveLayer` onto the undo stack.
+- Calls `canvas_mut().dirty_rect.request_full_blend()`.
 
 ---
 
