@@ -32,7 +32,8 @@ pub enum SaveState {
 }
 
 /// Wraps a canvas (behind `Arc` for COW during async saves) with its save
-/// path, current layer, and dirty-tracking state.
+/// path, current layer, dirty-tracking state, and a monotonically increasing
+/// layer-number counter for unique default layer names.
 #[derive(Debug)]
 pub struct Document {
     /// The canvas being edited (layers, dimensions, pixel data).
@@ -47,6 +48,10 @@ pub struct Document {
     pub dirty_since_last_autosave: bool,
     /// Current save state — `InFlight` while an async save is running.
     pub save_state: SaveState,
+    /// Monotonically increasing counter for default layer names.
+    /// Incremented on every `add_layer()` so names stay unique even after
+    /// layer deletion.
+    pub next_layer_number: usize,
 }
 
 impl Document {
