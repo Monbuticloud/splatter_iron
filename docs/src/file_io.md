@@ -49,7 +49,7 @@ Result sent back via channel when an async save completes. Received by `poll_sav
 | Variant               | Description                                                                                                                                                                     |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Autosave`            | Autosave completed successfully. `poll_save_results` sets `document.dirty_since_last_autosave = false` in response.                                                             |
-| `ManualSave(PathBuf)` | Manual save completed to the given path. `poll_save_results` updates `document.savefile_path` and sets `render_next_frame = true`.                                              |
+| `ManualSave(PathBuf)` | Manual save completed to the given path. `poll_save_results` updates `document.savefile_path` and calls `request_full_blend` to trigger a re-composite.                                              |
 | `ArchiveAutosave`     | Archive autosave completed successfully. `poll_save_results` resets the archive autosave timer in response.                                                                         |
 | `Failed(String)`      | Save failed at the serialization stage. The string is a human-readable error message pushed to the error list. |
 
@@ -207,7 +207,7 @@ Called once per frame to process completed async save results. Drains the `save_
 
 - `document` — The `Document` to update based on the save outcome:
   - `Autosave` → Sets `document.dirty_since_last_autosave = false`, marking the autosave as up-to-date.
-  - `ManualSave(path)` → Sets `document.savefile_path = path.display().to_string()` and `document.canvas.render_next_frame = true`, updating the UI with the new save location and triggering a re-render.
+  - `ManualSave(path)` → Sets `document.savefile_path = path.display().to_string()`, sets `document.dirty_since_last_autosave = false`, and calls `document.canvas_mut().dirty_rect.request_full_blend()` to trigger a full re-composite.
 - `error_list` — A `Vec<String>` where `Failed(message)` results are pushed as `"Save failed: {message}"`.
 
 Non-blocking: uses `try_recv()` so it will not stall the frame if no save has completed.
