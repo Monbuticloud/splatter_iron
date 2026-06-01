@@ -98,6 +98,7 @@ pub struct PersistedConfig {
     pub recent_files: Vec<PathBuf>,
 }
 
+/// File-extension list accepted by the image-import dialog (19 formats).
 pub const IMPORT_EXTENSIONS: &[&str] = &[
     "avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif", "tga", "ico", "pnm", "pgm", "ppm",
     "pbm", "pam", "qoi", "exr", "hdr", "ff",
