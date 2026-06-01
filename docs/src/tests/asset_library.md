@@ -17,3 +17,7 @@ Adding an entry increments the count and selects it.
 ## `add_multiple_preserves_order`
 
 Adding multiple entries preserves insertion order; the first-added entry is at index 0, the second at index 1, and so on.
+
+## `remove_last_clears_selection`
+
+Removing the only entry in the library clears the selection and leaves the library empty.
