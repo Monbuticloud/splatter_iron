@@ -12,3 +12,7 @@ pattern, field access, and debug formatting.
 ## `construction_and_field_access`
 
 Constructs `BrushStrokeParams` directly and asserts all fields match.
+
+## `builder_with_defaults`
+
+Uses the builder pattern with no alpha overlay override; verifies `alpha_overlay` defaults to `false`.
