@@ -76,6 +76,9 @@ pub(crate) fn estimate_canvas_memory(width: u32, height: u32) -> u64 {
     let pixels = u64::from(width) * u64::from(height);
     pixels * 12
 }
+/// Repaint-interval multiplier applied when the render state is
+/// `IdleThrottled` — the normal repaint delay is multiplied by this
+/// value to reduce CPU/GPU load during idle periods.
 pub(crate) const REPAINT_DELAY_MULTIPLIER: u32 = 5;
 
 // --- Autosave interval ---
