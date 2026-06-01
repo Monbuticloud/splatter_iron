@@ -57,7 +57,7 @@ The per-frame entry point called by eframe. Orchestrates the frame lifecycle:
 3. **GPU sync** — calls `self.sync_gpu_texture(frame, ui)` to resize/blend/upload.
 4. **Panels** — calls `self.show_panels(ui)` which renders top/left/right/centre panels.
 5. **Dialogs** — calls error window, delete-layer, large-canvas, new-canvas,
-   unsaved-changes, stamp-naming, brush-naming, toast, and progress dialogs.
+   unsaved-changes, stamp-naming, brush-naming, and toast dialogs.
 6. **Title** — updates window title to reflect unsaved-changes state.
 7. **Close** — sends `ViewportCommand::Close` on quit or `is_quitting`.
 8. **Autosave** — calls `self.handle_autosave()` and `self.handle_config_save()`.
