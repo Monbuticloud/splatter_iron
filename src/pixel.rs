@@ -5,8 +5,9 @@
 //!
 //! Supports three layer compositing modes:
 //! - [`LayerMode::Normal`]: standard alpha-over blend.
-//! - [`LayerMode::ClippedDown`]: layer alpha is clipped by the base layer's alpha.
-//! - [`LayerMode::MaskedDown`]: layer alpha modulates the accumulator alpha
+//! - [`LayerMode::Clipped`]: layer alpha is clipped by the base layer's alpha (base visible).
+//! - [`LayerMode::ClippedOverlap`]: same clip as `Clipped`, but the base layer's RGB is hidden.
+//! - [`LayerMode::Masked`]: layer alpha modulates the accumulator alpha
 //!   (RGB content is not rendered).
 
 use eframe::egui::Color32;
@@ -154,7 +155,7 @@ const fn scale_alpha(alpha: u8, opacity: u8) -> u8 {
     ((alpha as u32 * opacity as u32 + 128) * 257 >> 16) as u8
 }
 
-/// Apply a MaskedDown layer: multiply each pixel's accumulated alpha by the
+/// Apply a Masked layer: multiply each pixel's accumulated alpha by the
 /// mask layer's alpha (after opacity scaling).  The mask layer's RGB content
 /// is ignored — it only contributes its alpha channel.
 #[inline]
@@ -180,8 +181,8 @@ fn apply_mask_simd_chunk(
     write_accumulator(output_chunk, acc_ra, acc_ga, acc_ba, acc_aa);
 }
 
-/// Blend one Normal or ClippedDown layer over the existing output accumulator
-/// with SIMD for 4 pixels.
+/// Blend one Normal, Clipped, or ClippedOverlap layer over the existing output
+/// accumulator with SIMD for 4 pixels.
 #[inline]
 fn blend_simd_chunk_over(
     output_chunk: &mut [u8],
@@ -233,7 +234,7 @@ fn blend_simd_chunk_over(
         top_a = (top_a * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
     }
 
-    // Apply ClippedDown: clip all channels by base layer's alpha.
+    // Apply Clipped: clip all channels by base layer's alpha.
     if let Some((base_pixels, base_opacity)) = clip_base {
         let b0 = scale_alpha(base_pixels[pixel_base].a(), base_opacity) as u32;
         let b1 = scale_alpha(base_pixels[pixel_base + 1].a(), base_opacity) as u32;
@@ -241,10 +242,12 @@ fn blend_simd_chunk_over(
         let b3 = scale_alpha(base_pixels[pixel_base + 3].a(), base_opacity) as u32;
         let base_a = u32x4::new([b0, b1, b2, b3]);
 
-        top_r = (top_r * base_a + ROUNDING_BIAS_128) >> u32x4::splat(8);
-        top_g = (top_g * base_a + ROUNDING_BIAS_128) >> u32x4::splat(8);
-        top_b = (top_b * base_a + ROUNDING_BIAS_128) >> u32x4::splat(8);
-        top_a = (top_a * base_a + ROUNDING_BIAS_128) >> u32x4::splat(8);
+        let div_255 = u32x4::splat(257);
+        let div_255_shift = u32x4::splat(16);
+        top_r = ((top_r * base_a + ROUNDING_BIAS_128) * div_255) >> div_255_shift;
+        top_g = ((top_g * base_a + ROUNDING_BIAS_128) * div_255) >> div_255_shift;
+        top_b = ((top_b * base_a + ROUNDING_BIAS_128) * div_255) >> div_255_shift;
+        top_a = ((top_a * base_a + ROUNDING_BIAS_128) * div_255) >> div_255_shift;
     }
 
     // Standard alpha-over blend into accumulator.
@@ -307,14 +310,15 @@ fn write_accumulator(chunk: &mut [u8], r: u32x4, g: u32x4, b: u32x4, a: u32x4) {
 
 /// Blend (or mask) a single layer over a pixel range of the output accumulator.
 ///
-/// Handles [`LayerMode::Normal`] and [`LayerMode::ClippedDown`] via SIMD alpha-over
-/// blend, and [`LayerMode::MaskedDown`] by modulating the accumulator alpha.
+/// Handles [`LayerMode::Normal`], [`LayerMode::Clipped`], and
+/// [`LayerMode::ClippedOverlap`] via SIMD alpha-over blend with optional clip
+/// masking, and [`LayerMode::Masked`] by modulating the accumulator alpha.
 ///
 /// # Parameters
 ///
 /// * `output` — RGBA accumulator buffer (read-write, full canvas size).
 /// * `info` — The layer to apply (pixels, opacity, mode).
-/// * `base` — For ClippedDown: the base layer whose alpha clips this layer.
+/// * `base` — For Clipped/ClippedOverlap: the base layer whose alpha clips this layer.
 /// * `pixel_start` — First pixel index in the range.
 /// * `pixel_count` — Number of pixels to process.
 /// * `parallel` — Whether to use rayon parallelism (full-canvas blends).
@@ -334,7 +338,9 @@ fn apply_single_layer(
     let pixel_end = pixel_start + pixel_count;
 
     let clip_base = match (info.mode, base) {
-        (LayerMode::ClippedDown, Some(base_info)) => Some((base_info.pixels, base_info.opacity)),
+        (LayerMode::Clipped, Some(base_info)) | (LayerMode::ClippedOverlap, Some(base_info)) => {
+            Some((base_info.pixels, base_info.opacity))
+        }
         _ => None,
     };
 
@@ -343,23 +349,23 @@ fn apply_single_layer(
     let head_end = aligned_start.min(pixel_end);
     for pixel_index in pixel_start..head_end {
         match info.mode {
-            LayerMode::MaskedDown => {
+            LayerMode::Masked => {
                 let mask_a = scale_alpha(info.pixels[pixel_index].a(), info.opacity);
                 let byte_index = pixel_index * BYTES_PER_PIXEL;
                 let acc_a = output[byte_index + 3] as u32;
                 output[byte_index + 3] = ((acc_a * mask_a as u32 + 128) >> 8) as u8;
             }
-            LayerMode::ClippedDown | LayerMode::Normal => {
+            LayerMode::Clipped | LayerMode::ClippedOverlap | LayerMode::Normal => {
                 let mut pixel = info.pixels[pixel_index];
                 pixel = scale_pixel_opacity(pixel, info.opacity);
                 if let Some((base_pixels, base_opacity)) = clip_base {
                     let base_a = scale_alpha(base_pixels[pixel_index].a(), base_opacity);
                     let f = base_a as u32;
                     pixel = Color32::from_rgba_premultiplied(
-                        ((pixel.r() as u32 * f + 128) >> 8) as u8,
-                        ((pixel.g() as u32 * f + 128) >> 8) as u8,
-                        ((pixel.b() as u32 * f + 128) >> 8) as u8,
-                        ((pixel.a() as u32 * f + 128) >> 8) as u8,
+                        ((pixel.r() as u32 * f + 128) * 257 >> 16) as u8,
+                        ((pixel.g() as u32 * f + 128) * 257 >> 16) as u8,
+                        ((pixel.b() as u32 * f + 128) * 257 >> 16) as u8,
+                        ((pixel.a() as u32 * f + 128) * 257 >> 16) as u8,
                     );
                 }
                 let byte_index = pixel_index * BYTES_PER_PIXEL;
@@ -386,7 +392,7 @@ fn apply_single_layer(
             &mut output[byte_start..byte_start + simd_pixel_count * BYTES_PER_PIXEL];
 
         match info.mode {
-            LayerMode::MaskedDown => {
+            LayerMode::Masked => {
                 if parallel && simd_chunks > PARALLEL_BLEND_THRESHOLD {
                     aligned_output
                         .par_chunks_mut(16)
@@ -410,7 +416,7 @@ fn apply_single_layer(
                     }
                 }
             }
-            LayerMode::ClippedDown | LayerMode::Normal => {
+            LayerMode::Clipped | LayerMode::ClippedOverlap | LayerMode::Normal => {
                 if parallel && simd_chunks > PARALLEL_BLEND_THRESHOLD {
                     aligned_output
                         .par_chunks_mut(16)
@@ -443,23 +449,23 @@ fn apply_single_layer(
     let tail_start = aligned_end.max(pixel_start);
     for pixel_index in tail_start..pixel_end {
         match info.mode {
-            LayerMode::MaskedDown => {
+            LayerMode::Masked => {
                 let mask_a = scale_alpha(info.pixels[pixel_index].a(), info.opacity);
                 let byte_index = pixel_index * BYTES_PER_PIXEL;
                 let acc_a = output[byte_index + 3] as u32;
                 output[byte_index + 3] = ((acc_a * mask_a as u32 + 128) >> 8) as u8;
             }
-            LayerMode::ClippedDown | LayerMode::Normal => {
+            LayerMode::Clipped | LayerMode::ClippedOverlap | LayerMode::Normal => {
                 let mut pixel = info.pixels[pixel_index];
                 pixel = scale_pixel_opacity(pixel, info.opacity);
                 if let Some((base_pixels, base_opacity)) = clip_base {
                     let base_a = scale_alpha(base_pixels[pixel_index].a(), base_opacity);
                     let f = base_a as u32;
                     pixel = Color32::from_rgba_premultiplied(
-                        ((pixel.r() as u32 * f + 128) >> 8) as u8,
-                        ((pixel.g() as u32 * f + 128) >> 8) as u8,
-                        ((pixel.b() as u32 * f + 128) >> 8) as u8,
-                        ((pixel.a() as u32 * f + 128) >> 8) as u8,
+                        ((pixel.r() as u32 * f + 128) * 257 >> 16) as u8,
+                        ((pixel.g() as u32 * f + 128) * 257 >> 16) as u8,
+                        ((pixel.b() as u32 * f + 128) * 257 >> 16) as u8,
+                        ((pixel.a() as u32 * f + 128) * 257 >> 16) as u8,
                     );
                 }
                 let byte_index = pixel_index * BYTES_PER_PIXEL;
@@ -479,16 +485,16 @@ fn apply_single_layer(
 
 /// Compute the base layer index for each layer.
 ///
-/// For a layer with [`LayerMode::ClippedDown`], the base is the nearest layer
-/// below it whose mode is **not** `ClippedDown`.  Consecutive `ClippedDown` layers
-/// all reference the same base (Photoshop-style clipping mask chain).
-/// For `Normal` and `MaskedDown` layers the base index is set to the
-/// layer's own index (unused).
+/// For a layer with [`LayerMode::Clipped`] or [`LayerMode::ClippedOverlap`],
+/// the base is the nearest layer below it whose mode is **not** `Clipped` or
+/// `ClippedOverlap`.  Consecutive clipped layers all reference the same base
+/// (Photoshop-style clipping mask chain).  For `Normal` and `Masked` layers
+/// the base index is set to the layer's own index (unused).
 fn compute_base_indices(layers: &[LayerBlendInfo]) -> Vec<usize> {
     let mut bases = Vec::with_capacity(layers.len());
     let mut current_base = 0;
     for (i, info) in layers.iter().enumerate() {
-        if info.mode == LayerMode::ClippedDown {
+        if info.mode == LayerMode::Clipped || info.mode == LayerMode::ClippedOverlap {
             bases.push(current_base);
         } else {
             current_base = i;
@@ -542,12 +548,22 @@ pub fn blend_layers(layers: &[LayerBlendInfo], output: &mut [u8]) {
     // Zero the output buffer — start from transparent.
     output.fill(0);
 
-    // Pre-compute ClippedDown base indices.
+    // Pre-compute base indices and find bases suppressed by ClippedOverlap.
     let base_indices = compute_base_indices(layers);
+    let mut suppress_base = vec![false; layers.len()];
+    for (i, info) in layers.iter().enumerate() {
+        if info.mode == LayerMode::ClippedOverlap {
+            suppress_base[base_indices[i]] = true;
+        }
+    }
 
     for (i, info) in layers.iter().enumerate() {
+        // Skip rendering Normal layers whose RGB is hidden by ClippedOverlap.
+        if suppress_base[i] && info.mode == LayerMode::Normal {
+            continue;
+        }
         let base = match info.mode {
-            LayerMode::ClippedDown => Some(&layers[base_indices[i]]),
+            LayerMode::Clipped | LayerMode::ClippedOverlap => Some(&layers[base_indices[i]]),
             _ => None,
         };
         apply_single_layer(output, info, base, 0, pixel_count, true);
@@ -589,14 +605,23 @@ pub fn blend_region(
     }
     let width = canvas_width as usize;
     let base_indices = compute_base_indices(layers);
+    let mut suppress_base = vec![false; layers.len()];
+    for (i, info) in layers.iter().enumerate() {
+        if info.mode == LayerMode::ClippedOverlap {
+            suppress_base[base_indices[i]] = true;
+        }
+    }
 
     for y in min_y..=max_y {
         let pixel_start = (y as usize) * width + min_x as usize;
         let pixel_count = (max_x - min_x + 1) as usize;
 
         for (i, info) in layers.iter().enumerate() {
+            if suppress_base[i] && info.mode == LayerMode::Normal {
+                continue;
+            }
             let base = match info.mode {
-                LayerMode::ClippedDown => Some(&layers[base_indices[i]]),
+                LayerMode::Clipped | LayerMode::ClippedOverlap => Some(&layers[base_indices[i]]),
                 _ => None,
             };
             apply_single_layer(output, info, base, pixel_start, pixel_count, false);
@@ -764,7 +789,7 @@ mod tests {
             LayerBlendInfo {
                 pixels: &clipped,
                 opacity: 255,
-                mode: LayerMode::ClippedDown,
+                mode: LayerMode::Clipped,
             },
         ];
         let mut out = vec![0u8; 8];
@@ -789,6 +814,46 @@ mod tests {
     }
 
     #[test]
+    fn blend_layers_clipped_overlap_hides_base_rgb() {
+        let base = vec![
+            Color32::from_rgba_premultiplied(255, 0, 0, 255),
+            Color32::from_rgba_premultiplied(255, 0, 0, 255),
+        ];
+        let clipped = vec![
+            Color32::from_rgba_premultiplied(0, 255, 0, 255),
+            Color32::from_rgba_premultiplied(0, 0, 0, 0),
+        ];
+        let layers = [
+            normal(&base, 255),
+            LayerBlendInfo {
+                pixels: &clipped,
+                opacity: 255,
+                mode: LayerMode::ClippedOverlap,
+            },
+        ];
+        let mut out = vec![0u8; 8];
+        blend_layers(&layers, &mut out);
+        // Pixel 0: base has red, clipped has green overlapping → green shows, red hidden.
+        assert!(
+            out[0] <= 1,
+            "pixel 0 red should be hidden, got {}",
+            out[0]
+        );
+        assert!(
+            out[1] >= 254,
+            "pixel 0 green should show, got {}",
+            out[1]
+        );
+        assert_eq!(out[3], 255, "pixel 0 alpha");
+        // Pixel 1: base has red, clipped is transparent → nothing shows.
+        assert_eq!(
+            out[4..8],
+            [0, 0, 0, 0],
+            "pixel 1 should be transparent"
+        );
+    }
+
+    #[test]
     fn blend_layers_mask_down_modulates_accumulator_alpha() {
         let bottom = vec![Color32::from_rgba_premultiplied(255, 255, 255, 255)];
         let mask = vec![Color32::from_rgba_premultiplied(0, 0, 0, 128)];
@@ -797,7 +862,7 @@ mod tests {
             LayerBlendInfo {
                 pixels: &mask,
                 opacity: 255,
-                mode: LayerMode::MaskedDown,
+                mode: LayerMode::Masked,
             },
         ];
         let mut out = vec![0u8; 4];

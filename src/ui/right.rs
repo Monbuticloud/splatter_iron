@@ -148,16 +148,25 @@ impl MyApp {
                             ::from_id_salt(format!("layer_mode_{i}"))
                             .selected_text(format!("{current_mode}"))
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(&mut current_mode, LayerMode::Normal, "Normal");
                                 ui.selectable_value(
                                     &mut current_mode,
-                                    LayerMode::ClippedDown,
-                                    "Clipped Down"
+                                    LayerMode::Normal,
+                                    "Normal",
                                 );
                                 ui.selectable_value(
                                     &mut current_mode,
-                                    LayerMode::MaskedDown,
-                                    "Masked Down"
+                                    LayerMode::Clipped,
+                                    "Clipped (Visible)",
+                                );
+                                ui.selectable_value(
+                                    &mut current_mode,
+                                    LayerMode::ClippedOverlap,
+                                    "Clipped (Overlap only)",
+                                );
+                                ui.selectable_value(
+                                    &mut current_mode,
+                                    LayerMode::Masked,
+                                    "Masked (Down)",
                                 );
                             });
                         if current_mode != layer.mode {
@@ -320,10 +329,10 @@ mod tests {
 
     #[test]
     fn layer_action_set_mode_holds_index_and_mode() {
-        let action = LayerAction::SetMode(2, LayerMode::ClippedDown);
+        let action = LayerAction::SetMode(2, LayerMode::Clipped);
         if let LayerAction::SetMode(index, mode) = action {
             assert_eq!(index, 2);
-            assert_eq!(mode, LayerMode::ClippedDown);
+            assert_eq!(mode, LayerMode::Clipped);
         } else {
             panic!("expected SetMode variant");
         }
