@@ -290,9 +290,11 @@ impl Document {
             index,
             layer: Box::new(removed),
         });
+        if index <= self.current_layer {
+            self.current_layer = self.current_layer.saturating_sub(1);
+        }
         self.current_layer = self
             .current_layer
-            .saturating_sub(1)
             .min(self.canvas.pixels.len().saturating_sub(1));
         self.canvas_mut().dirty_rect.request_full_blend();
     }
