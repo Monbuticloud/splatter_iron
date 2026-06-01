@@ -16,6 +16,8 @@ A file-dialog action queued for execution on a background thread. The result is 
 | `Export(usize)` | Opens a native `rfd::FileDialog` "save" dialog for the export format at the given index into `EXPORT_FORMATS`. Sets default filename to `export.{primary_extension}`. Spawns a thread; on user selection, sends `DialogResult::Picked(path)`. |
 | `LoadStamp`     | Opens a native `rfd::FileDialog` "open" dialog filtered for image files (`IMPORT_EXTENSIONS`). Spawns a thread; decodes the selected image and sends `DialogResult::StampPixels` or `DialogResult::Error`. |
 | `LoadBrush`     | Opens a native `rfd::FileDialog` "open" dialog filtered for `.abr`/`.gbr` files. Spawns a thread; parses the file and sends `DialogResult::BrushTips` or `DialogResult::Error`. |
+| `ExportArchive` | Opens a native `rfd::FileDialog` "save" dialog for `.splatterarchive` files. Spawns a thread; on user selection, sends result through the dialog channel for archive serialization. |
+| `ImportArchive` | Opens a native `rfd::FileDialog` "open" dialog filtered for `.splatterarchive` files. Spawns a thread; on user selection, loads and deserializes the archive, replacing the current canvas. |
 
 Derives `Clone`, `Copy`.
 
@@ -29,6 +31,7 @@ Message sent from the file-dialog background thread to the UI thread after the u
 | `StampPixels(Vec, u32, u32, String)` | Decoded stamp image pixels + dimensions + suggested name stem, sent from the background thread after a `LoadStamp` action.                                |
 | `BrushTips(Vec<BrushTip>)`    | Parsed brush tips from an ABR/GBR file, sent from the background thread after a `LoadBrush` action.                                                              |
 | `Error(String)`               | An error occurred during a file operation on the background thread. The string is a human-readable description.                                                   |
+| `Cancelled`                   | User closed or cancelled the native dialog without selecting a file. Clears `pending_file_action`.                                                                  |
 
 ### `SaveKind`
 
