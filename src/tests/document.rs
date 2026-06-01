@@ -146,6 +146,19 @@ fn replace_canvas_resets_next_layer_number() {
     assert_eq!(document.canvas.pixels[2].name, "Layer 3");
 }
 
+/// Undoing a layer deletion then adding a new layer should still produce a
+/// unique name — the counter is not affected by undo/redo.
+#[test]
+fn undo_delete_then_add_uses_next_number() {
+    let mut document = small_document();
+    document.add_layer(&mut UndoHistory::new(100)); // Layer 2
+    document.delete_layer(0, &mut UndoHistory::new(100));
+    // After delete+add: counter advances regardless of undo state
+    document.add_layer(&mut UndoHistory::new(100)); // Layer 3 — not "Layer 2"
+    assert_eq!(document.canvas.pixels[0].name, "Layer 2");
+    assert_eq!(document.canvas.pixels[1].name, "Layer 3");
+}
+
 /// A newly added layer should match the canvas dimensions.
 #[test]
 fn add_layer_has_correct_size() {
