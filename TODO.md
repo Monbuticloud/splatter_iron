@@ -26,64 +26,44 @@
 
 ### Performance
 
-- `compress_run` allocates `Vec<Color32>` before RLE check — `src/undo.rs:52` → defer allocation via iterator/callback. (P2)(B1)(aef7235)
-- bucket fill lacks visited-stamp dedup — `src/tools/bucket_fill.rs:34` → reuse `apply_visited_runs`. (P2)(B2)(aef7235)
-- `stamp_circle_positions` uses `f64::sqrt` per row — `src/tools/circle_brush.rs:312` → integer midpoint-circle increment. (P2)(B1)(aef7235)
-- grid overlay redraws all lines every frame — `src/ui/center.rs:120-148` → cache as shape or vertex buffer. (P3)(B1)(aef7235)
-- adaptive render quality — reduce blend resolution when zoomed far out. (P3)(B1)(59653a1)
+- `compress_run` allocates `Vec<Color32>` before RLE check — `src/undo.rs:52` → defer allocation via iterator/callback. `stamp_brush` uses `mem::take` but callers still allocate upfront. (P2)(B1)(5d89e87)
+- bucket fill lacks visited-stamp dedup — `src/tools/bucket_fill.rs:34` → inline stamp check (not `apply_visited_runs`; architectural mismatch). (P2)(B2)(5d89e87)
+- `stamp_circle_positions` uses `f64::sqrt` per row — `src/tools/circle_brush.rs:312` → integer midpoint-circle increment (other circle fns already converted). (P2)(B1)(5d89e87)
+- grid overlay redraws all lines every frame — `src/ui/center.rs:120-148` → cache as shape or vertex buffer. (P3)(B1)(5d89e87)
+- adaptive render quality — reduce blend resolution when zoomed far out. (P3)(B1)(5d89e87)
 
 ### Architecture
 
-- split `FileIO` — `src/file_io.rs:99` manages dialog/save/export/load/import/stamp/brush → `DialogManager`, `SaveManager`, `ExportManager`, `ImportManager`. (P1)(B5)(aef7235)
-- `apply_stroke` duplicates `BrushStrokeParams` construction — `src/ui/center.rs:509-751` → extract builder. (P1)(B1)(aef7235)
-- consolidate eraser variants — explore `ToolKind { Square, Circle }` + `Eraser(ToolKind)` layout (enum, not bool). (P2)(B4)(aef7235)
-- deduplicate stamp/brush fields in `ToolConfiguration` — share sub-struct for `sampling`/`tint_mode`. (P2)(B3)(aef7235)
-- layer blend modes — add Multiply, Screen, Overlay etc. (currently only alpha-overlay + opaque). (P2)(B2)(aef7235)
-- selection tools — rectangular/lasso/magic-wand. (P2)(B2)(aef7235)
-- layer locking — add `alpha_lock` / `full_lock` fields to `Layer`, wire into blend and brush-apply. (P2)(B2)(59653a1)
-- canvas rotation/flip — store rotation/filp in `UIState`; apply view transform in `center.rs`. (P2)(B2)(59653a1)
-- line tool — click-drag straight line; preview during drag; shift-constrain to 45°. (P2)(B2)(59653a1)
-- canvas background checkerboard — blend behind transparent areas in `blend_layers()`. (P3)(B2)(59653a1)
-- rectangle/ellipse shape tools — unfilled/stroked shapes with configurable border width. (P3)(B2)(59653a1)
+- split `FileIO` — `src/file_io.rs:99` manages dialog/save/export/load/import/stamp/brush → `DialogManager`, `SaveManager`, `ExportManager`, `ImportManager`. (P1)(B5)(5d89e87)
+- `apply_stroke` duplicates `BrushStrokeParams` builder construction — `src/ui/center.rs:644-878` → builder extracted but `::builder(...)` call repeated 6×; hoist invariant args above match. (P1)(B1)(5d89e87)
+- consolidate eraser variants — explore `ToolKind { Square, Circle }` + `Eraser(ToolKind)` layout (enum, not bool). (P2)(B4)(5d89e87)
+- deduplicate stamp/brush fields in `ToolConfiguration` — share sub-struct for `sampling`/`tint_mode`. (P2)(B3)(5d89e87)
+- layer blend modes — add Multiply, Screen, Overlay etc. (currently only alpha-overlay + opaque). (P2)(B2)(5d89e87)
+- selection tools — rectangular/lasso/magic-wand. (P2)(B2)(5d89e87)
+- layer locking — add `alpha_lock` / `full_lock` fields to `Layer`, wire into blend and brush-apply. (P2)(B2)(5d89e87)
+- canvas rotation/flip — store rotation/filp in `UIState`; apply view transform in `center.rs`. (P2)(B2)(5d89e87)
+- line tool — click-drag straight line; preview during drag; shift-constrain to 45°. (P2)(B2)(5d89e87)
+- canvas background checkerboard — blend behind transparent areas in `blend_layers()`. (P3)(B2)(5d89e87)
+- rectangle/ellipse shape tools — unfilled/stroked shapes with configurable border width. (P3)(B2)(5d89e87)
 
 ### UX
 
-- keyboard shortcut system with help dialog — top-bar "Keyboard Shortcuts" / `?` button. (P2)(B2)(aef7235)
-- pressure sensitivity — `pressure: f32` in `BrushStrokeParams` (per ADR-0018). (P3)(B2)(aef7235)
-- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. (P2)(B2)(59653a1)
-- status bar — canvas dimensions, zoom %, cursor coordinates, memory usage at window bottom. (P2)(B2)(59653a1)
-- persist UI state — save/restore window size, panel widths, zoom, pan offset, last export format in `PersistedConfig`. (P2)(B2)(59653a1)
-- color palette/swatches — save/load/recent colors panel, persisted to disk. (P3)(B2)(59653a1)
-- fullscreen toggle — `Cmd+Ctrl+F` or menu entry. (P3)(B2)(59653a1)
-- panel visibility toggles — `Tab` to toggle all panels, individual show/hide buttons. (P3)(B2)(59653a1)
-- preferences/settings dialog — default canvas size, autosave interval, theme. (P3)(B2)(59653a1)
+- keyboard shortcut system with help dialog — top-bar "Keyboard Shortcuts" / `?` button. (P2)(B2)(5d89e87)
+- pressure sensitivity — `pressure: f32` in `BrushStrokeParams` (per ADR-0018). (P3)(B2)(5d89e87)
+- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. (P2)(B2)(5d89e87)
+- status bar — dimensions + zoom + activity shown; missing cursor coordinates + memory usage. (P2)(B2)(5d89e87)
+- persist UI state — tool config + recent files persisted; missing window size, panel widths, zoom, pan offset, last export format. (P2)(B2)(5d89e87)
+- color palette/swatches — save/load/recent colors panel, persisted to disk. (P3)(B2)(5d89e87)
+- fullscreen toggle — `Cmd+Ctrl+F` or menu entry. (P3)(B2)(5d89e87)
+- panel visibility toggles — `Tab` to toggle all panels, individual show/hide buttons. (P3)(B2)(5d89e87)
+- preferences/settings dialog — default canvas size, autosave interval, theme. (P3)(B2)(5d89e87)
 
 ### Standards & Cleanup
 
-- `#[allow(clippy::..)]` missing inline justification — `src/ui/center.rs:296`, `src/tools/stamp_brush.rs:85` — add inline comment per AGENTS.md. (P1)(B1)(59653a1)
-- `unwrap()` calls without justification — `src/ui/dialogs.rs:224,411` — add safety comment or replace with `if let`. (P1)(B1)(59653a1)
-- missing `# Errors` doc sections — `src/tools/brush_parsers.rs:72,158,256,316,340,359,390` — 7 `Result` fns lacking `# Errors`. (P2)(B1)(59653a1)
-- misplaced docstring — `src/app/mod.rs:75-78`: `/// File-extension list...` attributed to `PersistedConfig` instead of `IMPORT_EXTENSIONS`. (P2)(B1)(59653a1)
-- duplicate docstring — `src/ui/center.rs:40-46` — first sentence appears twice. (P3)(B1)(59653a1)
-- unused imports — `src/debug.rs:7`, `src/file_io.rs:4`, `src/tools/custom_brush.rs:9`, `src/ui/dialogs.rs:13`. (P3)(B1)(59653a1)
-- dead code audit — remove or `#[cfg(test)]` gate 10+ dead items in `asset_library`, `canvas`, `files`, `undo_history`. (P3)(B1)(59653a1)
+- missing `# Errors` doc sections — `src/tools/brush_parsers.rs:72,158,256,316,340,359,390` — 7 `Result` fns lacking `# Errors`. (P2)(B1)(5d89e87)
+- unused imports — `src/file_io.rs:4` (`Path`), `src/tools/custom_brush.rs:9` (`Canvas`) — 2 of 4 remain; `debug.rs:7`, `dialogs.rs:13` fixed. (P3)(B1)(5d89e87)
+- dead code audit — `#[cfg(test)]` gate or remove 21 dead items in `asset_library`, `canvas`, `files`, `undo_history`. (P3)(B1)(5d89e87)
 
 ### Testing
 
-- missing test module — `src/persistence.rs` has no `src/tests/persistence.rs`. (P1)(B1)(59653a1)
-- missing frame.rs tests — `src/app/frame.rs` (GPU sync, render state, autosave) has zero coverage. (P2)(B1)(59653a1)
-- missing `docs/src/tests/` files — `asset_library.md`, `brush_common.md`, `brush_params.md`, `debug.md`. (P3)(B0)(59653a1)
-
-### Documentation
-
-## Accepted
-
-### Allocation reductions
-
-- `canvas.rs:262` + `file_io.rs:432` — `output_rgba: Vec<u8>` cloned (12MB) on every export → `Arc<Vec<u8>>` for atomic-shared export. (P1)(B1)(514450e)
-- `tools/stamp_brush.rs:148` — `src_x_map` allocated per stamp placement in `stamp_at` → reuse `scratch_src_x` buffer across stamps within a line. (P1)(B1)(514450e)
-- `files.rs:262,325,367,387` — export allocates intermediate RgbaImage → skip it for JPEG/HDR/Farbfeld, encode from `raw_output` directly. (P2)(B1)(514450e)
-
-## Implementing
-
--
+- missing `src/tests/frame.rs` — `src/app/frame.rs` has inline tests but no dedicated module per convention. (P2)(B1)(5d89e87)

@@ -4,6 +4,12 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 
 ## Denied
 
+- `#[allow(clippy::..)]` missing inline justification — `src/ui/center.rs:296`, `src/tools/stamp_brush.rs:85` — both now have inline justification comments. (P1)(B1)(59653a1)(5d89e87)
+- `unwrap()` calls without justification — `src/ui/dialogs.rs:224,411` — lines no longer contain bare `unwrap()`. (P1)(B1)(59653a1)(5d89e87)
+- misplaced docstring — `src/app/mod.rs:75-78` — docstrings correctly attributed per current code. (P2)(B1)(59653a1)(5d89e87)
+- duplicate docstring — `src/ui/center.rs:40-46` — no duplication in current codebase. (P3)(B1)(59653a1)(5d89e87)
+- missing test module — `src/persistence.rs` has no `src/tests/persistence.rs` — module exists and is registered. (P1)(B1)(59653a1)(5d89e87)
+- missing `docs/src/tests/` files — `asset_library.md`, `brush_common.md`, `brush_params.md`, `debug.md` — all 4 files present. (P3)(B0)(59653a1)(5d89e87)
 - `ActiveWake` render state at unlimited FPS — `src/canvas.rs:370` : already implemented — `ActiveWake(Duration)` with decrement-to-throttle in `src/app/frame.rs:122-129`. (P3)(B1)(59653a1)
 - `src/files.rs:211` missing `# Errors` — `ExportStrategy` trait already documents `# Errors` at `src/files.rs:193-195`; impl inherits. (P2)(B1)(59653a1)
 - `ui/top.rs:149` — clone `recent_files` every frame → borrow instead. (P2)(B1)(514450e) — clone is inside `context_menu` closure, only runs on menu open not every frame.
