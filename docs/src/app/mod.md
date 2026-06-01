@@ -13,6 +13,9 @@ history, and file-IO subsystems for eframe.
 ## Constants, Structs & Enums
 
 All app identity constants (`APP_QUALIFIER`, `APP_ORGANIZATION`, `APP_NAME`),
+performance constants (`UNFOCUSED_SLEEP_MILLISECONDS`, `REPAINT_DELAY_MULTIPLIER`,
+`AUTOSAVE_INTERVAL_MINUTES`), canvas presets and thresholds (`NEW_CANVAS_PRESETS`,
+`MEMORY_WARNING_THRESHOLD`, `estimate_canvas_memory`),
 canvas format constants (`CANVAS_EXTENSION`, `FILE_FILTER_NAME`,
 `DEFAULT_CANVAS_NAME`), archive format constants (`ARCHIVE_EXTENSION`,
 `ARCHIVE_FILTER_NAME`, `DEFAULT_ARCHIVE_NAME`), `IMPORT_EXTENSIONS`, `EXPORT_FORMATS`,
