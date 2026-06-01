@@ -409,6 +409,31 @@ impl Document {
         }
     }
 
+    pub fn set_layer_mode(
+        &mut self,
+        index: usize,
+        mode: crate::canvas::LayerMode,
+        undo: &mut UndoHistory,
+    ) {
+        let canvas = self.canvas_mut();
+        if let Some(l) = canvas.pixels.get_mut(index) {
+            let old_mode = l.mode;
+            l.mode = mode;
+            undo.push_undo(UndoRecord::ModifyLayer {
+                index,
+                old_visible: l.visible,
+                old_opacity: l.opacity,
+                old_name: l.name.clone(),
+                old_mode,
+                new_visible: l.visible,
+                new_opacity: l.opacity,
+                new_name: l.name.clone(),
+                new_mode: mode,
+            });
+            canvas.dirty_rect.request_full_blend();
+        }
+    }
+
     /// Rename a layer.
     ///
     /// Pushes an [`UndoRecord::ModifyLayer`] so the name change can be undone.
