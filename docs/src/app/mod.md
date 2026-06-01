@@ -39,7 +39,7 @@ Steps:
 6. Loads `StampLibrary` and `BrushLibrary` from disk.
 7. When wgpu is available, creates a GPU `Rgba8UnormSrgb` texture and registers
    it with the egui_wgpu renderer.
-7. Assembles `MyApp` with the loaded/created subsystems and optional `GpuTexture`.
+8. Assembles `MyApp` with the loaded/created subsystems and optional `GpuTexture`.
 
 ### Panics
 
