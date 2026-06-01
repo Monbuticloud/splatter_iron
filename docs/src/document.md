@@ -15,6 +15,7 @@ save path, and coordinates GPU texture uploads.
 | `current_layer`             | `usize`  | Index into `canvas.pixels` for the active layer     |
 | `dirty_since_last_autosave` | `bool`   | Whether unsaved changes exist                       |
 | `save_state`                | `SaveState` | Current save state — `Idle` or `InFlight` while an async save runs |
+| `next_layer_number`         | `usize`  | Monotonically increasing counter for default layer names (unique across add/delete cycles) |
 
 ### Invariants
 
@@ -30,8 +31,9 @@ save path, and coordinates GPU texture uploads.
 
 Constructs a `Document` wrapping the supplied `Canvas`.
 
-Initialises the document with an empty save path, `current_layer = 0`, and
-`dirty_since_last_autosave = false`.
+Initialises the document with an empty save path, `current_layer = 0`,
+`dirty_since_last_autosave = false`, and `next_layer_number` set to one
+past the number of pre-existing layers.
 
 ### Signature
 
@@ -56,7 +58,8 @@ pub fn new(canvas: Canvas) -> Self
 
 Replaces the current canvas with a new one and resets the document to a clean
 state. The undo history is cleared and resized to match the new canvas's pixel
-count.
+count. `next_layer_number` is set to `pixels.len() + 1` so subsequent default
+layer names stay unique.
 
 ### Signature
 
@@ -206,6 +209,9 @@ pub fn add_layer(&mut self, undo: &mut UndoHistory)
 
 - Pushes a `Layer` containing `width × height` transparent pixels onto
   `self.canvas_mut().pixels`.
+- Sets the layer's default name to `"Layer {n}"` where `n` is the current
+  `next_layer_number` (incremented after each call so names remain unique
+  across add/delete cycles).
 - Sets `self.current_layer` to the index of the newly added layer so it becomes
   the active drawing target.
 - Calls `self.canvas_mut().dirty_rect.request_full_blend()` so the compositor re-blends all
