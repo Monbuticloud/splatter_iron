@@ -2,6 +2,8 @@
 //!
 //! Mirrors the `stamp_library` test patterns.
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use eframe::egui::Context;
 
 use crate::asset_library::Library;
@@ -9,12 +11,11 @@ use crate::brush_library::BrushEntry;
 use crate::brush_library::add_brush;
 use crate::tests::common::red;
 
+static NEXT_BRUSH_DIR: AtomicU64 = AtomicU64::new(0);
+
 fn tempdir() -> std::path::PathBuf {
-    let ts = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    let dir = std::env::temp_dir().join(format!("brush_lib_test_{ts}"));
+    let id = NEXT_BRUSH_DIR.fetch_add(1, Ordering::SeqCst);
+    let dir = std::env::temp_dir().join(format!("brush_lib_test_{id}"));
     std::fs::create_dir_all(&dir).expect("create temp dir");
     dir
 }
