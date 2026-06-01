@@ -252,10 +252,11 @@ impl Document {
     ///
     /// * `undo` — Undo history to push the record onto.
     pub fn add_layer(&mut self, undo: &mut UndoHistory) {
-        let canvas = self.canvas_mut();
-        let layer_index = canvas.pixels.len();
+        let layer_index = self.canvas.pixels.len();
+        let width = self.canvas.width;
+        let height = self.canvas.height;
         let layer = Layer {
-            pixels: vec![Color32::TRANSPARENT; (canvas.width * canvas.height) as usize],
+            pixels: vec![Color32::TRANSPARENT; (width * height) as usize],
             name: format!("Layer {}", layer_index + 1),
             visible: true,
             opacity: 255,
@@ -265,8 +266,12 @@ impl Document {
             index: layer_index,
             layer: Box::new(layer.clone()),
         });
-        canvas.pixels.push(layer);
-        canvas.dirty_rect.request_full_blend();
+        {
+            let canvas = self.canvas_mut();
+            canvas.pixels.push(layer);
+            canvas.dirty_rect.request_full_blend();
+        }
+        self.current_layer = layer_index;
     }
 
     /// Remove the layer at `index` and adjust `current_layer` if needed.
