@@ -242,9 +242,9 @@ impl MyApp {
                     if ui.button("Save").clicked() {
                         if self.document.savefile_path.is_empty() {
                             self.ui.dialogs.pending_after_save = Some(action.clone());
-                            self.file_io.queue_file_action(PendingFileAction::Save);
+                            self.dialog_manager.queue_file_action(PendingFileAction::Save);
                         } else {
-                            self.file_io.save_to_current_path(&mut self.document);
+                            self.save_manager.save_to_current_path(&mut self.document);
                             self.ui.dialogs.pending_after_save = Some(action.clone());
                         }
                         resolved = true;
@@ -284,13 +284,13 @@ impl MyApp {
                 self.ui.dialogs.show_new_canvas_dialog = true;
             }
             UnsavedWarningAction::Load => {
-                self.file_io.queue_file_action(PendingFileAction::Load);
+                self.dialog_manager.queue_file_action(PendingFileAction::Load);
             }
             UnsavedWarningAction::Import => {
-                self.file_io.queue_file_action(PendingFileAction::Import);
+                self.dialog_manager.queue_file_action(PendingFileAction::Import);
             }
             UnsavedWarningAction::LoadPath(path) => {
-                self.file_io.queue_load_direct(path);
+                self.dialog_manager.queue_load_direct(path);
             }
         }
     }

@@ -16,11 +16,14 @@ pub mod common;
 pub mod custom_brush;
 #[cfg(feature = "debug-snapshot")]
 pub mod debug;
+pub mod dialog_manager;
 pub mod document;
-pub mod file_io;
+pub mod export_manager;
 pub mod files;
+pub mod load_import_manager;
 pub mod persistence;
 pub mod pixel;
+pub mod save_manager;
 pub mod square_brush;
 pub mod stamp_brush;
 pub mod stamp_library;

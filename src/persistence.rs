@@ -22,7 +22,7 @@ impl MyApp {
 
     /// Path to the user-config JSON file (tool settings, preferences).
     pub(crate) fn config_path(&self) -> PathBuf {
-        self.file_io.app_local_data_directory.join("config.json")
+        self.save_manager.app_local_data_directory.join("config.json")
     }
 
     /// Persist current tool configuration and recent files to disk.

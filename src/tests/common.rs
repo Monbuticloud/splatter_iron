@@ -16,7 +16,10 @@ use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
 use crate::canvas::Layer;
 use crate::document::Document;
-use crate::file_io::FileIO;
+use crate::file_io::DialogManager;
+use crate::file_io::ExportManager;
+use crate::file_io::LoadImportManager;
+use crate::file_io::SaveManager;
 use crate::files::DefaultExportStrategy;
 use crate::tool_configuration::ToolConfiguration;
 use crate::undo_history::UndoHistory;
@@ -34,14 +37,10 @@ pub fn create_test_app(data_dir: PathBuf) -> MyApp {
         document: Document::new(canvas),
         tool_configuration: ToolConfiguration::default(),
         undo: UndoHistory::new(pixel_count),
-        file_io: FileIO::new(
-            dialog_tx,
-            dialog_rx,
-            save_tx,
-            save_rx,
-            data_dir.clone(),
-            Arc::new(DefaultExportStrategy),
-        ),
+        dialog_manager: DialogManager::new(dialog_tx, dialog_rx),
+        save_manager: SaveManager::new(save_tx, save_rx, data_dir.clone()),
+        export_manager: ExportManager::new(Arc::new(DefaultExportStrategy)),
+        load_import_manager: LoadImportManager::new(),
         ui: UIState::default(),
         gpu_texture: None,
         stamp_library: Library::load_from_disk(&data_dir),

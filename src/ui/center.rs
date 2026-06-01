@@ -292,7 +292,7 @@ impl MyApp {
 
         response.context_menu(|ui| {
             if ui.button("Import").clicked() {
-                self.file_io.pending_file_action = Some(PendingFileAction::Import);
+                self.dialog_manager.pending_file_action = Some(PendingFileAction::Import);
                 ui.ctx().request_repaint();
                 ui.close();
             }
@@ -301,7 +301,7 @@ impl MyApp {
                 for (format_index, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                     if ui.button(label).clicked() {
                         self.ui.last_export_format = format_index;
-                        self.file_io
+                        self.dialog_manager
                             .queue_file_action(PendingFileAction::Export(format_index));
                         ui.ctx().request_repaint();
                         ui.close();
@@ -312,7 +312,7 @@ impl MyApp {
             ui.separator();
 
             if ui.button("Save As").clicked() {
-                self.file_io.queue_file_action(PendingFileAction::Save);
+                self.dialog_manager.queue_file_action(PendingFileAction::Save);
                 self.document.savefile_path.clear();
                 ui.ctx().request_repaint();
                 ui.close();
@@ -321,7 +321,7 @@ impl MyApp {
             if self.tool_configuration.current_tool == CurrentTool::Stamp {
                 ui.separator();
                 if ui.button("Replace Stamp Image...").clicked() {
-                    self.file_io.queue_file_action(PendingFileAction::LoadStamp);
+                    self.dialog_manager.queue_file_action(PendingFileAction::LoadStamp);
                     ui.ctx().request_repaint();
                     ui.close();
                 }
@@ -329,7 +329,7 @@ impl MyApp {
             if self.tool_configuration.current_tool == CurrentTool::CustomBrush {
                 ui.separator();
                 if ui.button("Replace Brush...").clicked() {
-                    self.file_io.queue_file_action(PendingFileAction::LoadBrush);
+                    self.dialog_manager.queue_file_action(PendingFileAction::LoadBrush);
                     ui.ctx().request_repaint();
                     ui.close();
                 }
@@ -473,14 +473,14 @@ impl MyApp {
             && self.tool_configuration.current_tool == CurrentTool::Stamp
             && self.stamp_library.is_empty()
         {
-            self.file_io.queue_file_action(PendingFileAction::LoadStamp);
+            self.dialog_manager.queue_file_action(PendingFileAction::LoadStamp);
             ui.ctx().request_repaint();
         }
         if response.clicked()
             && self.tool_configuration.current_tool == CurrentTool::CustomBrush
             && self.brush_library.is_empty()
         {
-            self.file_io.queue_file_action(PendingFileAction::LoadBrush);
+            self.dialog_manager.queue_file_action(PendingFileAction::LoadBrush);
             ui.ctx().request_repaint();
         }
 

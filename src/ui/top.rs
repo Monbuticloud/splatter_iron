@@ -90,22 +90,22 @@ impl MyApp {
         }
         if ui.input(|i| i.key_pressed(egui::Key::S) && i.modifiers.command && !i.modifiers.shift) {
             if self.document.savefile_path.is_empty() {
-                self.file_io.queue_file_action(PendingFileAction::Save);
+                self.dialog_manager.queue_file_action(PendingFileAction::Save);
             } else {
                 self.ui.progress = crate::app::ProgressState::Saving;
-                self.file_io.save_to_current_path(&mut self.document);
+                self.save_manager.save_to_current_path(&mut self.document);
             }
             ui.ctx().request_repaint();
         }
         if ui.input(|i| i.key_pressed(egui::Key::S) && i.modifiers.command && i.modifiers.shift) {
-            self.file_io.queue_file_action(PendingFileAction::Save);
+            self.dialog_manager.queue_file_action(PendingFileAction::Save);
             ui.ctx().request_repaint();
         }
         if ui.input(|i| i.key_pressed(egui::Key::I) && i.modifiers.command && !i.modifiers.shift) {
             self.guard_unsaved(UnsavedWarningAction::Import);
         }
         if ui.input(|i| i.key_pressed(egui::Key::E) && i.modifiers.command && !i.modifiers.shift) {
-            self.file_io
+            self.dialog_manager
                 .queue_file_action(PendingFileAction::Export(self.ui.last_export_format));
             ui.ctx().request_repaint();
         }
@@ -114,10 +114,10 @@ impl MyApp {
             // Save
             if ui.button("Save").clicked() {
                 if self.document.savefile_path.is_empty() {
-                    self.file_io.queue_file_action(PendingFileAction::Save);
+                    self.dialog_manager.queue_file_action(PendingFileAction::Save);
                 } else {
                     self.ui.progress = crate::app::ProgressState::Saving;
-                    self.file_io.save_to_current_path(&mut self.document);
+                    self.save_manager.save_to_current_path(&mut self.document);
                 }
                 ui.ctx().request_repaint();
             }
@@ -138,7 +138,7 @@ impl MyApp {
                 for (format_index, &(label, _)) in crate::app::EXPORT_FORMATS.iter().enumerate() {
                     if ui.button(label).clicked() {
                         self.ui.last_export_format = format_index;
-                        self.file_io
+                        self.dialog_manager
                             .queue_file_action(PendingFileAction::Export(format_index));
                         ui.ctx().request_repaint();
                         ui.close();
@@ -170,13 +170,13 @@ impl MyApp {
             // File menu with archive operations
             ui.menu_button("File", |ui| {
                 if ui.button("Export Archive…").clicked() {
-                    self.file_io
+                    self.dialog_manager
                         .queue_file_action(PendingFileAction::ExportArchive);
                     ui.ctx().request_repaint();
                     ui.close();
                 }
                 if ui.button("Import Archive…").clicked() {
-                    self.file_io
+                    self.dialog_manager
                         .queue_file_action(PendingFileAction::ImportArchive);
                     ui.ctx().request_repaint();
                     ui.close();
@@ -185,7 +185,7 @@ impl MyApp {
 
             // Autosaves — open the autosave folder in the OS file manager
             if ui.button("Autosaves").clicked() {
-                let path = self.file_io.autosave_directory();
+                let path = self.save_manager.autosave_directory();
                 #[cfg(target_os = "macos")]
                 let _ = std::process::Command::new("open").arg(&path).spawn();
                 #[cfg(target_os = "windows")]

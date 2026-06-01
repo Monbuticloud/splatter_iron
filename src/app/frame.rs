@@ -2,6 +2,7 @@
 //! I/O, manage render-state transitions, sync GPU texture, and autosave.
 
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 
 use eframe::egui;
@@ -15,6 +16,7 @@ use crate::app::REPAINT_DELAY_MULTIPLIER;
 use crate::app::UNFOCUSED_SLEEP_MILLISECONDS;
 use crate::canvas::RenderState;
 use crate::document::SaveState;
+use crate::file_io::DispatchedAction;
 use crate::file_io::SaveKind;
 
 impl MyApp {
@@ -28,38 +30,70 @@ impl MyApp {
         );
         let was_autosave = self.ui.progress == ProgressState::Autosaving;
 
-        self.file_io.poll_dialog_results(
-            &mut self.document,
-            &mut self.undo,
-            &mut self.ui.errors.list,
-        );
-        self.file_io
+        // 1. Poll dialog results → dispatch to the appropriate subsystem.
+        let actions = self
+            .dialog_manager
+            .poll_dialog_results(&mut self.ui.errors.list);
+        for action in actions {
+            match action {
+                DispatchedAction::Save(path) => {
+                    self.save_manager
+                        .trigger_async_save(&mut self.document, SaveKind::ManualSave(path));
+                }
+                DispatchedAction::Load(path) => {
+                    self.load_import_manager.trigger_async_load(path);
+                }
+                DispatchedAction::Import(path) => {
+                    self.load_import_manager.trigger_async_import(path);
+                }
+                DispatchedAction::Export(_index, path) => {
+                    if self.document.canvas.output_rgba.is_empty() {
+                        continue;
+                    }
+                    let rgba = Arc::clone(&self.document.canvas.output_rgba);
+                    let w = self.document.canvas.width;
+                    let h = self.document.canvas.height;
+                    self.export_manager.trigger_async_export(rgba, w, h, path);
+                }
+                DispatchedAction::ExportArchive(path) => {
+                    let canvas = (*self.document.canvas).clone();
+                    self.export_manager
+                        .trigger_async_export_archive(canvas, path);
+                }
+                DispatchedAction::ImportArchive(path) => {
+                    self.load_import_manager.trigger_async_import_archive(path);
+                }
+            }
+        }
+
+        // 2. Poll save results.
+        self.save_manager
             .poll_save_results(&mut self.document, &mut self.ui.errors.list);
 
-        // Execute deferred action after save completes.
+        // 3. Execute deferred action after save completes.
         if self.document.save_state == SaveState::Idle {
             if let Some(action) = self.ui.dialogs.pending_after_save.take() {
                 self.execute_unsaved_action(action);
             }
         }
 
-        // Poll load/import results (applies `Canvas` to document).
-        self.file_io.poll_load_import_results(
+        // 4. Poll load/import results (applies `Canvas` to document).
+        self.load_import_manager.poll_load_import_results(
             &mut self.document,
             &mut self.undo,
             &mut self.ui.errors.list,
         );
 
-        // Track async operation progress.
+        // 5. Track async operation progress.
         // Priority: load > import > export > save > idle.
-        if self.file_io.load_in_flight {
+        if self.load_import_manager.load_in_flight {
             self.ui.progress = ProgressState::Loading;
-        } else if self.file_io.import_in_flight {
+        } else if self.load_import_manager.import_in_flight {
             self.ui.progress = ProgressState::Importing;
-        } else if self.file_io.export_in_flight {
+        } else if self.export_manager.export_in_flight {
             self.ui.progress = ProgressState::Exporting;
         } else if self.document.save_state == SaveState::InFlight {
-            self.ui.progress = if self.file_io.autosave_in_flight {
+            self.ui.progress = if self.save_manager.autosave_in_flight {
                 ProgressState::Autosaving
             } else {
                 ProgressState::Saving
@@ -74,11 +108,12 @@ impl MyApp {
         } else {
             self.ui.progress = ProgressState::Idle;
         }
-        if self.file_io.poll_export_results(&mut self.ui.errors.list) {
+        if self.export_manager.poll_export_results(&mut self.ui.errors.list) {
             self.ui.progress = ProgressState::Idle;
         }
 
-        if let Some((pixels, w, h, name)) = self.file_io.loaded_stamp_data.take() {
+        // 6. Transfer stamp/brush data from dialog manager to UI dialogs.
+        if let Some((pixels, w, h, name)) = self.dialog_manager.loaded_stamp_data.take() {
             self.ui.dialogs.pending_stamp_name = Some(PendingStamp {
                 pixels,
                 width: w,
@@ -88,7 +123,7 @@ impl MyApp {
             });
         }
 
-        if let Some(tips) = self.file_io.loaded_brush_data.take() {
+        if let Some(tips) = self.dialog_manager.loaded_brush_data.take() {
             let pending: Vec<PendingStamp> = tips
                 .into_iter()
                 .map(|tip| PendingStamp {
@@ -102,7 +137,7 @@ impl MyApp {
             self.ui.dialogs.pending_brushes = Some(pending);
         }
 
-        // Track recently saved/loaded files.
+        // 7. Track recently saved/loaded files.
         if !self.document.savefile_path.is_empty() {
             let path = PathBuf::from(&self.document.savefile_path);
             let is_already_tracked = self.ui.recent_files.first().is_some_and(|p| p == &path);
@@ -251,7 +286,7 @@ impl MyApp {
             self.ui.last_autosave_time = self.ui.time_elapsed;
             self.ui.times_autosaved += 1;
             self.ui.progress = ProgressState::Autosaving;
-            self.file_io
+            self.save_manager
                 .trigger_async_save(&mut self.document, SaveKind::Autosave);
         }
     }

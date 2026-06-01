@@ -20,7 +20,10 @@ use crate::canvas::Canvas;
 use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
 use crate::document::Document;
-use crate::file_io::FileIO;
+use crate::file_io::DialogManager;
+use crate::file_io::ExportManager;
+use crate::file_io::LoadImportManager;
+use crate::file_io::SaveManager;
 use crate::stamp_library::StampEntry;
 use crate::tool_configuration::ToolConfiguration;
 use crate::undo_history::UndoHistory;
@@ -436,8 +439,14 @@ pub struct MyApp {
     pub tool_configuration: ToolConfiguration,
     /// Undo/redo history stack with visited-stamp deduplication.
     pub undo: UndoHistory,
-    /// Async file dialog and save operation manager.
-    pub file_io: FileIO,
+    /// File dialog state machine.
+    pub dialog_manager: DialogManager,
+    /// Async save orchestration.
+    pub save_manager: SaveManager,
+    /// Async export orchestration.
+    pub export_manager: ExportManager,
+    /// Async load/import orchestration.
+    pub load_import_manager: LoadImportManager,
     /// UI render state, autosave tracking, and dialog flags.
     pub ui: UIState,
     /// GPU texture for partial-upload rendering.
@@ -544,14 +553,16 @@ impl MyApp {
             document: Document::new(canvas),
             tool_configuration,
             undo: UndoHistory::new(pixel_count),
-            file_io: FileIO::new(
-                dialog_sender,
-                dialog_receiver,
+            dialog_manager: DialogManager::new(dialog_sender, dialog_receiver),
+            save_manager: SaveManager::new(
                 save_result_sender,
                 save_result_receiver,
-                data_dir,
-                std::sync::Arc::new(crate::files::DefaultExportStrategy),
+                data_dir.clone(),
             ),
+            export_manager: ExportManager::new(std::sync::Arc::new(
+                crate::files::DefaultExportStrategy,
+            )),
+            load_import_manager: LoadImportManager::new(),
             ui: UIState {
                 max_texture_dimension,
                 recent_files,

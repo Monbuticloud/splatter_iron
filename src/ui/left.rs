@@ -73,7 +73,7 @@ impl MyApp {
             ui.separator();
 
             if ui.button("Load Stamp Image...").clicked() {
-                self.file_io.queue_file_action(PendingFileAction::LoadStamp);
+                self.dialog_manager.queue_file_action(PendingFileAction::LoadStamp);
                 ui.ctx().request_repaint();
             }
 
@@ -133,7 +133,7 @@ impl MyApp {
             ui.separator();
 
             if ui.button("Import Brush...").clicked() {
-                self.file_io.queue_file_action(PendingFileAction::LoadBrush);
+                self.dialog_manager.queue_file_action(PendingFileAction::LoadBrush);
                 ui.ctx().request_repaint();
             }
 
