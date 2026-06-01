@@ -65,8 +65,7 @@ while the brush preview follows the virtual (stabilized) cursor.
 
 When the canvas is hovered, `render_state` is set to
 `RenderState::ActiveWake(Duration::from_millis(550))`, keeping the render loop
-active while the user is interacting. `pending_layer_for_deletion` is cleared
-on hover.
+active while the user is interacting.
 
 ### Bucket fill on click
 
@@ -75,7 +74,7 @@ When `CurrentTool::BucketFill` is selected and the canvas is clicked:
 1. Convert the pointer position to pixel coordinates `(pixel_x, pixel_y)`.
 2. Call `draw_bucket_fill` with the current colour and layer.
 3. Push the resulting `UndoRecord` onto the undo stack.
-4. Mark `dirty_since_last_autosave = true` and `render_next_frame = true`.
+4. Mark `dirty_since_last_autosave = true` and call `canvas_mut().dirty_rect.request_full_blend()`.
 
 ### Drag strokes
 
