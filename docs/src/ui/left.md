@@ -9,19 +9,22 @@ selection.
 pub fn show_left_panel(&mut self, ui: &mut egui::Ui)
 ```
 
-Renders a vertical list of tool selection buttons using egui's
+Renders a vertical list of 8 tool selection buttons using egui's
 `selectable_value` widget, which combines radio-button semantics with
 visual highlighting.
 
 ### Tools
 
-| Order | Tool          | `CurrentTool` variant |
-| ----- | ------------- | --------------------- |
-| 1     | Square Tool   | `Square`              |
-| 2     | Circle Tool   | `Circle`              |
-| 3     | Square Eraser | `SquareEraser`        |
-| 4     | Circle Eraser | `CircleEraser`        |
-| 5     | Bucket Fill   | `BucketFill`          |
+| Order | Tool            | `CurrentTool` variant |
+| ----- | --------------- | --------------------- |
+| 1     | Square Tool     | `Square`              |
+| 2     | Circle Tool     | `Circle`              |
+| 3     | Square Eraser   | `SquareEraser`        |
+| 4     | Circle Eraser   | `CircleEraser`        |
+| 5     | Bucket Fill     | `BucketFill`          |
+| 6     | Stamp Tool      | `Stamp`               |
+| 7     | Custom Brush    | `CustomBrush`         |
+| 8     | Pan             | `Pan`                 |
 
 ### Visual styling
 
@@ -56,3 +59,7 @@ A pair of radio buttons (Original / Tinted) exposed via `egui::selectable_value`
 ## `Stamp/brush sampling selector`
 
 A combo box selecting between Nearest and Bilinear sampling. Controls how stamps/brush tips are scaled.
+
+## `Pan Tool button`
+
+Selects `CurrentTool::Pan`. When active, dragging on the canvas pans the viewport instead of drawing.
