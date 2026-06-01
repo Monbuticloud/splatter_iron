@@ -15,3 +15,7 @@ Confirms that when all pixels are visited, `apply_visited_runs` produces one run
 ## `alpha_overlay_blends`
 
 Ensures that `apply_visited_runs` in alpha-overlay mode blends the overlay color with existing pixel values rather than replacing them.
+
+## `alpha_overlay_skips_processed`
+
+Verifies that `apply_visited_runs` skips pixels already marked as processed in the drag buffer during alpha-overlay mode, returning an empty run list when none remain unprocessed.

@@ -61,3 +61,7 @@ Entries added to the library survive a reload from disk, confirming serialisatio
 ## `selected_mut_empty_none`
 
 `selected_mut()` on an empty library returns `None`.
+
+## `remove_out_of_bounds_noop`
+
+Removing with an out-of-bounds index leaves the library contents unchanged.
