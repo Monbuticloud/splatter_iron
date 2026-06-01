@@ -79,15 +79,18 @@ impl Document {
 
     /// Replace the current canvas with a new one and reset document state.
     ///
-    /// Clears the save path, marks the canvas as not dirty, and resets
-    /// the undo history (including resizing the visited buffer).
+    /// Clears the save path, marks the canvas as not dirty, resets the undo
+    /// history, and sets `next_layer_number` to one past the new canvas's
+    /// layer count so default names stay unique.
     ///
     /// # Parameters
     ///
     /// * `canvas` — The new canvas to use.
     /// * `undo` — Undo history to clear and resize for the new canvas.
     pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory) {
+        let layer_count = canvas.pixels.len();
         self.canvas = Arc::new(canvas);
+        self.next_layer_number = layer_count + 1;
         self.savefile_path.clear();
         self.dirty_since_last_autosave = false;
         undo.clear();
