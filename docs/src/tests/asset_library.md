@@ -25,3 +25,7 @@ Removing the only entry in the library clears the selection and leaves the libra
 ## `remove_middle_preserves_order`
 
 Removing a middle entry shifts later entries down and preserves the relative order of remaining entries.
+
+## `select_switches_active`
+
+Selecting by index switches which entry is returned by `selected()`.
