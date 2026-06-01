@@ -9,3 +9,7 @@ Each library operation (load, add, remove, select, get, entries, persistence, se
 ## `load_from_disk_creates_dir`
 
 Loading from a non-existent directory creates it and returns an empty library.
+
+## `add_entry_increments_count`
+
+Adding an entry increments the count and selects it.
