@@ -36,11 +36,13 @@ PNG filename, and an optional egui texture handle for gallery preview.
 
 ## `BrushLibrary`
 
+`BrushLibrary` is a type alias for [`Library<BrushEntry>`](asset_library.md). The underlying struct fields are:
+
 ```rust
-pub struct BrushLibrary {
-    brushes: Vec<BrushEntry>,
+pub struct Library<T> {
+    entries: Vec<T>,
     selected_index: Option<usize>,
-    brushes_dir: PathBuf,
+    dir: PathBuf,
 }
 ```
 
