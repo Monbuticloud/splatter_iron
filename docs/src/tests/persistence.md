@@ -13,3 +13,7 @@ save/load round-trips, and autosave interval guard.
 ## `push_recent_file_empty_path_noop`
 
 Pushing an empty `PathBuf` is a no-op — recent files remain empty.
+
+## `push_recent_file_inserts_front`
+
+Pushing paths inserts them at position 0, preserving stack order.
