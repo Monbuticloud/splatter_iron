@@ -128,7 +128,7 @@ pub fn upload_to_gpu(
     &self,
     queue: &wgpu::Queue,
     texture: &wgpu::Texture,
-    dirty: &Option<(u32, u32, u32, u32)>,
+    dirty: &Option<DirtyRect>,
 )
 ```
 
@@ -138,13 +138,13 @@ pub fn upload_to_gpu(
 | --------- | ------------------------------- | ---------------------------------------------------------------------- |
 | `queue`   | `&wgpu::Queue`                  | Queue for submitting write commands to the GPU                         |
 | `texture` | `&wgpu::Texture`                | Destination GPU texture                                                |
-| `dirty`   | `&Option<(u32, u32, u32, u32)>` | `Some((x, y, w, h))` for partial upload, `None` for full canvas upload |
+| `dirty`   | `&Option<DirtyRect>` | `Some(DirtyRect)` for partial upload, `None` for full canvas upload |
 
 ### Behaviour
 
 - When `dirty` is `None`, the offset is `(0, 0)` and the extent is the full
   canvas dimensions.
-- When `dirty` is `Some(...)` with zero width or height, the function returns
+- When `dirty` is `Some(DirtyRect)` with zero width or height, the function returns
   immediately without issuing a GPU write.
 - The `bytes_per_row` is always `canvas_width × 4` (the full row pitch),
   regardless of the dirty rect width. This matches the layout of `output_rgba`.
