@@ -1,6 +1,6 @@
 # SplatterIron
 
-**Lightweight, GPU-accelerated digital painting application** built with Rust. for when full-suite tools feel heavy, but basic paint apps feel doesn't enough.
+**Lightweight, GPU-accelerated digital painting application** built with Rust. for when full-suite tools feel heavy, but basic paint apps doesn't feel enough.
 
 > **MSRV**: Rust 1.96.0 (stable) — pinned in `rust-toolchain.toml`
 >
