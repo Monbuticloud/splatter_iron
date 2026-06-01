@@ -173,7 +173,7 @@ The type derives `Clone` for undo/redo snapshotting and `Serialize`/`Deserialize
 | `height`            | `u32`                   | Canvas height in pixels                                                         |
 | `width`             | `u32`                   | Canvas width in pixels                                                          |
 | `rendered_layers`   | `Option<TextureHandle>` | Cached GPU texture handle for the blended composite                             |
-| `output_rgba`       | `Vec<u8>`               | Premultiplied-alpha RGBA output buffer (width × height × 4 bytes)               |
+| `output_rgba`       | `Arc<Vec<u8>>`          | Premultiplied-alpha RGBA output buffer (width × height × 4 bytes), shared with GPU upload for zero-copy            |
 | `dirty_rect`        | `DirtyRectList`         | List of dirty regions; empty list triggers full re-blend |
 
 ### Invariants
