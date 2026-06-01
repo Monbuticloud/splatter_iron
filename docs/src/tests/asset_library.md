@@ -33,3 +33,7 @@ Selecting by index switches which entry is returned by `selected()`.
 ## `select_out_of_bounds_noop`
 
 Selecting with an out-of-bounds index leaves the current selection unchanged.
+
+## `get_valid_index`
+
+`get` with a valid index returns `Some(entry)`.
