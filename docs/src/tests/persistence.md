@@ -37,3 +37,7 @@ Writes a config with `CurrentTool::Circle`, red color, and a recent file; reads 
 ## `save_config_empty_recent_files`
 
 Saves config when recent files is empty; verifies the saved JSON has an empty recent-files list.
+
+## `handle_config_save_waits_for_interval`
+
+Immediately after construction, `time_elapsed` is 0 so `handle_config_save` should not write config.json.

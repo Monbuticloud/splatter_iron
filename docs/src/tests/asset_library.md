@@ -53,3 +53,7 @@ Selecting with an out-of-bounds index leaves the current selection unchanged.
 ## `persistence_round_trip`
 
 Entries added to the library survive a reload from disk, confirming serialisation and deserialisation round-trip works.
+
+## `selected_mut_allows_mutation`
+
+`selected_mut()` returns a mutable reference that allows modifying the selected entry's fields.
