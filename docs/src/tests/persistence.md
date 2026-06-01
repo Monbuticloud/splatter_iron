@@ -21,3 +21,7 @@ Pushing paths inserts them at position 0, preserving stack order.
 ## `push_recent_file_dedup`
 
 Pushing a duplicate path moves it to position 0 and removes the older entry.
+
+## `push_recent_file_truncates_at_ten`
+
+Pushing 11 paths caps the list at 10, retaining the most recent 10.
