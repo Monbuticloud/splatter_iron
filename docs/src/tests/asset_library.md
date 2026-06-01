@@ -37,3 +37,7 @@ Selecting with an out-of-bounds index leaves the current selection unchanged.
 ## `get_valid_index`
 
 `get` with a valid index returns `Some(entry)`.
+
+## `get_out_of_bounds_none`
+
+`get` with an out-of-bounds index returns `None`.
