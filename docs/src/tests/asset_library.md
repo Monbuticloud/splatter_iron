@@ -49,3 +49,7 @@ Selecting with an out-of-bounds index leaves the current selection unchanged.
 ## `entries_returns_all`
 
 `entries()` returns all added entries after multiple insertions.
+
+## `persistence_round_trip`
+
+Entries added to the library survive a reload from disk, confirming serialisation and deserialisation round-trip works.

@@ -9,3 +9,7 @@ save/load round-trips, and autosave interval guard.
 - Config path construction.
 - Save/load round-trip with tool config and with empty recent files.
 - Autosave guard: does not save before interval, does save after.
+
+## `push_recent_file_empty_path_noop`
+
+Pushing an empty `PathBuf` is a no-op — recent files remain empty.
