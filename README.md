@@ -12,22 +12,22 @@
 
 ### Drawing Tools
 
-| Tool | Shortcut | Description |
-|------|----------|-------------|
-| Square brush | `S` | Filled rectangles |
-| Circle brush | `C` | Filled circles |
-| Square eraser | `E` | Rectangular erasure |
-| Circle eraser | `Shift+E` | Circular erasure |
-| Bucket fill | `G` | Flood-fill contiguous areas |
-| Stamp | `T` | Place images onto canvas (nearest/bilinear scaling, original/tinted) |
-| Custom brush | `B` | Draw with imported .gbr, .abr, .brush tips |
-| Eyedropper | `I` | Pick color from canvas |
-| Pan | `H` | Drag to pan viewport |
+| Tool          | Shortcut  | Description                                                          |
+| ------------- | --------- | -------------------------------------------------------------------- |
+| Square brush  | `S`       | Filled rectangles                                                    |
+| Circle brush  | `C`       | Filled circles                                                       |
+| Square eraser | `E`       | Rectangular erasure                                                  |
+| Circle eraser | `Shift+E` | Circular erasure                                                     |
+| Bucket fill   | `G`       | Flood-fill contiguous areas                                          |
+| Stamp         | `T`       | Place images onto canvas (nearest/bilinear scaling, original/tinted) |
+| Custom brush  | `B`       | Draw with imported .gbr, .abr, .brush tips                           |
+| Eyedropper    | `I`       | Pick color from canvas                                               |
+| Pan           | `H`       | Drag to pan viewport                                                 |
 
 ### Canvas & Layers
 
 - Multi-layer documents — add, delete, rename, reorder, toggle visibility, adjust opacity
-- Layer operations are undoable
+- Layer operations are undo-able
 - Canvas presets: XS 800×600, S 1280×960, M 2000×1500, L 2560×1920, XL 3200×2400 — plus custom sizes
 - Zoom 0.05×–20× centered on cursor; double-click to reset
 - Brush preview on hover; configurable pixel grid overlay
@@ -116,14 +116,14 @@ cargo clippy
 
 Preliminary memory comparison: SplatterIron vs. GIMP at 2000×2000 canvas, single layer, macOS.
 
-| Application | Real Memory | Canvas | Layers | Focused | OS |
-|---|---|---|---|---|---|
-| SplatterIron | 147.1 MB | 2000×2000 | 1 | No | macOS |
-| SplatterIron | 332.7 MB | 2000×2000 | 1 | Yes | macOS |
-| GIMP | 337.8 MB | 2000×2000 | 1 | No | macOS |
-| GIMP | 355.0 MB | 2000×2000 | 1 | Yes | macOS |
+| Application  | Real Memory | Canvas    | Layers | Focused | OS    |
+| ------------ | ----------- | --------- | ------ | ------- | ----- |
+| SplatterIron | 147.1 MB    | 2000×2000 | 1      | No      | macOS |
+| SplatterIron | 332.7 MB    | 2000×2000 | 1      | Yes     | macOS |
+| GIMP         | 337.8 MB    | 2000×2000 | 1      | No      | macOS |
+| GIMP         | 355.0 MB    | 2000×2000 | 1      | Yes     | macOS |
 
-*Single-run measurements. SplatterIron consumes comparable or less memory than GIMP under the same canvas load.*
+_Single-run measurements. SplatterIron consumes comparable or less memory than GIMP under the same canvas load._
 
 ---
 
