@@ -76,8 +76,6 @@
 
 ### Documentation
 
-- README is sparse — add build instructions, feature list, screenshot, contribution guide. (P3)(B0)(aef7235)
-
 ## Accepted
 
 ### Allocation reductions
