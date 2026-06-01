@@ -89,6 +89,34 @@ fn add_layer_unique_names_multiple_cycles() {
     assert_eq!(document.canvas.pixels[1].name, "Layer 4");
 }
 
+/// After any sequence of add/delete operations, every layer name in the stack
+/// must be unique (egui uses labels as widget IDs, so duplicates cause ID
+/// collisions).
+#[test]
+fn add_layer_all_names_unique() {
+    let mut document = small_document();
+    document.add_layer(&mut UndoHistory::new(100)); // Layer 2
+    document.add_layer(&mut UndoHistory::new(100)); // Layer 3
+    document.delete_layer(0, &mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100)); // Layer 4
+    document.delete_layer(1, &mut UndoHistory::new(100));
+    document.add_layer(&mut UndoHistory::new(100)); // Layer 5
+    let names: Vec<String> = document
+        .canvas
+        .pixels
+        .iter()
+        .map(|l| l.name.clone())
+        .collect();
+    let mut sorted = names.clone();
+    sorted.sort();
+    sorted.dedup();
+    assert_eq!(
+        sorted.len(),
+        names.len(),
+        "all layer names must be unique, got {names:?}"
+    );
+}
+
 /// A newly added layer should match the canvas dimensions.
 #[test]
 fn add_layer_has_correct_size() {
