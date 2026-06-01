@@ -409,6 +409,15 @@ impl Document {
         }
     }
 
+    /// Set the compositing mode of a layer.
+    ///
+    /// Pushes an [`UndoRecord::ModifyLayer`] so the change can be undone.
+    ///
+    /// # Parameters
+    ///
+    /// * `index` — Index of the layer to modify.
+    /// * `mode` — New compositing mode.
+    /// * `undo` — Undo history to push the record onto.
     pub fn set_layer_mode(
         &mut self,
         index: usize,
