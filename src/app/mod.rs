@@ -278,6 +278,7 @@ pub struct ErrorState {
 }
 
 impl Default for ErrorState {
+    /// Empty error list — no active errors.
     fn default() -> Self {
         Self { list: Vec::new() }
     }
