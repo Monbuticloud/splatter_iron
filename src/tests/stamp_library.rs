@@ -1,5 +1,7 @@
 //! Tests for `Library<StampEntry>` — add, remove, select, and persistence round-trip.
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use eframe::egui::Context;
 
 use crate::asset_library::Library;
@@ -290,13 +292,12 @@ fn remove_middle_preserves_order() {
     assert_eq!(lib.entries()[1].name, "third");
 }
 
+static NEXT_STAMP_DIR: AtomicU64 = AtomicU64::new(0);
+
 /// Helper: create a temporary directory that cleans itself up on drop.
 fn tempdir() -> std::path::PathBuf {
-    let ts = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    let dir = std::env::temp_dir().join(format!("stamp_lib_test_{ts}"));
+    let id = NEXT_STAMP_DIR.fetch_add(1, Ordering::SeqCst);
+    let dir = std::env::temp_dir().join(format!("stamp_lib_test_{id}"));
     std::fs::create_dir_all(&dir).expect("create temp dir");
     dir
 }
