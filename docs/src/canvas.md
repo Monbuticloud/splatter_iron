@@ -325,7 +325,7 @@ Layers are composited bottom-to-top by [`blend_layers()`] — later layers overl
 
 ## `struct DirtyRectList`
 
-A collection of DirtyRect values with proximity-based merging. When adding a rect via add(), if it overlaps or is within DIRTY_RECT_PROXIMITY (16 px) of an existing rect they are merged. This reduces the number of partial texture uploads without requiring a full-canvas blend.
+A collection of DirtyRect values with proximity-based merging and a `needs_full_blend` flag. When adding a rect via add(), if it overlaps or is within DIRTY_RECT_PROXIMITY (16 px) of an existing rect they are merged. This reduces the number of partial texture uploads without requiring a full-canvas blend. The `needs_full_blend` flag overrides incremental rects — when set, `take_all` returns an empty list to signal a full-canvas composite is needed.
 
 ## `DirtyRectList::new`
 
@@ -341,7 +341,7 @@ Merges all rects into a single bounding box covering the union of all entries. N
 
 ## `DirtyRectList::take_all`
 
-Replaces the internal list with an empty vec and returns the drained rects. Used by the renderer to consume dirty rects for texture upload.
+Replaces the internal list with an empty vec and returns the drained rects. If `request_full_blend` was called, returns an empty list to signal that the entire canvas needs re-blending. Used by the renderer to consume dirty rects for texture upload.
 
 ## `DirtyRectList::is_empty`
 
@@ -351,6 +351,14 @@ Returns true if there are no rects in the list AND no full blend has been reques
 
 Removes all rects from the list.
 
+## `DirtyRectList::request_full_blend`
+
+Marks the list so that the next call to `take_all` returns an empty list, signalling the compositor to perform a full-canvas blend. Used after layer reorders, visibility toggles, or opacity changes where incremental dirty rects are insufficient.
+
+## `DirtyRectList::needs_reblend`
+
+Returns `true` if there are any pending dirty rects OR a full blend has been requested. Used by the renderer to decide whether to skip the GPU upload entirely (returns `false` → nothing has changed since last upload).
+
 ## `CurrentTool::Stamp`
 
 Stamp brush tool. When selected, clicking the canvas stamps an image from the StampLibrary. Drag draws a line of stamped impressions interpolated between start and end points.
@@ -359,6 +367,4 @@ Stamp brush tool. When selected, clicking the canvas stamps an image from the St
 
 Custom brush tool. When selected, uses a loaded brush tip from BrushLibrary to paint. Supports tinting and alpha overlay.
 
-## `Canvas.dirty_rect field type update`
 
-The dirty_rect field is now DirtyRectList, not Option<DirtyRect>. It holds zero or more dirty rectangles that can be consumed individually for partial texture uploads.
