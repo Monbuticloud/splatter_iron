@@ -13,3 +13,7 @@ Loading from a non-existent directory creates it and returns an empty library.
 ## `add_entry_increments_count`
 
 Adding an entry increments the count and selects it.
+
+## `add_multiple_preserves_order`
+
+Adding multiple entries preserves insertion order; the first-added entry is at index 0, the second at index 1, and so on.
