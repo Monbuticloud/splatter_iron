@@ -52,12 +52,14 @@ data directory or autosaves subdirectory.
 
 The per-frame entry point called by eframe. Orchestrates the frame lifecycle:
 
-1. **Poll async I/O** — calls `self.poll_file_results(ui.ctx())`.
-2. **Render state** — calls `self.update_render_state(ui)`. If unfocused, returns early.
-3. **GPU sync** — calls `self.sync_gpu_texture(frame, ui)` to resize/blend/upload.
-4. **Panels** — calls `self.show_panels(ui)` which renders top/left/right/centre panels.
-5. **Dialogs** — calls error window, delete-layer, large-canvas, new-canvas,
-   unsaved-changes, stamp-naming, brush-naming, and toast dialogs.
-6. **Title** — updates window title to reflect unsaved-changes state.
-7. **Close** — sends `ViewportCommand::Close` on quit or `is_quitting`.
-8. **Autosave** — calls `self.handle_autosave()` and `self.handle_config_save()`.
+1. **Debug snapshot** — saves debug-snapshot PNG (behind `debug-snapshot` feature).
+2. **Poll async I/O** — calls `self.poll_file_results(ui.ctx())`.
+3. **Render state** — calls `self.update_render_state(ui)`. If unfocused, returns early.
+4. **GPU sync** — calls `self.sync_gpu_texture(frame, ui)` to resize/blend/upload.
+5. **Panels** — calls `self.show_panels(ui)` which renders top/left/right/centre panels;
+   returns `is_quitting` if a destructive action (New/Load/Close) was triggered.
+6. **Dialogs** — calls error, delete-layer, large-canvas, new-canvas, unsaved-changes,
+   stamp-naming, brush-naming, and toast dialogs.
+7. **Title** — updates window title to reflect unsaved-changes state.
+8. **Close** — sends `ViewportCommand::Close` on quit or `is_quitting`.
+9. **Autosave** — calls `self.handle_autosave()` and `self.handle_config_save()`.
