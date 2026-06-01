@@ -198,15 +198,16 @@ with `Color32::TRANSPARENT` and uses the same dimensions as the existing canvas.
 ### Signature
 
 ```rust
-pub fn add_layer(&mut self)
+pub fn add_layer(&mut self, undo: &mut UndoHistory)
 ```
 
 ### Behaviour
 
 - Pushes a `Layer` containing `width × height` transparent pixels onto
   `self.canvas_mut().pixels`.
-- Sets `self.canvas_mut().render_next_frame = true` so the compositor re-blends all
+- Calls `self.canvas_mut().dirty_rect.request_full_blend()` so the compositor re-blends all
   layers on the next frame.
+- Pushes `UndoRecord::AddLayer` onto the undo stack for revertability.
 - Does **not** change `current_layer` — the newly added layer is appended at the
   end; the UI is responsible for selecting it if desired.
 
