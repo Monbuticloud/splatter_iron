@@ -82,9 +82,13 @@ impl UndoHistory {
         }
     }
 
+    const COMPRESSION_LEVEL: i32 = -1;
+
     /// Push a new undo record and truncate any redo history.
     ///
-    /// Enforces `MAX_STROKE_STACK` by popping the oldest entries.
+    /// Compresses `before_pixels` via zstd before storing to reduce
+    /// memory usage. Enforces `MAX_STROKE_STACK` by popping the oldest
+    /// entries.
     ///
     /// # Parameters
     ///
@@ -93,6 +97,11 @@ impl UndoHistory {
         self.stroke_stack
             .truncate(self.stroke_stack.len() - self.redo_index);
         self.stroke_stack.push_back(record);
+        let last = self
+            .stroke_stack
+            .back_mut()
+            .expect("just pushed");
+        last.compress_before(Self::COMPRESSION_LEVEL);
         while self.stroke_stack.len() > MAX_STROKE_STACK {
             self.stroke_stack.pop_front();
         }
@@ -315,6 +324,9 @@ impl UndoHistory {
     /// Each record is applied in reverse order (most recent first),
     /// and `redo_index` advances accordingly.
     ///
+    /// Decompresses `before_pixels` before each application and
+    /// re-compresses it afterward to keep memory usage low.
+    ///
     /// # Parameters
     ///
     /// * `canvas` — The canvas to restore pixels on.
@@ -331,7 +343,10 @@ impl UndoHistory {
             .min(self.stroke_stack.len() - self.redo_index);
         for _ in 0..step_count {
             let index = self.stroke_stack.len() - 1 - self.redo_index;
-            undo_apply(canvas, &self.stroke_stack[index]);
+            let record = &mut self.stroke_stack[index];
+            record.decompress_before();
+            undo_apply(canvas, record);
+            record.compress_before(Self::COMPRESSION_LEVEL);
             self.redo_index += 1;
         }
     }

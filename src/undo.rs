@@ -2,6 +2,8 @@
 //! and their application to the canvas ([`undo_apply`], [`redo_apply`]).
 //! Run-length compression (`compress_run`) reduces storage for uniform spans.
 
+use std::io::Cursor;
+
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
@@ -129,6 +131,56 @@ pub enum UndoRecord {
         new_name: String,
         new_mode: LayerMode,
     },
+}
+
+impl UndoRecord {
+    /// Compress `before_pixels` using zstd and store the result in
+    /// `compressed_before_pixels`, then clear the uncompressed buffer.
+    /// No-op if `before_pixels` is already empty or already compressed.
+    ///
+    /// Call before pushing this record into the undo history stack.
+    pub fn compress_before(&mut self, level: i32) {
+        match self {
+            UndoRecord::Run {
+                before_pixels,
+                compressed_before_pixels,
+                ..
+            } if !before_pixels.is_empty() =>
+            {
+                let bytes = bytemuck::cast_slice(before_pixels.as_slice());
+                *compressed_before_pixels = Some(
+                    zstd::encode_all(Cursor::new(bytes), level)
+                        .expect("zstd compression of before_pixels"),
+                );
+                before_pixels.clear();
+            }
+            _ => {}
+        }
+    }
+
+    /// Decompress `compressed_before_pixels` back into `before_pixels`
+    /// and clear the compressed buffer.
+    /// No-op if `before_pixels` is already populated or no compressed data.
+    ///
+    /// Call before passing this record to `undo_apply`.
+    pub fn decompress_before(&mut self) {
+        match self {
+            UndoRecord::Run {
+                before_pixels,
+                compressed_before_pixels,
+                ..
+            } if compressed_before_pixels.is_some() =>
+            {
+                if let Some(compressed) = compressed_before_pixels.take() {
+                    let bytes: Vec<u8> = zstd::decode_all(Cursor::new(compressed))
+                        .expect("zstd decompression of before_pixels");
+                    let pixels: &[Color32] = bytemuck::cast_slice(&bytes);
+                    *before_pixels = pixels.to_vec();
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 /// Restore canvas state to before the operation recorded by `record`.
