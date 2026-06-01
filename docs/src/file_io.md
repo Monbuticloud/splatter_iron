@@ -163,7 +163,7 @@ After processing, `pending_file_action` is consumed (set to `None`).
 ### `FileIO::trigger_async_save`
 
 ```rust
-pub fn trigger_async_save(&self, document: &Document, kind: SaveKind)
+pub fn trigger_async_save(&mut self, document: &mut Document, kind: SaveKind)
 ```
 
 Spawns a background thread to serialize and write the canvas to disk. Clones the canvas to avoid borrowing the `Document` across threads. The thread pipeline is:
