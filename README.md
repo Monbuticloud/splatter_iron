@@ -1,5 +1,7 @@
 # SplatterIron
 
+## info
+
 SplatterIron is a lightweight art app with the same (mostly) features like:
 
 - Brushes
@@ -8,9 +10,13 @@ SplatterIron is a lightweight art app with the same (mostly) features like:
 - Brush Size
 - Full RGBA color for brushes (0-255,0-255,0-255,0-255)
 
-## Notice(s)
+All while being lightweight, here is a table for comparison:
 
--> Commit messages are automatically generated with copilot on vscode, some may be inaccurate or excessive.
+## Developers
+
+### Notice(s) for developers
+
+-> Commit messages are automatically generated, some messages may be inaccurate or excessive.
 
 ## Copyright
 

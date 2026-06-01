@@ -85,19 +85,20 @@ pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory)
 
 ## `Document::blend_to_output()`
 
-Blends all layers into the `output_rgba` buffer. When a `dirty_rect` is set,
-only the pixels within that rectangle are recomputed (`blend_region`); otherwise
-the entire canvas is blended from scratch (`blend_layers`).
+Blends all layers into the `output_rgba` buffer. Consumes dirty rects from
+`DirtyRectList::take_all()`: when rects are present, only those regions are
+recomputed via `blend_region`; when the list returns empty (full blend
+requested), the entire canvas is blended from scratch via `blend_layers`.
 
 ### Signature
 
 ```rust
-pub fn blend_to_output(&mut self) -> Option<(u32, u32, u32, u32)>
+pub fn blend_to_output(&mut self) -> Option<DirtyRect>
 ```
 
 ### Returns
 
-- `Some((x, y, width, height))` — the bounding box of the region that was
+- `Some(DirtyRect)` — the bounding box of the region that was
   blended, usable as a partial upload hint.
 - `None` — the dirty rectangle was empty; no blending was performed.
 
@@ -110,8 +111,7 @@ code.
 ### Side effects
 
 - Resizes `output_rgba` to `width × height × 4` if the dimensions have changed.
-- Sets `render_next_frame = false`.
-- After blending, resets `dirty_rect` to `None`.
+- Calls `canvas_mut().dirty_rect.clear()` and marks `needs_full_blend = false` after blending.
 
 ---
 
