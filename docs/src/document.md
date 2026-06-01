@@ -223,7 +223,7 @@ when only one layer exists).
 ### Signature
 
 ```rust
-pub fn delete_layer(&mut self, index: usize)
+pub fn delete_layer(&mut self, index: usize, undo: &mut UndoHistory)
 ```
 
 ### Parameters
@@ -239,7 +239,8 @@ pub fn delete_layer(&mut self, index: usize)
    - If the removed layer was below the active layer, `current_layer` is
      decremented by 1 (via `saturating_sub(1)`).
    - The result is clamped to `[0, layers.len() - 1]` with `min()`.
-3. Sets `self.canvas_mut().render_next_frame = true`.
+3. Pushes `UndoRecord::DeleteLayer` onto the undo stack.
+4. Calls `self.canvas_mut().dirty_rect.request_full_blend()`.
 
 ---
 
