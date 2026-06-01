@@ -76,6 +76,12 @@ pub enum UndoRecord {
         color_after: Color32,
         /// Compressed run-length segments preserving before-pixel data.
         runs: Vec<RunSegment>,
+        /// Flat buffer of all non-uniform before-pixels referenced by
+        /// `BeforePixels::Many { offset, length }` in each run.
+        before_pixels: Vec<Color32>,
+        /// zstd-compressed version of `before_pixels` stored in the undo
+        /// history stack to reduce memory; decompressed on undo access.
+        compressed_before_pixels: Option<Vec<u8>>,
         /// Whether this stroke was drawn as an alpha overlay (vs. opaque).
         is_alpha_overlay: bool,
     },
@@ -133,9 +139,8 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
     match record {
         UndoRecord::Run {
             layer_index,
-            color_after: _,
             runs,
-            is_alpha_overlay: _,
+            ..
         } => {
             let layer = &mut canvas.pixels[*layer_index];
             for run in runs {
@@ -201,6 +206,7 @@ pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
             color_after,
             runs,
             is_alpha_overlay,
+            ..
         } => {
             let layer = &mut canvas.pixels[*layer_index];
             if *is_alpha_overlay {

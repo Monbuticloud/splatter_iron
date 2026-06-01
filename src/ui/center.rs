@@ -574,6 +574,7 @@ impl MyApp {
                                 color_after,
                                 runs,
                                 is_alpha_overlay,
+                                ..
                             } = stroke
                             {
                                 self.undo.init_drag_accumulator(

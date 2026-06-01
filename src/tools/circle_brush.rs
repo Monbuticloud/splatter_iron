@@ -131,6 +131,8 @@ pub fn draw_circle(
             layer_index: layer,
             color_after: color,
             runs: Vec::new(),
+            before_pixels: Vec::new(),
+            compressed_before_pixels: None,
             is_alpha_overlay: alpha_overlay,
         };
     }
@@ -212,6 +214,8 @@ pub fn draw_circle(
         layer_index: layer,
         color_after: color,
         runs,
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }
 }
@@ -402,6 +406,8 @@ pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoR
         layer_index: layer,
         color_after: color,
         runs,
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }
 }

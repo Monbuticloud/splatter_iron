@@ -53,6 +53,8 @@ pub fn draw_bucket_fill(
             layer_index: layer,
             color_after: color,
             runs: Vec::new(),
+            before_pixels: Vec::new(),
+            compressed_before_pixels: None,
             is_alpha_overlay: alpha_overlay,
         };
     }
@@ -158,6 +160,8 @@ pub fn draw_bucket_fill(
         layer_index: layer,
         color_after: color,
         runs,
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }
 }

@@ -317,6 +317,8 @@ fn undo_apply_corrupt_run_panics() {
             length: 1,
             before: BeforePixels::All(Color32::WHITE),
         }],
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: false,
     };
     undo::undo_apply(&mut canvas, &corrupt);
@@ -337,6 +339,8 @@ fn redo_apply_corrupt_run_panics() {
             length: 100, // extends past 100-pixel buffer end (50+100 > 100)
             before: BeforePixels::All(Color32::WHITE),
         }],
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: false,
     };
     undo::redo_apply(&mut canvas, &corrupt);
@@ -457,8 +461,10 @@ fn undo_apply_before_pixels_many_wrong_length_panics() {
         runs: vec![RunSegment {
             start: 0,
             length: 5,
-            before: BeforePixels::Many(vec![Color32::RED; 3]), // length 3, expected 5
+            before: BeforePixels::Many(vec![Color32::RED; 3]),
         }],
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: false,
     };
     undo::undo_apply(&mut canvas, &corrupt);
@@ -489,6 +495,8 @@ fn undo_apply_empty_run_noop() {
             length: 0,
             before: BeforePixels::All(Color32::WHITE),
         }],
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: false,
     };
     // Should not panic despite being somewhat degenerate
@@ -531,6 +539,8 @@ fn redo_apply_empty_run_noop() {
             length: 0,
             before: BeforePixels::All(Color32::WHITE),
         }],
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: false,
     };
     undo::redo_apply(&mut canvas, &record);

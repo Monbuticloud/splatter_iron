@@ -122,6 +122,8 @@ pub fn draw_custom_brush_line(
         layer_index: layer,
         color_after: color,
         runs: all_runs,
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
     }
 }

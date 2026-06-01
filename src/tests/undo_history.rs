@@ -352,6 +352,8 @@ fn push_undo_empty_record() {
         layer_index: 0,
         color_after: Color32::RED,
         runs: Vec::new(),
+        before_pixels: Vec::new(),
+        compressed_before_pixels: None,
         is_alpha_overlay: false,
     };
     history.push_undo(empty_record);

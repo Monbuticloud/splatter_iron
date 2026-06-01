@@ -203,6 +203,8 @@ impl UndoHistory {
                 layer_index: accumulator.layer_index,
                 color_after: accumulator.color_after,
                 runs: accumulator.runs,
+                before_pixels: Vec::new(),
+                compressed_before_pixels: None,
                 is_alpha_overlay: accumulator.is_alpha_overlay,
             };
             self.push_undo(record);
