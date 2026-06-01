@@ -17,3 +17,7 @@ Pushing an empty `PathBuf` is a no-op — recent files remain empty.
 ## `push_recent_file_inserts_front`
 
 Pushing paths inserts them at position 0, preserving stack order.
+
+## `push_recent_file_dedup`
+
+Pushing a duplicate path moves it to position 0 and removes the older entry.
