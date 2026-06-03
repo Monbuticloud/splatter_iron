@@ -690,29 +690,55 @@ pub(crate) fn draw_checkerboard(
     let width = canvas_width as usize;
     for y in min_y..=max_y {
         let row_offset = y as usize * width;
-        for x in min_x..=max_x {
-            let i = (row_offset + x as usize) * 4;
-            let alpha = output[i + 3];
-            if alpha == 255 {
-                continue;
+        let cb_row_bit = (y / CHECKER_SIZE) & 1;
+
+        let mut x = min_x;
+        while x <= max_x {
+            // Process 4-pixel batches. When all 4 are opaque, skip the entire
+            // batch in one check (common case in composited output).
+            let batch_end = (x + 3).min(max_x);
+            let full_batch = batch_end - x == 3;
+
+            if full_batch {
+                let bo = (row_offset + x as usize) * 4;
+                // Read 4 alpha bytes at offsets 3,7,11,15 and pack into u32.
+                // SAFETY: full 4-pixel batch = 16 contiguous bytes, all in bounds.
+                let a0 = output[bo + 3] as u32;
+                let a1 = output[bo + 7] as u32;
+                let a2 = output[bo + 11] as u32;
+                let a3 = output[bo + 15] as u32;
+                // 0xFF * 0x01010101 = fully opaque for all 4.
+                if a0 | a1 | a2 | a3 == 0xFF {
+                    // All opaque — skip entire batch
+                    x += 4;
+                    continue;
+                }
             }
 
-            // Checkerboard tile color at this position.
-            let cb = if ((x / CHECKER_SIZE) + (y / CHECKER_SIZE)) & 1 == 0 {
-                LIGHT
-            } else {
-                DARK
-            };
+            for xp in x..=batch_end {
+                let i = (row_offset + xp as usize) * 4;
+                let alpha = output[i + 3];
+                if alpha == 255 {
+                    continue;
+                }
 
-            // Premultiplied alpha-over composite: content over checkerboard.
-            // result_rgb = content_rgb_premul + checkerboard_rgb × (255 − α) ÷ 256.
-            let inv_a = 255u32 - u32::from(alpha);
-            let blend = u32::from(cb) * inv_a;
-            let blended = ((blend + 128) >> 8) as u8;
-            output[i]     = output[i].saturating_add(blended);
-            output[i + 1] = output[i + 1].saturating_add(blended);
-            output[i + 2] = output[i + 2].saturating_add(blended);
-            output[i + 3] = 255;
+                // Checkerboard tile color at this position.
+                let cb = if ((xp / CHECKER_SIZE) & 1) ^ cb_row_bit == 0 {
+                    LIGHT
+                } else {
+                    DARK
+                };
+
+                // Premultiplied alpha-over composite: content over checkerboard.
+                let inv_a = 255u32 - u32::from(alpha);
+                let blended = ((u32::from(cb) * inv_a + 128) >> 8) as u8;
+                output[i] = output[i].saturating_add(blended);
+                output[i + 1] = output[i + 1].saturating_add(blended);
+                output[i + 2] = output[i + 2].saturating_add(blended);
+                output[i + 3] = 255;
+            }
+
+            x = batch_end + 1;
         }
     }
 }
