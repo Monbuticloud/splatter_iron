@@ -8,8 +8,9 @@
 use eframe::egui::Color32;
 
 use crate::canvas::DirtyRect;
+use crate::undo::BeforePixels;
 use crate::undo::RunSegment;
-use crate::undo::compress_and_store;
+use crate::undo::RLE_SHORT_RUN_THRESHOLD;
 
 /// Apply color to all visited pixels within a dirty region, capture
 /// before-pixels, and return compressed run segments for undo.
@@ -18,6 +19,10 @@ use crate::undo::compress_and_store;
 /// current `stamp` value (and not already drag-processed in alpha-overlay
 /// mode), captures the old color, writes the new color (blend or replace),
 /// and assembles contiguous runs.
+///
+/// Uniform runs of 8+ pixels use [`BeforePixels::All`] without allocating
+/// an intermediate buffer. Non-uniform runs directly extend the caller's
+/// flat `before_pixels` buffer.
 ///
 /// # Parameters
 ///
@@ -69,7 +74,9 @@ pub fn apply_visited_runs(
                 continue;
             }
             let run_start = pixel_index as u32;
-            let mut before = Vec::new();
+
+            // Count contiguous visited pixels in this run.
+            let mut run_len: u32 = 0;
             while x <= dirty_rect.max_x {
                 let next_pixel_index = row_start + x as usize;
                 if visited[next_pixel_index] != stamp {
@@ -78,18 +85,39 @@ pub fn apply_visited_runs(
                 if alpha_overlay && drag_processed[next_pixel_index] == drag_stamp_value {
                     break;
                 }
-                before.push(pixels[next_pixel_index]);
-                pixels[next_pixel_index] = if alpha_overlay {
-                    crate::pixel::alpha_blend(pixels[next_pixel_index], color)
+                run_len += 1;
+                x += 1;
+            }
+
+            // Check uniformity without allocating an intermediate Vec.
+            let run_slice = &pixels[run_start as usize..run_start as usize + run_len as usize];
+            let uniform =
+                run_len >= RLE_SHORT_RUN_THRESHOLD && run_slice.iter().all(|&p| p == run_slice[0]);
+
+            let (rle_before, length) = if uniform {
+                (BeforePixels::All(run_slice[0]), run_len)
+            } else {
+                let offset = before_pixels.len() as u32;
+                before_pixels.extend_from_slice(run_slice);
+                (BeforePixels::Many { offset, length: run_len }, run_len)
+            };
+
+            // Apply colour.
+            for p in &mut pixels[run_start as usize..run_start as usize + run_len as usize] {
+                *p = if alpha_overlay {
+                    crate::pixel::alpha_blend(*p, color)
                 } else {
                     color
                 };
-                if alpha_overlay {
-                    drag_processed[next_pixel_index] = drag_stamp_value;
-                }
-                x += 1;
             }
-            let (rle_before, length) = compress_and_store(&before, before_pixels);
+            if alpha_overlay {
+                let ds = drag_stamp_value;
+                for d in &mut drag_processed[run_start as usize..run_start as usize + run_len as usize]
+                {
+                    *d = ds;
+                }
+            }
+
             runs.push(RunSegment {
                 start: run_start,
                 length,

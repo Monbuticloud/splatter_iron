@@ -51,7 +51,7 @@ pub struct RunSegment {
     pub before: BeforePixels,
 }
 
-const RLE_SHORT_RUN_THRESHOLD: u32 = 8;
+pub(crate) const RLE_SHORT_RUN_THRESHOLD: u32 = 8;
 
 /// Compress a contiguous run of pixel data into a flat `before_pixels` buffer.
 ///
