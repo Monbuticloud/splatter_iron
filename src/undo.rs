@@ -1,6 +1,6 @@
 //! Undo-record types ([`UndoRecord`], [`RunSegment`], [`BeforePixels`])
 //! and their application to the canvas ([`undo_apply`], [`redo_apply`]).
-//! Run-length compression (`compress_run`) reduces storage for uniform spans.
+//! Run-length compression ([`compress_and_store`]) reduces storage for uniform spans.
 
 use std::io::Cursor;
 
