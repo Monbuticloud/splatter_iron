@@ -11,6 +11,7 @@ use serde::Serialize;
 
 /// Default canvas width in pixels for new documents.
 const DEFAULT_WIDTH: u32 = 2000;
+/// Default canvas height in pixels for new documents.
 const DEFAULT_HEIGHT: u32 = 1500;
 
 /// Determines how a layer interacts with the layer below it during compositing.
