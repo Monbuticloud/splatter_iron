@@ -157,10 +157,11 @@ fn stamp_at(
     let float_scale_x = stamp_width as f64 / output_w as f64;
     let float_scale_y = stamp_height as f64 / output_h as f64;
 
+    let mut before = Vec::new();
     for y in top..=bottom {
         let row_start = (y as usize) * width;
         let mut run_start: Option<u32> = None;
-        let mut before = Vec::new();
+        before.clear();
 
         // Precompute src_y once per row (O(height) vs O(width*height)).
         let src_y =
