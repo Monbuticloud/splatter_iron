@@ -1,6 +1,7 @@
 target
 lib
 lib/*
+.tmp/
 zig
 profile.json.gz
 .DS_Store
