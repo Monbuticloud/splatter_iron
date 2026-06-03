@@ -315,13 +315,72 @@ impl UndoHistory {
 
     /// Finish accumulating drag data and push the result as a single undo record.
     ///
+    /// If the last entry in the stroke stack is a `Run` variant from the same
+    /// drag (matching `layer_index`, `color_after`, `is_alpha_overlay`), the
+    /// accumulator frames are merged into that record instead of creating a
+    /// new adjacent entry. This prevents adjacent undo records from the same
+    /// drag gesture when [`MAX_DRAG_FRAMES`] causes a mid-drag split.
+    ///
     /// Delegates to [`merge_frames`] to build the record and calls
     /// [`push_undo`] to store it. No-op if no drag was in progress.
     ///
     /// [`push_undo`]: Self::push_undo
     /// [`merge_frames`]: Self::merge_frames
     pub fn finalize_drag_accumulator(&mut self) {
-        if let Some(accumulator) = self.drag_accumulator.take() {
+        let Some(accumulator) = self.drag_accumulator.take() else {
+            return;
+        };
+
+        // Check if the last undo record belongs to the same drag gesture
+        // (created by a MAX_DRAG_FRAMES split). If so, pop and merge.
+        let pop_and_merge = self.stroke_stack.back().is_some_and(|last| {
+            matches!(
+                last,
+                UndoRecord::Run {
+                    layer_index,
+                    color_after,
+                    is_alpha_overlay,
+                    full_layer_before: None,
+                    ..
+                } if *layer_index == accumulator.layer_index
+                    && *color_after == accumulator.color_after
+                    && *is_alpha_overlay == accumulator.is_alpha_overlay
+            )
+        });
+
+        if pop_and_merge {
+            let mut prior = self
+                .stroke_stack
+                .pop_back()
+                .expect("checked is_some_and above");
+            prior.decompress_before();
+            if let UndoRecord::Run {
+                ref mut runs,
+                ref mut before_pixels,
+                ..
+            } = prior
+            {
+                // Adjust offsets for accumulator frames and append.
+                let offset_adjust = before_pixels.len() as u32;
+                let mut all_before = std::mem::take(before_pixels);
+                let mut all_runs = std::mem::take(runs);
+
+                for mut frame in accumulator.frames.into_iter().rev() {
+                    for run in &mut frame.runs {
+                        if let crate::undo::BeforePixels::Many { offset, .. } = &mut run.before {
+                            *offset += offset_adjust + all_before.len() as u32;
+                        }
+                    }
+                    all_runs.append(&mut frame.runs);
+                    all_before.append(&mut frame.before_pixels);
+                }
+
+                // Rebuild the prior record with merged data.
+                *runs = all_runs;
+                *before_pixels = all_before;
+            }
+            self.push_undo(prior);
+        } else {
             let record = Self::merge_frames(
                 accumulator.frames,
                 accumulator.layer_index,
