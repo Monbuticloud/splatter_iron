@@ -618,6 +618,10 @@ fn blend_to_output_skips_invisible_layers() {
     document.canvas_mut().pixels[1].visible = false;
     document.canvas_mut().dirty_rect.request_full_blend();
     document.blend_to_output();
-    // Output should show the transparent layer 0 (not red)
-    assert_eq!(document.canvas.output_rgba[0..4].to_vec(), vec![0, 0, 0, 0]);
+    // Output should show the checkerboard pattern behind transparent areas.
+    // Pixel (0,0) is a light tile: 192 × 255/256 ≈ 191, with alpha = 255.
+    assert_eq!(
+        document.canvas.output_rgba[0..4].to_vec(),
+        vec![191, 191, 191, 255]
+    );
 }

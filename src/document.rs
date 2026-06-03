@@ -147,6 +147,7 @@ impl Document {
 
         let result = if rects.is_empty() {
             pixel::blend_layers(&layer_data, output);
+            pixel::draw_checkerboard(output, width, 0, 0, width - 1, height - 1);
             Some(DirtyRect::new(0, 0, width - 1, height - 1))
         } else {
             let mut union_rect: Option<DirtyRect> = None;
@@ -156,6 +157,14 @@ impl Document {
                 }
                 pixel::blend_region(
                     &layer_data,
+                    output,
+                    width,
+                    rect.min_x,
+                    rect.min_y,
+                    rect.max_x,
+                    rect.max_y,
+                );
+                pixel::draw_checkerboard(
                     output,
                     width,
                     rect.min_x,

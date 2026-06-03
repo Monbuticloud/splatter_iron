@@ -653,6 +653,70 @@ pub fn blend_layers(layers: &[LayerBlendInfo], output: &mut [u8]) {
     }
 }
 
+/// Draw a checkerboard pattern behind transparent or semi-transparent pixels
+/// in the blended output buffer.
+///
+/// Every pixel with alpha < 255 gets a light/dark gray tile blended beneath
+/// it so the checkerboard shows through. Pixels with alpha == 255 are left
+/// unchanged (fully opaque).
+///
+/// The checkerboard is drawn as a backdrop behind the existing content using
+/// premultiplied alpha-over compositing:
+/// `result_rgb = content_rgb_premul + checkerboard_rgb × (1 − α/255)`.
+/// The result alpha is set to 255 (fully opaque) since the checkerboard
+/// fills all transparent areas.
+///
+/// # Parameters
+///
+/// * `output` — Premultiplied RGBA output buffer from `blend_layers` or
+///   `blend_region`.
+/// * `canvas_width` — Canvas width in pixels (for row stride calculation).
+/// * `min_x` — Leftmost column to process (inclusive).
+/// * `min_y` — Topmost row to process (inclusive).
+/// * `max_x` — Rightmost column to process (inclusive).
+/// * `max_y` — Bottommost row to process (inclusive).
+pub(crate) fn draw_checkerboard(
+    output: &mut [u8],
+    canvas_width: u32,
+    min_x: u32,
+    min_y: u32,
+    max_x: u32,
+    max_y: u32,
+) {
+    const CHECKER_SIZE: u32 = 8;
+    const LIGHT: u8 = 192;
+    const DARK: u8 = 128;
+
+    let width = canvas_width as usize;
+    for y in min_y..=max_y {
+        let row_offset = y as usize * width;
+        for x in min_x..=max_x {
+            let i = (row_offset + x as usize) * 4;
+            let alpha = output[i + 3];
+            if alpha == 255 {
+                continue;
+            }
+
+            // Checkerboard tile color at this position.
+            let cb = if ((x / CHECKER_SIZE) + (y / CHECKER_SIZE)) & 1 == 0 {
+                LIGHT
+            } else {
+                DARK
+            };
+
+            // Premultiplied alpha-over composite: content over checkerboard.
+            // result_rgb = content_rgb_premul + checkerboard_rgb × (255 − α) ÷ 256.
+            let inv_a = 255u32 - u32::from(alpha);
+            let blend = u32::from(cb) * inv_a;
+            let blended = ((blend + 128) >> 8) as u8;
+            output[i]     = output[i].saturating_add(blended);
+            output[i + 1] = output[i + 1].saturating_add(blended);
+            output[i + 2] = output[i + 2].saturating_add(blended);
+            output[i + 3] = 255;
+        }
+    }
+}
+
 /// Blend only the pixels within a dirty rectangle.
 ///
 /// Processes the region row-by-row. Sequential iteration is used since
