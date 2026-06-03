@@ -19,7 +19,7 @@
 | UI | eframe (egui) | 0.34.3 | Native desktop, GPU, cross-platform, accessible |
 | Allocator | MiMalloc | 0.1.51 | Fast multi-threaded; wrapped in TrackingAllocator |
 | SIMD | `wide::u32x4` | 1.4.0 | Fixed-point 4× pixel blend |
-| Parallelism | rayon | 1.5.3 | Parallel blend threshold at 64 chunks |
+| Parallelism | rayon | 1.5.3 | Parallel blend threshold at 256 chunks |
 | Compression | zstd (level 10) | 0.13.3 | zstdmt for multi-threaded; .splattercanvas format |
 | Serialization | serde_json | 1.0.150 | Structured save/load; ecolor+serde for Color32 |
 | Dialogs | rfd | 0.17.2 | Native file open/save dialogs |
@@ -76,7 +76,7 @@ Each IO manager owns its own channel pair, orchestrated by frame loop.
 
 ### Pattern 4 — SIMD pixel blend
 Fixed-point premultiplied-alpha: `(dest * inv_alpha + 128) >> 8`
-SIMD `u32x4` + rayon parallel at 64+ chunks in `blend_layers()`.
+SIMD `u32x4` + rayon parallel at 256+ chunks in `blend_layers()`.
 
 ### Pattern 5 — egui panel on MyApp
 ```rust
