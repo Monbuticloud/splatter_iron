@@ -97,4 +97,4 @@
 
 ## Implementing
 
-- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. (P2)(B2)(460008e)
+- None at the moment

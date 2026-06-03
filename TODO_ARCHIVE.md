@@ -28,6 +28,8 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 
 ## Implemented
 
+- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. Added to `handle_canvas_interaction` in `src/ui/center.rs`. Coarse step 10px, fine step 1px. (P2)(B2)(460008e)(HEAD)
+
 - README is sparse — add build instructions, feature list, screenshot, contribution guide. (P3)(B0)(aef7235)(a904732)
 - `export_as_image` pixel-by-pixel loop — `src/files.rs:247` → replaced with `bytemuck` cast + rayon `par_chunks_mut` (P1)(B1)(aef7235)(b049292)
 - `canvas.rs:262` + `file_io.rs:432` — `output_rgba: Vec<u8>` cloned (12MB) on every export → `Arc<Vec<u8>>` for atomic-shared export. (P1)(B1)(514450e)(d72467d)
