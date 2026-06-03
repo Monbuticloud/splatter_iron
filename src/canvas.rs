@@ -387,6 +387,15 @@ impl Canvas {
     }
 }
 
+/// The shape used by a drawing or erasing tool.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ToolKind {
+    /// Rectangular brush/eraser footprint.
+    Square,
+    /// Circular brush/eraser footprint.
+    Circle,
+}
+
 /// The drawing tool currently selected in the UI.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CurrentTool {
@@ -398,6 +407,8 @@ pub enum CurrentTool {
     SquareEraser,
     /// Erase by dragging a circular eraser.
     CircleEraser,
+    /// Erase pixels using a shaped eraser footprint.
+    Eraser(ToolKind),
     /// Flood-fill a contiguous region of similar color.
     BucketFill,
     /// Stamp an external image onto the canvas.
