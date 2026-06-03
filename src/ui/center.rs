@@ -30,6 +30,7 @@ use crate::undo::UndoRecord;
 
 /// Alpha multiplier applied to the brush preview fill color.
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
+/// Width of the brush preview outline stroke.
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
 const ZOOM_SENSITIVITY: f32 = 0.003;
 const MIN_ZOOM: f32 = 0.05;
