@@ -4,6 +4,8 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 
 ## Denied
 
+- reduce undo zstd compression level from default to 0 — `undo_history.rs` already uses level `-1` (fast mode), which is faster than level 0 (default/3). No change needed. (P1)(B1)(460008e)(HEAD)
+
 - `#[allow(clippy::..)]` missing inline justification — `src/ui/center.rs:296`, `src/tools/stamp_brush.rs:85` — both now have inline justification comments. (P1)(B1)(59653a1)(5d89e87)
 - `unwrap()` calls without justification — `src/ui/dialogs.rs:224,411` — lines no longer contain bare `unwrap()`. (P1)(B1)(59653a1)(5d89e87)
 - misplaced docstring — `src/app/mod.rs:75-78` — docstrings correctly attributed per current code. (P2)(B1)(59653a1)(5d89e87)

@@ -75,7 +75,6 @@
 
 ### Performance
 
-- reduce undo zstd compression level from default to 0 for 5x faster compression on main thread. (P1)(B1)(460008e)
 - layer-snapshot undo for >50% coverage strokes — store zstd-compressed full layer clone instead of per-pixel before-data. Simplifies undo path for large strokes, avoids per-segment overhead. (P2)(B2)(460008e)
 
 ### Security
