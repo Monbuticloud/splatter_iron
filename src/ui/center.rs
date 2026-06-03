@@ -32,6 +32,7 @@ use crate::undo::UndoRecord;
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
 /// Width of the brush preview outline stroke.
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
+/// Mouse wheel zoom sensitivity factor.
 const ZOOM_SENSITIVITY: f32 = 0.003;
 const MIN_ZOOM: f32 = 0.05;
 const MAX_ZOOM: f32 = 20.0;
