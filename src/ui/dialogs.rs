@@ -9,7 +9,6 @@ use eframe::egui;
 use crate::app::MEMORY_WARNING_THRESHOLD;
 use crate::app::MyApp;
 use crate::app::NEW_CANVAS_PRESETS;
-use crate::app::PendingStamp;
 use crate::app::UnsavedWarningAction;
 use crate::app::estimate_canvas_memory;
 use crate::canvas::Canvas;

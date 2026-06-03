@@ -10,7 +10,6 @@
 //! - [`LayerMode::Masked`]: layer alpha modulates the accumulator alpha
 //!   (RGB content is not rendered).
 
-use bytemuck::cast_mut;
 use eframe::egui::Color32;
 use rayon::prelude::*;
 use wide::u32x4;
