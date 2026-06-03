@@ -277,6 +277,16 @@ impl MyApp {
         );
     }
 
+    /// Apply persisted window size on the very first frame.
+    ///
+    /// Sends a viewport command to resize the window to the saved dimensions.
+    /// No-op on subsequent frames (checks `first_frame` flag).
+    pub(crate) fn handle_first_frame(&mut self, ctx: &egui::Context) {
+        if let Some(window_size) = self.ui.window_size.take() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(window_size));
+        }
+    }
+
     /// Trigger an autosave if the canvas is dirty and enough time has elapsed.
     pub(crate) fn handle_autosave(&mut self) {
         if self.document.dirty_since_last_autosave

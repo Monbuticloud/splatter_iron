@@ -99,13 +99,25 @@ pub(crate) const REPAINT_DELAY_MULTIPLIER: u32 = 5;
 pub(crate) const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 
 // --- Image import extensions ---
-/// Serialization wrapper for tool config + recent files.
+/// Serialization wrapper for tool config, recent files, and UI state.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PersistedConfig {
     /// Tool settings (current tool, color, radius, etc.).
     pub tool_configuration: ToolConfiguration,
     /// Recently opened/saved file paths.
     pub recent_files: Vec<PathBuf>,
+    /// Last-used export format index into [`EXPORT_FORMATS`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_export_format: Option<usize>,
+    /// Canvas pan offset from center (x, y) in screen pixels.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pan_offset: Option<[f32; 2]>,
+    /// Current zoom level (1.0 = fit to screen).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub zoom: Option<f32>,
+    /// Window inner size (width, height) in logical pixels.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_size: Option<[f32; 2]>,
 }
 
 /// File-extension list accepted by the image-import dialog (19 formats).
@@ -395,6 +407,9 @@ pub struct UIState {
     pub grid_cache: Option<(Vec<egui::Shape>, u32, u32, u32)>,
     /// Current canvas-relative cursor pixel coordinates (when hovering).
     pub cursor_pixel: Option<(u32, u32)>,
+    /// Window inner size (logical pixels), updated each frame for persistence.
+    /// `None` before the first frame.
+    pub window_size: Option<egui::Vec2>,
 }
 
 impl Default for UIState {
@@ -424,6 +439,7 @@ impl Default for UIState {
             pan_offset: egui::Vec2::ZERO,
             zoom: 1.0,
             grid_cache: None,
+            window_size: None,
         }
     }
 }
@@ -547,22 +563,30 @@ impl MyApp {
                 }
             });
 
-        let (tool_configuration, recent_files) = data_dir
-            .join("config.json")
-            .as_path()
-            .try_exists()
-            .ok()
-            .filter(|&exists| exists)
-            .and_then(|_| {
-                std::fs::File::open(data_dir.join("config.json"))
-                    .ok()
-                    .and_then(|file| {
-                        let limited = file.take(MAX_CONFIG_SIZE);
-                        let p: PersistedConfig = serde_json::from_reader(limited).ok()?;
-                        Some((p.tool_configuration, p.recent_files))
-                    })
-            })
-            .unwrap_or_default();
+        let (tool_configuration, recent_files, last_export_format, pan_offset, zoom, window_size) =
+            data_dir
+                .join("config.json")
+                .as_path()
+                .try_exists()
+                .ok()
+                .filter(|&exists| exists)
+                .and_then(|_| {
+                    std::fs::File::open(data_dir.join("config.json"))
+                        .ok()
+                        .and_then(|file| {
+                            let limited = file.take(MAX_CONFIG_SIZE);
+                            let p: PersistedConfig = serde_json::from_reader(limited).ok()?;
+                            Some((
+                                p.tool_configuration,
+                                p.recent_files,
+                                p.last_export_format,
+                                p.pan_offset,
+                                p.zoom,
+                                p.window_size,
+                            ))
+                        })
+                })
+                .unwrap_or_default();
 
         Self {
             document: Document::new(canvas),
@@ -581,6 +605,12 @@ impl MyApp {
             ui: UIState {
                 max_texture_dimension,
                 recent_files,
+                last_export_format: last_export_format.unwrap_or(1),
+                pan_offset: pan_offset
+                    .map(|[x, y]| egui::Vec2::new(x, y))
+                    .unwrap_or(egui::Vec2::ZERO),
+                zoom: zoom.unwrap_or(1.0),
+                window_size: window_size.map(|[x, y]| egui::Vec2::new(x, y)),
                 ..UIState::default()
             },
             gpu_texture,
@@ -608,6 +638,9 @@ impl eframe::App for MyApp {
         }
 
         self.sync_gpu_texture(frame, ui);
+
+        // Capture current window size for config persistence.
+        self.ui.window_size = Some(ui.ctx().screen_rect().size());
 
         let is_quitting = self.show_panels(ui);
 
@@ -645,6 +678,7 @@ impl eframe::App for MyApp {
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         }
 
+        self.handle_first_frame(ui.ctx());
         self.handle_autosave();
         self.handle_config_save();
     }

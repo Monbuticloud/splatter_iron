@@ -239,6 +239,10 @@ fn persisted_config_roundtrip() {
     let cfg = crate::app::PersistedConfig {
         tool_configuration: crate::tool_configuration::ToolConfiguration::default(),
         recent_files: vec![PathBuf::from("/tmp/test.splattercanvas")],
+        last_export_format: Some(0),
+        pan_offset: Some([0.0, 0.0]),
+        zoom: Some(1.0),
+        window_size: Some([800.0, 600.0]),
     };
     let json = serde_json::to_string(&cfg).expect("serialize");
     let deserialized: crate::app::PersistedConfig =

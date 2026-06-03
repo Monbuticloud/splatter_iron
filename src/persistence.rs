@@ -10,6 +10,7 @@ use crate::app::AUTOSAVE_INTERVAL_MINUTES;
 use crate::app::MyApp;
 use crate::app::PersistedConfig;
 
+
 impl MyApp {
     /// Add a file path to the recent-files list (dedup, max 10, most recent first).
     pub(crate) fn push_recent_file(&mut self, path: PathBuf) {
@@ -28,11 +29,15 @@ impl MyApp {
             .join("config.json")
     }
 
-    /// Persist current tool configuration and recent files to disk.
+    /// Persist current tool configuration, recent files, and UI state to disk.
     pub(crate) fn save_config(&self) {
         let persisted = PersistedConfig {
             tool_configuration: self.tool_configuration.clone(),
             recent_files: self.ui.recent_files.clone(),
+            last_export_format: Some(self.ui.last_export_format),
+            pan_offset: Some([self.ui.pan_offset.x, self.ui.pan_offset.y]),
+            zoom: Some(self.ui.zoom),
+            window_size: self.ui.window_size.map(|v| [v.x, v.y]),
         };
         let path = self.config_path();
         if let Ok(json) = serde_json::to_string(&persisted) {
