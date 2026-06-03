@@ -121,7 +121,12 @@ impl Document {
         let pixel_count = (canvas.width as usize) * (canvas.height as usize);
 
         if canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
-            canvas.output_rgba = Arc::new(vec![0; pixel_count * RGBA_CHANNELS]);
+            // Prefer in-place resize over new allocation when capacity suffices.
+            let buf = Arc::make_mut(&mut canvas.output_rgba);
+            if buf.capacity() < pixel_count * RGBA_CHANNELS {
+                buf.reserve(pixel_count * RGBA_CHANNELS - buf.len());
+            }
+            buf.resize(pixel_count * RGBA_CHANNELS, 0);
         }
         // Collect pixel slices, opacity, and mode for visible layers only.
         let layer_data: Vec<LayerBlendInfo> = canvas
