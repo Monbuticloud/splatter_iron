@@ -296,6 +296,12 @@ fn stamp_circle_positions(
 
     let radius_squared = (geo_radius as u64) * (geo_radius as u64);
 
+    // Per-row span tracking across all Bresenham steps: each row tracks the
+    // min_x/max_x of already-stamped columns. This avoids re-stamping pixels
+    // already covered by a previous step, reducing O(L·R²) to O(L·R).
+    let mut row_min_x = vec![u32::MAX; height as usize];
+    let mut row_max_x = vec![0u32; height as usize];
+
     loop {
         let geo_radius_i32 = geo_radius as i32;
         let circle_min_y = (current_y - geo_radius_i32).max(0) as u32;
@@ -311,27 +317,29 @@ fn stamp_circle_positions(
                 cx -= 1;
             }
 
+            let span_start = (current_x - cx).max(0).min(width as i32 - 1) as usize;
+            let span_end = (current_x + cx).max(0).min(width as i32 - 1) as usize;
+            if span_start > span_end {
+                continue;
+            }
+
             // Top half (center row when dy == 0)
             if dy <= current_y {
                 let y_top = (current_y - dy) as usize;
-                let row_start = y_top * width;
-                let span_start = (current_x - cx).max(0).min(width as i32 - 1) as usize;
-                let span_end = (current_x + cx).max(0).min(width as i32 - 1) as usize;
-                for pi in span_start..=span_end {
-                    visited[row_start + pi] = stamp;
-                }
+                stamp_circle_row(
+                    y_top, span_start, span_end, width, visited, stamp,
+                    &mut row_min_x, &mut row_max_x,
+                );
             }
 
             // Bottom half (skip center-row duplicate)
             if dy != 0 {
                 let y_bot = current_y + dy;
                 if y_bot < height as i32 {
-                    let row_start = (y_bot as usize) * width;
-                    let span_start = (current_x - cx).max(0).min(width as i32 - 1) as usize;
-                    let span_end = (current_x + cx).max(0).min(width as i32 - 1) as usize;
-                    for pi in span_start..=span_end {
-                        visited[row_start + pi] = stamp;
-                    }
+                    stamp_circle_row(
+                        y_bot as usize, span_start, span_end, width, visited, stamp,
+                        &mut row_min_x, &mut row_max_x,
+                    );
                 }
             }
         }
@@ -347,6 +355,48 @@ fn stamp_circle_positions(
         if error_times_two <= delta_x {
             error += delta_x;
             current_y += step_y;
+        }
+    }
+}
+
+/// Stamp the span `[span_start, span_end]` for a single row, skipping pixels
+/// already covered by previous Bresenham steps via per-row span tracking.
+#[inline]
+fn stamp_circle_row(
+    row: usize,
+    span_start: usize,
+    span_end: usize,
+    width: usize,
+    visited: &mut [u32],
+    stamp: u32,
+    row_min_x: &mut [u32],
+    row_max_x: &mut [u32],
+) {
+    let cur_min = row_min_x[row];
+    let cur_max = row_max_x[row];
+    let row_start = row * width;
+
+    if cur_min == u32::MAX {
+        // First time this row is hit — stamp the full span.
+        for x in span_start..=span_end {
+            visited[row_start + x] = stamp;
+        }
+        row_min_x[row] = span_start as u32;
+        row_max_x[row] = span_end as u32;
+    } else {
+        // Stamp newly-covered left extension.
+        if span_start < cur_min as usize {
+            for x in span_start..cur_min as usize {
+                visited[row_start + x] = stamp;
+            }
+            row_min_x[row] = span_start as u32;
+        }
+        // Stamp newly-covered right extension.
+        if span_end > cur_max as usize {
+            for x in cur_max as usize..=span_end {
+                visited[row_start + x] = stamp;
+            }
+            row_max_x[row] = span_end as u32;
         }
     }
 }
