@@ -38,6 +38,7 @@ const ZOOM_SENSITIVITY: f32 = 0.003;
 const MIN_ZOOM: f32 = 0.05;
 /// Maximum allowed zoom level.
 const MAX_ZOOM: f32 = 20.0;
+/// Duration (ms) the canvas stays in ActiveWake after the last interaction.
 const ACTIVE_DURATION_MILLISECONDS: u64 = 550;
 const CANVAS_BORDER_WIDTH: f32 = 2.0;
 const CANVAS_BORDER_COLOR: Color32 = Color32::from_rgb(128, 0, 128);
