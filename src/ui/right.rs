@@ -7,6 +7,7 @@ use crate::app::MyApp;
 use crate::canvas::CurrentTool;
 use crate::canvas::LayerMode;
 
+/// Range of valid undo/redo steps multiplier values.
 const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=100;
 const BRUSH_RADIUS_RANGE: std::ops::RangeInclusive<u32> = 0..=1000;
 
@@ -49,13 +50,12 @@ impl MyApp {
         ui.separator();
         ui.label("Color Selector");
         ui.horizontal(|ui| {
-            if
-                ui
-                    .selectable_label(
-                        self.tool_configuration.current_tool == CurrentTool::Eyedropper,
-                        "Eyedropper"
-                    )
-                    .clicked()
+            if ui
+                .selectable_label(
+                    self.tool_configuration.current_tool == CurrentTool::Eyedropper,
+                    "Eyedropper",
+                )
+                .clicked()
             {
                 self.tool_configuration.current_tool = CurrentTool::Eyedropper;
             }
@@ -66,35 +66,45 @@ impl MyApp {
 
         ui.label("Undo/Redo Strength");
         ui.add(
-            egui::DragValue::new(&mut self.ui.undo_redo_steps_multiplier).range(UNDO_REDO_RANGE)
-        ).on_hover_text("Number of paint strokes per undo or redo step (max 100)");
+            egui::DragValue::new(&mut self.ui.undo_redo_steps_multiplier).range(UNDO_REDO_RANGE),
+        )
+        .on_hover_text("Number of paint strokes per undo or redo step (max 100)");
 
         ui.label("::Brush Settings::");
         ui.separator();
         ui.label("Brush Radius:");
         ui.add(egui::DragValue::new(&mut self.tool_configuration.radius).range(BRUSH_RADIUS_RANGE));
-        ui.checkbox(&mut self.tool_configuration.show_brush_preview, "Brush Preview");
+        ui.checkbox(
+            &mut self.tool_configuration.show_brush_preview,
+            "Brush Preview",
+        );
         ui.checkbox(&mut self.tool_configuration.alpha_overlay, "Alpha Overlay");
         ui.checkbox(&mut self.tool_configuration.show_grid, "Show Grid");
         ui.add_enabled(
             self.tool_configuration.show_grid,
-            egui::DragValue
-                ::new(&mut self.tool_configuration.grid_size)
+            egui::DragValue::new(&mut self.tool_configuration.grid_size)
                 .range(1..=500)
-                .prefix("Grid: ")
+                .prefix("Grid: "),
         );
-        ui.checkbox(&mut self.tool_configuration.stabilization_enabled, "Stabilize");
+        ui.checkbox(
+            &mut self.tool_configuration.stabilization_enabled,
+            "Stabilize",
+        );
         ui.add_enabled(
             self.tool_configuration.stabilization_enabled,
-            egui::Slider
-                ::new(&mut self.tool_configuration.stabilization_smoothing, 0.0..=100.0)
-                .text("Smoothing")
-        ).on_hover_text("Higher values make the virtual cursor lag further behind the real cursor");
+            egui::Slider::new(
+                &mut self.tool_configuration.stabilization_smoothing,
+                0.0..=100.0,
+            )
+            .text("Smoothing"),
+        )
+        .on_hover_text("Higher values make the virtual cursor lag further behind the real cursor");
 
         ui.separator();
         ui.label("Save Path:");
         ui.add(
-            egui::TextEdit::singleline(&mut self.document.savefile_path).id_source("save_path_text")
+            egui::TextEdit::singleline(&mut self.document.savefile_path)
+                .id_source("save_path_text"),
         );
 
         ui.separator();
@@ -134,25 +144,19 @@ impl MyApp {
 
                         // Opacity slider
                         let mut opacity = layer.opacity;
-                        if
-                            ui
-                                .add(egui::Slider::new(&mut opacity, 0..=255).text("Opacity"))
-                                .changed()
+                        if ui
+                            .add(egui::Slider::new(&mut opacity, 0..=255).text("Opacity"))
+                            .changed()
                         {
                             pending_opacity = Some((i, opacity));
                         }
 
                         // Compositing mode dropdown
                         let mut current_mode = layer.mode;
-                        egui::ComboBox
-                            ::from_id_salt(format!("layer_mode_{i}"))
+                        egui::ComboBox::from_id_salt(format!("layer_mode_{i}"))
                             .selected_text(format!("{current_mode}"))
                             .show_ui(ui, |ui| {
-                                ui.selectable_value(
-                                    &mut current_mode,
-                                    LayerMode::Normal,
-                                    "Normal",
-                                );
+                                ui.selectable_value(&mut current_mode, LayerMode::Normal, "Normal");
                                 ui.selectable_value(
                                     &mut current_mode,
                                     LayerMode::Clipped,
@@ -206,7 +210,8 @@ impl MyApp {
 
             // Apply opacity change (needs mutable access to canvas).
             if let Some((index, opacity)) = pending_opacity {
-                self.document.set_layer_opacity(index, opacity, &mut self.undo);
+                self.document
+                    .set_layer_opacity(index, opacity, &mut self.undo);
             }
 
             // Apply deferred layer actions.
@@ -247,11 +252,12 @@ impl MyApp {
 
 #[cfg(test)]
 mod tests {
-    use super::UNDO_REDO_RANGE;
+    use egui_kittest::kittest::Queryable;
+
     use super::BRUSH_RADIUS_RANGE;
     use super::LayerAction;
+    use super::UNDO_REDO_RANGE;
     use crate::canvas::LayerMode;
-    use egui_kittest::kittest::Queryable;
 
     #[test]
     fn undo_redo_range_start_less_than_or_equal_end() {
