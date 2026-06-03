@@ -22,27 +22,23 @@
 
 (Change)(PX)(BX)(Time when TODO was made, use latest made or updated commit (use hash))
 
+## Rules
+
+- **Preserve empty sections** — do not delete a `##` section from TODO.md just because it currently has no items. Empty sections act as placeholders for future work and signal intentional gaps.
+- **Promote active work** — when implementation of a TODO item begins, move it from its current section (e.g. Ideas, Accepted) into the `## Implementing` section.
+- **Archive on completion** — once implementation finishes, move the item from `## Implementing` to TODO_ARCHIVE.md under the appropriate `## Implemented` or `## Denied` section.
+
 ## Ideas
 
 ### Performance
 
 - adaptive render quality — reduce blend resolution when zoomed far out. (P3)(B1)(5d89e87)
 - reduce undo zstd compression level from default to 0 for 5x faster compression on main thread. (P1)(B1)(24f670e)
-- add image import dimension limits (max 16384×16384 / 50MP) to prevent OOM from malicious images. (P1)(B1)(24f670e)
-- increase `PARALLEL_BLEND_THRESHOLD` from 64 to 256 to reduce rayon overhead on small dirty rects. (P2)(B1)(24f670e)
-- use capacity-based reallocation for `output_rgba` in `blend_to_output` instead of exact-length check to avoid realloc when capacity suffices. (P2)(B1)(24f670e)
-- eliminate intermediate `RgbaImage` allocation for all export formats (PNG, WebP, TIFF, TGA, PNM, QOI) — currently only JPEG/HDR/Farbfeld skip it. (P2)(B1)(24f670e)
-- stream JPEG RGB output to avoid intermediate `Vec<u8>` allocation — write unpremultiplied RGB directly via pre-allocated buffer. (P2)(B1)(24f670e)
-- use `alpha_blend_simd_four` in alpha-overlay brush paths (`bucket_fill.rs`, `circle_brush.rs`) — currently uses scalar `alpha_blend` per pixel. (P2)(B1)(24f670e)
 - avoid full layer pixel clone in `AddLayer` undo record — store placeholder that recreates transparent pixels on undo instead of cloning entire `Layer`. (P2)(B1)(24f670e)
 - optimize `stamp_circle_positions` inner loops — use midpoint-circle span filling (like `fill_circle_impl`) instead of pixel-by-pixel iteration per Bresenham step. (P3)(B1)(24f670e)
 - refactor duplicated `read_canvas`/`read_canvas_xz` and `write_canvas`/`write_canvas_xz` into generic functions accepting a decoder/encoder factory. (P3)(B1)(24f670e)
-- remove dead/commented dependencies from `Cargo.toml`: `tokio`, `rand`, `target`, `type-layout`. (P3)(B1)(24f670e)
 
 ### Security
-
-- add config file size limit (1MB `Read::take`) for `serde_json::from_reader` to prevent malformed config OOM. (P2)(B1)(24f670e)
-- add canvas dimension validation against `max_texture_dimension_2d` at creation and import time. (P2)(B1)(24f670e)
 
 ### Architecture
 
@@ -73,7 +69,6 @@
 
 ### Documentation
 
-- add `Superseded-By: ADR-0024` marker to ADR-0006 and ADR-0021 front matter (flat buffer + zstd partially replaced their storage model). (P2)(B1)(24f670e)
 - fix `docs/src/file_io.md` — `push_recent_file` is in `persistence.rs`, not the `file_io` module; clarify the delegation chain. (P3)(B1)(24f670e)
 - add `#[cfg(test)]` annotation notice to `docs/src/files.md` for `save_canvas_to_bytes`/`load_canvas_from_bytes` — they're test-only. (P3)(B1)(24f670e)
 - create consolidated "Performance Architecture" document from ADR-0001, 0004, 0005, 0010, 0012 — centralized perf strategy reference. (P3)(B0)(24f670e)
@@ -87,7 +82,24 @@
 
 ## Accepted
 
-- None at the moment
+### Performance
+
+- add image import dimension limits (max 16384×16384 / 50MP) to prevent OOM from malicious images. (P1)(B1)(24f670e)
+- increase `PARALLEL_BLEND_THRESHOLD` from 64 to 256 to reduce rayon overhead on small dirty rects. (P2)(B1)(24f670e)
+- use capacity-based reallocation for `output_rgba` in `blend_to_output` instead of exact-length check to avoid realloc when capacity suffices. (P2)(B1)(24f670e)
+- eliminate intermediate `RgbaImage` allocation for all export formats (PNG, WebP, TIFF, TGA, PNM, QOI) — currently only JPEG/HDR/Farbfeld skip it. (P2)(B1)(24f670e)
+- stream JPEG RGB output to avoid intermediate `Vec<u8>` allocation — write unpremultiplied RGB directly via pre-allocated buffer. (P2)(B1)(24f670e)
+- use `alpha_blend_simd_four` in alpha-overlay brush paths (`bucket_fill.rs`, `circle_brush.rs`) — currently uses scalar `alpha_blend` per pixel. (P2)(B1)(24f670e)
+- remove dead/commented dependencies from `Cargo.toml`: `tokio`, `rand`, `target`, `type-layout`. (P3)(B1)(24f670e)
+
+### Security
+
+- add config file size limit (1MB `Read::take`) for `serde_json::from_reader` to prevent malformed config OOM. (P2)(B1)(24f670e)
+- add canvas dimension validation against `max_texture_dimension_2d` at creation and import time. (P2)(B1)(24f670e)
+
+### Documentation
+
+- add `Superseded-By: ADR-0024` marker to ADR-0006 and ADR-0021 front matter (flat buffer + zstd partially replaced their storage model). (P2)(B1)(24f670e)
 
 ## Implementing
 
