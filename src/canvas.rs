@@ -9,6 +9,7 @@ use eframe::egui::TextureHandle;
 use serde::Deserialize;
 use serde::Serialize;
 
+/// Default canvas width in pixels for new documents.
 const DEFAULT_WIDTH: u32 = 2000;
 const DEFAULT_HEIGHT: u32 = 1500;
 
