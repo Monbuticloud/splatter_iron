@@ -411,30 +411,36 @@ pub fn export_as_image(
 
     let mut raw_output = vec![0u8; total_pixels * 4];
 
+    const CHUNK_BYTES: usize = 4096;
+    const PIXELS_PER_CHUNK: usize = CHUNK_BYTES / 4;
     raw_output
-        .par_chunks_mut(4)
+        .par_chunks_mut(CHUNK_BYTES)
         .enumerate()
-        .for_each(|(i, pixel)| {
-            let c = premultiplied[i];
-            let (fr, fg, fb, fa) = if is_jpeg {
-                // Blend premultiplied RGBA against white background:
-                // fully transparent (a=0,r=0) -> white (255,255,255)
-                // For premultiplied over white: r' = r + (255 - a) (clamped)
-                let inv_a = 255u8.wrapping_sub(c.a());
-                (
-                    c.r().saturating_add(inv_a),
-                    c.g().saturating_add(inv_a),
-                    c.b().saturating_add(inv_a),
-                    255,
-                )
-            } else {
-                let straight = unpremultiply(c);
-                (straight.r(), straight.g(), straight.b(), straight.a())
-            };
-            pixel[0] = fr;
-            pixel[1] = fg;
-            pixel[2] = fb;
-            pixel[3] = fa;
+        .for_each(|(chunk_idx, chunk)| {
+            let base_pixel = chunk_idx * PIXELS_PER_CHUNK;
+            for (j, pixel) in chunk.chunks_exact_mut(4).enumerate() {
+                let i = base_pixel + j;
+                let c = premultiplied[i];
+                let (fr, fg, fb, fa) = if is_jpeg {
+                    // Blend premultiplied RGBA against white background:
+                    // fully transparent (a=0,r=0) -> white (255,255,255)
+                    // For premultiplied over white: r' = r + (255 - a) (clamped)
+                    let inv_a = 255u8.wrapping_sub(c.a());
+                    (
+                        c.r().saturating_add(inv_a),
+                        c.g().saturating_add(inv_a),
+                        c.b().saturating_add(inv_a),
+                        255,
+                    )
+                } else {
+                    let straight = unpremultiply(c);
+                    (straight.r(), straight.g(), straight.b(), straight.a())
+                };
+                pixel[0] = fr;
+                pixel[1] = fg;
+                pixel[2] = fb;
+                pixel[3] = fa;
+            }
         });
 
     let file = std::fs::File::create(path)?;
