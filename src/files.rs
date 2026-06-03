@@ -575,10 +575,30 @@ pub fn export_as_image(
 ///
 /// Returns an error if the file cannot be read or the image format is
 /// not recognized by the `image` crate.
+/// Maximum allowed image dimension for import — prevents OOM from
+/// malicious or accidentally oversized images.
+const MAX_IMPORT_DIMENSION: u32 = 16384;
+/// Maximum megapixels for imported images.
+const MAX_IMPORT_MEGAPIXELS: u64 = 50_000_000;
+
 pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
     let dynamic_image = image::open(path)?;
     let rgba = dynamic_image.to_rgba8();
     let (width_u32, height_u32) = rgba.dimensions();
+
+    if width_u32 > MAX_IMPORT_DIMENSION || height_u32 > MAX_IMPORT_DIMENSION {
+        anyhow::bail!(
+            "Image dimensions {width_u32}×{height_u32} exceed maximum allowed \
+             ({MAX_IMPORT_DIMENSION}×{MAX_IMPORT_DIMENSION})",
+        );
+    }
+    let megapixels = u64::from(width_u32) * u64::from(height_u32);
+    if megapixels > MAX_IMPORT_MEGAPIXELS {
+        anyhow::bail!(
+            "Image has {megapixels} pixels, exceeds {MAX_IMPORT_MEGAPIXELS} pixel limit",
+        );
+    }
+
     let pixel_count = (width_u32 as usize) * (height_u32 as usize);
 
     let mut pixels = Vec::with_capacity(pixel_count);
