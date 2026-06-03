@@ -49,8 +49,10 @@ fn fill_square_impl(
 
 /// Mark all pixel indices covered by a brush stroke line in the `visited` buffer.
 ///
-/// Uses the Bresenham line algorithm to step along the line and stamps every
-/// pixel within the brush radius (a square brush). The caller can later scan
+/// Uses the Bresenham line algorithm to step along the line. At each step the
+/// square brush footprint is stamped, but per-row span tracking
+/// (`row_min_x`/`row_max_x`) ensures each pixel is written only once even when
+/// consecutive brush positions heavily overlap. The caller can later scan
 /// `visited` for values matching `stamp` to get deduplicated, sorted positions.
 ///
 /// Clamps brush bounds to canvas dimensions. Tracks the bounding box of
