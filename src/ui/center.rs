@@ -28,6 +28,7 @@ use crate::tools::square_brush::draw_square_line;
 use crate::tools::stamp_brush::draw_stamp_line;
 use crate::undo::UndoRecord;
 
+/// Alpha multiplier applied to the brush preview fill color.
 const PREVIEW_FILL_ALPHA_FACTOR: f32 = 0.2;
 const PREVIEW_STROKE_WIDTH: f32 = 1.0;
 const ZOOM_SENSITIVITY: f32 = 0.003;
@@ -109,10 +110,10 @@ fn draw_circle_preview(
     canvas_width: u32,
     canvas_height: u32,
 ) {
-    let center_screen_x = response.rect.min.x
-        + (pixel_x as f32) * (draw_size.x / (canvas_width as f32));
-    let center_screen_y = response.rect.min.y
-        + (pixel_y as f32) * (draw_size.y / (canvas_height as f32));
+    let center_screen_x =
+        response.rect.min.x + (pixel_x as f32) * (draw_size.x / (canvas_width as f32));
+    let center_screen_y =
+        response.rect.min.y + (pixel_y as f32) * (draw_size.y / (canvas_height as f32));
     let screen_radius = (radius as f32) * (draw_size.x / (canvas_width as f32));
 
     ui.painter().circle_stroke(
@@ -140,20 +141,14 @@ fn draw_square_preview(
     let half_radius = radius;
 
     let preview_start_x = pixel_x.saturating_sub(half_radius) as f32;
-    let preview_end_x =
-        ((pixel_x + half_radius).min(canvas_width - 1) as f32) + 1.0;
+    let preview_end_x = ((pixel_x + half_radius).min(canvas_width - 1) as f32) + 1.0;
     let preview_start_y = pixel_y.saturating_sub(half_radius) as f32;
-    let preview_end_y =
-        ((pixel_y + half_radius).min(canvas_height - 1) as f32) + 1.0;
+    let preview_end_y = ((pixel_y + half_radius).min(canvas_height - 1) as f32) + 1.0;
 
-    let screen_x = response.rect.min.x
-        + preview_start_x * (draw_size.x / (canvas_width as f32));
-    let screen_y = response.rect.min.y
-        + preview_start_y * (draw_size.y / (canvas_height as f32));
-    let screen_w = (preview_end_x - preview_start_x)
-        * (draw_size.x / (canvas_width as f32));
-    let screen_h = (preview_end_y - preview_start_y)
-        * (draw_size.y / (canvas_height as f32));
+    let screen_x = response.rect.min.x + preview_start_x * (draw_size.x / (canvas_width as f32));
+    let screen_y = response.rect.min.y + preview_start_y * (draw_size.y / (canvas_height as f32));
+    let screen_w = (preview_end_x - preview_start_x) * (draw_size.x / (canvas_width as f32));
+    let screen_h = (preview_end_y - preview_start_y) * (draw_size.y / (canvas_height as f32));
 
     let preview_rect = Rect::from_min_size(
         Pos2::new(screen_x, screen_y),
@@ -168,18 +163,11 @@ fn draw_square_preview(
         // so float result ≤ 127.5 → truncation to u8 is safe;
         // all intermediates are non-negative → no sign loss.
         #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let preview_alpha =
-            ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
+        let preview_alpha = ((brush_alpha as f32) * PREVIEW_FILL_ALPHA_FACTOR) as u8;
         Color32::from_rgba_premultiplied(
-            ((color.r() as u32
-                * preview_alpha as u32)
-                / brush_alpha as u32) as u8,
-            ((color.g() as u32
-                * preview_alpha as u32)
-                / brush_alpha as u32) as u8,
-            ((color.b() as u32
-                * preview_alpha as u32)
-                / brush_alpha as u32) as u8,
+            ((color.r() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
+            ((color.g() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
+            ((color.b() as u32 * preview_alpha as u32) / brush_alpha as u32) as u8,
             preview_alpha,
         )
     };
@@ -188,10 +176,7 @@ fn draw_square_preview(
     ui.painter().rect_stroke(
         preview_rect,
         0.0,
-        egui::Stroke::new(
-            PREVIEW_STROKE_WIDTH,
-            color,
-        ),
+        egui::Stroke::new(PREVIEW_STROKE_WIDTH, color),
         StrokeKind::Middle,
     );
 }
@@ -239,12 +224,8 @@ impl MyApp {
         let available = ui.available_size();
         let scale = (available.x / canvas_pixel_size.x).min(available.y / canvas_pixel_size.y);
         let base_size = canvas_pixel_size * scale;
-        let (draw_size, canvas_rect) = compute_canvas_rect(
-            available,
-            base_size,
-            self.ui.zoom,
-            self.ui.pan_offset,
-        );
+        let (draw_size, canvas_rect) =
+            compute_canvas_rect(available, base_size, self.ui.zoom, self.ui.pan_offset);
 
         let cursor = if self.tool_configuration.current_tool == CurrentTool::Pan {
             egui::CursorIcon::Grab
@@ -315,7 +296,8 @@ impl MyApp {
             ui.separator();
 
             if ui.button("Save As").clicked() {
-                self.dialog_manager.queue_file_action(PendingFileAction::Save);
+                self.dialog_manager
+                    .queue_file_action(PendingFileAction::Save);
                 self.document.savefile_path.clear();
                 ui.ctx().request_repaint();
                 ui.close();
@@ -324,7 +306,8 @@ impl MyApp {
             if self.tool_configuration.current_tool == CurrentTool::Stamp {
                 ui.separator();
                 if ui.button("Replace Stamp Image...").clicked() {
-                    self.dialog_manager.queue_file_action(PendingFileAction::LoadStamp);
+                    self.dialog_manager
+                        .queue_file_action(PendingFileAction::LoadStamp);
                     ui.ctx().request_repaint();
                     ui.close();
                 }
@@ -332,7 +315,8 @@ impl MyApp {
             if self.tool_configuration.current_tool == CurrentTool::CustomBrush {
                 ui.separator();
                 if ui.button("Replace Brush...").clicked() {
-                    self.dialog_manager.queue_file_action(PendingFileAction::LoadBrush);
+                    self.dialog_manager
+                        .queue_file_action(PendingFileAction::LoadBrush);
                     ui.ctx().request_repaint();
                     ui.close();
                 }
@@ -384,11 +368,8 @@ impl MyApp {
                 local_position.y / response.rect.height(),
             );
 
-            let (raw_pixel_x, raw_pixel_y) = uv_to_pixel(
-                uv,
-                self.document.canvas.width,
-                self.document.canvas.height,
-            );
+            let (raw_pixel_x, raw_pixel_y) =
+                uv_to_pixel(uv, self.document.canvas.width, self.document.canvas.height);
 
             let dt = ui.input(|i| i.unstable_dt);
             let (pixel_x, pixel_y) = self.stabilized_pixel(raw_pixel_x, raw_pixel_y, dt);
@@ -476,14 +457,16 @@ impl MyApp {
             && self.tool_configuration.current_tool == CurrentTool::Stamp
             && self.stamp_library.is_empty()
         {
-            self.dialog_manager.queue_file_action(PendingFileAction::LoadStamp);
+            self.dialog_manager
+                .queue_file_action(PendingFileAction::LoadStamp);
             ui.ctx().request_repaint();
         }
         if response.clicked()
             && self.tool_configuration.current_tool == CurrentTool::CustomBrush
             && self.brush_library.is_empty()
         {
-            self.dialog_manager.queue_file_action(PendingFileAction::LoadBrush);
+            self.dialog_manager
+                .queue_file_action(PendingFileAction::LoadBrush);
             ui.ctx().request_repaint();
         }
 
@@ -495,11 +478,8 @@ impl MyApp {
                     local_position.y / response.rect.height(),
                 );
 
-                let (pixel_x, pixel_y) = uv_to_pixel(
-                    uv,
-                    self.document.canvas.width,
-                    self.document.canvas.height,
-                );
+                let (pixel_x, pixel_y) =
+                    uv_to_pixel(uv, self.document.canvas.width, self.document.canvas.height);
 
                 let canvas = Arc::make_mut(&mut self.document.canvas);
                 canvas.dirty_rect.request_full_blend();
@@ -523,11 +503,8 @@ impl MyApp {
                     local_position.x / response.rect.width(),
                     local_position.y / response.rect.height(),
                 );
-                let (pixel_x, pixel_y) = uv_to_pixel(
-                    uv,
-                    self.document.canvas.width,
-                    self.document.canvas.height,
-                );
+                let (pixel_x, pixel_y) =
+                    uv_to_pixel(uv, self.document.canvas.width, self.document.canvas.height);
                 let w = self.document.canvas.width;
                 let index = ((pixel_y * w + pixel_x) as usize) * 4;
                 let rgba = &self.document.canvas.output_rgba;
@@ -556,11 +533,8 @@ impl MyApp {
                     local_position.y / response.rect.height(),
                 );
 
-                let (raw_x, raw_y) = uv_to_pixel(
-                    uv,
-                    self.document.canvas.width,
-                    self.document.canvas.height,
-                );
+                let (raw_x, raw_y) =
+                    uv_to_pixel(uv, self.document.canvas.width, self.document.canvas.height);
 
                 if !matches!(
                     self.tool_configuration.current_tool,
@@ -587,8 +561,7 @@ impl MyApp {
                                     color_after,
                                     is_alpha_overlay,
                                 );
-                                self.undo
-                                    .extend_drag_accumulator(runs, before_pixels);
+                                self.undo.extend_drag_accumulator(runs, before_pixels);
                             }
                         } else if let UndoRecord::Run {
                             runs,
@@ -596,8 +569,7 @@ impl MyApp {
                             ..
                         } = stroke
                         {
-                            self.undo
-                                .extend_drag_accumulator(runs, before_pixels);
+                            self.undo.extend_drag_accumulator(runs, before_pixels);
                         }
                     }
                     self.ui.previous_cursor_position = Some((stab_x, stab_y));
@@ -688,7 +660,13 @@ impl MyApp {
                         let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_square_line(
                             BrushStrokeParams::builder(
-                                canvas, color, layer, visited, stamp, drag_processed, ds_val,
+                                canvas,
+                                color,
+                                layer,
+                                visited,
+                                stamp,
+                                drag_processed,
+                                ds_val,
                             )
                             .start(pixel_x, pixel_y)
                             .end(pixel_x, pixel_y)
@@ -703,8 +681,7 @@ impl MyApp {
                         let start_y = pixel_y.saturating_sub(half_radius);
                         let end_y = (pixel_y + half_radius + 1).min(canvas.height);
                         Some(draw_square(
-                            start_x, start_y, end_x, end_y,
-                            canvas, color, layer, false,
+                            start_x, start_y, end_x, end_y, canvas, color, layer, false,
                         ))
                     }
                 } else if let Some((previous_x, previous_y)) = previous_position {
@@ -712,7 +689,13 @@ impl MyApp {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_square_line(
                         BrushStrokeParams::builder(
-                            canvas, color, layer, visited, stamp, drag_processed, ds_val,
+                            canvas,
+                            color,
+                            layer,
+                            visited,
+                            stamp,
+                            drag_processed,
+                            ds_val,
                         )
                         .start(previous_x, previous_y)
                         .end(pixel_x, pixel_y)
@@ -736,7 +719,13 @@ impl MyApp {
                         let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_circle_line(
                             BrushStrokeParams::builder(
-                                canvas, color, layer, visited, stamp, drag_processed, ds_val,
+                                canvas,
+                                color,
+                                layer,
+                                visited,
+                                stamp,
+                                drag_processed,
+                                ds_val,
                             )
                             .start(pixel_x, pixel_y)
                             .end(pixel_x, pixel_y)
@@ -746,8 +735,7 @@ impl MyApp {
                         ))
                     } else {
                         Some(draw_circle(
-                            pixel_x, pixel_y, radius,
-                            canvas, color, layer, false,
+                            pixel_x, pixel_y, radius, canvas, color, layer, false,
                         ))
                     }
                 } else if let Some((previous_x, previous_y)) = previous_position {
@@ -755,7 +743,13 @@ impl MyApp {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_circle_line(
                         BrushStrokeParams::builder(
-                            canvas, color, layer, visited, stamp, drag_processed, ds_val,
+                            canvas,
+                            color,
+                            layer,
+                            visited,
+                            stamp,
+                            drag_processed,
+                            ds_val,
                         )
                         .start(previous_x, previous_y)
                         .end(pixel_x, pixel_y)
@@ -789,7 +783,13 @@ impl MyApp {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_stamp_line(
                         BrushStrokeParams::builder(
-                            canvas, color, layer, visited, stamp, drag_processed, ds_val,
+                            canvas,
+                            color,
+                            layer,
+                            visited,
+                            stamp,
+                            drag_processed,
+                            ds_val,
                         )
                         .start(start_x, start_y)
                         .end(pixel_x, pixel_y)
@@ -826,7 +826,13 @@ impl MyApp {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_custom_brush_line(
                         BrushStrokeParams::builder(
-                            canvas, color, layer, visited, stamp, drag_processed, ds_val,
+                            canvas,
+                            color,
+                            layer,
+                            visited,
+                            stamp,
+                            drag_processed,
+                            ds_val,
                         )
                         .start(start_x, start_y)
                         .end(pixel_x, pixel_y)
@@ -1005,6 +1011,17 @@ fn stamp_tip_preview(
 
 #[cfg(test)]
 mod tests {
+    use eframe::egui;
+    use egui_kittest::kittest::Queryable;
+
+    use super::ACTIVE_DURATION_MILLISECONDS;
+    use super::CANVAS_BORDER_COLOR;
+    use super::CANVAS_BORDER_WIDTH;
+    use super::MAX_ZOOM;
+    use super::MIN_ZOOM;
+    use super::PREVIEW_FILL_ALPHA_FACTOR;
+    use super::PREVIEW_STROKE_WIDTH;
+    use super::ZOOM_SENSITIVITY;
     use super::compute_canvas_rect;
     use super::draw_circle_preview;
     use super::draw_grid_overlay;
@@ -1012,17 +1029,7 @@ mod tests {
     use super::stamp_tip_preview;
     use super::uv_to_pixel;
     use super::zoom_around_point;
-    use super::PREVIEW_FILL_ALPHA_FACTOR;
-    use super::PREVIEW_STROKE_WIDTH;
-    use super::ZOOM_SENSITIVITY;
-    use super::MIN_ZOOM;
-    use super::MAX_ZOOM;
-    use super::ACTIVE_DURATION_MILLISECONDS;
-    use super::CANVAS_BORDER_WIDTH;
-    use super::CANVAS_BORDER_COLOR;
     use crate::app::ProgressState;
-    use eframe::egui;
-    use egui_kittest::kittest::Queryable;
 
     #[test]
     fn compute_canvas_rect_default_zoom_centers_canvas() {
@@ -1038,12 +1045,8 @@ mod tests {
     fn compute_canvas_rect_pan_offset_shifts_position() {
         let available = egui::vec2(500.0, 500.0);
         let base_size = egui::vec2(200.0, 200.0);
-        let (draw_size, rect) = compute_canvas_rect(
-            available,
-            base_size,
-            1.0,
-            egui::vec2(50.0, -30.0),
-        );
+        let (draw_size, rect) =
+            compute_canvas_rect(available, base_size, 1.0, egui::vec2(50.0, -30.0));
         assert_eq!(draw_size, base_size);
         assert_eq!(rect.min, egui::pos2(200.0, 120.0));
     }
@@ -1060,8 +1063,7 @@ mod tests {
     #[test]
     fn draw_circle_preview_renders_without_panic() {
         egui::__run_test_ui(|ui| {
-            let response =
-                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            let response = ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
             draw_circle_preview(
                 ui,
                 &response,
@@ -1079,8 +1081,7 @@ mod tests {
     #[test]
     fn draw_square_preview_renders_without_panic() {
         egui::__run_test_ui(|ui| {
-            let response =
-                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            let response = ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
             draw_square_preview(
                 ui,
                 &response,
@@ -1098,8 +1099,7 @@ mod tests {
     #[test]
     fn draw_circle_preview_zero_radius_does_not_panic() {
         egui::__run_test_ui(|ui| {
-            let response =
-                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            let response = ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
             draw_circle_preview(
                 ui,
                 &response,
@@ -1117,8 +1117,7 @@ mod tests {
     #[test]
     fn draw_square_preview_zero_radius_does_not_panic() {
         egui::__run_test_ui(|ui| {
-            let response =
-                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            let response = ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
             draw_square_preview(
                 ui,
                 &response,
@@ -1136,8 +1135,7 @@ mod tests {
     #[test]
     fn draw_square_preview_transparent_color_no_panic() {
         egui::__run_test_ui(|ui| {
-            let response =
-                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            let response = ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
             draw_square_preview(
                 ui,
                 &response,
@@ -1191,18 +1189,12 @@ mod tests {
 
     #[test]
     fn uv_bottom_right_returns_max_minus_one() {
-        assert_eq!(
-            uv_to_pixel(egui::Vec2::new(1.0, 1.0), 100, 200),
-            (99, 199)
-        );
+        assert_eq!(uv_to_pixel(egui::Vec2::new(1.0, 1.0), 100, 200), (99, 199));
     }
 
     #[test]
     fn uv_center_returns_half_dimensions() {
-        assert_eq!(
-            uv_to_pixel(egui::Vec2::new(0.5, 0.5), 100, 200),
-            (50, 100)
-        );
+        assert_eq!(uv_to_pixel(egui::Vec2::new(0.5, 0.5), 100, 200), (50, 100));
     }
 
     #[test]
@@ -1215,28 +1207,20 @@ mod tests {
 
     #[test]
     fn uv_one_by_one_canvas() {
-        assert_eq!(
-            uv_to_pixel(egui::Vec2::new(0.0, 0.0), 1, 1),
-            (0, 0)
-        );
-        assert_eq!(
-            uv_to_pixel(egui::Vec2::new(1.0, 1.0), 1, 1),
-            (0, 0)
-        );
+        assert_eq!(uv_to_pixel(egui::Vec2::new(0.0, 0.0), 1, 1), (0, 0));
+        assert_eq!(uv_to_pixel(egui::Vec2::new(1.0, 1.0), 1, 1), (0, 0));
     }
 
     #[test]
     fn uv_clamps_above_one() {
-        assert_eq!(
-            uv_to_pixel(egui::Vec2::new(2.0, 3.0), 100, 200),
-            (99, 199)
-        );
+        assert_eq!(uv_to_pixel(egui::Vec2::new(2.0, 3.0), 100, 200), (99, 199));
     }
 
     #[test]
     fn zoom_unchanged_returns_zero_pan() {
         let result = zoom_around_point(
-            1.0, 1.0,
+            1.0,
+            1.0,
             egui::pos2(250.0, 250.0),
             egui::pos2(150.0, 150.0),
             egui::vec2(200.0, 200.0),
@@ -1248,7 +1232,8 @@ mod tests {
     #[test]
     fn zoom_in_from_center_returns_zero_pan() {
         let result = zoom_around_point(
-            1.0, 2.0,
+            1.0,
+            2.0,
             egui::pos2(250.0, 250.0),
             egui::pos2(150.0, 150.0),
             egui::vec2(200.0, 200.0),
@@ -1260,7 +1245,8 @@ mod tests {
     #[test]
     fn zoom_in_from_top_left_adjusts_pan() {
         let result = zoom_around_point(
-            1.0, 2.0,
+            1.0,
+            2.0,
             egui::pos2(150.0, 150.0),
             egui::pos2(150.0, 150.0),
             egui::vec2(200.0, 200.0),
@@ -1272,7 +1258,8 @@ mod tests {
     #[test]
     fn zoom_out_from_center_returns_zero_pan() {
         let result = zoom_around_point(
-            1.0, 0.5,
+            1.0,
+            0.5,
             egui::pos2(250.0, 250.0),
             egui::pos2(150.0, 150.0),
             egui::vec2(200.0, 200.0),
@@ -1284,7 +1271,8 @@ mod tests {
     #[test]
     fn zoom_in_from_offset_adjusts_pan_proportionally() {
         let result = zoom_around_point(
-            1.0, 2.0,
+            1.0,
+            2.0,
             egui::pos2(200.0, 175.0),
             egui::pos2(150.0, 150.0),
             egui::vec2(200.0, 200.0),
@@ -1296,8 +1284,7 @@ mod tests {
     #[test]
     fn stamp_tip_preview_renders_without_panicking() {
         egui::__run_test_ui(|ui| {
-            let response =
-                ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
+            let response = ui.allocate_response(egui::vec2(100.0, 100.0), egui::Sense::click());
             stamp_tip_preview(
                 ui,
                 &response,
@@ -1318,8 +1305,7 @@ mod tests {
     #[test]
     fn stamp_tip_preview_with_texture_does_not_panic() {
         egui::__run_test_ui(|ui| {
-            let response =
-                ui.allocate_response(egui::vec2(200.0, 200.0), egui::Sense::click());
+            let response = ui.allocate_response(egui::vec2(200.0, 200.0), egui::Sense::click());
             stamp_tip_preview(
                 ui,
                 &response,
@@ -1396,12 +1382,15 @@ mod tests {
     #[test]
     fn draw_grid_overlay_disabled_no_panic() {
         egui::__run_test_ui(|ui| {
-            let rect = egui::Rect::from_min_size(
-                egui::pos2(0.0, 0.0),
+            let rect = egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 100.0));
+            let mut cache = None;
+            draw_grid_overlay(
+                ui,
+                &mut cache,
+                (10, 100, 100),
+                rect,
                 egui::vec2(100.0, 100.0),
             );
-            let mut cache = None;
-            draw_grid_overlay(ui, &mut cache, (10, 100, 100), rect, egui::vec2(100.0, 100.0));
             // show_grid=false is now handled by the caller — calling with cache means it draws.
             // Test that it doesn't panic.
         });
@@ -1410,10 +1399,7 @@ mod tests {
     #[test]
     fn draw_grid_overlay_enabled_no_panic() {
         egui::__run_test_ui(|ui| {
-            let rect = egui::Rect::from_min_size(
-                egui::pos2(0.0, 0.0),
-                egui::vec2(100.0, 100.0),
-            );
+            let rect = egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 100.0));
             let mut cache = None;
             draw_grid_overlay(ui, &mut cache, (10, 50, 50), rect, egui::vec2(100.0, 100.0));
         });
@@ -1422,10 +1408,7 @@ mod tests {
     #[test]
     fn draw_grid_overlay_grid_size_zero_clamped() {
         egui::__run_test_ui(|ui| {
-            let rect = egui::Rect::from_min_size(
-                egui::pos2(0.0, 0.0),
-                egui::vec2(100.0, 100.0),
-            );
+            let rect = egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 100.0));
             let mut cache = None;
             draw_grid_overlay(ui, &mut cache, (0, 50, 50), rect, egui::vec2(100.0, 100.0));
         });
