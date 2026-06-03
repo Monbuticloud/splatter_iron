@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-05-18
 - **Commits:** `d17c90e`, `58f1699`
+- **Superseded-By:** ADR-0024 (flat before-pixels buffer + zstd compression partially replaced the per-segment storage model)
 
 ## Context
 
