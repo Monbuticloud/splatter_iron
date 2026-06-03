@@ -665,7 +665,11 @@ impl MyApp {
         let canvas = Arc::make_mut(&mut self.document.canvas);
         canvas.dirty_rect.request_full_blend();
 
-        match self.tool_configuration.current_tool {
+        let layer = self.document.current_layer;
+        let radius = self.tool_configuration.radius;
+        let current_tool = self.tool_configuration.current_tool;
+
+        match current_tool {
             CurrentTool::BucketFill => None,
             CurrentTool::Eyedropper => None,
             CurrentTool::Pan => None,
@@ -681,35 +685,23 @@ impl MyApp {
                         let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_square_line(
                             BrushStrokeParams::builder(
-                                canvas,
-                                color,
-                                self.document.current_layer,
-                                visited,
-                                stamp,
-                                drag_processed,
-                                ds_val,
+                                canvas, color, layer, visited, stamp, drag_processed, ds_val,
                             )
                             .start(pixel_x, pixel_y)
                             .end(pixel_x, pixel_y)
                             .alpha_overlay(true)
                             .build(),
-                            self.tool_configuration.radius,
+                            radius,
                         ))
                     } else {
-                        let half_radius = self.tool_configuration.radius;
+                        let half_radius = radius;
                         let start_x = pixel_x.saturating_sub(half_radius);
                         let end_x = (pixel_x + half_radius + 1).min(canvas.width);
                         let start_y = pixel_y.saturating_sub(half_radius);
                         let end_y = (pixel_y + half_radius + 1).min(canvas.height);
                         Some(draw_square(
-                            start_x,
-                            start_y,
-                            end_x,
-                            end_y,
-                            canvas,
-                            color,
-                            self.document.current_layer,
-                            false,
+                            start_x, start_y, end_x, end_y,
+                            canvas, color, layer, false,
                         ))
                     }
                 } else if let Some((previous_x, previous_y)) = previous_position {
@@ -717,19 +709,13 @@ impl MyApp {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_square_line(
                         BrushStrokeParams::builder(
-                            canvas,
-                            color,
-                            self.document.current_layer,
-                            visited,
-                            stamp,
-                            drag_processed,
-                            ds_val,
+                            canvas, color, layer, visited, stamp, drag_processed, ds_val,
                         )
                         .start(previous_x, previous_y)
                         .end(pixel_x, pixel_y)
                         .alpha_overlay(alpha_overlay)
                         .build(),
-                        self.tool_configuration.radius,
+                        radius,
                     ))
                 } else {
                     None
@@ -747,29 +733,18 @@ impl MyApp {
                         let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                         Some(draw_circle_line(
                             BrushStrokeParams::builder(
-                                canvas,
-                                color,
-                                self.document.current_layer,
-                                visited,
-                                stamp,
-                                drag_processed,
-                                ds_val,
+                                canvas, color, layer, visited, stamp, drag_processed, ds_val,
                             )
                             .start(pixel_x, pixel_y)
                             .end(pixel_x, pixel_y)
                             .alpha_overlay(true)
                             .build(),
-                            self.tool_configuration.radius,
+                            radius,
                         ))
                     } else {
                         Some(draw_circle(
-                            pixel_x,
-                            pixel_y,
-                            self.tool_configuration.radius,
-                            canvas,
-                            color,
-                            self.document.current_layer,
-                            false,
+                            pixel_x, pixel_y, radius,
+                            canvas, color, layer, false,
                         ))
                     }
                 } else if let Some((previous_x, previous_y)) = previous_position {
@@ -777,19 +752,13 @@ impl MyApp {
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     Some(draw_circle_line(
                         BrushStrokeParams::builder(
-                            canvas,
-                            color,
-                            self.document.current_layer,
-                            visited,
-                            stamp,
-                            drag_processed,
-                            ds_val,
+                            canvas, color, layer, visited, stamp, drag_processed, ds_val,
                         )
                         .start(previous_x, previous_y)
                         .end(pixel_x, pixel_y)
                         .alpha_overlay(alpha_overlay)
                         .build(),
-                        self.tool_configuration.radius,
+                        radius,
                     ))
                 } else {
                     None
@@ -812,19 +781,12 @@ impl MyApp {
                     (pixel_x, pixel_y)
                 };
 
-                let stamp = self.undo.next_stamp();
-
                 self.stamp_library.selected().map(|entry| {
+                    let stamp = self.undo.next_stamp();
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_stamp_line(
                         BrushStrokeParams::builder(
-                            canvas,
-                            color,
-                            self.document.current_layer,
-                            visited,
-                            stamp,
-                            drag_processed,
-                            ds_val,
+                            canvas, color, layer, visited, stamp, drag_processed, ds_val,
                         )
                         .start(start_x, start_y)
                         .end(pixel_x, pixel_y)
@@ -833,7 +795,7 @@ impl MyApp {
                         &entry.pixels,
                         entry.width,
                         entry.height,
-                        self.tool_configuration.radius,
+                        radius,
                         self.tool_configuration.stamp_tint_mode == StampTintMode::Tinted,
                         self.tool_configuration.stamp_sampling,
                     )
@@ -856,19 +818,12 @@ impl MyApp {
                     (pixel_x, pixel_y)
                 };
 
-                let stamp = self.undo.next_stamp();
-
                 self.brush_library.selected().map(|entry| {
+                    let stamp = self.undo.next_stamp();
                     let (visited, drag_processed, ds_val) = self.undo.scratch_buffers();
                     draw_custom_brush_line(
                         BrushStrokeParams::builder(
-                            canvas,
-                            color,
-                            self.document.current_layer,
-                            visited,
-                            stamp,
-                            drag_processed,
-                            ds_val,
+                            canvas, color, layer, visited, stamp, drag_processed, ds_val,
                         )
                         .start(start_x, start_y)
                         .end(pixel_x, pixel_y)
@@ -877,7 +832,7 @@ impl MyApp {
                         &entry.pixels,
                         entry.width,
                         entry.height,
-                        self.tool_configuration.radius,
+                        radius,
                         entry.spacing,
                         self.tool_configuration.brush_tint_mode == StampTintMode::Tinted,
                         self.tool_configuration.brush_sampling,
