@@ -10,6 +10,7 @@ use crate::canvas::Canvas;
 use crate::canvas::Layer;
 use crate::canvas::LayerMode;
 use crate::pixel::alpha_blend;
+use crate::pixel::alpha_blend_simd_four;
 
 /// Compressed storage for a run of before-pixels: either all the same color
 /// (`All`) or an offset+length into a flat `before_pixels` buffer (`Many`).
@@ -275,7 +276,15 @@ pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
             if *is_alpha_overlay {
                 for run in runs {
                     let end = (run.start as usize) + run.length as usize;
-                    for pixel in layer.pixels[run.start as usize..end].iter_mut() {
+                    let pixels = &mut layer.pixels[run.start as usize..end];
+                    // SIMD bulk blend (4 pixels at a time)
+                    let (simd, tail) = pixels.split_at_mut(pixels.len() - (pixels.len() % 4));
+                    for chunk in simd.chunks_exact_mut(4) {
+                        let arr: &mut [Color32; 4] = chunk.try_into().expect("chunks_exact_mut yields exactly 4 elements");
+                        alpha_blend_simd_four(arr, *color_after);
+                    }
+                    // Scalar tail (<4 pixels)
+                    for pixel in tail.iter_mut() {
                         *pixel = alpha_blend(*pixel, *color_after);
                     }
                 }
