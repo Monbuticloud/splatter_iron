@@ -20,7 +20,7 @@
 
 ## Format
 
-(Change)(PX)(BX)(Time when TODO was made, use latest made or updated commit (use hash))
+(Change)(PX)(BX)(Time when TODO was made, use latest made or updated commit (use hash), you are NOT allowed to use relative timestamps (e.g HEAD, Latest, 5 commits ago))
 
 ## Rules
 
@@ -75,19 +75,13 @@
 
 ### Performance
 
-
-
 ### Security
 
 - **(none at the moment)**
 
 ### Architecture
 
-
-
 ### UX
-
-
 
 ### Documentation
 
