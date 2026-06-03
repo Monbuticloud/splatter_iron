@@ -32,63 +32,65 @@
 
 ### Performance
 
-- adaptive render quality — reduce blend resolution when zoomed far out. (P3)(B1)(5d89e87)
-- reduce undo zstd compression level from default to 0 for 5x faster compression on main thread. (P1)(B1)(24f670e)
-- avoid full layer pixel clone in `AddLayer` undo record — store placeholder that recreates transparent pixels on undo instead of cloning entire `Layer`. (P2)(B1)(24f670e)
-- optimize `stamp_circle_positions` inner loops — use midpoint-circle span filling (like `fill_circle_impl`) instead of pixel-by-pixel iteration per Bresenham step. (P3)(B1)(24f670e)
-- refactor duplicated `read_canvas`/`read_canvas_xz` and `write_canvas`/`write_canvas_xz` into generic functions accepting a decoder/encoder factory. (P3)(B1)(24f670e)
+- adaptive render quality — reduce blend resolution when zoomed far out. (P3)(B1)(460008e)
+- avoid full layer pixel clone in `AddLayer` undo record — store placeholder that recreates transparent pixels on undo instead of cloning entire `Layer`. (P2)(B1)(460008e)
+- refactor duplicated `read_canvas`/`read_canvas_xz` and `write_canvas`/`write_canvas_xz` into generic functions accepting a decoder/encoder factory. (P3)(B1)(460008e)
 
 ### Security
 
 ### Architecture
 
-- consolidate eraser variants — explore `ToolKind { Square, Circle }` + `Eraser(ToolKind)` layout (enum, not bool). (P2)(B4)(5d89e87)
-- deduplicate stamp/brush fields in `ToolConfiguration` — share sub-struct for `sampling`/`tint_mode`. (P2)(B3)(5d89e87)
-- layer blend modes — add Multiply, Screen, Overlay etc. (currently only alpha-overlay + opaque). (P2)(B2)(5d89e87)
-- selection tools — rectangular/lasso/magic-wand. (P2)(B2)(5d89e87)
-- layer locking — add `alpha_lock` / `full_lock` fields to `Layer`, wire into blend and brush-apply. (P2)(B2)(5d89e87)
-- canvas rotation/flip — store rotation/filp in `UIState`; apply view transform in `center.rs`. (P2)(B2)(5d89e87)
-- line tool — click-drag straight line; preview during drag; shift-constrain to 45°. (P2)(B2)(5d89e87)
-- canvas background checkerboard — blend behind transparent areas in `blend_layers()`. (P3)(B2)(5d89e87)
-- rectangle/ellipse shape tools — unfilled/stroked shapes with configurable border width. (P3)(B2)(5d89e87)
-- layer-snapshot undo for >50% coverage strokes — store zstd-compressed full layer clone instead of per-pixel before-data. Simplifies undo path for large strokes, avoids per-segment overhead. (P2)(B2)(9d11f23)
-- add `Canvas` resize guard for undo records — version-stamp run segments against canvas dimensions so undo/redo are no-ops after resize. (P3)(B1)(24f670e)
-- create ADR-0025: Error Handling Strategy — document panic-vs-Result philosophy with ADR template. (P3)(B0)(24f670e)
+- consolidate eraser variants — explore `ToolKind { Square, Circle }` + `Eraser(ToolKind)` layout (enum, not bool). (P2)(B4)(460008e)
+- deduplicate stamp/brush fields in `ToolConfiguration` — share sub-struct for `sampling`/`tint_mode`. (P2)(B3)(460008e)
+- layer blend modes — add Multiply, Screen, Overlay etc. (currently only alpha-overlay + opaque). (P2)(B2)(460008e)
+- selection tools — rectangular/lasso/magic-wand. (P2)(B2)(460008e)
+- layer locking — add `alpha_lock` / `full_lock` fields to `Layer`, wire into blend and brush-apply. (P2)(B2)(460008e)
+- canvas rotation/flip — store rotation/filp in `UIState`; apply view transform in `center.rs`. (P2)(B2)(460008e)
+- line tool — click-drag straight line; preview during drag; shift-constrain to 45°. (P2)(B2)(460008e)
+- rectangle/ellipse shape tools — unfilled/stroked shapes with configurable border width. (P3)(B2)(460008e)
+- add `Canvas` resize guard for undo records — version-stamp run segments against canvas dimensions so undo/redo are no-ops after resize. (P3)(B1)(460008e)
+- create ADR-0025: Error Handling Strategy — document panic-vs-Result philosophy with ADR template. (P3)(B0)(460008e)
 
 ### UX
 
-- keyboard shortcut system with help dialog — top-bar "Keyboard Shortcuts" / `?` button. (P2)(B2)(5d89e87)
-- pressure sensitivity — `pressure: f32` in `BrushStrokeParams` (per ADR-0018). (P3)(B2)(5d89e87)
-- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. (P2)(B2)(5d89e87)
-- status bar — dimensions + zoom + activity shown; missing cursor coordinates + memory usage. (P2)(B2)(5d89e87)
-- persist UI state — tool config + recent files persisted; missing window size, panel widths, zoom, pan offset, last export format. (P2)(B2)(5d89e87)
-- color palette/swatches — save/load/recent colors panel, persisted to disk. (P3)(B2)(5d89e87)
-- fullscreen toggle — `Cmd+Ctrl+F` or menu entry. (P3)(B2)(5d89e87)
-- panel visibility toggles — `Tab` to toggle all panels, individual show/hide buttons. (P3)(B2)(5d89e87)
-- preferences/settings dialog — default canvas size, autosave interval, theme. (P3)(B2)(5d89e87)
+- keyboard shortcut system with help dialog — top-bar "Keyboard Shortcuts" / `?` button. (P2)(B2)(460008e)
+- pressure sensitivity — `pressure: f32` in `BrushStrokeParams` (per ADR-0018). (P3)(B2)(460008e)
+- color palette/swatches — save/load/recent colors panel, persisted to disk. (P3)(B2)(460008e)
+- fullscreen toggle — `Cmd+Ctrl+F` or menu entry. (P3)(B2)(460008e)
+- panel visibility toggles — `Tab` to toggle all panels, individual show/hide buttons. (P3)(B2)(460008e)
+- preferences/settings dialog — default canvas size, autosave interval, theme. (P3)(B2)(460008e)
 
 ### Documentation
 
-- fix `docs/src/file_io.md` — `push_recent_file` is in `persistence.rs`, not the `file_io` module; clarify the delegation chain. (P3)(B1)(24f670e)
-- add `#[cfg(test)]` annotation notice to `docs/src/files.md` for `save_canvas_to_bytes`/`load_canvas_from_bytes` — they're test-only. (P3)(B1)(24f670e)
-- create consolidated "Performance Architecture" document from ADR-0001, 0004, 0005, 0010, 0012 — centralized perf strategy reference. (P3)(B0)(24f670e)
-- create `.splattercanvas` file format specification document with exact JSON schema. (P4)(B0)(24f670e)
-- expand `docs/src/ui/panels.md` (556B) to cover panel visibility toggle details and usage. (P3)(B1)(24f670e)
-- expand `docs/src/app/frame.md` (936B) to fully document frame lifecycle (poll, render state, GPU sync, autosave). (P3)(B1)(24f670e)
+- fix `docs/src/file_io.md` — `push_recent_file` is in `persistence.rs`, not the `file_io` module; clarify the delegation chain. (P3)(B1)(460008e)
+- add `#[cfg(test)]` annotation notice to `docs/src/files.md` for `save_canvas_to_bytes`/`load_canvas_from_bytes` — they're test-only. (P3)(B1)(460008e)
+- create consolidated "Performance Architecture" document from ADR-0001, 0004, 0005, 0010, 0012 — centralized perf strategy reference. (P3)(B0)(460008e)
+- create `.splattercanvas` file format specification document with exact JSON schema. (P4)(B0)(460008e)
+- expand `docs/src/ui/panels.md` (556B) to cover panel visibility toggle details and usage. (P3)(B1)(460008e)
+- expand `docs/src/app/frame.md` (936B) to fully document frame lifecycle (poll, render state, GPU sync, autosave). (P3)(B1)(460008e)
 
 ### Standards & Cleanup
-
-- dead code audit — `#[cfg(test)]` gate or remove 21 dead items in `asset_library`, `canvas`, `files`, `undo_history`. (P3)(B1)(5d89e87)
 
 ## Accepted
 
 ### Performance
 
-- **(none at the moment)**
+- reduce undo zstd compression level from default to 0 for 5x faster compression on main thread. (P1)(B1)(460008e)
+- layer-snapshot undo for >50% coverage strokes — store zstd-compressed full layer clone instead of per-pixel before-data. Simplifies undo path for large strokes, avoids per-segment overhead. (P2)(B2)(460008e)
 
 ### Security
 
 - **(none at the moment)**
+
+### Architecture
+
+- canvas background checkerboard — blend behind transparent areas in `blend_layers()`. (P3)(B2)(460008e)
+
+### UX
+
+- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. (P2)(B2)(460008e)
+- status bar — dimensions + zoom + activity shown; missing cursor coordinates + memory usage. (P2)(B2)(460008e)
+- persist UI state — tool config + recent files persisted; missing window size, panel widths, zoom, pan offset, last export format. (P2)(B2)(460008e)
 
 ### Documentation
 

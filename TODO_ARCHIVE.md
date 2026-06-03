@@ -55,7 +55,8 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 - eliminate intermediate `RgbaImage` allocation for all export formats (PNG, WebP, TIFF, TGA, PNM, QOI) — currently only JPEG/HDR/Farbfeld skip it. (P2)(B1)(24f670e)
 - stream JPEG RGB output to avoid intermediate `Vec<u8>` allocation — write unpremultiplied RGB directly via pre-allocated buffer. (P2)(B1)(24f670e)
 - use `alpha_blend_simd_four` in alpha-overlay brush paths (`bucket_fill.rs`, `circle_brush.rs`) — currently uses scalar `alpha_blend` per pixel. (P2)(B1)(24f670e)
+- `stamp_circle_positions` inner loops — converted to midpoint-circle span filling (like `fill_circle_impl`) instead of pixel-by-pixel iteration per Bresenham step. (P3)(B1)(24f670e)(460008e)
 
 ## Outdated
 
--
+- dead code audit — `#[cfg(test)]` gate or remove 21 dead items in `asset_library`, `canvas`, `files`, `undo_history`. (P3)(B1)(460008e)
