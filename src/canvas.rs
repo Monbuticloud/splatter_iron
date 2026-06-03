@@ -276,6 +276,7 @@ impl DirtyRectList {
     }
 
     /// Clear all tracked rects and reset the full-blend flag.
+    #[cfg(test)]
     pub fn clear(&mut self) {
         self.rects.clear();
         self.needs_full_blend = false;
