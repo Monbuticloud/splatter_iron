@@ -45,6 +45,7 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 - scalar head/tail blending logic duplicated 3× in `apply_single_layer` — `src/pixel.rs:350-483` → extracted into shared `process_pixel` closure. (P3)(B1)(5bf5fc9)
 - stale `compress_run` name in module docstring — `src/undo.rs:3` → function renamed to `compress_and_store`. (P4)(B1)(5bf5fc9)
 - missing `src/tests/frame.rs` — `src/app/frame.rs` had inline tests; created dedicated test module per convention, migrated 4 tests. (P2)(B1)(5d89e87)
+- split `FileIO` into `DialogManager` + `SaveManager` + `ExportManager` + `ImportManager` — async file IO now fully decoupled into 4 submodules. (P1)(B5)(5d89e87)(24f670e)
 
 ## Outdated
 
