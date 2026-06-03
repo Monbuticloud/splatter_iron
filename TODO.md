@@ -87,7 +87,7 @@
 
 ### UX
 
-- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. (P2)(B2)(460008e)
+
 - status bar — dimensions + zoom + activity shown; missing cursor coordinates + memory usage. (P2)(B2)(460008e)
 - persist UI state — tool config + recent files persisted; missing window size, panel widths, zoom, pan offset, last export format. (P2)(B2)(460008e)
 
@@ -97,4 +97,4 @@
 
 ## Implementing
 
-- None at the moment
+- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. (P2)(B2)(460008e)

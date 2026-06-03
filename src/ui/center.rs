@@ -330,6 +330,24 @@ impl MyApp {
             }
         });
 
+        // Brush radius keyboard shortcuts: `[`/`]` decrease/increase radius.
+        // `Shift+[`/`Shift+]` for fine adjustment (1 px).
+        {
+            let coarse = 10u32;
+            let fine = 1u32;
+            let shift = ui.input(|i| i.modifiers.shift);
+            if ui.input(|i| i.key_pressed(egui::Key::OpenBracket)) {
+                let step = if shift { fine } else { coarse };
+                self.tool_configuration.radius = self.tool_configuration.radius.saturating_sub(step).max(1);
+                ui.ctx().request_repaint();
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::CloseBracket)) {
+                let step = if shift { fine } else { coarse };
+                self.tool_configuration.radius = self.tool_configuration.radius.saturating_add(step);
+                ui.ctx().request_repaint();
+            }
+        }
+
         // Zoom via scroll/pinch while hovering the canvas.
         if response.hovered() {
             let pinch = ui.input(|i| i.zoom_delta());
