@@ -20,6 +20,9 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 - `tools/bucket_fill.rs:60-61,86` — runs+stack+per-span allocations in `draw_bucket_fill` → scratch `&mut Vec`. (P1)(B1)(514450e) — same ownership issue.
 - `tools/custom_brush.rs:79` — `all_runs` accumulator per stroke → scratch `&mut Vec<RunSegment>`. (P1)(B1)(514450e) — same ownership issue.
 - `tools/stamp_brush.rs:161` — per-row `before` Vec in `stamp_at` → scratch buffer. (P1)(B1)(514450e) — `before` Vec consumed by `compress_run` into undo record, ownership transfer unavoidable.
+- `blend_region` recomputes `base_indices` and `suppress_base` per dirty rect call — `src/pixel.rs:607-613` → cache when layers haven't changed; add generation counter. (P2)(B1)(5bf5fc9) — overhead ~100ns per call, not worth caching.
+- bucket fill lacks visited-stamp dedup — `src/tools/bucket_fill.rs:34` → inline stamp check (not `apply_visited_runs`; architectural mismatch). (P2)(B2)(5bf5fc9) — bucket fill is single-click (no drag), scanline already O(filled_area); visited-stamp would require O(canvas_area) buffer scan.
+- alpha overlay rounding drift on repeated undo/redo — `src/undo.rs:279` → store final after-state in undo record instead of re-applying `alpha_blend` each redo. (P2)(B1)(5bf5fc9) — undo stores exact before-pixels from initial stroke; redo always blends from same base state. No drift occurs regardless of undo/redo cycles.
 
 ## Implemented
 
@@ -28,6 +31,20 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 - `canvas.rs:262` + `file_io.rs:432` — `output_rgba: Vec<u8>` cloned (12MB) on every export → `Arc<Vec<u8>>` for atomic-shared export. (P1)(B1)(514450e)(d72467d)
 - `tools/stamp_brush.rs:148` — `src_x_map` allocated per stamp placement in `stamp_at` → reuse `scratch_src_x` buffer across stamps within a line. (P1)(B1)(514450e)(95feb79)
 - `files.rs:262,325,367,387` — export allocates intermediate RgbaImage → skip it for JPEG/HDR/Farbfeld, encode from `raw_output` directly. (P2)(B1)(514450e)(b5ff2ca)
+- `stamp_circle_positions` uses `f64::sqrt` per row — `src/tools/circle_brush.rs:312` → integer midpoint-circle increment (other circle fns already converted). (P1)(B1)(5d89e87)
+- square brush `stamp_line_positions` stamps full (2R)² rect at every Bresenham step with no overlap awareness — `src/tools/square_brush.rs:113-119` → per-row span deduplication to avoid re-stamping overlapping pixels. (P1)(B1)(5bf5fc9)
+- `redo_apply` alpha overlay path iterates pixel-by-pixel — `src/undo.rs:275-281` → SIMD-vectorize with `wide::u32x4` (pattern already used in `pixel.rs`). (P2)(B1)(5bf5fc9)
+- bucket fill stack grows unbounded for large contiguous fills — `src/tools/bucket_fill.rs:64` → added upper bound or switch to bounded scanline queue. (P2)(B1)(5bf5fc9)
+- `compress_run` allocates `Vec<Color32>` before RLE check — `src/undo.rs:52` → defer allocation: `apply_visited_runs` checks uniformity without intermediate Vec. (P2)(B1)(5d89e87)
+- grid overlay redraws all lines every frame — `src/ui/center.rs:275-291` → cache shapes keyed on (grid_size, cw, ch). (P3)(B1)(5d89e87)
+- `apply_stroke` duplicates `BrushStrokeParams` builder construction — `src/ui/center.rs:644-878` → hoisted `layer`, `radius`, `current_tool`; collapsed builder to 1 line. (P1)(B1)(5d89e87)
+- drag accumulator has no max frame limit — `src/undo_history.rs:209-211` → added `MAX_DRAG_FRAMES=5000` with auto-finalize. (P2)(B1)(5bf5fc9)
+- memory warning estimate ignores actual layer count — `src/app/mod.rs:78-81` → `estimate_canvas_memory` now takes `layer_count` parameter. (P2)(B1)(5bf5fc9)
+- missing `# Errors` doc sections — `src/tools/brush_parsers.rs:72,158` — `parse_gbr` and `parse_abr` now have `# Errors`; remaining 5 private fns exempt per standards. (P2)(B1)(5d89e87)
+- unused imports — `src/tools/custom_brush.rs:9` (`Canvas`) removed; `file_io.rs` no longer has raw `Path` import (module was split). (P3)(B1)(5d89e87)
+- scalar head/tail blending logic duplicated 3× in `apply_single_layer` — `src/pixel.rs:350-483` → extracted into shared `process_pixel` closure. (P3)(B1)(5bf5fc9)
+- stale `compress_run` name in module docstring — `src/undo.rs:3` → function renamed to `compress_and_store`. (P4)(B1)(5bf5fc9)
+- missing `src/tests/frame.rs` — `src/app/frame.rs` had inline tests; created dedicated test module per convention, migrated 4 tests. (P2)(B1)(5d89e87)
 
 ## Outdated
 
