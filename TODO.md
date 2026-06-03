@@ -83,7 +83,7 @@
 
 ### Architecture
 
-- canvas background checkerboard — blend behind transparent areas in `blend_layers()`. (P3)(B2)(460008e)
+
 
 ### UX
 

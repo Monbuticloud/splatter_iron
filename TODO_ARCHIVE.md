@@ -29,6 +29,7 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 ## Implemented
 
 - brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. Added to `handle_canvas_interaction` in `src/ui/center.rs`. Coarse step 10px, fine step 1px. (P2)(B2)(460008e)(HEAD)
+- canvas background checkerboard — `draw_checkerboard` in `pixel.rs` blends 8×8 light/dark gray tiles behind transparent areas. Called from `blend_to_output` in `document.rs`. (P3)(B2)(460008e)(HEAD)
 
 - README is sparse — add build instructions, feature list, screenshot, contribution guide. (P3)(B0)(aef7235)(a904732)
 - `export_as_image` pixel-by-pixel loop — `src/files.rs:247` → replaced with `bytemuck` cast + rayon `par_chunks_mut` (P1)(B1)(aef7235)(b049292)
