@@ -403,10 +403,6 @@ pub enum CurrentTool {
     Square,
     /// Draw solid circles by dragging.
     Circle,
-    /// Erase by dragging a rectangular eraser.
-    SquareEraser,
-    /// Erase by dragging a circular eraser.
-    CircleEraser,
     /// Erase pixels using a shaped eraser footprint.
     Eraser(ToolKind),
     /// Flood-fill a contiguous region of similar color.
