@@ -306,18 +306,36 @@ fn stamp_circle_positions(
         dirty_rect.extend(circle_min_x, circle_min_y);
         dirty_rect.extend(circle_max_x, circle_max_y);
 
-        for delta_y in -geo_radius_i32..=geo_radius_i32 {
-            let y = current_y + delta_y;
-            if y < 0 || y >= height as i32 {
-                continue;
+        let mut cx = geo_radius_i32;
+        for dy in 0..=geo_radius_i32 {
+            while cx > 0
+                && (cx as u64) * (cx as u64) + (dy as u64) * (dy as u64) > radius_squared
+            {
+                cx -= 1;
             }
-            let delta_y_squared = (delta_y.abs() as u64) * (delta_y.abs() as u64);
-            let delta_x = ((radius_squared - delta_y_squared) as f64).sqrt() as i32;
-            let row_start = (y as usize) * width;
-            let start_x_local = (current_x - delta_x).max(0).min(width as i32 - 1) as usize;
-            let end_x_local = (current_x + delta_x).max(0).min(width as i32 - 1) as usize;
-            for pixel_index in start_x_local..=end_x_local {
-                visited[row_start + pixel_index] = stamp;
+
+            // Top half (center row when dy == 0)
+            if dy <= current_y {
+                let y_top = (current_y - dy) as usize;
+                let row_start = y_top * width;
+                let span_start = (current_x - cx).max(0).min(width as i32 - 1) as usize;
+                let span_end = (current_x + cx).max(0).min(width as i32 - 1) as usize;
+                for pi in span_start..=span_end {
+                    visited[row_start + pi] = stamp;
+                }
+            }
+
+            // Bottom half (skip center-row duplicate)
+            if dy != 0 {
+                let y_bot = current_y + dy;
+                if y_bot < height as i32 {
+                    let row_start = (y_bot as usize) * width;
+                    let span_start = (current_x - cx).max(0).min(width as i32 - 1) as usize;
+                    let span_end = (current_x + cx).max(0).min(width as i32 - 1) as usize;
+                    for pi in span_start..=span_end {
+                        visited[row_start + pi] = stamp;
+                    }
+                }
             }
         }
 
