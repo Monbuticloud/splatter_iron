@@ -384,6 +384,22 @@ impl MyApp {
             ui.ctx().request_repaint();
         }
 
+        // Track cursor pixel coordinates for the status bar display.
+        if let Some(hover_pos) = response.hover_pos() {
+            let local_position = hover_pos - response.rect.min;
+            let uv = egui::vec2(
+                local_position.x / response.rect.width(),
+                local_position.y / response.rect.height(),
+            );
+            self.ui.cursor_pixel = Some(uv_to_pixel(
+                uv,
+                self.document.canvas.width,
+                self.document.canvas.height,
+            ));
+        } else {
+            self.ui.cursor_pixel = None;
+        }
+
         if self.tool_configuration.show_brush_preview
             && let Some(hover_pos) = response.hover_pos()
         {
@@ -877,19 +893,39 @@ impl MyApp {
     }
 
     /// Draw a persistent status bar below the canvas showing canvas dimensions,
-    /// zoom level, and any in-flight file operation (save, export, load, import).
+    /// cursor coordinates, zoom level, memory usage, and any in-flight file
+    /// operation (save, export, load, import).
     fn show_canvas_status_line(&mut self, ui: &mut egui::Ui) {
         ui.separator();
         ui.horizontal(|ui| {
-            // Left: canvas dimensions.
+            // Left group: dimensions | cursor | zoom | memory.
             ui.label(format!(
                 "{}×{}",
                 self.document.canvas.width, self.document.canvas.height
             ));
             ui.separator();
 
-            // Center: zoom level.
+            if let Some((px, py)) = self.ui.cursor_pixel {
+                ui.label(format!("({px}, {py})"));
+            } else {
+                ui.label("(-, -)");
+            }
+            ui.separator();
+
+            // Zoom level.
             ui.label(format!("{:>3.0}%", self.ui.zoom * 100.0));
+            ui.separator();
+
+            // Memory usage.
+            let width = self.document.canvas.width;
+            let height = self.document.canvas.height;
+            let layer_count = self.document.canvas.pixels.len();
+            let mem = crate::app::estimate_canvas_memory(width, height, layer_count);
+            if mem >= 1_000_000 {
+                ui.label(format!("{} MB", mem / 1_000_000));
+            } else {
+                ui.label(format!("{} KB", mem / 1_000));
+            }
 
             // Right: activity status (right-aligned).
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {

@@ -393,6 +393,8 @@ pub struct UIState {
     pub zoom: f32,
     /// Cached grid overlay shapes, recomputed when any cache-key dimension changes.
     pub grid_cache: Option<(Vec<egui::Shape>, u32, u32, u32)>,
+    /// Current canvas-relative cursor pixel coordinates (when hovering).
+    pub cursor_pixel: Option<(u32, u32)>,
 }
 
 impl Default for UIState {
@@ -418,6 +420,7 @@ impl Default for UIState {
             progress: ProgressState::Idle,
             last_status_message: None,
             should_close: false,
+            cursor_pixel: None,
             pan_offset: egui::Vec2::ZERO,
             zoom: 1.0,
             grid_cache: None,
