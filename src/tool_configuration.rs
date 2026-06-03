@@ -25,6 +25,24 @@ pub enum StampTintMode {
     Tinted,
 }
 
+/// Shared sampling configuration for stamp and brush-tip rendering.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct SamplingConfig {
+    /// Pixel-sampling strategy (nearest or bilinear).
+    pub sampling: StampSampling,
+    /// Whether to tint by the current tool color.
+    pub tint_mode: StampTintMode,
+}
+
+impl Default for SamplingConfig {
+    fn default() -> Self {
+        Self {
+            sampling: StampSampling::Nearest,
+            tint_mode: StampTintMode::Original,
+        }
+    }
+}
+
 /// Current tool selection, color, brush radius, and stamp/brush sampling config.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ToolConfiguration {
@@ -38,17 +56,13 @@ pub struct ToolConfiguration {
     pub alpha_overlay: bool,
     /// Whether to show the brush size preview circle/square on the canvas.
     pub show_brush_preview: bool,
-    /// Sampling strategy when scaling the stamp to canvas size.
-    pub stamp_sampling: StampSampling,
-    /// Whether stamp pixels are tinted by `current_color`.
-    pub stamp_tint_mode: StampTintMode,
-    /// Sampling strategy when scaling a custom brush tip to canvas size.
-    pub brush_sampling: StampSampling,
-    /// Whether custom brush tip pixels are tinted by `current_color`.
-    pub brush_tint_mode: StampTintMode,
+    /// Sampling configuration for stamp tool rendering.
+    pub stamp_config: SamplingConfig,
+    /// Sampling configuration for custom brush tip rendering.
+    pub brush_config: SamplingConfig,
     /// Whether the pixel-grid overlay is visible on the canvas.
     pub show_grid: bool,
-    /// Spacing of grid lines in canvas pixels.
+    /// Grid spacing in canvas pixels.
     pub grid_size: u32,
     /// Whether brush stabilization (lerped virtual cursor) is enabled.
     pub stabilization_enabled: bool,
@@ -66,10 +80,8 @@ impl Default for ToolConfiguration {
             radius: 100,
             alpha_overlay: false,
             show_brush_preview: true,
-            stamp_sampling: StampSampling::Nearest,
-            stamp_tint_mode: StampTintMode::Original,
-            brush_sampling: StampSampling::Nearest,
-            brush_tint_mode: StampTintMode::Original,
+            stamp_config: SamplingConfig::default(),
+            brush_config: SamplingConfig::default(),
             show_grid: false,
             grid_size: 50,
             stabilization_enabled: false,
@@ -77,3 +89,5 @@ impl Default for ToolConfiguration {
         }
     }
 }
+
+

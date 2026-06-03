@@ -30,7 +30,7 @@ fn default_values_match_expected() {
 fn default_tint_mode_is_original() {
     let config = ToolConfiguration::default();
     assert_eq!(
-        config.stamp_tint_mode,
+        config.stamp_config.tint_mode,
         StampTintMode::Original,
         "stamp tint mode defaults to Original"
     );

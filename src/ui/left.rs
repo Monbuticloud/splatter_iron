@@ -104,19 +104,19 @@ impl MyApp {
                 ui.label("Tint mode:");
                 ui.horizontal(|ui| {
                     ui.selectable_value(
-                        &mut self.tool_configuration.stamp_tint_mode,
+                        &mut self.tool_configuration.stamp_config.tint_mode,
                         StampTintMode::Original,
                         "Original",
                     );
                     ui.selectable_value(
-                        &mut self.tool_configuration.stamp_tint_mode,
+                        &mut self.tool_configuration.stamp_config.tint_mode,
                         StampTintMode::Tinted,
                         "Tinted",
                     );
                 });
 
                 ui.label("Sampling:");
-                Self::sampling_combo(ui, &mut self.tool_configuration.stamp_sampling);
+                Self::sampling_combo(ui, &mut self.tool_configuration.stamp_config.sampling);
             } else {
                 ui.label("No stamps loaded.");
             }
@@ -165,19 +165,19 @@ impl MyApp {
                 ui.label("Tint mode:");
                 ui.horizontal(|ui| {
                     ui.selectable_value(
-                        &mut self.tool_configuration.brush_tint_mode,
+                        &mut self.tool_configuration.brush_config.tint_mode,
                         StampTintMode::Original,
                         "Original",
                     );
                     ui.selectable_value(
-                        &mut self.tool_configuration.brush_tint_mode,
+                        &mut self.tool_configuration.brush_config.tint_mode,
                         StampTintMode::Tinted,
                         "Tinted",
                     );
                 });
 
                 ui.label("Sampling:");
-                Self::sampling_combo(ui, &mut self.tool_configuration.brush_sampling);
+                Self::sampling_combo(ui, &mut self.tool_configuration.brush_config.sampling);
             } else {
                 ui.label("No brushes imported.");
             }

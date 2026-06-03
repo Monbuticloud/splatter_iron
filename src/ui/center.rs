@@ -843,8 +843,8 @@ impl MyApp {
                         entry.width,
                         entry.height,
                         radius,
-                        self.tool_configuration.stamp_tint_mode == StampTintMode::Tinted,
-                        self.tool_configuration.stamp_sampling,
+                        self.tool_configuration.stamp_config.tint_mode == StampTintMode::Tinted,
+                        self.tool_configuration.stamp_config.sampling,
                     )
                 })
             }
@@ -887,8 +887,8 @@ impl MyApp {
                         entry.height,
                         radius,
                         entry.spacing,
-                        self.tool_configuration.brush_tint_mode == StampTintMode::Tinted,
-                        self.tool_configuration.brush_sampling,
+                        self.tool_configuration.brush_config.tint_mode == StampTintMode::Tinted,
+                        self.tool_configuration.brush_config.sampling,
                     )
                 })
             }
