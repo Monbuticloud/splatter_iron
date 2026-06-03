@@ -41,7 +41,7 @@ impl MyApp {
             }) {
                 let is_eraser = matches!(
                     self.tool_configuration.current_tool,
-                    CurrentTool::SquareEraser | CurrentTool::CircleEraser
+                    CurrentTool::Eraser(_)
                 );
                 if is_eraser {
                     if let Some(prev) = self.ui.previous_tool.take() {
@@ -49,7 +49,7 @@ impl MyApp {
                     }
                 } else {
                     self.ui.previous_tool = Some(self.tool_configuration.current_tool);
-                    self.tool_configuration.current_tool = CurrentTool::SquareEraser;
+                    self.tool_configuration.current_tool = CurrentTool::Eraser(crate::canvas::ToolKind::Square);
                 }
             }
             if ui
@@ -57,12 +57,12 @@ impl MyApp {
             {
                 let is_eraser = matches!(
                     self.tool_configuration.current_tool,
-                    CurrentTool::SquareEraser | CurrentTool::CircleEraser
+                    CurrentTool::Eraser(_)
                 );
                 if !is_eraser {
                     self.ui.previous_tool = Some(self.tool_configuration.current_tool);
                 }
-                self.tool_configuration.current_tool = CurrentTool::CircleEraser;
+                self.tool_configuration.current_tool = CurrentTool::Eraser(crate::canvas::ToolKind::Circle);
             }
             if ui.input(|i| i.key_pressed(egui::Key::G) && !i.modifiers.command) {
                 self.tool_configuration.current_tool = CurrentTool::BucketFill;
@@ -339,7 +339,7 @@ mod tests {
         ));
     }
 
-    /// Pressing `E` toggles eraser tool (non-eraser -> SquareEraser).
+    /// Pressing `E` toggles eraser tool (non-eraser -> Eraser(ToolKind::Square)).
     #[test]
     fn key_e_toggles_eraser_on_non_eraser() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -356,7 +356,7 @@ mod tests {
 
         assert!(matches!(
             app.tool_configuration.current_tool,
-            crate::canvas::CurrentTool::SquareEraser
+            crate::canvas::CurrentTool::Eraser(crate::canvas::ToolKind::Square)
         ));
         assert!(matches!(
             app.ui.previous_tool,
@@ -369,7 +369,7 @@ mod tests {
     fn key_e_toggles_back_from_eraser() {
         let dir = tempfile::tempdir().expect("temp dir");
         let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
-        app.tool_configuration.current_tool = crate::canvas::CurrentTool::SquareEraser;
+        app.tool_configuration.current_tool = crate::canvas::CurrentTool::Eraser(crate::canvas::ToolKind::Square);
         app.ui.previous_tool = Some(crate::canvas::CurrentTool::Circle);
 
         {

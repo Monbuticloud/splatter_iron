@@ -420,7 +420,7 @@ impl MyApp {
                 .circle_filled(hover_pos, 2.5, Color32::from_gray(80));
 
             match self.tool_configuration.current_tool {
-                CurrentTool::Circle | CurrentTool::CircleEraser => {
+                CurrentTool::Circle | CurrentTool::Eraser(crate::canvas::ToolKind::Circle) => {
                     draw_circle_preview(
                         ui,
                         &response,
@@ -434,7 +434,7 @@ impl MyApp {
                     );
                 }
 
-                CurrentTool::Square | CurrentTool::SquareEraser => {
+                CurrentTool::Square | CurrentTool::Eraser(crate::canvas::ToolKind::Square) => {
                     draw_square_preview(
                         ui,
                         &response,
@@ -672,7 +672,7 @@ impl MyApp {
     fn apply_stroke(&mut self, pixel_x: u32, pixel_y: u32) -> Option<UndoRecord> {
         let is_eraser = matches!(
             self.tool_configuration.current_tool,
-            CurrentTool::SquareEraser | CurrentTool::CircleEraser
+            CurrentTool::Eraser(_)
         );
         let color = if is_eraser {
             Color32::TRANSPARENT
@@ -693,7 +693,7 @@ impl MyApp {
             CurrentTool::Eyedropper => None,
             CurrentTool::Pan => None,
 
-            CurrentTool::Square | CurrentTool::SquareEraser => {
+            CurrentTool::Square | CurrentTool::Eraser(crate::canvas::ToolKind::Square) => {
                 let first_frame = self.ui.previous_cursor_position.is_none();
                 let previous_position = self.ui.previous_cursor_position;
 
@@ -752,7 +752,7 @@ impl MyApp {
                 }
             }
 
-            CurrentTool::Circle | CurrentTool::CircleEraser => {
+            CurrentTool::Circle | CurrentTool::Eraser(crate::canvas::ToolKind::Circle) => {
                 let first_frame = self.ui.previous_cursor_position.is_none();
                 let previous_position = self.ui.previous_cursor_position;
 

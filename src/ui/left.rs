@@ -35,12 +35,12 @@ impl MyApp {
         );
         ui.selectable_value(
             &mut self.tool_configuration.current_tool,
-            CurrentTool::SquareEraser,
+            CurrentTool::Eraser(crate::canvas::ToolKind::Square),
             "Square Eraser",
         );
         ui.selectable_value(
             &mut self.tool_configuration.current_tool,
-            CurrentTool::CircleEraser,
+            CurrentTool::Eraser(crate::canvas::ToolKind::Circle),
             "Circle Eraser",
         );
         ui.selectable_value(
