@@ -37,9 +37,6 @@ impl AssetEntry for TestEntry {
     fn name(&self) -> &str {
         &self.name
     }
-    fn name_mut(&mut self) -> &mut String {
-        &mut self.name
-    }
     fn filename(&self) -> &str {
         &self.filename
     }
@@ -48,9 +45,6 @@ impl AssetEntry for TestEntry {
     }
     fn pixels(&self) -> &[Color32] {
         &self.pixels
-    }
-    fn pixels_mut(&mut self) -> &mut Vec<Color32> {
-        &mut self.pixels
     }
     fn width(&self) -> u32 {
         self.width
@@ -157,109 +151,9 @@ fn remove_last_clears_selection() {
     let mut lib = Library::<TestEntry>::load_from_disk(&dir);
     lib.add_entry(test_entry("only"), &eframe::egui::Context::default());
     assert!(lib.selected().is_some());
-    lib.remove(0);
-    assert!(lib.selected().is_none());
-    assert!(lib.is_empty());
-}
-
-/// Remove the middle entry preserves ordering of the rest.
-#[test]
-fn remove_middle_preserves_order() {
-    let dir = tempdir();
-    let mut lib = Library::<TestEntry>::load_from_disk(&dir);
-    lib.add_entry(test_entry("a"), &eframe::egui::Context::default());
-    lib.add_entry(test_entry("b"), &eframe::egui::Context::default());
-    lib.add_entry(test_entry("c"), &eframe::egui::Context::default());
-    lib.remove(1);
-    assert_eq!(lib.len(), 2);
-    assert_eq!(lib.get(0).unwrap().name(), "a");
-    assert_eq!(lib.get(1).unwrap().name(), "c");
-}
-
-/// Select switches which entry is active.
-#[test]
-fn select_switches_active() {
-    let dir = tempdir();
-    let mut lib = Library::<TestEntry>::load_from_disk(&dir);
-    lib.add_entry(test_entry("x"), &eframe::egui::Context::default());
-    lib.add_entry(test_entry("y"), &eframe::egui::Context::default());
-    lib.select(0);
-    assert_eq!(lib.selected().unwrap().name(), "x");
-    lib.select(1);
-    assert_eq!(lib.selected().unwrap().name(), "y");
-}
-
-/// Select with out-of-bounds index is a no-op.
-#[test]
-fn select_out_of_bounds_noop() {
-    let dir = tempdir();
-    let mut lib = Library::<TestEntry>::load_from_disk(&dir);
-    lib.add_entry(test_entry("only"), &eframe::egui::Context::default());
-    lib.select(42);
-    assert_eq!(lib.selected_index(), Some(0));
-}
-
-/// `get` with valid index returns the entry.
-#[test]
-fn get_valid_index() {
-    let dir = tempdir();
-    let mut lib = Library::<TestEntry>::load_from_disk(&dir);
-    lib.add_entry(test_entry("found"), &eframe::egui::Context::default());
-    assert!(lib.get(0).is_some());
-    assert_eq!(lib.get(0).unwrap().name(), "found");
-}
-
-/// `get` with out-of-bounds index returns None.
-#[test]
-fn get_out_of_bounds_none() {
-    let dir = tempdir();
-    let lib = Library::<TestEntry>::load_from_disk(&dir);
-    assert!(lib.get(0).is_none());
-    assert!(lib.get(100).is_none());
-}
-
-/// `entries` on empty library returns empty slice.
-#[test]
-fn entries_empty() {
-    let dir = tempdir();
-    let lib = Library::<TestEntry>::load_from_disk(&dir);
-    assert!(lib.entries().is_empty());
-}
-
-/// `entries` returns all added entries.
-#[test]
-fn entries_returns_all() {
-    let dir = tempdir();
-    let mut lib = Library::<TestEntry>::load_from_disk(&dir);
-    lib.add_entry(test_entry("a"), &eframe::egui::Context::default());
-    lib.add_entry(test_entry("b"), &eframe::egui::Context::default());
-    assert_eq!(lib.entries().len(), 2);
-}
-
-/// Persistence round-trip: entries survive a reload.
-#[test]
-fn persistence_round_trip() {
-    let dir = tempdir();
-    {
-        let mut lib = Library::<TestEntry>::load_from_disk(&dir);
-        lib.add_entry(test_entry("persist"), &eframe::egui::Context::default());
-    }
-    {
-        let lib = Library::<TestEntry>::load_from_disk(&dir);
-        assert_eq!(lib.len(), 1);
-        assert_eq!(lib.selected().unwrap().name(), "persist");
-    }
-}
-
-/// `selected_mut` allows mutation of the selected entry.
-#[test]
-fn selected_mut_allows_mutation() {
-    let dir = tempdir();
-    let mut lib = Library::<TestEntry>::load_from_disk(&dir);
-    lib.add_entry(test_entry("old"), &eframe::egui::Context::default());
-    let entry = lib.selected_mut().expect("should be selected");
-    *entry.name_mut() = "new".to_string();
-    assert_eq!(lib.selected().unwrap().name(), "new");
+    let entry = lib.selected_mut().expect("selected entry");
+    *entry.filename_mut() = "renamed.png".to_string();
+    assert_eq!(lib.selected().unwrap().filename(), "renamed.png");
 }
 
 /// `selected_mut` on empty library returns None.

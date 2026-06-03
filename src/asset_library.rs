@@ -16,16 +16,12 @@ use crate::pixel;
 pub trait AssetEntry: Sized {
     /// Display name.
     fn name(&self) -> &str;
-    /// Mutable reference to the display name.
-    fn name_mut(&mut self) -> &mut String;
     /// On-disk PNG filename (relative to the library directory).
     fn filename(&self) -> &str;
     /// Mutable reference to the on-disk PNG filename.
     fn filename_mut(&mut self) -> &mut String;
     /// Premultiplied-alpha pixel data (row-major).
     fn pixels(&self) -> &[Color32];
-    /// Mutable reference to the premultiplied-alpha pixel buffer.
-    fn pixels_mut(&mut self) -> &mut Vec<Color32>;
     /// Image dimensions in pixels.
     fn width(&self) -> u32;
     fn height(&self) -> u32;
@@ -226,6 +222,7 @@ impl<T: AssetEntry> Library<T> {
     }
 
     /// Mutable reference to the currently selected entry.
+    #[cfg(test)]
     pub fn selected_mut(&mut self) -> Option<&mut T> {
         self.selected_index.map(|i| &mut self.entries[i])
     }
@@ -246,6 +243,7 @@ impl<T: AssetEntry> Library<T> {
     }
 
     /// Entry at `index`, or `None`.
+    #[cfg(test)]
     pub fn get(&self, index: usize) -> Option<&T> {
         self.entries.get(index)
     }

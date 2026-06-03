@@ -43,9 +43,6 @@ impl AssetEntry for StampEntry {
     fn name(&self) -> &str {
         &self.name
     }
-    fn name_mut(&mut self) -> &mut String {
-        &mut self.name
-    }
     fn filename(&self) -> &str {
         &self.filename
     }
@@ -54,9 +51,6 @@ impl AssetEntry for StampEntry {
     }
     fn pixels(&self) -> &[Color32] {
         &self.pixels
-    }
-    fn pixels_mut(&mut self) -> &mut Vec<Color32> {
-        &mut self.pixels
     }
     fn width(&self) -> u32 {
         self.width
