@@ -218,7 +218,7 @@ impl UndoHistory {
         // undo record and start a fresh accumulator for remaining frames.
         if accumulator.frames.len() >= MAX_DRAG_FRAMES {
             let layer_index = accumulator.layer_index;
-            let width = accumulator.width;
+            let _width = accumulator.width;
             let color_after = accumulator.color_after;
             let is_alpha_overlay = accumulator.is_alpha_overlay;
             // Swap out frames, push current frame, finalize into undo stack.
@@ -292,54 +292,63 @@ impl UndoHistory {
     // --- Accessors used by tests ---
 
     /// Number of entries in the stroke stack.
+    #[cfg(test)]
     #[inline]
     pub fn stroke_stack_len(&self) -> usize {
         self.stroke_stack.len()
     }
 
     /// Length of the visited buffer (number of canvas pixels).
+    #[cfg(test)]
     #[inline]
     pub fn visited_len(&self) -> usize {
         self.visited.len()
     }
 
     /// Length of the drag-processed buffer.
+    #[cfg(test)]
     #[inline]
     pub fn drag_processed_len(&self) -> usize {
         self.drag_processed.len()
     }
 
     /// Current visited stamp value.
+    #[cfg(test)]
     #[inline]
     pub fn visited_stamp(&self) -> u32 {
         self.visited_stamp
     }
 
     /// Set the visited stamp value directly (for testing wrap behaviour).
+    #[cfg(test)]
     #[inline]
     pub fn set_visited_stamp(&mut self, val: u32) {
         self.visited_stamp = val;
     }
 
     /// Current drag stamp value.
+    #[cfg(test)]
     #[inline]
     pub fn drag_stamp_value(&self) -> u32 {
         self.drag_stamp_value
     }
 
     /// Set the drag stamp value directly (for testing wrap behaviour).
+    #[cfg(test)]
     #[inline]
     pub fn set_drag_stamp_value(&mut self, val: u32) {
         self.drag_stamp_value = val;
     }
 
     /// `true` if every entry in the visited buffer is 0.
+    #[cfg(test)]
     #[inline]
     pub fn visited_all_zero(&self) -> bool {
         self.visited.iter().all(|&v| v == 0)
     }
 
     /// Mutable reference to the drag-processed buffer (used by tests).
+    #[cfg(test)]
     #[inline]
     pub fn drag_processed_mut(&mut self) -> &mut [u32] {
         &mut self.drag_processed
