@@ -84,3 +84,11 @@
 ### Standards & Cleanup
 
 - dead code audit — `#[cfg(test)]` gate or remove 21 dead items in `asset_library`, `canvas`, `files`, `undo_history`. (P3)(B1)(5d89e87)
+
+## Accepted
+
+- None at the moment
+
+## Implementing
+
+- None at the moment
