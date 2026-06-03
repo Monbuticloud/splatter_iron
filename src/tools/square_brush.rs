@@ -33,9 +33,7 @@ fn fill_square_impl(
             let row_start = (y as usize) * width;
             let start = row_start + (start_x as usize);
             let end = row_start + (end_x as usize);
-            for pixel in pixels[start..end].iter_mut() {
-                *pixel = crate::pixel::alpha_blend(*pixel, color);
-            }
+            crate::pixel::alpha_blend_span(&mut pixels[start..end], color);
         }
     } else {
         for y in start_y..end_y {
