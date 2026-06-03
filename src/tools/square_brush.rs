@@ -76,6 +76,12 @@ fn stamp_line_positions(
 ) {
     let half_radius = brush_radius;
 
+    // Per-row span tracking: each row's min_x/max_x of already-stamped columns.
+    // u32::MAX / 0 = unstamped. This avoids re-stamping pixels already covered
+    // by a previous Bresenham step (common case for overlapping brush footprints).
+    let mut row_min_x = vec![u32::MAX; height as usize];
+    let mut row_max_x = vec![0u32; height as usize];
+
     let mut current_x = start_x as i32;
     let mut current_y = start_y as i32;
     let target_x = end_x as i32;
@@ -111,10 +117,33 @@ fn stamp_line_positions(
         dirty_rect.extend(brush_end_x - 1, brush_end_y - 1);
 
         for y in brush_start_y..brush_end_y {
-            let row_start = (y as usize) * width;
-            for x in brush_start_x..brush_end_x {
-                let pixel_index = (row_start + (x as usize)) as u32;
-                visited[pixel_index as usize] = stamp;
+            let row = y as usize;
+            let row_start = row * width;
+            let cur_min = row_min_x[row];
+            let cur_max = row_max_x[row];
+
+            if cur_min == u32::MAX {
+                // First time this row is hit — stamp the full span.
+                for x in brush_start_x..brush_end_x {
+                    visited[row_start + x as usize] = stamp;
+                }
+                row_min_x[row] = brush_start_x;
+                row_max_x[row] = brush_end_x;
+            } else {
+                // Stamp newly-covered left extension.
+                if brush_start_x < cur_min {
+                    for x in brush_start_x..cur_min {
+                        visited[row_start + x as usize] = stamp;
+                    }
+                    row_min_x[row] = brush_start_x;
+                }
+                // Stamp newly-covered right extension.
+                if brush_end_x > cur_max {
+                    for x in cur_max..brush_end_x {
+                        visited[row_start + x as usize] = stamp;
+                    }
+                    row_max_x[row] = brush_end_x;
+                }
             }
         }
 
