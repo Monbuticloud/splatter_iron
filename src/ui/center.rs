@@ -532,7 +532,10 @@ impl MyApp {
                     self.document.current_layer,
                     self.tool_configuration.alpha_overlay,
                 );
-                self.undo.push_undo(stroke);
+                self.undo.push_undo_snapshot(
+                    stroke,
+                    &self.document.canvas.pixels[self.document.current_layer],
+                );
                 self.document.dirty_since_last_autosave = true;
             }
         }
