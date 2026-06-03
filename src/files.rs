@@ -440,13 +440,16 @@ pub fn export_as_image(
     let file = std::fs::File::create(path)?;
     let writer = BufWriter::new(file);
 
-    // JPEG: alpha was blended against white above. Strip alpha channel
-    // directly from raw_output, skipping the RgbaImage intermediate.
+    // JPEG: alpha was blended against white above. Write unpremultiplied RGB
+    // via a pre-allocated buffer, avoiding intermediate `Vec<u8>` growth.
     if format == image::ImageFormat::Jpeg {
-        let rgb: Vec<u8> = raw_output
-            .chunks_exact(4)
-            .flat_map(|p| [p[0], p[1], p[2]])
-            .collect();
+        let mut rgb = vec![0u8; total_pixels * 3];
+        for (i, chunk) in raw_output.chunks_exact(4).enumerate() {
+            let o = i * 3;
+            rgb[o] = chunk[0];
+            rgb[o + 1] = chunk[1];
+            rgb[o + 2] = chunk[2];
+        }
         image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY).write_image(
             &rgb,
             width,
@@ -499,18 +502,16 @@ pub fn export_as_image(
         return Ok(());
     }
 
-    // For non-RgbaImage formats (ICO, GIF) and the rest, create RgbaImage.
-    let mut img = image::RgbaImage::from_raw(width, height, raw_output)
-        .expect("dimensions match allocated pixel count");
-
-    // ICO format has a 256×256 pixel limit — scale down if needed.
+    // ICO format has a 256×256 pixel limit — scale down via RgbaImage if needed.
     if format == image::ImageFormat::Ico && (width > 256 || height > 256) {
+        let img = image::RgbaImage::from_raw(width, height, raw_output)
+            .expect("dimensions match allocated pixel count");
         let scale = (256.0f64 / width.max(height) as f64).min(1.0);
         let new_width = (width as f64 * scale).round() as u32;
         let new_height = (height as f64 * scale).round() as u32;
         let new_width = new_width.max(1);
         let new_height = new_height.max(1);
-        img = image::imageops::resize(
+        let img = image::imageops::resize(
             &img,
             new_width,
             new_height,
@@ -519,22 +520,35 @@ pub fn export_as_image(
         let (w, h) = img.dimensions();
         width = w;
         height = h;
+        let ico_raw = img.into_raw();
+        image::codecs::ico::IcoEncoder::new(writer).write_image(
+            &ico_raw,
+            width,
+            height,
+            image::ExtendedColorType::Rgba8,
+        )?;
+        return Ok(());
     }
 
-    // GIF needs the `RgbaImage` directly, not raw bytes — handle it first.
+    // GIF needs the `RgbaImage` for Frame construction.
     if format == image::ImageFormat::Gif {
+        let img = image::RgbaImage::from_raw(width, height, raw_output)
+            .expect("dimensions match allocated pixel count");
         let frame = image::Frame::new(img);
         let mut encoder = image::codecs::gif::GifEncoder::new(writer);
         encoder.encode_frame(frame)?;
         return Ok(());
     }
 
-    // Consume img into raw byte buffer for all other formats.
-    let raw = img.into_raw();
-
+    // All other formats: write raw_output directly, no RgbaImage wrapper.
     macro_rules! export_via {
         ($encoder:expr) => {
-            $encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)
+            $encoder.write_image(
+                &raw_output,
+                width,
+                height,
+                image::ExtendedColorType::Rgba8,
+            )
         };
     }
 
