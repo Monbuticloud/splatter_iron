@@ -11,6 +11,10 @@ use crate::undo::redo_apply;
 use crate::undo::undo_apply;
 
 const MAX_STROKE_STACK: usize = 1000;
+/// Maximum number of frames accumulated in a single drag gesture before
+/// the accumulator is force-finalised and a new one starts.
+/// Prevents unbounded memory growth during very long drag interactions.
+const MAX_DRAG_FRAMES: usize = 5000;
 
 /// Run segments and before-pixels from one drag frame.
 #[derive(Debug)]
@@ -206,43 +210,81 @@ impl UndoHistory {
         runs: Vec<RunSegment>,
         before_pixels: Vec<eframe::egui::Color32>,
     ) {
-        if let Some(ref mut accumulator) = self.drag_accumulator {
-            accumulator.frames.push(DragFrame { runs, before_pixels });
+        let Some(ref mut accumulator) = self.drag_accumulator else {
+            return;
+        };
+
+        // When the frame limit is reached, flush accumulated frames as one
+        // undo record and start a fresh accumulator for remaining frames.
+        if accumulator.frames.len() >= MAX_DRAG_FRAMES {
+            let layer_index = accumulator.layer_index;
+            let width = accumulator.width;
+            let color_after = accumulator.color_after;
+            let is_alpha_overlay = accumulator.is_alpha_overlay;
+            // Swap out frames, push current frame, finalize into undo stack.
+            let mut taken = Vec::with_capacity(MAX_DRAG_FRAMES.min(256));
+            std::mem::swap(&mut taken, &mut accumulator.frames);
+            taken.push(DragFrame { runs, before_pixels });
+            let record = Self::merge_frames(taken, layer_index, color_after, is_alpha_overlay);
+            self.push_undo(record);
+            // Reset drag stamp so fresh strokes don't collide with the archived ones.
+            self.drag_stamp_value = self.drag_stamp_value.wrapping_add(1);
+            return;
+        }
+
+        accumulator.frames.push(DragFrame { runs, before_pixels });
+    }
+
+    /// Merge a collection of drag frames into a single undo record.
+    ///
+    /// Frames are processed in reverse order (most recent first) so that
+    /// overlapping paint regions undo correctly. `BeforePixels::Many` offsets
+    /// are adjusted to point into the concatenated `before_pixels` buffer.
+    fn merge_frames(
+        frames: Vec<DragFrame>,
+        layer_index: usize,
+        color_after: eframe::egui::Color32,
+        is_alpha_overlay: bool,
+    ) -> UndoRecord {
+        let mut all_runs = Vec::new();
+        let mut all_before = Vec::new();
+
+        for mut frame in frames.into_iter().rev() {
+            let offset_adjust = all_before.len() as u32;
+            for run in &mut frame.runs {
+                if let BeforePixels::Many { offset, .. } = &mut run.before {
+                    *offset += offset_adjust;
+                }
+            }
+            all_runs.append(&mut frame.runs);
+            all_before.append(&mut frame.before_pixels);
+        }
+
+        UndoRecord::Run {
+            layer_index,
+            color_after,
+            runs: all_runs,
+            before_pixels: all_before,
+            compressed_before_pixels: None,
+            is_alpha_overlay,
         }
     }
 
     /// Finish accumulating drag data and push the result as a single undo record.
     ///
-    /// Merges all stored frames in reverse order (most recent first for
-    /// correct undo of overlapping paint), adjusting `BeforePixels::Many`
-    /// offsets to point into the concatenated `before_pixels` buffer.
+    /// Delegates to [`merge_frames`] to build the record and calls
+    /// [`push_undo`] to store it. No-op if no drag was in progress.
     ///
-    /// No-op if no drag was in progress.
+    /// [`push_undo`]: Self::push_undo
+    /// [`merge_frames`]: Self::merge_frames
     pub fn finalize_drag_accumulator(&mut self) {
         if let Some(accumulator) = self.drag_accumulator.take() {
-            let mut all_runs = Vec::new();
-            let mut all_before = Vec::new();
-
-            for frame in accumulator.frames.into_iter().rev() {
-                let mut frame = frame;
-                let offset_adjust = all_before.len() as u32;
-                for run in &mut frame.runs {
-                    if let BeforePixels::Many { offset, .. } = &mut run.before {
-                        *offset += offset_adjust;
-                    }
-                }
-                all_runs.append(&mut frame.runs);
-                all_before.append(&mut frame.before_pixels);
-            }
-
-            let record = UndoRecord::Run {
-                layer_index: accumulator.layer_index,
-                color_after: accumulator.color_after,
-                runs: all_runs,
-                before_pixels: all_before,
-                compressed_before_pixels: None,
-                is_alpha_overlay: accumulator.is_alpha_overlay,
-            };
+            let record = Self::merge_frames(
+                accumulator.frames,
+                accumulator.layer_index,
+                accumulator.color_after,
+                accumulator.is_alpha_overlay,
+            );
             self.push_undo(record);
         }
     }
