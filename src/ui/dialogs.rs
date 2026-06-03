@@ -63,7 +63,7 @@ impl MyApp {
             return;
         };
         let mut open = true;
-        let estimated = estimate_canvas_memory(w, h);
+        let estimated = estimate_canvas_memory(w, h, 1);
         let estimated_mb = estimated / (1024 * 1024);
         egui::Window::new("Large Canvas Warning")
             .collapsible(false)
@@ -180,6 +180,7 @@ impl MyApp {
                             let mem = estimate_canvas_memory(
                                 self.ui.dialogs.new_canvas_width,
                                 self.ui.dialogs.new_canvas_height,
+                                1,
                             );
                             if mem > MEMORY_WARNING_THRESHOLD {
                                 self.ui.dialogs.pending_large_canvas = Some((

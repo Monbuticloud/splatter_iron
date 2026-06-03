@@ -73,11 +73,13 @@ pub(crate) const UNFOCUSED_SLEEP_MILLISECONDS: u64 = 50;
 pub(crate) const MEMORY_WARNING_THRESHOLD: u64 = 500_000_000;
 
 /// Estimate the minimum memory footprint (bytes) for a canvas of the given
-/// dimensions: output_rgba (w×h×4) + one layer (w×h×4) + blend buffer
-/// overhead (w×h×4). The actual footprint is higher with multiple layers.
-pub(crate) fn estimate_canvas_memory(width: u32, height: u32) -> u64 {
+/// dimensions and layer count: output_rgba (w×h×4) + each layer's pixel data
+/// (w×h×4 per layer) + blend buffer overhead (w×h×4).
+/// Pass `layer_count = 1` for a new canvas (one default layer).
+pub(crate) fn estimate_canvas_memory(width: u32, height: u32, layer_count: usize) -> u64 {
     let pixels = u64::from(width) * u64::from(height);
-    pixels * 12
+    // output_rgba + blend_buffer + each layer's pixel data
+    pixels * 4 * (2 + layer_count as u64)
 }
 /// Repaint-interval multiplier applied when the render state is
 /// `IdleThrottled` — the normal repaint delay is multiplied by this

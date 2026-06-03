@@ -140,12 +140,13 @@ fn export_information_construction() {
     assert_eq!(info.fmt, image::ImageFormat::Png);
 }
 
-/// `estimate_canvas_memory` returns width × height × 12.
+/// `estimate_canvas_memory` accounts for output_rgba + blend buffer + layers.
 #[test]
 fn estimate_canvas_memory_returns_product() {
-    assert_eq!(crate::app::estimate_canvas_memory(100, 100), 120_000);
-    assert_eq!(crate::app::estimate_canvas_memory(1, 1), 12);
-    assert_eq!(crate::app::estimate_canvas_memory(0, 0), 0);
+    assert_eq!(crate::app::estimate_canvas_memory(100, 100, 1), 120_000);
+    assert_eq!(crate::app::estimate_canvas_memory(1, 1, 0), 8);
+    assert_eq!(crate::app::estimate_canvas_memory(0, 0, 5), 0);
+    assert_eq!(crate::app::estimate_canvas_memory(10, 10, 2), 10 * 10 * 4 * 4);
 }
 
 /// `DialogState::default()` initialises all fields to their expected defaults.
