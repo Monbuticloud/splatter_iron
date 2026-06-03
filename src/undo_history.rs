@@ -4,6 +4,7 @@
 use std::collections::VecDeque;
 
 use crate::canvas::Canvas;
+use crate::canvas::Layer;
 use crate::undo::BeforePixels;
 use crate::undo::RunSegment;
 use crate::undo::UndoRecord;
@@ -102,6 +103,31 @@ impl UndoHistory {
             .truncate(self.stroke_stack.len() - self.redo_index);
         self.stroke_stack.push_back(record);
         let last = self.stroke_stack.back_mut().expect("just pushed");
+        last.compress_before(Self::COMPRESSION_LEVEL);
+        while self.stroke_stack.len() > MAX_STROKE_STACK {
+            self.stroke_stack.pop_front();
+        }
+        self.redo_index = 0;
+    }
+
+    /// Push a new undo record with an optional full-layer snapshot.
+    ///
+    /// When `layer` is provided and the stroke covers >50% of the layer
+    /// pixels, the per-pixel before-data is replaced with a zstd-compressed
+    /// full-layer snapshot for faster undo. Otherwise behaves identically
+    /// to [`push_undo`].
+    ///
+    /// # Parameters
+    ///
+    /// * `record` — The undo record to push onto the history stack.
+    /// * `layer` — The post-stroke layer; the snapshot heuristic is applied
+    ///   when available.
+    pub fn push_undo_snapshot(&mut self, record: UndoRecord, layer: &Layer) {
+        self.stroke_stack
+            .truncate(self.stroke_stack.len() - self.redo_index);
+        self.stroke_stack.push_back(record);
+        let last = self.stroke_stack.back_mut().expect("just pushed");
+        last.maybe_snapshot(layer, Self::COMPRESSION_LEVEL);
         last.compress_before(Self::COMPRESSION_LEVEL);
         while self.stroke_stack.len() > MAX_STROKE_STACK {
             self.stroke_stack.pop_front();
@@ -270,6 +296,7 @@ impl UndoHistory {
             before_pixels: all_before,
             compressed_before_pixels: None,
             is_alpha_overlay,
+            full_layer_before: None,
         }
     }
 
