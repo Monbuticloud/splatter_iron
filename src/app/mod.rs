@@ -1,6 +1,7 @@
 //! Top-level application state, identity constants, export formats, autosave
 //! loop, and wiring between the document, tools, undo history, and file IO.
 
+use std::io::Read;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -65,6 +66,11 @@ pub(crate) const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
 /// Sleep duration (ms) while the window is unfocused, used by
 /// `RenderState::UnfocusedFrozen` to minimise repaint overhead.
 pub(crate) const UNFOCUSED_SLEEP_MILLISECONDS: u64 = 50;
+
+/// Maximum size (bytes) for deserialized config files — prevents OOM from
+/// malformed or malicious config.json files. 1 MB is generous for tool config
+/// + recent files (typically <1 KB).
+pub(crate) const MAX_CONFIG_SIZE: u64 = 1_048_576; // 1 MB
 
 // --- Memory warning threshold ---
 /// Threshold (in bytes) above which creating a new canvas shows a
@@ -548,7 +554,8 @@ impl MyApp {
                 std::fs::File::open(data_dir.join("config.json"))
                     .ok()
                     .and_then(|file| {
-                        let p: PersistedConfig = serde_json::from_reader(file).ok()?;
+                        let limited = file.take(MAX_CONFIG_SIZE);
+                        let p: PersistedConfig = serde_json::from_reader(limited).ok()?;
                         Some((p.tool_configuration, p.recent_files))
                     })
             })
