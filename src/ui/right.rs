@@ -9,6 +9,7 @@ use crate::canvas::LayerMode;
 
 /// Range of valid undo/redo steps multiplier values.
 const UNDO_REDO_RANGE: std::ops::RangeInclusive<usize> = 1..=100;
+/// Range of valid brush radius values in pixels.
 const BRUSH_RADIUS_RANGE: std::ops::RangeInclusive<u32> = 0..=1000;
 
 /// Internal message enum for deferring layer UI actions.
