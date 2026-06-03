@@ -83,6 +83,7 @@ fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
 /// Returns an error if zstd decompression or JSON deserialization fails,
 /// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
 /// or if the canvas has invalid dimensions or mismatched layer sizes.
+#[cfg(test)]
 pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
     read_canvas(data)
 }
@@ -129,6 +130,7 @@ fn write_canvas(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
 /// # Errors
 ///
 /// Returns an error if JSON serialization or zstd compression fails.
+#[cfg(test)]
 pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     let mut compressed = Vec::new();
     write_canvas(canvas, &mut compressed)?;
@@ -234,6 +236,7 @@ fn read_canvas_xz(reader: impl Read) -> anyhow::Result<Canvas> {
 /// Returns an error if xz decompression or JSON deserialization fails,
 /// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
 /// or if the canvas has invalid dimensions or mismatched layer sizes.
+#[cfg(test)]
 pub fn load_canvas_from_bytes_xz(data: &[u8]) -> anyhow::Result<Canvas> {
     read_canvas_xz(data)
 }
@@ -290,6 +293,7 @@ fn write_canvas_xz(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
 /// # Errors
 ///
 /// Returns an error if JSON serialization or xz compression fails.
+#[cfg(test)]
 pub fn save_canvas_to_bytes_xz(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
     let mut compressed = Vec::new();
     write_canvas_xz(canvas, &mut compressed)?;
@@ -531,9 +535,6 @@ pub fn export_as_image(
     macro_rules! export_via {
         ($encoder:expr) => {
             $encoder.write_image(&raw, width, height, image::ExtendedColorType::Rgba8)
-        };
-        ($encoder:expr, $color:expr) => {
-            $encoder.write_image(&raw, width, height, $color)
         };
     }
 
