@@ -385,6 +385,8 @@ pub struct UIState {
     pub pan_offset: egui::Vec2,
     /// Current zoom level (1.0 = fit to screen).
     pub zoom: f32,
+    /// Cached grid overlay shapes, recomputed when any cache-key dimension changes.
+    pub grid_cache: Option<(Vec<egui::Shape>, u32, u32, u32)>,
 }
 
 impl Default for UIState {
@@ -412,6 +414,7 @@ impl Default for UIState {
             should_close: false,
             pan_offset: egui::Vec2::ZERO,
             zoom: 1.0,
+            grid_cache: None,
         }
     }
 }

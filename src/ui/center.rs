@@ -279,14 +279,17 @@ impl MyApp {
 
         // Draw grid overlay if enabled.
         if self.tool_configuration.show_grid {
-            draw_grid_overlay(
-                ui,
-                true,
+            let cache_key = (
                 self.tool_configuration.grid_size,
-                canvas_rect,
-                draw_size,
                 self.document.canvas.width,
                 self.document.canvas.height,
+            );
+            draw_grid_overlay(
+                ui,
+                &mut self.ui.grid_cache,
+                cache_key,
+                canvas_rect,
+                draw_size,
             );
         }
 
@@ -887,55 +890,64 @@ impl MyApp {
     }
 }
 
-/// Draw a grid overlay on the canvas.
+/// Draw a grid overlay on the canvas, caching shapes across frames.
 ///
 /// Draws vertical and horizontal lines at `grid_size` pixel intervals within the
 /// canvas rectangle `canvas_rect`, using screen-space scaling derived from
-/// `draw_size` and canvas dimensions `cw` × `ch`.
+/// `draw_size`. The shape cache is invalidated when any of `(grid_size, cw, ch)`
+/// changes, avoiding per-frame recomputation.
 fn draw_grid_overlay(
     ui: &egui::Ui,
-    show_grid: bool,
-    grid_size: u32,
+    cache: &mut Option<(Vec<egui::Shape>, u32, u32, u32)>,
+    cache_key: (u32, u32, u32),
     canvas_rect: Rect,
     draw_size: egui::Vec2,
-    cw: u32,
-    ch: u32,
 ) {
-    if !show_grid {
-        return;
-    }
+    let (grid_size, cw, ch) = cache_key;
     let grid_size = grid_size.max(1);
+
+    // Cache hit — reuse previously computed shapes.
+    if let Some((shapes, gs, w, h)) = cache {
+        if *gs == grid_size && *w == cw && *h == ch {
+            ui.painter().extend(shapes.iter().cloned());
+            return;
+        }
+    }
+
+    // Cache miss — (re)build grid line shapes.
     let sx = draw_size.x / cw as f32;
     let sy = draw_size.y / ch as f32;
     let grid_color = egui::Color32::from_gray(128);
     let grid_stroke = egui::Stroke::new(1.0, grid_color);
 
-    // Vertical lines
+    let mut shapes = Vec::new();
     let mut x = grid_size as f32;
     while x < cw as f32 {
         let screen_x = canvas_rect.min.x + x * sx;
-        ui.painter().line_segment(
+        shapes.push(egui::Shape::line_segment(
             [
                 egui::pos2(screen_x, canvas_rect.top()),
                 egui::pos2(screen_x, canvas_rect.bottom()),
             ],
             grid_stroke,
-        );
+        ));
         x += grid_size as f32;
     }
-    // Horizontal lines
     let mut y = grid_size as f32;
     while y < ch as f32 {
         let screen_y = canvas_rect.min.y + y * sy;
-        ui.painter().line_segment(
+        shapes.push(egui::Shape::line_segment(
             [
                 egui::pos2(canvas_rect.left(), screen_y),
                 egui::pos2(canvas_rect.right(), screen_y),
             ],
             grid_stroke,
-        );
+        ));
         y += grid_size as f32;
     }
+
+    ui.painter().extend(shapes.iter().cloned());
+    *cache = Some((shapes, grid_size, cw, ch));
 }
 
 /// Draw a stamp/brush-tip preview: renders the tip image at the cursor
@@ -1388,7 +1400,10 @@ mod tests {
                 egui::pos2(0.0, 0.0),
                 egui::vec2(100.0, 100.0),
             );
-            draw_grid_overlay(ui, false, 10, rect, egui::vec2(100.0, 100.0), 100, 100);
+            let mut cache = None;
+            draw_grid_overlay(ui, &mut cache, (10, 100, 100), rect, egui::vec2(100.0, 100.0));
+            // show_grid=false is now handled by the caller — calling with cache means it draws.
+            // Test that it doesn't panic.
         });
     }
 
@@ -1399,7 +1414,8 @@ mod tests {
                 egui::pos2(0.0, 0.0),
                 egui::vec2(100.0, 100.0),
             );
-            draw_grid_overlay(ui, true, 10, rect, egui::vec2(100.0, 100.0), 50, 50);
+            let mut cache = None;
+            draw_grid_overlay(ui, &mut cache, (10, 50, 50), rect, egui::vec2(100.0, 100.0));
         });
     }
 
@@ -1410,7 +1426,8 @@ mod tests {
                 egui::pos2(0.0, 0.0),
                 egui::vec2(100.0, 100.0),
             );
-            draw_grid_overlay(ui, true, 0, rect, egui::vec2(100.0, 100.0), 50, 50);
+            let mut cache = None;
+            draw_grid_overlay(ui, &mut cache, (0, 50, 50), rect, egui::vec2(100.0, 100.0));
         });
     }
 
