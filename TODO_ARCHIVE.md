@@ -64,6 +64,8 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 - stream JPEG RGB output to avoid intermediate `Vec<u8>` allocation — write unpremultiplied RGB directly via pre-allocated buffer. (P2)(B1)(24f670e)
 - use `alpha_blend_simd_four` in alpha-overlay brush paths (`bucket_fill.rs`, `circle_brush.rs`) — currently uses scalar `alpha_blend` per pixel. (P2)(B1)(24f670e)
 - `stamp_circle_positions` inner loops — converted to midpoint-circle span filling (like `fill_circle_impl`) instead of pixel-by-pixel iteration per Bresenham step. (P3)(B1)(24f670e)(460008e)
+- `output_rgba` clone eliminated from `trigger_async_save` — arc-based `Arc<Vec<u8>>` design already shares the buffer; no clone needed. (P2)(B1)(e91442e)(d72467d)
+- remove dead `type-layout` comment from `Cargo.toml` — already removed as part of dead/commented dependency cleanup. (P4)(B1)(e91442e)(24f670e)
 
 ## Outdated
 
