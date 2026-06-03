@@ -84,22 +84,15 @@
 
 ### Performance
 
-- add image import dimension limits (max 16384×16384 / 50MP) to prevent OOM from malicious images. (P1)(B1)(24f670e)
-- increase `PARALLEL_BLEND_THRESHOLD` from 64 to 256 to reduce rayon overhead on small dirty rects. (P2)(B1)(24f670e)
-- use capacity-based reallocation for `output_rgba` in `blend_to_output` instead of exact-length check to avoid realloc when capacity suffices. (P2)(B1)(24f670e)
-- eliminate intermediate `RgbaImage` allocation for all export formats (PNG, WebP, TIFF, TGA, PNM, QOI) — currently only JPEG/HDR/Farbfeld skip it. (P2)(B1)(24f670e)
-- stream JPEG RGB output to avoid intermediate `Vec<u8>` allocation — write unpremultiplied RGB directly via pre-allocated buffer. (P2)(B1)(24f670e)
-- use `alpha_blend_simd_four` in alpha-overlay brush paths (`bucket_fill.rs`, `circle_brush.rs`) — currently uses scalar `alpha_blend` per pixel. (P2)(B1)(24f670e)
-- remove dead/commented dependencies from `Cargo.toml`: `tokio`, `rand`, `target`, `type-layout`. (P3)(B1)(24f670e)
+- **(none at the moment)**
 
 ### Security
 
-- add config file size limit (1MB `Read::take`) for `serde_json::from_reader` to prevent malformed config OOM. (P2)(B1)(24f670e)
-- add canvas dimension validation against `max_texture_dimension_2d` at creation and import time. (P2)(B1)(24f670e)
+- **(none at the moment)**
 
 ### Documentation
 
-- add `Superseded-By: ADR-0024` marker to ADR-0006 and ADR-0021 front matter (flat buffer + zstd partially replaced their storage model). (P2)(B1)(24f670e)
+- **(none at the moment)**
 
 ## Implementing
 
