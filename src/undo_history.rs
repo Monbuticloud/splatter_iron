@@ -98,12 +98,18 @@ impl UndoHistory {
     /// # Parameters
     ///
     /// * `record` — The undo record to push onto the history stack.
+    ///
+    /// # Panics
+    ///
+    /// Panics if zstd compression fails (should never happen in practice;
+    /// would indicate an OOM or corrupted internal state).
     pub fn push_undo(&mut self, record: UndoRecord) {
         self.stroke_stack
             .truncate(self.stroke_stack.len() - self.redo_index);
         self.stroke_stack.push_back(record);
         let last = self.stroke_stack.back_mut().expect("just pushed");
-        last.compress_before(Self::COMPRESSION_LEVEL);
+        last.compress_before(Self::COMPRESSION_LEVEL)
+            .expect("zstd compression in push_undo");
         while self.stroke_stack.len() > MAX_STROKE_STACK {
             self.stroke_stack.pop_front();
         }
@@ -122,13 +128,20 @@ impl UndoHistory {
     /// * `record` — The undo record to push onto the history stack.
     /// * `layer` — The post-stroke layer; the snapshot heuristic is applied
     ///   when available.
+    ///
+    /// # Panics
+    ///
+    /// Panics if zstd compression fails (should never happen in practice;
+    /// would indicate an OOM or corrupted internal state).
     pub fn push_undo_snapshot(&mut self, record: UndoRecord, layer: &Layer) {
         self.stroke_stack
             .truncate(self.stroke_stack.len() - self.redo_index);
         self.stroke_stack.push_back(record);
         let last = self.stroke_stack.back_mut().expect("just pushed");
-        last.maybe_snapshot(layer, Self::COMPRESSION_LEVEL);
-        last.compress_before(Self::COMPRESSION_LEVEL);
+        last.maybe_snapshot(layer, Self::COMPRESSION_LEVEL)
+            .expect("zstd compression in push_undo_snapshot");
+        last.compress_before(Self::COMPRESSION_LEVEL)
+            .expect("zstd compression in push_undo_snapshot");
         while self.stroke_stack.len() > MAX_STROKE_STACK {
             self.stroke_stack.pop_front();
         }
@@ -427,7 +440,9 @@ impl UndoHistory {
             let record = &mut self.stroke_stack[index];
             record.decompress_before();
             undo_apply(canvas, record);
-            record.compress_before(Self::COMPRESSION_LEVEL);
+            record
+                .compress_before(Self::COMPRESSION_LEVEL)
+                .expect("zstd compression in undo_step");
             self.redo_index += 1;
         }
     }

@@ -3,6 +3,7 @@
 //! Run-length compression ([`compress_and_store`]) reduces storage for uniform spans.
 
 use std::io::Cursor;
+use std::io::Read;
 
 use eframe::egui::Color32;
 
@@ -11,6 +12,10 @@ use crate::canvas::Layer;
 use crate::canvas::LayerMode;
 use crate::pixel::alpha_blend;
 use crate::pixel::alpha_blend_simd_four;
+
+/// Maximum allowed bytes for decompressed undo data (512 MB).
+/// Matches the constant in `files.rs` for consistency.
+const MAX_DECOMPRESSED_BYTES: u64 = 512 * 1024 * 1024;
 
 /// Compressed storage for a run of before-pixels: either all the same color
 /// (`All`) or an offset+length into a flat `before_pixels` buffer (`Many`).
@@ -160,10 +165,30 @@ impl UndoRecord {
     ///   before-state from runs and before_pixels.
     /// * `level` — Zstd compression level for the snapshot.
     ///
-    /// # Panics
+    /// If the stroke covers more than 50% of the layer's pixels, replace the
+    /// per-pixel `before_pixels` with a zstd-compressed full-layer snapshot.
     ///
-    /// Panics if zstd compression fails (should never happen in practice).
-    pub fn maybe_snapshot(&mut self, layer: &Layer, level: i32) {
+    /// The snapshot is reconstructed by cloning the current (post-stroke)
+    /// `layer` and restoring the original pixel values from `runs` and
+    /// `before_pixels`. This trades per-pixel decompress overhead for a
+    /// simple full-layer swap on undo, which is significantly faster for
+    /// large strokes.
+    ///
+    /// Runs and `color_after` are preserved for `redo_apply`.
+    ///
+    /// Call before `compress_before`, and only when the current layer state
+    /// is available (i.e. the stroke has already been applied).
+    ///
+    /// # Parameters
+    ///
+    /// * `layer` — The current (post-stroke) layer, used to reconstruct the
+    ///   before-state from runs and before_pixels.
+    /// * `level` — Zstd compression level for the snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if zstd compression or JSON serialization fails.
+    pub fn maybe_snapshot(&mut self, layer: &Layer, level: i32) -> anyhow::Result<()> {
         let UndoRecord::Run {
             runs,
             before_pixels,
@@ -171,17 +196,17 @@ impl UndoRecord {
             ..
         } = self
         else {
-            return;
+            return Ok(());
         };
 
         if before_pixels.is_empty() || full_layer_before.is_some() {
-            return;
+            return Ok(());
         }
 
         let total_pixels = layer.pixels.len() as f64;
         let covered: f64 = runs.iter().map(|r| u64::from(r.length)).sum::<u64>() as f64;
         if covered <= total_pixels * 0.5 {
-            return;
+            return Ok(());
         }
 
         // Reconstruct the before-layer by restoring original pixels into a
@@ -203,12 +228,10 @@ impl UndoRecord {
             }
         }
 
-        let json = serde_json::to_vec(&before_layer).expect("layer serialization");
-        *full_layer_before = Some(
-            zstd::encode_all(std::io::Cursor::new(json), level)
-                .expect("zstd compression of layer snapshot"),
-        );
+        let json = serde_json::to_vec(&before_layer)?;
+        *full_layer_before = Some(zstd::encode_all(std::io::Cursor::new(json), level)?);
         before_pixels.clear();
+        Ok(())
     }
 
     /// Compress `before_pixels` using zstd and store the result in
@@ -216,7 +239,11 @@ impl UndoRecord {
     /// No-op if `before_pixels` is already empty or already compressed.
     ///
     /// Call before pushing this record into the undo history stack.
-    pub fn compress_before(&mut self, level: i32) {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if zstd compression fails.
+    pub fn compress_before(&mut self, level: i32) -> anyhow::Result<()> {
         match self {
             UndoRecord::Run {
                 before_pixels,
@@ -224,14 +251,13 @@ impl UndoRecord {
                 ..
             } if !before_pixels.is_empty() => {
                 let bytes = bytemuck::cast_slice(before_pixels.as_slice());
-                *compressed_before_pixels = Some(
-                    zstd::encode_all(Cursor::new(bytes), level)
-                        .expect("zstd compression of before_pixels"),
-                );
+                *compressed_before_pixels =
+                    Some(zstd::encode_all(Cursor::new(bytes), level)?);
                 before_pixels.clear();
             }
             _ => {}
         }
+        Ok(())
     }
 
     /// Decompress `compressed_before_pixels` back into `before_pixels`
@@ -239,6 +265,11 @@ impl UndoRecord {
     /// No-op if `before_pixels` is already populated or no compressed data.
     ///
     /// Call before passing this record to `undo_apply`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if zstd decompression fails or if decompressed data exceeds
+    /// the size limit, indicating corrupt data or a malicious save.
     pub fn decompress_before(&mut self) {
         match self {
             UndoRecord::Run {
@@ -247,7 +278,13 @@ impl UndoRecord {
                 ..
             } if compressed_before_pixels.is_some() => {
                 if let Some(compressed) = compressed_before_pixels.take() {
-                    let bytes: Vec<u8> = zstd::decode_all(Cursor::new(compressed))
+                    let cursor = Cursor::new(compressed);
+                    let mut limited = zstd::Decoder::new(cursor)
+                        .expect("zstd decoder creation")
+                        .take(MAX_DECOMPRESSED_BYTES);
+                    let mut bytes = Vec::new();
+                    limited
+                        .read_to_end(&mut bytes)
                         .expect("zstd decompression of before_pixels");
                     let pixels: &[Color32] = bytemuck::cast_slice(&bytes);
                     *before_pixels = pixels.to_vec();
@@ -284,10 +321,12 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
             ..
         } => {
             if let Some(compressed) = full_layer_before {
-                // Full-layer restore: decompress and replace the entire layer.
-                let bytes: Vec<u8> = zstd::decode_all(std::io::Cursor::new(compressed))
-                    .expect("zstd decompression of layer snapshot");
-                let before_layer: Layer = serde_json::from_slice(&bytes)
+                // Full-layer restore: stream-decompress with size limit.
+                let cursor = std::io::Cursor::new(compressed);
+                let mut limited = zstd::Decoder::new(cursor)
+                    .expect("zstd decoder creation")
+                    .take(MAX_DECOMPRESSED_BYTES);
+                let before_layer: Layer = serde_json::from_reader(&mut limited)
                     .expect("deserialization of layer snapshot");
                 canvas.pixels[*layer_index] = before_layer;
             } else {
