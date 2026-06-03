@@ -75,7 +75,7 @@
 
 ### Performance
 
-- layer-snapshot undo for >50% coverage strokes — store zstd-compressed full layer clone instead of per-pixel before-data. Simplifies undo path for large strokes, avoids per-segment overhead. (P2)(B2)(460008e)
+
 
 ### Security
 
