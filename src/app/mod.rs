@@ -6,8 +6,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
-#[cfg(feature = "debug-snapshot")]
-use crate::debug::debug_snapshot;
 use directories::ProjectDirs;
 use eframe::egui::{self};
 use eframe::egui_wgpu::wgpu;
@@ -19,6 +17,8 @@ use crate::brush_library::BrushEntry;
 use crate::canvas::Canvas;
 use crate::canvas::CurrentTool;
 use crate::canvas::RenderState;
+#[cfg(feature = "debug-snapshot")]
+use crate::debug::debug_snapshot;
 use crate::document::Document;
 use crate::file_io::DialogManager;
 use crate::file_io::ExportManager;

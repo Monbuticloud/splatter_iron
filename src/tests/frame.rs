@@ -24,8 +24,7 @@ fn handle_autosave_triggers_when_dirty_and_elapsed() {
     let dir = tempfile::tempdir().expect("temp dir");
     let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
     app.document.dirty_since_last_autosave = true;
-    app.ui.time_elapsed =
-        Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES) + Duration::from_secs(1);
+    app.ui.time_elapsed = Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES) + Duration::from_secs(1);
     app.handle_autosave();
     assert!(app.ui.times_autosaved >= 1);
 }
@@ -47,8 +46,7 @@ fn handle_autosave_no_panic_with_unconnected_channels() {
     let dir = tempfile::tempdir().expect("temp dir");
     let mut app = crate::tests::common::create_test_app(dir.path().to_path_buf());
     app.document.dirty_since_last_autosave = true;
-    app.ui.time_elapsed =
-        Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES) + Duration::from_secs(1);
+    app.ui.time_elapsed = Duration::from_mins(AUTOSAVE_INTERVAL_MINUTES) + Duration::from_secs(1);
     // trigger_async_save still works with no receiver.
     app.handle_autosave();
 }

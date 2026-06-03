@@ -148,16 +148,28 @@ pub fn alpha_blend_simd_four(dst: &mut [Color32; 4], source: Color32) {
 
     // Read 4 destination pixels (R/G/B/A interleaved).
     let dr = u32x4::new([
-        bytes[0] as u32, bytes[4] as u32, bytes[8] as u32, bytes[12] as u32,
+        bytes[0] as u32,
+        bytes[4] as u32,
+        bytes[8] as u32,
+        bytes[12] as u32,
     ]);
     let dg = u32x4::new([
-        bytes[1] as u32, bytes[5] as u32, bytes[9] as u32, bytes[13] as u32,
+        bytes[1] as u32,
+        bytes[5] as u32,
+        bytes[9] as u32,
+        bytes[13] as u32,
     ]);
     let db = u32x4::new([
-        bytes[2] as u32, bytes[6] as u32, bytes[10] as u32, bytes[14] as u32,
+        bytes[2] as u32,
+        bytes[6] as u32,
+        bytes[10] as u32,
+        bytes[14] as u32,
     ]);
     let da = u32x4::new([
-        bytes[3] as u32, bytes[7] as u32, bytes[11] as u32, bytes[15] as u32,
+        bytes[3] as u32,
+        bytes[7] as u32,
+        bytes[11] as u32,
+        bytes[15] as u32,
     ]);
 
     // Constant source, splatted across all 4 lanes.
@@ -405,38 +417,36 @@ fn apply_single_layer(
     };
 
     // Process a single pixel (used for scalar head and tail alignment).
-    let process_pixel = |pixel_index: usize, output: &mut [u8]| {
-        match info.mode {
-            LayerMode::Masked => {
-                let mask_a = scale_alpha(info.pixels[pixel_index].a(), info.opacity);
-                let byte_index = pixel_index * BYTES_PER_PIXEL;
-                let acc_a = output[byte_index + 3] as u32;
-                output[byte_index + 3] = ((acc_a * mask_a as u32 + 128) >> 8) as u8;
-            }
-            LayerMode::Clipped | LayerMode::ClippedOverlap | LayerMode::Normal => {
-                let mut pixel = info.pixels[pixel_index];
-                pixel = scale_pixel_opacity(pixel, info.opacity);
-                if let Some((base_pixels, base_opacity)) = clip_base {
-                    let base_a = scale_alpha(base_pixels[pixel_index].a(), base_opacity);
-                    let f = base_a as u32;
-                    pixel = Color32::from_rgba_premultiplied(
-                        ((pixel.r() as u32 * f + 128) * 257 >> 16) as u8,
-                        ((pixel.g() as u32 * f + 128) * 257 >> 16) as u8,
-                        ((pixel.b() as u32 * f + 128) * 257 >> 16) as u8,
-                        ((pixel.a() as u32 * f + 128) * 257 >> 16) as u8,
-                    );
-                }
-                let byte_index = pixel_index * BYTES_PER_PIXEL;
-                let dst = Color32::from_rgba_premultiplied(
-                    output[byte_index],
-                    output[byte_index + 1],
-                    output[byte_index + 2],
-                    output[byte_index + 3],
+    let process_pixel = |pixel_index: usize, output: &mut [u8]| match info.mode {
+        LayerMode::Masked => {
+            let mask_a = scale_alpha(info.pixels[pixel_index].a(), info.opacity);
+            let byte_index = pixel_index * BYTES_PER_PIXEL;
+            let acc_a = output[byte_index + 3] as u32;
+            output[byte_index + 3] = ((acc_a * mask_a as u32 + 128) >> 8) as u8;
+        }
+        LayerMode::Clipped | LayerMode::ClippedOverlap | LayerMode::Normal => {
+            let mut pixel = info.pixels[pixel_index];
+            pixel = scale_pixel_opacity(pixel, info.opacity);
+            if let Some((base_pixels, base_opacity)) = clip_base {
+                let base_a = scale_alpha(base_pixels[pixel_index].a(), base_opacity);
+                let f = base_a as u32;
+                pixel = Color32::from_rgba_premultiplied(
+                    ((pixel.r() as u32 * f + 128) * 257 >> 16) as u8,
+                    ((pixel.g() as u32 * f + 128) * 257 >> 16) as u8,
+                    ((pixel.b() as u32 * f + 128) * 257 >> 16) as u8,
+                    ((pixel.a() as u32 * f + 128) * 257 >> 16) as u8,
                 );
-                let blended = alpha_blend(dst, pixel);
-                let arr = blended.to_array();
-                output[byte_index..byte_index + 4].copy_from_slice(&arr);
             }
+            let byte_index = pixel_index * BYTES_PER_PIXEL;
+            let dst = Color32::from_rgba_premultiplied(
+                output[byte_index],
+                output[byte_index + 1],
+                output[byte_index + 2],
+                output[byte_index + 3],
+            );
+            let blended = alpha_blend(dst, pixel);
+            let arr = blended.to_array();
+            output[byte_index..byte_index + 4].copy_from_slice(&arr);
         }
     };
 
@@ -828,11 +838,7 @@ mod tests {
         ];
         let mut out = vec![0u8; 8];
         blend_layers(&layers, &mut out);
-        assert!(
-            out[0] <= 1,
-            "pixel 0 red should be ~0, got {}",
-            out[0]
-        );
+        assert!(out[0] <= 1, "pixel 0 red should be ~0, got {}", out[0]);
         assert!(
             out[1] >= 254,
             "pixel 0 green should be ~255, got {}",
@@ -840,11 +846,7 @@ mod tests {
         );
         assert_eq!(out[2], 0, "pixel 0 blue");
         assert_eq!(out[3], 255, "pixel 0 alpha");
-        assert_eq!(
-            out[4..8],
-            [0, 0, 0, 0],
-            "pixel 1 should be transparent"
-        );
+        assert_eq!(out[4..8], [0, 0, 0, 0], "pixel 1 should be transparent");
     }
 
     #[test]
@@ -868,23 +870,11 @@ mod tests {
         let mut out = vec![0u8; 8];
         blend_layers(&layers, &mut out);
         // Pixel 0: base has red, clipped has green overlapping → green shows, red hidden.
-        assert!(
-            out[0] <= 1,
-            "pixel 0 red should be hidden, got {}",
-            out[0]
-        );
-        assert!(
-            out[1] >= 254,
-            "pixel 0 green should show, got {}",
-            out[1]
-        );
+        assert!(out[0] <= 1, "pixel 0 red should be hidden, got {}", out[0]);
+        assert!(out[1] >= 254, "pixel 0 green should show, got {}", out[1]);
         assert_eq!(out[3], 255, "pixel 0 alpha");
         // Pixel 1: base has red, clipped is transparent → nothing shows.
-        assert_eq!(
-            out[4..8],
-            [0, 0, 0, 0],
-            "pixel 1 should be transparent"
-        );
+        assert_eq!(out[4..8], [0, 0, 0, 0], "pixel 1 should be transparent");
     }
 
     #[test]

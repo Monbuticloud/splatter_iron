@@ -173,8 +173,7 @@ fn stamp_at(
             // Skip pixels already painted by an overlapping stamp in this stroke
             if visited[idx] == stamp {
                 if let Some(rs) = run_start.take() {
-                    let (rle_before, length) =
-                        compress_and_store(&before, before_pixels);
+                    let (rle_before, length) = compress_and_store(&before, before_pixels);
                     runs.push(RunSegment {
                         start: rs,
                         length,
@@ -188,8 +187,7 @@ fn stamp_at(
             // If already processed in this alpha-overlay drag, close the run
             if alpha_overlay && drag_processed[idx] == drag_stamp_value {
                 if let Some(rs) = run_start.take() {
-                    let (rle_before, length) =
-                        compress_and_store(&before, before_pixels);
+                    let (rle_before, length) = compress_and_store(&before, before_pixels);
                     runs.push(RunSegment {
                         start: rs,
                         length,

@@ -238,10 +238,7 @@ impl DialogManager {
                                 let mut pixels = Vec::with_capacity(pixel_count);
                                 for pixel in rgba.pixels() {
                                     let straight = Color32::from_rgba_unmultiplied(
-                                        pixel[0],
-                                        pixel[1],
-                                        pixel[2],
-                                        pixel[3],
+                                        pixel[0], pixel[1], pixel[2], pixel[3],
                                     );
                                     pixels.push(straight);
                                 }
@@ -249,8 +246,7 @@ impl DialogManager {
                                     .file_stem()
                                     .map(|s| s.to_string_lossy().into_owned())
                                     .unwrap_or_else(|| "stamp".to_string());
-                                let _ = sender
-                                    .send(DialogResult::StampPixels(pixels, w, h, name));
+                                let _ = sender.send(DialogResult::StampPixels(pixels, w, h, name));
                             }
                             Err(error) => {
                                 let _ = sender.send(DialogResult::Error(format!(
@@ -323,10 +319,7 @@ impl DialogManager {
     /// # Parameters
     ///
     /// * `error_list` — Error list to push failure messages into.
-    pub fn poll_dialog_results(
-        &mut self,
-        error_list: &mut Vec<String>,
-    ) -> Vec<DispatchedAction> {
+    pub fn poll_dialog_results(&mut self, error_list: &mut Vec<String>) -> Vec<DispatchedAction> {
         let mut actions = Vec::new();
         while let Ok(result) = self.dialog_receiver.try_recv() {
             match result {
@@ -352,22 +345,15 @@ impl DialogManager {
                     let action = match pending {
                         PendingFileAction::Save => {
                             let path_string = path.display().to_string();
-                            let save_path =
-                                if path_string.ends_with(CANVAS_EXTENSION) {
-                                    path
-                                } else {
-                                    PathBuf::from(format!(
-                                        "{path_string}{CANVAS_EXTENSION}"
-                                    ))
-                                };
+                            let save_path = if path_string.ends_with(CANVAS_EXTENSION) {
+                                path
+                            } else {
+                                PathBuf::from(format!("{path_string}{CANVAS_EXTENSION}"))
+                            };
                             Some(DispatchedAction::Save(save_path))
                         }
-                        PendingFileAction::Load => {
-                            Some(DispatchedAction::Load(path))
-                        }
-                        PendingFileAction::Import => {
-                            Some(DispatchedAction::Import(path))
-                        }
+                        PendingFileAction::Load => Some(DispatchedAction::Load(path)),
+                        PendingFileAction::Import => Some(DispatchedAction::Import(path)),
                         PendingFileAction::Export(index) => {
                             let information = &EXPORT_FORMATS[index].1;
                             let default_extension = information.extensions[0];
@@ -381,29 +367,21 @@ impl DialogManager {
                             } else {
                                 format!("{path_string}.{default_extension}")
                             };
-                            Some(DispatchedAction::Export(
-                                index,
-                                PathBuf::from(&path_string),
-                            ))
+                            Some(DispatchedAction::Export(index, PathBuf::from(&path_string)))
                         }
                         PendingFileAction::ExportArchive => {
                             let path_string = path.display().to_string();
-                            let final_path =
-                                if path_string.ends_with(ARCHIVE_EXTENSION) {
-                                    path
-                                } else {
-                                    PathBuf::from(format!(
-                                        "{path_string}{ARCHIVE_EXTENSION}"
-                                    ))
-                                };
+                            let final_path = if path_string.ends_with(ARCHIVE_EXTENSION) {
+                                path
+                            } else {
+                                PathBuf::from(format!("{path_string}{ARCHIVE_EXTENSION}"))
+                            };
                             Some(DispatchedAction::ExportArchive(final_path))
                         }
                         PendingFileAction::ImportArchive => {
                             Some(DispatchedAction::ImportArchive(path))
                         }
-                        PendingFileAction::LoadStamp | PendingFileAction::LoadBrush => {
-                            None
-                        }
+                        PendingFileAction::LoadStamp | PendingFileAction::LoadBrush => None,
                     };
                     if let Some(a) = action {
                         actions.push(a);

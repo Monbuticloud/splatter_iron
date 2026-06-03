@@ -74,9 +74,7 @@ impl LoadImportManager {
                     let save_path = path.display().to_string();
                     LoadImportResult::Loaded(canvas, save_path)
                 }
-                Err(error) => {
-                    LoadImportResult::Failed(format!("Failed to load canvas: {error}"))
-                }
+                Err(error) => LoadImportResult::Failed(format!("Failed to load canvas: {error}")),
             };
             let _ = sender.send(result);
         });
@@ -95,9 +93,7 @@ impl LoadImportManager {
                 Ok(canvas) => {
                     LoadImportResult::Imported(canvas.pixels, canvas.width, canvas.height)
                 }
-                Err(error) => {
-                    LoadImportResult::Failed(format!("Import failed: {error}"))
-                }
+                Err(error) => LoadImportResult::Failed(format!("Import failed: {error}")),
             };
             let _ = sender.send(result);
         });

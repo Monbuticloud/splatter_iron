@@ -81,20 +81,29 @@ impl<T: AssetEntry> Library<T> {
         if index_path.exists() {
             if let Ok(json) = std::fs::read_to_string(&index_path) {
                 if let Ok(root) = serde_json::from_str::<serde_json::Value>(&json) {
-                    if let Some(arr) = root.get(T::json_field_name()).and_then(|v| v.as_array()) {
+                    if let Some(arr) = root
+                        .get(T::json_field_name())
+                        .and_then(serde_json::Value::as_array)
+                    {
                         for item in arr {
                             let name = item
                                 .get("name")
-                                .and_then(|v| v.as_str())
+                                .and_then(serde_json::Value::as_str)
                                 .unwrap_or("")
                                 .to_string();
                             let filename = item
                                 .get("filename")
-                                .and_then(|v| v.as_str())
+                                .and_then(serde_json::Value::as_str)
                                 .unwrap_or("")
                                 .to_string();
-                            let w = item.get("w").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
-                            let h = item.get("h").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                            let w = item
+                                .get("w")
+                                .and_then(serde_json::Value::as_u64)
+                                .unwrap_or(0) as u32;
+                            let h = item
+                                .get("h")
+                                .and_then(serde_json::Value::as_u64)
+                                .unwrap_or(0) as u32;
 
                             let png_path = dir.join(&filename);
                             if let Ok(img) = image::open(&png_path) {

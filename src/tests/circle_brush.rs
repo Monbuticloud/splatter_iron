@@ -4,11 +4,11 @@
 //! Verifies correct pixel coverage, alpha overlay, and
 //! drag-stamp deduplication across connected strokes.
 
+use std::sync::Arc;
+
 use eframe::egui::Color32;
 
 use crate::brush_params::BrushStrokeParams;
-use std::sync::Arc;
-
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
 use crate::canvas::Layer;

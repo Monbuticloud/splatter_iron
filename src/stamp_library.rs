@@ -35,7 +35,7 @@ impl StampEntry {
     /// Returns `None` if the texture has not been created yet
     /// (e.g. before the first call to [`Library::create_textures`]).
     pub fn texture_id(&self) -> Option<egui::TextureId> {
-        self.texture_handle.as_ref().map(|h| h.id())
+        self.texture_handle.as_ref().map(TextureHandle::id)
     }
 }
 

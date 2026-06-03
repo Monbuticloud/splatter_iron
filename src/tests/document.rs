@@ -3,12 +3,12 @@
 //! Covers adding, deleting, reordering, and selecting layers, as well as
 //! compositing output and tracking dirty regions for rendering.
 
+use std::sync::Arc;
+
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRect;
-use std::sync::Arc;
-
 use crate::canvas::DirtyRectList;
 use crate::canvas::Layer;
 use crate::document::Document;
@@ -545,7 +545,10 @@ fn toggle_layer_visible_keeps_last_visible() {
     assert!(document.canvas.pixels[0].visible);
     // Only one layer visible — should not be hidden
     document.toggle_layer_visible(0, &mut UndoHistory::new(100));
-    assert!(document.canvas.pixels[0].visible, "last visible layer stays visible");
+    assert!(
+        document.canvas.pixels[0].visible,
+        "last visible layer stays visible"
+    );
 }
 
 /// `toggle_layer_visible` makes an invisible layer visible again.

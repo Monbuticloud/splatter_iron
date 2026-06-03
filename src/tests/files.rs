@@ -4,12 +4,12 @@
 //! identical output, that image export produces valid headers, and that
 //! zstd-compressed `.splattercanvas` files survive round-trip.
 
+use std::sync::Arc;
+
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
-use std::sync::Arc;
-
 use crate::canvas::Layer;
 use crate::files;
 

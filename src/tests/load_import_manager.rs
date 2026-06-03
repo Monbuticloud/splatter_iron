@@ -22,7 +22,10 @@ fn poll_load_import_results_loaded_replaces_canvas() {
 
     let source = Canvas::new(3, 4);
     lim.load_import_sender
-        .send(LoadImportResult::Loaded(source, "/tmp/test.splattercanvas".into()))
+        .send(LoadImportResult::Loaded(
+            source,
+            "/tmp/test.splattercanvas".into(),
+        ))
         .unwrap();
     lim.poll_load_import_results(&mut document, &mut undo, &mut errors);
 
@@ -35,8 +38,9 @@ fn poll_load_import_results_loaded_replaces_canvas() {
 
 #[test]
 fn poll_load_import_results_imported_replaces_canvas() {
-    use crate::canvas::Layer;
     use eframe::egui::Color32;
+
+    use crate::canvas::Layer;
 
     let mut lim = create_load_import_manager();
     let mut document = Document::new(Canvas::new(10, 10));

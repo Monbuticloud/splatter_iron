@@ -7,8 +7,8 @@
 use eframe::egui::Color32;
 
 use crate::canvas::LayerMode;
-use crate::pixel::LayerBlendInfo;
 use crate::pixel;
+use crate::pixel::LayerBlendInfo;
 
 /// Check that every channel of `a` and `b` differs by at most `max_diff`.
 fn channels_close(left: Color32, right: Color32, max_diff: u8) -> bool {
@@ -130,7 +130,14 @@ fn blend_layers_single_layer_copy() {
     let pixel_count = 12;
     let pixels = vec![Color32::from_rgba_premultiplied(50, 100, 150, 200); pixel_count];
     let mut output = vec![0u8; pixel_count * 4];
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &pixels[..], opacity: 255, mode: LayerMode::Normal }], &mut output);
+    pixel::blend_layers(
+        &[LayerBlendInfo {
+            pixels: &pixels[..],
+            opacity: 255,
+            mode: LayerMode::Normal,
+        }],
+        &mut output,
+    );
     for (pixel_index, pixel) in pixels.iter().enumerate() {
         let arr = pixel.to_array();
         assert_eq!(output[pixel_index * 4], arr[0]);
@@ -147,7 +154,21 @@ fn blend_layers_two_layers_opaque() {
     let bottom = vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); pixel_count];
     let top = vec![Color32::from_rgba_premultiplied(0, 255, 0, 255); pixel_count];
     let mut output = vec![0u8; pixel_count * 4];
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &bottom[..], opacity: 255, mode: LayerMode::Normal }, LayerBlendInfo { pixels: &top[..], opacity: 255, mode: LayerMode::Normal }], &mut output);
+    pixel::blend_layers(
+        &[
+            LayerBlendInfo {
+                pixels: &bottom[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+            LayerBlendInfo {
+                pixels: &top[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+        ],
+        &mut output,
+    );
     for i in 0..pixel_count {
         assert_eq!(output[i * 4], 0, "red channel at {i}");
         assert_eq!(output[i * 4 + 1], 255, "green channel at {i}");
@@ -168,8 +189,27 @@ fn blend_region_single_layer_matches_full() {
     let mut full_out = vec![0u8; pixel_count * 4];
     let mut region_out = vec![0u8; pixel_count * 4];
 
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &pixels[..], opacity: 255, mode: LayerMode::Normal }], &mut full_out);
-    pixel::blend_region(&[LayerBlendInfo { pixels: &pixels[..], opacity: 255, mode: LayerMode::Normal }], &mut region_out, width, 2, 2, 5, 5);
+    pixel::blend_layers(
+        &[LayerBlendInfo {
+            pixels: &pixels[..],
+            opacity: 255,
+            mode: LayerMode::Normal,
+        }],
+        &mut full_out,
+    );
+    pixel::blend_region(
+        &[LayerBlendInfo {
+            pixels: &pixels[..],
+            opacity: 255,
+            mode: LayerMode::Normal,
+        }],
+        &mut region_out,
+        width,
+        2,
+        2,
+        5,
+        5,
+    );
 
     // Pixels outside region should be untouched (zero)
     assert_eq!(region_out[0..2 * 8 * 4], vec![0u8; 2 * 8 * 4][..]);
@@ -197,9 +237,34 @@ fn blend_region_two_layers() {
     let mut full_out = vec![0u8; pixel_count * 4];
     let mut region_out = vec![0u8; pixel_count * 4];
 
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &bottom[..], opacity: 255, mode: LayerMode::Normal }, LayerBlendInfo { pixels: &top[..], opacity: 255, mode: LayerMode::Normal }], &mut full_out);
+    pixel::blend_layers(
+        &[
+            LayerBlendInfo {
+                pixels: &bottom[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+            LayerBlendInfo {
+                pixels: &top[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+        ],
+        &mut full_out,
+    );
     pixel::blend_region(
-        &[LayerBlendInfo { pixels: &bottom[..], opacity: 255, mode: LayerMode::Normal }, LayerBlendInfo { pixels: &top[..], opacity: 255, mode: LayerMode::Normal }],
+        &[
+            LayerBlendInfo {
+                pixels: &bottom[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+            LayerBlendInfo {
+                pixels: &top[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+        ],
         &mut region_out,
         width,
         1,
@@ -247,7 +312,23 @@ fn blend_layers_three_layers() {
     let top = vec![Color32::from_rgba_premultiplied(0, 0, 255, 255); pixel_count];
     let mut output = vec![0u8; pixel_count * 4];
     pixel::blend_layers(
-        &[LayerBlendInfo { pixels: &bottom[..], opacity: 255, mode: LayerMode::Normal }, LayerBlendInfo { pixels: &middle[..], opacity: 255, mode: LayerMode::Normal }, LayerBlendInfo { pixels: &top[..], opacity: 255, mode: LayerMode::Normal }],
+        &[
+            LayerBlendInfo {
+                pixels: &bottom[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+            LayerBlendInfo {
+                pixels: &middle[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+            LayerBlendInfo {
+                pixels: &top[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+        ],
         &mut output,
     );
     for i in 0..pixel_count {
@@ -265,7 +346,21 @@ fn blend_layers_semi_transparent_top() {
     let bottom = vec![Color32::from_rgba_premultiplied(0, 255, 0, 255); pixel_count];
     let top = vec![Color32::from_rgba_premultiplied(255, 0, 0, 128); pixel_count];
     let mut output = vec![0u8; pixel_count * 4];
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &bottom[..], opacity: 255, mode: LayerMode::Normal }, LayerBlendInfo { pixels: &top[..], opacity: 255, mode: LayerMode::Normal }], &mut output);
+    pixel::blend_layers(
+        &[
+            LayerBlendInfo {
+                pixels: &bottom[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+            LayerBlendInfo {
+                pixels: &top[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+        ],
+        &mut output,
+    );
     for i in 0..pixel_count {
         // Opaque result, red from top blended over green bottom
         assert_eq!(output[i * 4 + 3], 255, "opaque at {i}");
@@ -343,7 +438,21 @@ fn blend_layers_mismatched_lengths_panics() {
     let bottom = vec![Color32::RED; pixel_count];
     let top = vec![Color32::BLUE; pixel_count + 2]; // longer layer
     let mut output = vec![0u8; pixel_count * 4];
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &bottom[..], opacity: 255, mode: LayerMode::Normal }, LayerBlendInfo { pixels: &top[..], opacity: 255, mode: LayerMode::Normal }], &mut output);
+    pixel::blend_layers(
+        &[
+            LayerBlendInfo {
+                pixels: &bottom[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+            LayerBlendInfo {
+                pixels: &top[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+        ],
+        &mut output,
+    );
 }
 
 /// `blend_layers` with output buffer too small should panic.
@@ -352,7 +461,14 @@ fn blend_layers_mismatched_lengths_panics() {
 fn blend_layers_output_too_small_panics() {
     let pixels = vec![Color32::RED; 4];
     let mut output = vec![0u8; 4]; // should be 16 bytes for 4 pixels
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &pixels[..], opacity: 255, mode: LayerMode::Normal }], &mut output);
+    pixel::blend_layers(
+        &[LayerBlendInfo {
+            pixels: &pixels[..],
+            opacity: 255,
+            mode: LayerMode::Normal,
+        }],
+        &mut output,
+    );
 }
 
 // --- blend_region edge cases ---
@@ -364,7 +480,19 @@ fn blend_layers_output_too_small_panics() {
 fn blend_region_zero_width_panics() {
     let mut output = vec![0u8; 64];
     let pixels = vec![Color32::RED; 16];
-    pixel::blend_region(&[LayerBlendInfo { pixels: &pixels[..], opacity: 255, mode: LayerMode::Normal }], &mut output, 4, 5, 0, 4, 3);
+    pixel::blend_region(
+        &[LayerBlendInfo {
+            pixels: &pixels[..],
+            opacity: 255,
+            mode: LayerMode::Normal,
+        }],
+        &mut output,
+        4,
+        5,
+        0,
+        4,
+        3,
+    );
 }
 
 /// `blend_region` with zero-height rect should be a no-op.
@@ -373,7 +501,19 @@ fn blend_region_zero_height_noop() {
     let mut output = vec![0u8; 64];
     let pixels = vec![Color32::RED; 16];
     // min_y=5, max_y=3 -> zero height, loop doesn't execute
-    pixel::blend_region(&[LayerBlendInfo { pixels: &pixels[..], opacity: 255, mode: LayerMode::Normal }], &mut output, 4, 0, 5, 3, 3);
+    pixel::blend_region(
+        &[LayerBlendInfo {
+            pixels: &pixels[..],
+            opacity: 255,
+            mode: LayerMode::Normal,
+        }],
+        &mut output,
+        4,
+        0,
+        5,
+        3,
+        3,
+    );
     assert_eq!(output, vec![0u8; 64]);
 }
 
@@ -384,7 +524,19 @@ fn blend_region_out_of_bounds_panics() {
     let mut output = vec![0u8; 64];
     let pixels = vec![Color32::RED; 16];
     // Canvas is 4x4 (16 pixels), rect (0, 0, 10, 3) extends beyond width
-    pixel::blend_region(&[LayerBlendInfo { pixels: &pixels[..], opacity: 255, mode: LayerMode::Normal }], &mut output, 4, 0, 0, 10, 3);
+    pixel::blend_region(
+        &[LayerBlendInfo {
+            pixels: &pixels[..],
+            opacity: 255,
+            mode: LayerMode::Normal,
+        }],
+        &mut output,
+        4,
+        0,
+        0,
+        10,
+        3,
+    );
 }
 
 // --- Additional edge cases for primitives ---
@@ -428,7 +580,21 @@ fn blend_layers_exactly_one_simd_chunk() {
     let bottom = vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); pixel_count];
     let top = vec![Color32::from_rgba_premultiplied(0, 255, 0, 128); pixel_count];
     let mut output = vec![0u8; pixel_count * 4];
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &bottom[..], opacity: 255, mode: LayerMode::Normal }, LayerBlendInfo { pixels: &top[..], opacity: 255, mode: LayerMode::Normal }], &mut output);
+    pixel::blend_layers(
+        &[
+            LayerBlendInfo {
+                pixels: &bottom[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+            LayerBlendInfo {
+                pixels: &top[..],
+                opacity: 255,
+                mode: LayerMode::Normal,
+            },
+        ],
+        &mut output,
+    );
     // Result should be alpha-blended green over red
     for i in 0..pixel_count {
         assert_eq!(output[i * 4 + 3], 255, "alpha at {i}");
@@ -443,7 +609,14 @@ fn blend_layers_simd_plus_tail() {
     let pixel_count = 5;
     let pixels = vec![Color32::from_rgba_premultiplied(100, 150, 200, 255); pixel_count];
     let mut output = vec![0u8; pixel_count * 4];
-    pixel::blend_layers(&[LayerBlendInfo { pixels: &pixels[..], opacity: 255, mode: LayerMode::Normal }], &mut output);
+    pixel::blend_layers(
+        &[LayerBlendInfo {
+            pixels: &pixels[..],
+            opacity: 255,
+            mode: LayerMode::Normal,
+        }],
+        &mut output,
+    );
     for i in 0..pixel_count {
         assert_eq!(output[i * 4], 100, "pixel {i} red");
         assert_eq!(output[i * 4 + 1], 150, "pixel {i} green");

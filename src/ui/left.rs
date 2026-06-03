@@ -73,7 +73,8 @@ impl MyApp {
             ui.separator();
 
             if ui.button("Load Stamp Image...").clicked() {
-                self.dialog_manager.queue_file_action(PendingFileAction::LoadStamp);
+                self.dialog_manager
+                    .queue_file_action(PendingFileAction::LoadStamp);
                 ui.ctx().request_repaint();
             }
 
@@ -133,7 +134,8 @@ impl MyApp {
             ui.separator();
 
             if ui.button("Import Brush...").clicked() {
-                self.dialog_manager.queue_file_action(PendingFileAction::LoadBrush);
+                self.dialog_manager
+                    .queue_file_action(PendingFileAction::LoadBrush);
                 ui.ctx().request_repaint();
             }
 
@@ -260,11 +262,12 @@ impl MyApp {
 
 #[cfg(test)]
 mod tests {
-    use super::SELECTED_TOOL_COLOR;
-    use super::THUMBNAIL_SIZE;
-    use super::MyApp;
     use eframe::egui;
     use egui_kittest::kittest::Queryable;
+
+    use super::MyApp;
+    use super::SELECTED_TOOL_COLOR;
+    use super::THUMBNAIL_SIZE;
 
     #[test]
     fn selected_tool_color_is_purple() {

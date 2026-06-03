@@ -242,7 +242,8 @@ impl MyApp {
                     if ui.button("Save").clicked() {
                         if self.document.savefile_path.is_empty() {
                             self.ui.dialogs.pending_after_save = Some(action.clone());
-                            self.dialog_manager.queue_file_action(PendingFileAction::Save);
+                            self.dialog_manager
+                                .queue_file_action(PendingFileAction::Save);
                         } else {
                             self.save_manager.save_to_current_path(&mut self.document);
                             self.ui.dialogs.pending_after_save = Some(action.clone());
@@ -284,10 +285,12 @@ impl MyApp {
                 self.ui.dialogs.show_new_canvas_dialog = true;
             }
             UnsavedWarningAction::Load => {
-                self.dialog_manager.queue_file_action(PendingFileAction::Load);
+                self.dialog_manager
+                    .queue_file_action(PendingFileAction::Load);
             }
             UnsavedWarningAction::Import => {
-                self.dialog_manager.queue_file_action(PendingFileAction::Import);
+                self.dialog_manager
+                    .queue_file_action(PendingFileAction::Import);
             }
             UnsavedWarningAction::LoadPath(path) => {
                 self.dialog_manager.queue_load_direct(path);
@@ -445,9 +448,10 @@ impl MyApp {
 
 #[cfg(test)]
 mod tests {
+    use egui_kittest::kittest::Queryable;
+
     use crate::app::PendingStamp;
     use crate::app::UnsavedWarningAction;
-    use egui_kittest::kittest::Queryable;
 
     /// Helper: create an app with a temp data dir.
     fn test_app() -> (crate::app::MyApp, tempfile::TempDir) {

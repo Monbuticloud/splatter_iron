@@ -99,13 +99,14 @@ impl SaveManager {
         document.save_state = SaveState::InFlight;
         let canvas = document.canvas.clone();
         let path = match &kind {
-            SaveKind::Autosave => self
-                .app_local_data_directory
-                .join(AUTOSAVE_DIRECTORY)
-                .join(format!(
-                    "{}.splattercanvas",
-                    Local::now().format(AUTOSAVE_DATE_FORMAT)
-                )),
+            SaveKind::Autosave => {
+                self.app_local_data_directory
+                    .join(AUTOSAVE_DIRECTORY)
+                    .join(format!(
+                        "{}.splattercanvas",
+                        Local::now().format(AUTOSAVE_DATE_FORMAT)
+                    ))
+            }
             SaveKind::ManualSave(save_path) => save_path.clone(),
         };
         let sender = self.save_result_sender.clone();
@@ -115,9 +116,7 @@ impl SaveManager {
                     SaveKind::Autosave => SaveResult::Autosave,
                     SaveKind::ManualSave(_) => SaveResult::ManualSave(path),
                 },
-                Err(error) => {
-                    SaveResult::Failed(format!("Serialisation failed: {error}"))
-                }
+                Err(error) => SaveResult::Failed(format!("Serialisation failed: {error}")),
             };
             let _ = sender.send(result);
         });
@@ -149,11 +148,7 @@ impl SaveManager {
     ///
     /// * `document` — The document to update save-path / dirty-flag on.
     /// * `error_list` — Error list to push failure messages into.
-    pub fn poll_save_results(
-        &mut self,
-        document: &mut Document,
-        error_list: &mut Vec<String>,
-    ) {
+    pub fn poll_save_results(&mut self, document: &mut Document, error_list: &mut Vec<String>) {
         while let Ok(result) = self.save_result_receiver.try_recv() {
             match result {
                 SaveResult::Autosave => {

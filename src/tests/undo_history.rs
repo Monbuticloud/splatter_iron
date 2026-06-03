@@ -219,13 +219,21 @@ fn drag_accumulator_full_lifecycle() {
     history.init_drag_accumulator(0, 10, red(), false);
     let record1 = square_brush::draw_square(0, 0, 3, 3, &mut canvas, red(), 0, false);
     let (runs, bp) = match record1 {
-        UndoRecord::Run { runs, before_pixels, .. } => (runs, before_pixels),
+        UndoRecord::Run {
+            runs,
+            before_pixels,
+            ..
+        } => (runs, before_pixels),
         _ => unreachable!("draw_square always produces Run"),
     };
     history.extend_drag_accumulator(runs, bp);
     let record2 = square_brush::draw_square(3, 3, 6, 6, &mut canvas, red(), 0, false);
     let (runs, bp) = match record2 {
-        UndoRecord::Run { runs, before_pixels, .. } => (runs, before_pixels),
+        UndoRecord::Run {
+            runs,
+            before_pixels,
+            ..
+        } => (runs, before_pixels),
         _ => unreachable!("draw_square always produces Run"),
     };
     history.extend_drag_accumulator(runs, bp);

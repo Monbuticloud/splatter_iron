@@ -71,10 +71,10 @@ impl MyApp {
             .poll_save_results(&mut self.document, &mut self.ui.errors.list);
 
         // 3. Execute deferred action after save completes.
-        if self.document.save_state == SaveState::Idle {
-            if let Some(action) = self.ui.dialogs.pending_after_save.take() {
-                self.execute_unsaved_action(action);
-            }
+        if self.document.save_state == SaveState::Idle
+            && let Some(action) = self.ui.dialogs.pending_after_save.take()
+        {
+            self.execute_unsaved_action(action);
         }
 
         // 4. Poll load/import results (applies `Canvas` to document).
@@ -108,7 +108,10 @@ impl MyApp {
         } else {
             self.ui.progress = ProgressState::Idle;
         }
-        if self.export_manager.poll_export_results(&mut self.ui.errors.list) {
+        if self
+            .export_manager
+            .poll_export_results(&mut self.ui.errors.list)
+        {
             self.ui.progress = ProgressState::Idle;
         }
 
@@ -291,4 +294,3 @@ impl MyApp {
         }
     }
 }
-

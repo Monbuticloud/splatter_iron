@@ -3,12 +3,12 @@
 //! Covers filling from single-pixel and multi-pixel seeds, edge-of-canvas
 //! seeds, fully-saturated canvases, and alpha-overlay mode.
 
+use std::sync::Arc;
+
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
-use std::sync::Arc;
-
 use crate::canvas::Layer;
 use crate::tests::common::blue;
 use crate::tests::common::red;

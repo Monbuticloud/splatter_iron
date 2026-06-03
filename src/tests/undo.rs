@@ -3,12 +3,12 @@
 //! Verifies that stroke records correctly restore original pixels on undo
 //! and re-apply the stroke again on redo, including alpha-overlay records.
 
+use std::sync::Arc;
+
 use eframe::egui::Color32;
 
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
-use std::sync::Arc;
-
 use crate::canvas::Layer;
 use crate::tests::common::red;
 use crate::tools::square_brush;
@@ -182,7 +182,7 @@ fn redo_apply_move_layer_swaps_forward() {
         visible: true,
         opacity: 255,
         mode: crate::canvas::LayerMode::Normal,
-        });
+    });
     let record = UndoRecord::MoveLayer {
         from_index: 1,
         to_index: 0,
@@ -420,7 +420,7 @@ fn undo_apply_move_layer_swaps_back() {
         visible: true,
         opacity: 255,
         mode: crate::canvas::LayerMode::Normal,
-        });
+    });
     let record = UndoRecord::MoveLayer {
         from_index: 1,
         to_index: 0,
@@ -467,7 +467,10 @@ fn undo_apply_before_pixels_many_wrong_length_panics() {
         runs: vec![RunSegment {
             start: 0,
             length: 5,
-            before: BeforePixels::Many { offset: 0, length: 3 },
+            before: BeforePixels::Many {
+                offset: 0,
+                length: 3,
+            },
         }],
         before_pixels: vec![Color32::RED; 3],
         compressed_before_pixels: None,
@@ -527,7 +530,10 @@ fn debug_before_pixels_all_format() {
 /// `Debug` for `BeforePixels::Many` produces expected format with offset and length.
 #[test]
 fn debug_before_pixels_many_format() {
-    let bp = crate::undo::BeforePixels::Many { offset: 10, length: 5 };
+    let bp = crate::undo::BeforePixels::Many {
+        offset: 10,
+        length: 5,
+    };
     let s = format!("{bp:?}");
     assert!(s.contains("Many") && s.contains("offset") && s.contains("length") && s.contains("5"));
 }

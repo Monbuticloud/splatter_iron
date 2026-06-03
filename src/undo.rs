@@ -146,8 +146,7 @@ impl UndoRecord {
                 before_pixels,
                 compressed_before_pixels,
                 ..
-            } if !before_pixels.is_empty() =>
-            {
+            } if !before_pixels.is_empty() => {
                 let bytes = bytemuck::cast_slice(before_pixels.as_slice());
                 *compressed_before_pixels = Some(
                     zstd::encode_all(Cursor::new(bytes), level)
@@ -170,8 +169,7 @@ impl UndoRecord {
                 before_pixels,
                 compressed_before_pixels,
                 ..
-            } if compressed_before_pixels.is_some() =>
-            {
+            } if compressed_before_pixels.is_some() => {
                 if let Some(compressed) = compressed_before_pixels.take() {
                     let bytes: Vec<u8> = zstd::decode_all(Cursor::new(compressed))
                         .expect("zstd decompression of before_pixels");
@@ -280,7 +278,9 @@ pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
                     // SIMD bulk blend (4 pixels at a time)
                     let (simd, tail) = pixels.split_at_mut(pixels.len() - (pixels.len() % 4));
                     for chunk in simd.chunks_exact_mut(4) {
-                        let arr: &mut [Color32; 4] = chunk.try_into().expect("chunks_exact_mut yields exactly 4 elements");
+                        let arr: &mut [Color32; 4] = chunk
+                            .try_into()
+                            .expect("chunks_exact_mut yields exactly 4 elements");
                         alpha_blend_simd_four(arr, *color_after);
                     }
                     // Scalar tail (<4 pixels)

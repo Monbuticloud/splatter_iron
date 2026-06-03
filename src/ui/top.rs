@@ -90,7 +90,8 @@ impl MyApp {
         }
         if ui.input(|i| i.key_pressed(egui::Key::S) && i.modifiers.command && !i.modifiers.shift) {
             if self.document.savefile_path.is_empty() {
-                self.dialog_manager.queue_file_action(PendingFileAction::Save);
+                self.dialog_manager
+                    .queue_file_action(PendingFileAction::Save);
             } else {
                 self.ui.progress = crate::app::ProgressState::Saving;
                 self.save_manager.save_to_current_path(&mut self.document);
@@ -98,7 +99,8 @@ impl MyApp {
             ui.ctx().request_repaint();
         }
         if ui.input(|i| i.key_pressed(egui::Key::S) && i.modifiers.command && i.modifiers.shift) {
-            self.dialog_manager.queue_file_action(PendingFileAction::Save);
+            self.dialog_manager
+                .queue_file_action(PendingFileAction::Save);
             ui.ctx().request_repaint();
         }
         if ui.input(|i| i.key_pressed(egui::Key::I) && i.modifiers.command && !i.modifiers.shift) {
@@ -114,7 +116,8 @@ impl MyApp {
             // Save
             if ui.button("Save").clicked() {
                 if self.document.savefile_path.is_empty() {
-                    self.dialog_manager.queue_file_action(PendingFileAction::Save);
+                    self.dialog_manager
+                        .queue_file_action(PendingFileAction::Save);
                 } else {
                     self.ui.progress = crate::app::ProgressState::Saving;
                     self.save_manager.save_to_current_path(&mut self.document);

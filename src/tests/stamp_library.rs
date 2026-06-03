@@ -1,6 +1,7 @@
 //! Tests for `Library<StampEntry>` — add, remove, select, and persistence round-trip.
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
 use eframe::egui::Context;
 

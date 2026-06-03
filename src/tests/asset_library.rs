@@ -3,7 +3,8 @@
 //! Uses a minimal test entry type (`TestEntry`) to verify the generic
 //! machinery independently of brush/stamp specialisations.
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
 use eframe::egui::Color32;
 use eframe::egui::TextureHandle;

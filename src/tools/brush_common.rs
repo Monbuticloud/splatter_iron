@@ -9,8 +9,8 @@ use eframe::egui::Color32;
 
 use crate::canvas::DirtyRect;
 use crate::undo::BeforePixels;
-use crate::undo::RunSegment;
 use crate::undo::RLE_SHORT_RUN_THRESHOLD;
+use crate::undo::RunSegment;
 
 /// Apply color to all visited pixels within a dirty region, capture
 /// before-pixels, and return compressed run segments for undo.
@@ -99,7 +99,13 @@ pub fn apply_visited_runs(
             } else {
                 let offset = before_pixels.len() as u32;
                 before_pixels.extend_from_slice(run_slice);
-                (BeforePixels::Many { offset, length: run_len }, run_len)
+                (
+                    BeforePixels::Many {
+                        offset,
+                        length: run_len,
+                    },
+                    run_len,
+                )
             };
 
             // Apply colour.
@@ -112,7 +118,8 @@ pub fn apply_visited_runs(
             }
             if alpha_overlay {
                 let ds = drag_stamp_value;
-                for d in &mut drag_processed[run_start as usize..run_start as usize + run_len as usize]
+                for d in
+                    &mut drag_processed[run_start as usize..run_start as usize + run_len as usize]
                 {
                     *d = ds;
                 }

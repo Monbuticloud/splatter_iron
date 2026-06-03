@@ -1,7 +1,8 @@
 //! Panel layout coordinator: renders top, left, right, and centre panels
 //! in the correct egui layout order.
 
-use eframe::egui::{self, Panel};
+use eframe::egui::Panel;
+use eframe::egui::{self};
 
 use crate::app::MyApp;
 

@@ -4,8 +4,8 @@
 //! predictable input state.
 
 use std::path::PathBuf;
-use std::sync::mpsc;
 use std::sync::Arc;
+use std::sync::mpsc;
 
 use eframe::egui::Color32;
 

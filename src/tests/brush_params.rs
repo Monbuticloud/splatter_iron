@@ -2,13 +2,13 @@
 //!
 //! Verifies construction, field access, and Debug output.
 
+use std::sync::Arc;
+
 use eframe::egui::Color32;
 
 use crate::brush_params::BrushStrokeParams;
 use crate::canvas::Canvas;
 use crate::canvas::DirtyRectList;
-use std::sync::Arc;
-
 use crate::canvas::Layer;
 
 /// Helper: build a minimal canvas fixture.
@@ -66,24 +66,20 @@ fn builder_with_defaults() {
     let mut visited = vec![0u32; 100];
     let mut drag = vec![0u32; 100];
 
-    let params = BrushStrokeParams::builder(
-        &mut c,
-        Color32::RED,
-        0,
-        &mut visited,
-        42,
-        &mut drag,
-        7,
-    )
-    .start(1, 2)
-    .end(5, 6)
-    .build();
+    let params =
+        BrushStrokeParams::builder(&mut c, Color32::RED, 0, &mut visited, 42, &mut drag, 7)
+            .start(1, 2)
+            .end(5, 6)
+            .build();
 
     assert_eq!(params.start_x, 1);
     assert_eq!(params.start_y, 2);
     assert_eq!(params.end_x, 5);
     assert_eq!(params.end_y, 6);
-    assert!(!params.alpha_overlay, "default alpha_overlay should be false");
+    assert!(
+        !params.alpha_overlay,
+        "default alpha_overlay should be false"
+    );
     assert_eq!(params.stamp, 42);
     assert_eq!(params.drag_stamp_value, 7);
 }
@@ -95,19 +91,12 @@ fn builder_with_alpha_overlay() {
     let mut visited = vec![0u32; 100];
     let mut drag = vec![0u32; 100];
 
-    let params = BrushStrokeParams::builder(
-        &mut c,
-        Color32::RED,
-        0,
-        &mut visited,
-        42,
-        &mut drag,
-        7,
-    )
-    .start(0, 0)
-    .end(3, 4)
-    .alpha_overlay(true)
-    .build();
+    let params =
+        BrushStrokeParams::builder(&mut c, Color32::RED, 0, &mut visited, 42, &mut drag, 7)
+            .start(0, 0)
+            .end(3, 4)
+            .alpha_overlay(true)
+            .build();
 
     assert!(params.alpha_overlay);
 }

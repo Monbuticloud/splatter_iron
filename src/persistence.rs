@@ -4,10 +4,11 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
+use serde_json;
+
 use crate::app::AUTOSAVE_INTERVAL_MINUTES;
 use crate::app::MyApp;
 use crate::app::PersistedConfig;
-use serde_json;
 
 impl MyApp {
     /// Add a file path to the recent-files list (dedup, max 10, most recent first).
@@ -22,7 +23,9 @@ impl MyApp {
 
     /// Path to the user-config JSON file (tool settings, preferences).
     pub(crate) fn config_path(&self) -> PathBuf {
-        self.save_manager.app_local_data_directory.join("config.json")
+        self.save_manager
+            .app_local_data_directory
+            .join("config.json")
     }
 
     /// Persist current tool configuration and recent files to disk.

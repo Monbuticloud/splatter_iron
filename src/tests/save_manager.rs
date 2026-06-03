@@ -100,11 +100,7 @@ fn save_to_current_path_empty_path_noop() {
 #[test]
 fn save_to_current_path_non_empty_triggers_save() {
     let (save_sender, save_receiver) = mpsc::channel();
-    let mut sm = SaveManager::new(
-        save_sender,
-        save_receiver,
-        PathBuf::from("/tmp"),
-    );
+    let mut sm = SaveManager::new(save_sender, save_receiver, PathBuf::from("/tmp"));
     let mut document = Document::new(Canvas::new(1, 1));
     document.savefile_path = "/tmp/test_save_non_empty.splattercanvas".to_string();
     sm.save_to_current_path(&mut document);

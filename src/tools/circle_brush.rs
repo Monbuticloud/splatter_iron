@@ -162,8 +162,7 @@ pub fn draw_circle(
             let row_start = (y as usize) * width;
             let start = row_start + span_start as usize;
             let end = row_start + span_end as usize + 1;
-            let (before, length) =
-                compress_and_store(&pixels[start..end], &mut before_pixels);
+            let (before, length) = compress_and_store(&pixels[start..end], &mut before_pixels);
             runs.push(RunSegment {
                 start: start as u32,
                 length,
@@ -178,8 +177,7 @@ pub fn draw_circle(
                 let row_start = (y as usize) * width;
                 let start = row_start + span_start as usize;
                 let end = row_start + span_end as usize + 1;
-                let (before, length) =
-                    compress_and_store(&pixels[start..end], &mut before_pixels);
+                let (before, length) = compress_and_store(&pixels[start..end], &mut before_pixels);
                 runs.push(RunSegment {
                     start: start as u32,
                     length,
@@ -309,9 +307,7 @@ fn stamp_circle_positions(
 
         let mut cx = geo_radius_i32;
         for dy in 0..=geo_radius_i32 {
-            while cx > 0
-                && (cx as u64) * (cx as u64) + (dy as u64) * (dy as u64) > radius_squared
-            {
+            while cx > 0 && (cx as u64) * (cx as u64) + (dy as u64) * (dy as u64) > radius_squared {
                 cx -= 1;
             }
 

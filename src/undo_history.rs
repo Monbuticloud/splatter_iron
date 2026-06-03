@@ -101,10 +101,7 @@ impl UndoHistory {
         self.stroke_stack
             .truncate(self.stroke_stack.len() - self.redo_index);
         self.stroke_stack.push_back(record);
-        let last = self
-            .stroke_stack
-            .back_mut()
-            .expect("just pushed");
+        let last = self.stroke_stack.back_mut().expect("just pushed");
         last.compress_before(Self::COMPRESSION_LEVEL);
         while self.stroke_stack.len() > MAX_STROKE_STACK {
             self.stroke_stack.pop_front();
@@ -224,7 +221,10 @@ impl UndoHistory {
             // Swap out frames, push current frame, finalize into undo stack.
             let mut taken = Vec::with_capacity(MAX_DRAG_FRAMES.min(256));
             std::mem::swap(&mut taken, &mut accumulator.frames);
-            taken.push(DragFrame { runs, before_pixels });
+            taken.push(DragFrame {
+                runs,
+                before_pixels,
+            });
             let record = Self::merge_frames(taken, layer_index, color_after, is_alpha_overlay);
             self.push_undo(record);
             // Reset drag stamp so fresh strokes don't collide with the archived ones.
@@ -232,7 +232,10 @@ impl UndoHistory {
             return;
         }
 
-        accumulator.frames.push(DragFrame { runs, before_pixels });
+        accumulator.frames.push(DragFrame {
+            runs,
+            before_pixels,
+        });
     }
 
     /// Merge a collection of drag frames into a single undo record.

@@ -5,12 +5,12 @@ use std::path::PathBuf;
 
 use eframe::egui::Color32;
 
-use crate::app::DialogState;
-use crate::app::ErrorState;
-use crate::app::EXPORT_FORMATS;
-use crate::app::ExportInformation;
-use crate::app::CANVAS_EXTENSION;
 use crate::app::ARCHIVE_EXTENSION;
+use crate::app::CANVAS_EXTENSION;
+use crate::app::DialogState;
+use crate::app::EXPORT_FORMATS;
+use crate::app::ErrorState;
+use crate::app::ExportInformation;
 use crate::app::IMPORT_EXTENSIONS;
 use crate::app::NEW_CANVAS_PRESETS;
 use crate::app::PendingStamp;
@@ -146,7 +146,10 @@ fn estimate_canvas_memory_returns_product() {
     assert_eq!(crate::app::estimate_canvas_memory(100, 100, 1), 120_000);
     assert_eq!(crate::app::estimate_canvas_memory(1, 1, 0), 8);
     assert_eq!(crate::app::estimate_canvas_memory(0, 0, 5), 0);
-    assert_eq!(crate::app::estimate_canvas_memory(10, 10, 2), 10 * 10 * 4 * 4);
+    assert_eq!(
+        crate::app::estimate_canvas_memory(10, 10, 2),
+        10 * 10 * 4 * 4
+    );
 }
 
 /// `DialogState::default()` initialises all fields to their expected defaults.
