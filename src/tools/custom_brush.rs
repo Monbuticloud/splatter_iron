@@ -6,7 +6,6 @@
 use eframe::egui::Color32;
 
 use crate::brush_params::BrushStrokeParams;
-use crate::canvas::Canvas;
 use crate::tool_configuration::StampSampling;
 use crate::tools::stamp_brush::draw_stamp_line;
 use crate::undo::BeforePixels;

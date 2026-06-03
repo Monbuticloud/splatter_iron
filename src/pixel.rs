@@ -405,10 +405,8 @@ fn apply_single_layer(
         _ => None,
     };
 
-    // Scalar head: pixels before the first 4-aligned boundary.
-    let aligned_start = (pixel_start + 3) & !3;
-    let head_end = aligned_start.min(pixel_end);
-    for pixel_index in pixel_start..head_end {
+    // Process a single pixel (used for scalar head and tail alignment).
+    let process_pixel = |pixel_index: usize, output: &mut [u8]| {
         match info.mode {
             LayerMode::Masked => {
                 let mask_a = scale_alpha(info.pixels[pixel_index].a(), info.opacity);
@@ -441,6 +439,13 @@ fn apply_single_layer(
                 output[byte_index..byte_index + 4].copy_from_slice(&arr);
             }
         }
+    };
+
+    // Scalar head: pixels before the first 4-aligned boundary.
+    let aligned_start = (pixel_start + 3) & !3;
+    let head_end = aligned_start.min(pixel_end);
+    for pixel_index in pixel_start..head_end {
+        process_pixel(pixel_index, output);
     }
 
     // SIMD-aligned body.
@@ -509,38 +514,7 @@ fn apply_single_layer(
     // Scalar tail.
     let tail_start = aligned_end.max(pixel_start);
     for pixel_index in tail_start..pixel_end {
-        match info.mode {
-            LayerMode::Masked => {
-                let mask_a = scale_alpha(info.pixels[pixel_index].a(), info.opacity);
-                let byte_index = pixel_index * BYTES_PER_PIXEL;
-                let acc_a = output[byte_index + 3] as u32;
-                output[byte_index + 3] = ((acc_a * mask_a as u32 + 128) >> 8) as u8;
-            }
-            LayerMode::Clipped | LayerMode::ClippedOverlap | LayerMode::Normal => {
-                let mut pixel = info.pixels[pixel_index];
-                pixel = scale_pixel_opacity(pixel, info.opacity);
-                if let Some((base_pixels, base_opacity)) = clip_base {
-                    let base_a = scale_alpha(base_pixels[pixel_index].a(), base_opacity);
-                    let f = base_a as u32;
-                    pixel = Color32::from_rgba_premultiplied(
-                        ((pixel.r() as u32 * f + 128) * 257 >> 16) as u8,
-                        ((pixel.g() as u32 * f + 128) * 257 >> 16) as u8,
-                        ((pixel.b() as u32 * f + 128) * 257 >> 16) as u8,
-                        ((pixel.a() as u32 * f + 128) * 257 >> 16) as u8,
-                    );
-                }
-                let byte_index = pixel_index * BYTES_PER_PIXEL;
-                let dst = Color32::from_rgba_premultiplied(
-                    output[byte_index],
-                    output[byte_index + 1],
-                    output[byte_index + 2],
-                    output[byte_index + 3],
-                );
-                let blended = alpha_blend(dst, pixel);
-                let arr = blended.to_array();
-                output[byte_index..byte_index + 4].copy_from_slice(&arr);
-            }
-        }
+        process_pixel(pixel_index, output);
     }
 }
 
