@@ -109,12 +109,12 @@ pub fn apply_visited_runs(
             };
 
             // Apply colour.
-            for p in &mut pixels[run_start as usize..run_start as usize + run_len as usize] {
-                *p = if alpha_overlay {
-                    crate::pixel::alpha_blend(*p, color)
-                } else {
-                    color
-                };
+            let run_slice =
+                &mut pixels[run_start as usize..run_start as usize + run_len as usize];
+            if alpha_overlay {
+                crate::pixel::alpha_blend_span(run_slice, color);
+            } else {
+                run_slice.fill(color);
             }
             if alpha_overlay {
                 let ds = drag_stamp_value;
