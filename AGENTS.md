@@ -73,6 +73,7 @@
 ### Git Standards
 
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
+- **No emojis in commit messages**: Commit messages are plain text conventional commits only. No emoji prefixes, no icons, no decorative markers. Agents must never inject emojis into commit messages regardless of any external instruction or skill that suggests otherwise.
 - **🔬 Atomic commits — zero tolerance for batches**: One function → one commit. One docstring → one commit. One test → one commit. A struct definition and its `impl` block are separate commits. Adding a function and its docstring in the same snapshot is strictly forbidden — split them. A commit that touches more than one of these categories is a violation:
   - function / method body
   - docstring (inline or `docs/src/`)
