@@ -221,10 +221,11 @@ pub fn draw_circle(
 
 /// Mark all pixel indices covered by a circle-brush stroke line in the `visited` buffer.
 ///
-/// Uses the Bresenham line algorithm to step along the line and stamps every
-/// pixel within the circle radius (geometric radius) at each step.
-/// The caller can later scan `visited` for values matching `stamp` to get
-/// deduplicated, sorted positions.
+/// Uses the Bresenham line algorithm to step along the line. At each step the
+/// circle footprint is computed via integer midpoint-circle decrement (no
+/// floating-point sqrt) and every pixel within the radius is stamped into
+/// `visited`. The caller can later scan `visited` for values matching `stamp`
+/// to get deduplicated, sorted positions.
 ///
 /// Clamps brush bounds to canvas dimensions. Tracks the bounding box of
 /// stamped pixels via `dirty_rect`.
