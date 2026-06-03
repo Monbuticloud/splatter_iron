@@ -20,6 +20,7 @@ pub mod dialog_manager;
 pub mod document;
 pub mod export_manager;
 pub mod files;
+pub mod frame;
 pub mod load_import_manager;
 pub mod persistence;
 pub mod pixel;
