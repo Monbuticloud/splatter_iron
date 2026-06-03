@@ -4,7 +4,7 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 
 ## Denied
 
-- reduce undo zstd compression level from default to 0 — `undo_history.rs` already uses level `-1` (fast mode), which is faster than level 0 (default/3). No change needed. (P1)(B1)(460008e)(HEAD)
+- reduce undo zstd compression level from default to 0 — `undo_history.rs` already uses level `-1` (fast mode), which is faster than level 0 (default/3). No change needed. (P1)(B1)(460008e)(8907a81)
 
 - `#[allow(clippy::..)]` missing inline justification — `src/ui/center.rs:296`, `src/tools/stamp_brush.rs:85` — both now have inline justification comments. (P1)(B1)(59653a1)(5d89e87)
 - `unwrap()` calls without justification — `src/ui/dialogs.rs:224,411` — lines no longer contain bare `unwrap()`. (P1)(B1)(59653a1)(5d89e87)
@@ -28,9 +28,9 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 
 ## Implemented
 
-- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. Added to `handle_canvas_interaction` in `src/ui/center.rs`. Coarse step 10px, fine step 1px. (P2)(B2)(460008e)(HEAD)
-- canvas background checkerboard — `draw_checkerboard` in `pixel.rs` blends 8×8 light/dark gray tiles behind transparent areas. Called from `blend_to_output` in `document.rs`. (P3)(B2)(460008e)(HEAD)
-- status bar — added cursor coordinates (px, py) and canvas memory estimate (MB/KB) to `show_canvas_status_line`. Added `cursor_pixel` field to `UIState`. (P2)(B2)(460008e)(HEAD)
+- brush radius keyboard shortcuts — `[`/`]` decrease/increase radius; `Shift+[`/`]` fine adjustment. Added to `handle_canvas_interaction` in `src/ui/center.rs`. Coarse step 10px, fine step 1px. (P2)(B2)(460008e)(58a22ba)
+- canvas background checkerboard — `draw_checkerboard` in `pixel.rs` blends 8×8 light/dark gray tiles behind transparent areas. Called from `blend_to_output` in `document.rs`. (P3)(B2)(460008e)(618b0fd)
+- status bar — added cursor coordinates (px, py) and canvas memory estimate (MB/KB) to `show_canvas_status_line`. Added `cursor_pixel` field to `UIState`. (P2)(B2)(460008e)(de8e5fd)
 - layer-snapshot undo — `full_layer_before` field on `UndoRecord::Run` for zstd-compressed full-layer snapshots when >50% pixels covered. `maybe_snapshot` method on `UndoRecord`; `push_undo_snapshot` on `UndoHistory`. Single-click actions (bucket fill) use snapshot path; drag tools use default per-pixel path. (P2)(B2)(460008e)(c9070cb)
 - persist UI state — window size, pan offset, zoom, last export format saved to `config.json` alongside tool config and recent files. Restored on next launch with first-frame `ViewportCommand::InnerSize`. (P2)(B2)(460008e)(f8e7bcb)
 
