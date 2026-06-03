@@ -201,7 +201,7 @@ pub fn alpha_blend_simd_four(dst: &mut [Color32; 4], source: Color32) {
 }
 
 /// Minimum SIMD chunk count before rayon parallelism kicks in.
-const PARALLEL_BLEND_THRESHOLD: usize = 64;
+const PARALLEL_BLEND_THRESHOLD: usize = 256;
 
 /// Scale a single premultiplied pixel by opacity (0–255) using fixed-point.
 #[inline]
