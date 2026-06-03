@@ -10,6 +10,7 @@
 //! - [`LayerMode::Masked`]: layer alpha modulates the accumulator alpha
 //!   (RGB content is not rendered).
 
+use bytemuck::cast_mut;
 use eframe::egui::Color32;
 use rayon::prelude::*;
 use wide::u32x4;
@@ -126,6 +127,66 @@ pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
         (source_blue + blend_channel(dest_blue, inverse_alpha)) as u8,
         (source_alpha + blend_channel(dest_alpha, inverse_alpha)) as u8,
     )
+}
+
+/// SIMD-accelerated alpha-blend of the same `source` color over 4 destination
+/// premultiplied pixels in a contiguous `[Color32; 4]` array.
+///
+/// Each channel (R/G/B/A) is processed with `wide::u32x4`, blending the
+/// constant source across all four pixels in parallel.  Results are written
+/// in-place.
+///
+/// The rounding matches [`alpha_blend`]: `(dest * (255 - src.a) + 128) >> 8`.
+/// Values are truncated (not clamped) on overflow, matching the scalar path.
+///
+/// # Panics
+///
+/// Panics in debug builds if `bytemuck` detects an alignment or layout
+/// violation (should never happen for `Color32`).
+#[inline]
+pub fn alpha_blend_simd_four(dst: &mut [Color32; 4], source: Color32) {
+    let bytes: &mut [u8; 16] = bytemuck::cast_mut(dst);
+
+    // Read 4 destination pixels (R/G/B/A interleaved).
+    let dr = u32x4::new([
+        bytes[0] as u32, bytes[4] as u32, bytes[8] as u32, bytes[12] as u32,
+    ]);
+    let dg = u32x4::new([
+        bytes[1] as u32, bytes[5] as u32, bytes[9] as u32, bytes[13] as u32,
+    ]);
+    let db = u32x4::new([
+        bytes[2] as u32, bytes[6] as u32, bytes[10] as u32, bytes[14] as u32,
+    ]);
+    let da = u32x4::new([
+        bytes[3] as u32, bytes[7] as u32, bytes[11] as u32, bytes[15] as u32,
+    ]);
+
+    // Constant source, splatted across all 4 lanes.
+    let sr = u32x4::splat(source.r() as u32);
+    let sg = u32x4::splat(source.g() as u32);
+    let sb = u32x4::splat(source.b() as u32);
+    let sa = u32x4::splat(source.a() as u32);
+
+    let inv_a = u32x4::splat(255) - sa;
+    let bias = u32x4::splat(128);
+
+    let out_r = sr + ((dr * inv_a + bias) >> u32x4::splat(8));
+    let out_g = sg + ((dg * inv_a + bias) >> u32x4::splat(8));
+    let out_b = sb + ((db * inv_a + bias) >> u32x4::splat(8));
+    let out_a = sa + ((da * inv_a + bias) >> u32x4::splat(8));
+
+    let r_arr = out_r.to_array();
+    let g_arr = out_g.to_array();
+    let b_arr = out_b.to_array();
+    let a_arr = out_a.to_array();
+
+    for i in 0..4 {
+        let o = i * 4;
+        bytes[o] = r_arr[i] as u8;
+        bytes[o + 1] = g_arr[i] as u8;
+        bytes[o + 2] = b_arr[i] as u8;
+        bytes[o + 3] = a_arr[i] as u8;
+    }
 }
 
 /// Minimum SIMD chunk count before rayon parallelism kicks in.
