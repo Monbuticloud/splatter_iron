@@ -32,6 +32,7 @@ Archived decisions from the TODO pipeline — items that were denied, implemente
 - canvas background checkerboard — `draw_checkerboard` in `pixel.rs` blends 8×8 light/dark gray tiles behind transparent areas. Called from `blend_to_output` in `document.rs`. (P3)(B2)(460008e)(HEAD)
 - status bar — added cursor coordinates (px, py) and canvas memory estimate (MB/KB) to `show_canvas_status_line`. Added `cursor_pixel` field to `UIState`. (P2)(B2)(460008e)(HEAD)
 - layer-snapshot undo — `full_layer_before` field on `UndoRecord::Run` for zstd-compressed full-layer snapshots when >50% pixels covered. `maybe_snapshot` method on `UndoRecord`; `push_undo_snapshot` on `UndoHistory`. Single-click actions (bucket fill) use snapshot path; drag tools use default per-pixel path. (P2)(B2)(460008e)(c9070cb)
+- persist UI state — window size, pan offset, zoom, last export format saved to `config.json` alongside tool config and recent files. Restored on next launch with first-frame `ViewportCommand::InnerSize`. (P2)(B2)(460008e)(f8e7bcb)
 
 - README is sparse — add build instructions, feature list, screenshot, contribution guide. (P3)(B0)(aef7235)(a904732)
 - `export_as_image` pixel-by-pixel loop — `src/files.rs:247` → replaced with `bytemuck` cast + rayon `par_chunks_mut` (P1)(B1)(aef7235)(b049292)

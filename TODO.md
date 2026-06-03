@@ -89,8 +89,6 @@
 
 
 
-- persist UI state — tool config + recent files persisted; missing window size, panel widths, zoom, pan offset, last export format. (P2)(B2)(460008e)
-
 ### Documentation
 
 - **(none at the moment)**
