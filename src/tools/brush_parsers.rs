@@ -69,6 +69,13 @@ pub fn parse_brush_file(path: &Path) -> Result<Vec<BrushTip>, String> {
 /// Supported: version 1 (20-byte header) and version 2 (24-byte header).
 /// Pixel data may be grayscale (1 bpp) or RGBA (4 bpp), stored as
 /// straight-alpha.
+///
+/// # Errors
+///
+/// Returns an error string if the buffer is too short for the header,
+/// the magic bytes are not `GIMP`, the version is unsupported (neither 1
+/// nor 2), the dimensions are zero, the bytes-per-pixel is not 1 or 4,
+/// the data is truncated, or the v2 spacing field is missing.
 pub(crate) fn parse_gbr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
     if data.len() < 20 {
         return Err("GBR file too short".into());
@@ -155,6 +162,13 @@ pub(crate) fn parse_gbr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
 /// image data) and rasterises common computed/parametric brush shapes
 /// (round, capped-round, square, diamond). Unknown subblock types are
 /// skipped with a logged warning.
+///
+/// # Errors
+///
+/// Returns an error string if the buffer is too short for the header,
+/// the magic bytes are not `8BPB`, the version is outside the 6–10 range,
+/// the header extends beyond the file, or no usable brush tips are found.
+/// Individual subblob parse failures are silently skipped.
 pub(crate) fn parse_abr(data: &[u8]) -> Result<Vec<BrushTip>, String> {
     if data.len() < 14 {
         return Err("ABR file too short".into());
