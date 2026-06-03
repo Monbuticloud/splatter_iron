@@ -296,7 +296,12 @@ impl Document {
         };
         undo.push_undo(UndoRecord::AddLayer {
             index: layer_index,
-            layer: Box::new(layer.clone()),
+            width: self.canvas.width,
+            height: self.canvas.height,
+            name: layer.name.clone(),
+            visible: layer.visible,
+            opacity: layer.opacity,
+            mode: layer.mode,
         });
         {
             let canvas = self.canvas_mut();

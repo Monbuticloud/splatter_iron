@@ -360,13 +360,12 @@ fn undo_apply_add_layer_removes_layer() {
     let mut canvas = small_white_canvas();
     let record = UndoRecord::AddLayer {
         index: 0,
-        layer: Box::new(crate::canvas::Layer {
-            pixels: vec![Color32::TRANSPARENT; 100],
-            name: "test".to_string(),
-            visible: true,
-            opacity: 255,
-            mode: crate::canvas::LayerMode::Normal,
-        }),
+        width: 10,
+        height: 10,
+        name: "test".to_string(),
+        visible: true,
+        opacity: 255,
+        mode: crate::canvas::LayerMode::Normal,
     };
     assert_eq!(canvas.pixels.len(), 1);
     undo::undo_apply(&mut canvas, &record);
@@ -441,13 +440,12 @@ fn redo_apply_add_layer_restores_layer() {
     let mut canvas = small_white_canvas();
     let record = UndoRecord::AddLayer {
         index: 0,
-        layer: Box::new(crate::canvas::Layer {
-            pixels: vec![Color32::TRANSPARENT; 100],
-            name: "test".to_string(),
-            visible: true,
-            opacity: 255,
-            mode: crate::canvas::LayerMode::Normal,
-        }),
+        width: 10,
+        height: 10,
+        name: "test".to_string(),
+        visible: true,
+        opacity: 255,
+        mode: crate::canvas::LayerMode::Normal,
     };
     undo::undo_apply(&mut canvas, &record);
     undo::redo_apply(&mut canvas, &record);

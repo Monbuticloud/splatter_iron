@@ -110,8 +110,18 @@ pub enum UndoRecord {
     AddLayer {
         /// Index at which the layer was inserted.
         index: usize,
-        /// The new layer's full state.
-        layer: Box<Layer>,
+        /// Canvas width at the time of creation (for transparent pixel buffer).
+        width: u32,
+        /// Canvas height at the time of creation.
+        height: u32,
+        /// Layer name assigned at creation.
+        name: String,
+        /// Layer visibility at creation.
+        visible: bool,
+        /// Layer opacity at creation.
+        opacity: u8,
+        /// Layer compositing mode at creation.
+        mode: LayerMode,
     },
     /// An existing layer was deleted.
     DeleteLayer {
@@ -347,7 +357,7 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
                 }
             }
         }
-        UndoRecord::AddLayer { index, layer: _ } => {
+        UndoRecord::AddLayer { index, .. } => {
             canvas.pixels.remove(*index);
         }
         UndoRecord::DeleteLayer { index, layer } => {
@@ -425,8 +435,26 @@ pub fn redo_apply(canvas: &mut Canvas, record: &UndoRecord) {
                 }
             }
         }
-        UndoRecord::AddLayer { index, layer } => {
-            canvas.pixels.insert(*index, *layer.clone());
+        UndoRecord::AddLayer {
+            index,
+            width,
+            height,
+            name,
+            visible,
+            opacity,
+            mode,
+        } => {
+            let pixel_count = (*width as usize) * (*height as usize);
+            canvas.pixels.insert(
+                *index,
+                Layer {
+                    pixels: vec![Color32::TRANSPARENT; pixel_count],
+                    name: name.clone(),
+                    visible: *visible,
+                    opacity: *opacity,
+                    mode: *mode,
+                },
+            );
         }
         UndoRecord::DeleteLayer { index, layer: _ } => {
             canvas.pixels.remove(*index);
