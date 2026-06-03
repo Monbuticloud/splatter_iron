@@ -93,6 +93,11 @@ pub enum UndoRecord {
         /// zstd-compressed version of `before_pixels` stored in the undo
         /// history stack to reduce memory; decompressed on undo access.
         compressed_before_pixels: Option<Vec<u8>>,
+        /// zstd-compressed full-layer snapshot for strokes covering >50% of
+        /// the layer's pixels. When set, `undo_apply` restores the entire
+        /// layer from this snapshot instead of iterating per-pixel runs.
+        /// `runs` and `color_after` are still used for `redo_apply`.
+        full_layer_before: Option<Vec<u8>>,
         /// Whether this stroke was drawn as an alpha overlay (vs. opaque).
         is_alpha_overlay: bool,
     },
@@ -135,6 +140,77 @@ pub enum UndoRecord {
 }
 
 impl UndoRecord {
+    /// If the stroke covers more than 50% of the layer's pixels, replace the
+    /// per-pixel `before_pixels` with a zstd-compressed full-layer snapshot.
+    ///
+    /// The snapshot is reconstructed by cloning the current (post-stroke)
+    /// `layer` and restoring the original pixel values from `runs` and
+    /// `before_pixels`. This trades per-pixel decompress overhead for a
+    /// simple full-layer swap on undo, which is significantly faster for
+    /// large strokes.
+    ///
+    /// Runs and `color_after` are preserved for `redo_apply`.
+    ///
+    /// Call before `compress_before`, and only when the current layer state
+    /// is available (i.e. the stroke has already been applied).
+    ///
+    /// # Parameters
+    ///
+    /// * `layer` — The current (post-stroke) layer, used to reconstruct the
+    ///   before-state from runs and before_pixels.
+    /// * `level` — Zstd compression level for the snapshot.
+    ///
+    /// # Panics
+    ///
+    /// Panics if zstd compression fails (should never happen in practice).
+    pub fn maybe_snapshot(&mut self, layer: &Layer, level: i32) {
+        let UndoRecord::Run {
+            runs,
+            before_pixels,
+            full_layer_before,
+            ..
+        } = self
+        else {
+            return;
+        };
+
+        if before_pixels.is_empty() || full_layer_before.is_some() {
+            return;
+        }
+
+        let total_pixels = layer.pixels.len() as f64;
+        let covered: f64 = runs.iter().map(|r| u64::from(r.length)).sum::<u64>() as f64;
+        if covered <= total_pixels * 0.5 {
+            return;
+        }
+
+        // Reconstruct the before-layer by restoring original pixels into a
+        // clone of the current (post-stroke) layer.
+        let mut before_layer = layer.clone();
+        for run in runs {
+            let start = run.start as usize;
+            let end = start + run.length as usize;
+            match &run.before {
+                BeforePixels::All(color) => {
+                    before_layer.pixels[start..end].fill(*color);
+                }
+                BeforePixels::Many { offset, length } => {
+                    let off = *offset as usize;
+                    let len = *length as usize;
+                    before_layer.pixels[start..end]
+                        .copy_from_slice(&before_pixels[off..off + len]);
+                }
+            }
+        }
+
+        let json = serde_json::to_vec(&before_layer).expect("layer serialization");
+        *full_layer_before = Some(
+            zstd::encode_all(std::io::Cursor::new(json), level)
+                .expect("zstd compression of layer snapshot"),
+        );
+        before_pixels.clear();
+    }
+
     /// Compress `before_pixels` using zstd and store the result in
     /// `compressed_before_pixels`, then clear the uncompressed buffer.
     /// No-op if `before_pixels` is already empty or already compressed.
@@ -184,6 +260,10 @@ impl UndoRecord {
 
 /// Restore canvas state to before the operation recorded by `record`.
 ///
+/// When the `Run` variant has a `full_layer_before` snapshot, the entire
+/// layer is replaced from the decompressed snapshot (faster for large strokes).
+/// Otherwise, per-pixel restoration from `runs` and `before_pixels` is used.
+///
 /// # Parameters
 ///
 /// * `canvas` — The canvas to modify.
@@ -200,19 +280,30 @@ pub fn undo_apply(canvas: &mut Canvas, record: &UndoRecord) {
             layer_index,
             runs,
             before_pixels,
+            full_layer_before,
             ..
         } => {
-            let layer = &mut canvas.pixels[*layer_index];
-            for run in runs {
-                let end = (run.start as usize) + run.length as usize;
-                match &run.before {
-                    BeforePixels::All(color) => {
-                        layer.pixels[run.start as usize..end].fill(*color);
-                    }
-                    BeforePixels::Many { offset, length } => {
-                        layer.pixels[run.start as usize..end].copy_from_slice(
-                            &before_pixels[*offset as usize..*offset as usize + *length as usize],
-                        );
+            if let Some(compressed) = full_layer_before {
+                // Full-layer restore: decompress and replace the entire layer.
+                let bytes: Vec<u8> = zstd::decode_all(std::io::Cursor::new(compressed))
+                    .expect("zstd decompression of layer snapshot");
+                let before_layer: Layer = serde_json::from_slice(&bytes)
+                    .expect("deserialization of layer snapshot");
+                canvas.pixels[*layer_index] = before_layer;
+            } else {
+                // Per-pixel restore from runs and before_pixels.
+                let layer = &mut canvas.pixels[*layer_index];
+                for run in runs {
+                    let end = (run.start as usize) + run.length as usize;
+                    match &run.before {
+                        BeforePixels::All(color) => {
+                            layer.pixels[run.start as usize..end].fill(*color);
+                        }
+                        BeforePixels::Many { offset, length } => {
+                            layer.pixels[run.start as usize..end].copy_from_slice(
+                                &before_pixels[*offset as usize..*offset as usize + *length as usize],
+                            );
+                        }
                     }
                 }
             }

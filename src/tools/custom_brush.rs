@@ -135,5 +135,6 @@ pub fn draw_custom_brush_line(
         before_pixels: all_before,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
+        full_layer_before: None,
     }
 }

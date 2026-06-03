@@ -132,6 +132,7 @@ pub fn draw_circle(
             before_pixels: Vec::new(),
             compressed_before_pixels: None,
             is_alpha_overlay: alpha_overlay,
+            full_layer_before: None,
         };
     }
 
@@ -212,6 +213,7 @@ pub fn draw_circle(
         before_pixels,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
+        full_layer_before: None,
     }
 }
 
@@ -423,5 +425,6 @@ pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoR
         before_pixels,
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
+        full_layer_before: None,
     }
 }

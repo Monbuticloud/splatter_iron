@@ -363,6 +363,7 @@ fn push_undo_empty_record() {
         before_pixels: Vec::new(),
         compressed_before_pixels: None,
         is_alpha_overlay: false,
+        full_layer_before: None,
     };
     history.push_undo(empty_record);
     assert!(history.can_undo());

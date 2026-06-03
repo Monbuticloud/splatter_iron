@@ -56,6 +56,7 @@ pub fn draw_bucket_fill(
             before_pixels: Vec::new(),
             compressed_before_pixels: None,
             is_alpha_overlay: alpha_overlay,
+            full_layer_before: None,
         };
     }
 
@@ -173,5 +174,6 @@ pub fn draw_bucket_fill(
         before_pixels: Vec::new(),
         compressed_before_pixels: None,
         is_alpha_overlay: alpha_overlay,
+        full_layer_before: None,
     }
 }
