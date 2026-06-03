@@ -61,7 +61,11 @@ pub fn draw_bucket_fill(
 
     let mut runs: Vec<RunSegment> = Vec::new();
     let mut before_pixels: Vec<Color32> = Vec::new();
-    let mut stack: Vec<(u32, u32)> = Vec::new();
+    // Pre-allocate stack to avoid repeated growth. Worst-case depth is
+    // O(height) for simple fills; pathological patterns can push more.
+    let max_stack = (canvas.width as usize).max(canvas.height as usize) * 4;
+    let mut stack: Vec<(u32, u32)> = Vec::with_capacity(max_stack);
+    let mut stack_overflow = false;
     let mut min_x = u32::MAX;
     let mut min_y = u32::MAX;
     let mut max_x = 0u32;
@@ -119,11 +123,15 @@ pub fn draw_bucket_fill(
         let search_right = (right_x + 1).min(canvas.width - 1);
 
         // Row above
-        if y > 0 {
+        if y > 0 && !stack_overflow {
             let prev_row = (y - 1) as usize * width;
             let mut check_x = search_left;
             while check_x <= search_right {
                 if pixels[prev_row + check_x as usize] == target {
+                    if stack.len() >= max_stack {
+                        stack_overflow = true;
+                        break;
+                    }
                     stack.push((check_x, y - 1));
                     while check_x <= search_right && pixels[prev_row + check_x as usize] == target {
                         check_x += 1;
@@ -135,11 +143,15 @@ pub fn draw_bucket_fill(
         }
 
         // Row below
-        if y < height - 1 {
+        if y < height - 1 && !stack_overflow {
             let next_row = (y + 1) as usize * width;
             let mut check_x = search_left;
             while check_x <= search_right {
                 if pixels[next_row + check_x as usize] == target {
+                    if stack.len() >= max_stack {
+                        stack_overflow = true;
+                        break;
+                    }
                     stack.push((check_x, y + 1));
                     while check_x <= search_right && pixels[next_row + check_x as usize] == target {
                         check_x += 1;
