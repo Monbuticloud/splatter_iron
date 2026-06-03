@@ -36,6 +36,7 @@ const PREVIEW_STROKE_WIDTH: f32 = 1.0;
 const ZOOM_SENSITIVITY: f32 = 0.003;
 /// Minimum allowed zoom level.
 const MIN_ZOOM: f32 = 0.05;
+/// Maximum allowed zoom level.
 const MAX_ZOOM: f32 = 20.0;
 const ACTIVE_DURATION_MILLISECONDS: u64 = 550;
 const CANVAS_BORDER_WIDTH: f32 = 2.0;
