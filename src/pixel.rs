@@ -200,6 +200,45 @@ pub fn alpha_blend_simd_four(dst: &mut [Color32; 4], source: Color32) {
     }
 }
 
+/// Alpha-blend a source color over a contiguous span of premultiplied pixels,
+/// using SIMD for 4-pixel chunks where possible.
+///
+/// Processes the span in three phases: scalar head (up to 3 pixels for 4-byte
+/// alignment), SIMD body (4 pixels at a time via [`alpha_blend_simd_four`]),
+/// scalar tail (remaining 0–3 pixels).
+///
+/// # Parameters
+///
+/// * `span` — Mutable slice of premultiplied pixels to blend over.
+/// * `source` — Premultiplied source color to alpha-blend onto each pixel.
+#[inline]
+pub fn alpha_blend_span(span: &mut [Color32], source: Color32) {
+    let len = span.len();
+    let mut i = 0;
+
+    // Scalar head: 0–3 pixels to reach 4-aligned index.
+    let head_end = (i + 3) & !3;
+    while i < head_end && i < len {
+        span[i] = alpha_blend(span[i], source);
+        i += 1;
+    }
+
+    // SIMD body: 4 pixels per chunk.
+    let simd_end = len & !3;
+    while i < simd_end {
+        // SAFETY: i < len, i + 4 <= len, and the slice is 4-element aligned.
+        let chunk: &mut [Color32; 4] = (&mut span[i..i + 4]).try_into().unwrap();
+        alpha_blend_simd_four(chunk, source);
+        i += 4;
+    }
+
+    // Scalar tail: remaining 0–3 pixels.
+    while i < len {
+        span[i] = alpha_blend(span[i], source);
+        i += 1;
+    }
+}
+
 /// Minimum SIMD chunk count before rayon parallelism kicks in.
 const PARALLEL_BLEND_THRESHOLD: usize = 256;
 

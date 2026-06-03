@@ -99,9 +99,7 @@ pub fn draw_bucket_fill(
         });
 
         if alpha_overlay {
-            for pixel in pixels[span_start..span_end].iter_mut() {
-                *pixel = crate::pixel::alpha_blend(*pixel, color);
-            }
+            crate::pixel::alpha_blend_span(&mut pixels[span_start..span_end], color);
         } else {
             pixels[span_start..span_end].fill(color);
         }

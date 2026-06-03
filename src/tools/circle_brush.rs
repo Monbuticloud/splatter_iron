@@ -65,9 +65,7 @@ fn fill_circle_impl(
 
         let apply = |span: &mut [Color32]| {
             if alpha_overlay {
-                for pixel in span.iter_mut() {
-                    *pixel = crate::pixel::alpha_blend(*pixel, color);
-                }
+                crate::pixel::alpha_blend_span(span, color);
             } else {
                 span.fill(color);
             }
