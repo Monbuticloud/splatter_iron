@@ -98,9 +98,9 @@ blend_layers with layers of different pixel counts panics.
 
 blend_layers with an undersized output buffer panics.
 
-## `blend_region_zero_width_panics`
+## `blend_region_zero_width_noop`
 
-blend_region with zero width panics.
+blend_region with zero width is a no-op (no panics, no writes).
 
 ## `blend_region_zero_height_noop`
 

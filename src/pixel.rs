@@ -978,12 +978,24 @@ pub fn blend_region(
     max_y: u32,
 ) {
 
-    if layers.is_empty() {
+    if layers.is_empty() || min_x > max_x || min_y > max_y {
 
         return;
     }
 
     let width = canvas_width as usize;
+
+    // Zero the output buffer in the dirty region so that transparent layer
+    // pixels (e.g. after erasing) produce transparent output instead of
+    // retaining stale pixels from the previous frame.
+    for y in min_y..=max_y {
+
+        let row_start = (y as usize * width + min_x as usize) * BYTES_PER_PIXEL;
+
+        let row_end = (y as usize * width + (max_x + 1) as usize) * BYTES_PER_PIXEL;
+
+        output[row_start..row_end].fill(0);
+    }
 
     let base_indices = compute_base_indices(layers);
 

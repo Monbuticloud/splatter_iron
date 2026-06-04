@@ -618,12 +618,10 @@ fn blend_layers_output_too_small_panics() {
 
 // --- blend_region edge cases ---
 
-/// `blend_region` with zero-width rect (min > max) should overflow
-/// in debug builds (overflow-checks = true).
+/// `blend_region` with zero-width rect (min > max) is a no-op.
 #[test]
-#[should_panic(expected = "attempt to subtract with overflow")]
 
-fn blend_region_zero_width_panics() {
+fn blend_region_zero_width_noop() {
 
     let mut output = vec![0u8; 64];
 
