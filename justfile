@@ -22,6 +22,10 @@ build-release:
 doc:
     RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
 
+# Generate HTML coverage report using cargo-llvm-cov
+coverage:
+    cargo llvm-cov --all-features --workspace --html
+
 # Check cargo-deny advisories, bans, licenses
 deny:
     cargo deny check
