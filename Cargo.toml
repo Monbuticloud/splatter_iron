@@ -69,3 +69,5 @@ all = "warn"
 pedantic = "warn"
 nursery = "warn"
 unwrap_used = "warn"
+# rustfmt handles empty line after doc comments
+empty_line_after_doc_comments = "allow"
