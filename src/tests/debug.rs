@@ -7,6 +7,8 @@
 
 /// Ensure the module is accessible.
 #[test]
+
 fn module_is_accessible() {
+
     let _ = crate::debug::debug_snapshot;
 }

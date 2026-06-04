@@ -46,6 +46,7 @@ use crate::undo::RunSegment;
 /// Panics if `pixels` is too small to cover the dirty rect at the given
 /// `width`, or if `visited` / `drag_processed` are too small.
 #[inline]
+
 pub fn apply_visited_runs(
     pixels: &mut [Color32],
     dirty_rect: &DirtyRect,
@@ -58,47 +59,72 @@ pub fn apply_visited_runs(
     drag_stamp_value: u32,
     before_pixels: &mut Vec<Color32>,
 ) -> Vec<RunSegment> {
+
     let mut runs: Vec<RunSegment> = Vec::new();
 
     for y in dirty_rect.min_y..=dirty_rect.max_y {
+
         let row_start = (y as usize) * width;
+
         let mut x = dirty_rect.min_x;
+
         while x <= dirty_rect.max_x {
+
             let pixel_index = row_start + x as usize;
+
             if visited[pixel_index] != stamp {
+
                 x += 1;
+
                 continue;
             }
+
             if alpha_overlay && drag_processed[pixel_index] == drag_stamp_value {
+
                 x += 1;
+
                 continue;
             }
+
             let run_start = pixel_index as u32;
 
             // Count contiguous visited pixels in this run.
             let mut run_len: u32 = 0;
+
             while x <= dirty_rect.max_x {
+
                 let next_pixel_index = row_start + x as usize;
+
                 if visited[next_pixel_index] != stamp {
+
                     break;
                 }
+
                 if alpha_overlay && drag_processed[next_pixel_index] == drag_stamp_value {
+
                     break;
                 }
+
                 run_len += 1;
+
                 x += 1;
             }
 
             // Check uniformity without allocating an intermediate Vec.
             let run_slice = &pixels[run_start as usize..run_start as usize + run_len as usize];
+
             let uniform =
                 run_len >= RLE_SHORT_RUN_THRESHOLD && run_slice.iter().all(|&p| p == run_slice[0]);
 
             let (rle_before, length) = if uniform {
+
                 (BeforePixels::All(run_slice[0]), run_len)
             } else {
+
                 let offset = before_pixels.len() as u32;
+
                 before_pixels.extend_from_slice(run_slice);
+
                 (
                     BeforePixels::Many {
                         offset,
@@ -109,18 +135,24 @@ pub fn apply_visited_runs(
             };
 
             // Apply colour.
-            let run_slice =
-                &mut pixels[run_start as usize..run_start as usize + run_len as usize];
+            let run_slice = &mut pixels[run_start as usize..run_start as usize + run_len as usize];
+
             if alpha_overlay {
+
                 crate::pixel::alpha_blend_span(run_slice, color);
             } else {
+
                 run_slice.fill(color);
             }
+
             if alpha_overlay {
+
                 let ds = drag_stamp_value;
+
                 for d in
                     &mut drag_processed[run_start as usize..run_start as usize + run_len as usize]
                 {
+
                     *d = ds;
                 }
             }

@@ -10,9 +10,11 @@ use crate::document::Document;
 
 // --- Autosave constants ---
 const AUTOSAVE_DIRECTORY: &str = "autosaves";
+
 const AUTOSAVE_DATE_FORMAT: &str = "%Y-%m-%d_%H-%M-%S";
 
 /// Distinguishes an autosave from a manual save in the async save pipeline.
+
 pub enum SaveKind {
     /// Periodic autosave to `{data_dir}/autosaves/`.
     Autosave,
@@ -22,6 +24,7 @@ pub enum SaveKind {
 
 /// Result of an async save operation sent via channel.
 #[derive(Debug)]
+
 pub enum SaveResult {
     /// Autosave completed successfully.
     Autosave,
@@ -35,6 +38,7 @@ pub enum SaveResult {
 ///
 /// Owns the save-result channel pair and the in-flight flag. The
 /// `app_local_data_directory` is used to construct autosave paths.
+
 pub struct SaveManager {
     /// Channel sender for save results from background thread to UI thread.
     pub save_result_sender: mpsc::Sender<SaveResult>,
@@ -49,6 +53,7 @@ pub struct SaveManager {
 
 impl std::fmt::Debug for SaveManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("SaveManager")
             .field("autosave_in_flight", &self.autosave_in_flight)
             .finish()
@@ -64,11 +69,13 @@ impl SaveManager {
     /// * `save_result_receiver` — Channel receiver for async save results.
     /// * `app_local_data_directory` — Base path under which the `autosaves/`
     ///   subdirectory exists.
+
     pub fn new(
         save_result_sender: mpsc::Sender<SaveResult>,
         save_result_receiver: mpsc::Receiver<SaveResult>,
         app_local_data_directory: PathBuf,
     ) -> Self {
+
         Self {
             save_result_sender,
             save_result_receiver,
@@ -78,7 +85,9 @@ impl SaveManager {
     }
 
     /// Return the path to the autosave directory (`{data_dir}/autosaves/`).
+
     pub fn autosave_directory(&self) -> PathBuf {
+
         self.app_local_data_directory.join(AUTOSAVE_DIRECTORY)
     }
 
@@ -93,11 +102,17 @@ impl SaveManager {
     ///
     /// * `document` — The document whose canvas will be saved.
     /// * `kind` — Whether this is an autosave or a manual save to a specific path.
+
     pub fn trigger_async_save(&mut self, document: &mut Document, kind: SaveKind) {
+
         use crate::document::SaveState;
+
         self.autosave_in_flight = matches!(kind, SaveKind::Autosave);
+
         document.save_state = SaveState::InFlight;
+
         let canvas = document.canvas.clone();
+
         let path = match &kind {
             SaveKind::Autosave => {
                 self.app_local_data_directory
@@ -109,8 +124,11 @@ impl SaveManager {
             }
             SaveKind::ManualSave(save_path) => save_path.clone(),
         };
+
         let sender = self.save_result_sender.clone();
+
         std::thread::spawn(move || {
+
             let result = match crate::files::save_canvas_to_path(&canvas, &path) {
                 Ok(()) => match kind {
                     SaveKind::Autosave => SaveResult::Autosave,
@@ -118,6 +136,7 @@ impl SaveManager {
                 },
                 Err(error) => SaveResult::Failed(format!("Serialisation failed: {error}")),
             };
+
             let _ = sender.send(result);
         });
     }
@@ -129,8 +148,11 @@ impl SaveManager {
     /// # Parameters
     ///
     /// * `document` — The document whose canvas will be saved.
+
     pub fn save_to_current_path(&mut self, document: &mut Document) {
+
         if !document.savefile_path.is_empty() {
+
             self.trigger_async_save(
                 document,
                 SaveKind::ManualSave(PathBuf::from(&document.savefile_path)),
@@ -148,22 +170,32 @@ impl SaveManager {
     ///
     /// * `document` — The document to update save-path / dirty-flag on.
     /// * `error_list` — Error list to push failure messages into.
+
     pub fn poll_save_results(&mut self, document: &mut Document, error_list: &mut Vec<String>) {
+
         while let Ok(result) = self.save_result_receiver.try_recv() {
+
             match result {
                 SaveResult::Autosave => {
+
                     document.dirty_since_last_autosave = false;
                 }
                 SaveResult::ManualSave(path) => {
+
                     document.savefile_path = path.display().to_string();
+
                     document.dirty_since_last_autosave = false;
+
                     document.canvas_mut().dirty_rect.request_full_blend();
                 }
                 SaveResult::Failed(message) => {
+
                     error_list.push(format!("Save failed: {message}"));
                 }
             }
+
             document.save_state = crate::document::SaveState::Idle;
+
             self.autosave_in_flight = false;
         }
     }

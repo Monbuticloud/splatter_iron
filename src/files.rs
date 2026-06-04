@@ -20,8 +20,11 @@ use crate::pixel::premultiply;
 use crate::pixel::unpremultiply;
 
 const COMPRESSION_LEVEL: i32 = 10;
+
 const XZ_COMPRESSION_PRESET: u32 = 9;
+
 const MAX_DECOMPRESSED_BYTES: u64 = 512 * 1024 * 1024;
+
 const JPEG_QUALITY: u8 = 100;
 
 /// Decompress and deserialize a `Canvas` from any `std::io::Read` by streaming
@@ -39,18 +42,25 @@ const JPEG_QUALITY: u8 = 100;
 /// Returns an error if zstd decompression or JSON deserialization fails,
 /// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
 /// or if the canvas has invalid dimensions or mismatched layer sizes.
+
 fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
+
     let decoder = zstd::Decoder::new(reader)?;
+
     let limited = decoder.take(MAX_DECOMPRESSED_BYTES);
+
     let mut canvas: Canvas = serde_json::from_reader(limited).map_err(|e| {
         if e.classify() == serde_json::error::Category::Eof {
+
             anyhow::anyhow!("decompressed data exceeds {} bytes", MAX_DECOMPRESSED_BYTES,)
         } else {
+
             e.into()
         }
     })?;
 
     if canvas.width == 0 || canvas.height == 0 {
+
         anyhow::bail!(
             "invalid canvas dimensions: {}x{}",
             canvas.width,
@@ -59,8 +69,11 @@ fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
     }
 
     let expected = (canvas.width as usize).saturating_mul(canvas.height as usize);
+
     for (i, layer) in canvas.pixels.iter().enumerate() {
+
         if layer.pixels.len() != expected {
+
             anyhow::bail!(
                 "layer {i}: expected {expected} pixels, got {}",
                 layer.pixels.len(),
@@ -69,6 +82,7 @@ fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
     }
 
     canvas.dirty_rect.request_full_blend();
+
     Ok(canvas)
 }
 
@@ -84,7 +98,9 @@ fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas> {
 /// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
 /// or if the canvas has invalid dimensions or mismatched layer sizes.
 #[cfg(test)]
+
 pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
+
     read_canvas(data)
 }
 
@@ -106,14 +122,21 @@ pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas> {
 /// # Errors
 ///
 /// Returns an error if JSON serialization or zstd compression fails.
+
 fn write_canvas(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
+
     let thread_count = std::thread::available_parallelism()
         .map(|count| count.get() as u32)
         .unwrap_or(1);
+
     let mut encoder = zstd::stream::Encoder::new(writer, COMPRESSION_LEVEL)?;
+
     encoder.multithread(thread_count)?;
+
     serde_json::to_writer(&mut encoder, canvas)?;
+
     encoder.finish()?;
+
     Ok(())
 }
 
@@ -131,9 +154,13 @@ fn write_canvas(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
 ///
 /// Returns an error if JSON serialization or zstd compression fails.
 #[cfg(test)]
+
 pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
+
     let mut compressed = Vec::new();
+
     write_canvas(canvas, &mut compressed)?;
+
     Ok(compressed)
 }
 
@@ -151,8 +178,11 @@ pub fn save_canvas_to_bytes(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
 ///
 /// Returns an error if the file cannot be created, or if JSON serialization
 /// or zstd compression fails.
+
 pub fn save_canvas_to_path(canvas: &Canvas, path: &Path) -> anyhow::Result<()> {
+
     let file = std::fs::File::create(path)?;
+
     write_canvas(canvas, file)
 }
 
@@ -168,8 +198,11 @@ pub fn save_canvas_to_path(canvas: &Canvas, path: &Path) -> anyhow::Result<()> {
 ///
 /// Returns an error if the file cannot be read, or if zstd decompression or
 /// JSON deserialization fails, or if the canvas has invalid dimensions.
+
 pub fn load_canvas_from_path(path: &Path) -> anyhow::Result<Canvas> {
+
     let file = std::fs::File::open(path)?;
+
     read_canvas(file)
 }
 
@@ -192,18 +225,25 @@ pub fn load_canvas_from_path(path: &Path) -> anyhow::Result<Canvas> {
 /// Returns an error if xz decompression or JSON deserialization fails,
 /// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
 /// or if the canvas has invalid dimensions or mismatched layer sizes.
+
 fn read_canvas_xz(reader: impl Read) -> anyhow::Result<Canvas> {
+
     let decoder = xz2::read::XzDecoder::new(reader);
+
     let limited = decoder.take(MAX_DECOMPRESSED_BYTES);
+
     let mut canvas: Canvas = serde_json::from_reader(limited).map_err(|e| {
         if e.classify() == serde_json::error::Category::Eof {
+
             anyhow::anyhow!("decompressed data exceeds {} bytes", MAX_DECOMPRESSED_BYTES,)
         } else {
+
             e.into()
         }
     })?;
 
     if canvas.width == 0 || canvas.height == 0 {
+
         anyhow::bail!(
             "invalid canvas dimensions: {}x{}",
             canvas.width,
@@ -212,8 +252,11 @@ fn read_canvas_xz(reader: impl Read) -> anyhow::Result<Canvas> {
     }
 
     let expected = (canvas.width as usize).saturating_mul(canvas.height as usize);
+
     for (i, layer) in canvas.pixels.iter().enumerate() {
+
         if layer.pixels.len() != expected {
+
             anyhow::bail!(
                 "layer {i}: expected {expected} pixels, got {}",
                 layer.pixels.len(),
@@ -222,6 +265,7 @@ fn read_canvas_xz(reader: impl Read) -> anyhow::Result<Canvas> {
     }
 
     canvas.dirty_rect.request_full_blend();
+
     Ok(canvas)
 }
 
@@ -237,7 +281,9 @@ fn read_canvas_xz(reader: impl Read) -> anyhow::Result<Canvas> {
 /// if the decompressed data exceeds [`MAX_DECOMPRESSED_BYTES`],
 /// or if the canvas has invalid dimensions or mismatched layer sizes.
 #[cfg(test)]
+
 pub fn load_canvas_from_bytes_xz(data: &[u8]) -> anyhow::Result<Canvas> {
+
     read_canvas_xz(data)
 }
 
@@ -253,8 +299,11 @@ pub fn load_canvas_from_bytes_xz(data: &[u8]) -> anyhow::Result<Canvas> {
 ///
 /// Returns an error if the file cannot be read, or if xz decompression or
 /// JSON deserialization fails, or if the canvas has invalid dimensions.
+
 pub fn load_canvas_from_path_xz(path: &Path) -> anyhow::Result<Canvas> {
+
     let file = std::fs::File::open(path)?;
+
     read_canvas_xz(file)
 }
 
@@ -273,10 +322,15 @@ pub fn load_canvas_from_path_xz(path: &Path) -> anyhow::Result<Canvas> {
 /// # Errors
 ///
 /// Returns an error if JSON serialization or xz compression fails.
+
 fn write_canvas_xz(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
+
     let mut encoder = xz2::write::XzEncoder::new(writer, XZ_COMPRESSION_PRESET);
+
     serde_json::to_writer(&mut encoder, canvas)?;
+
     encoder.finish()?;
+
     Ok(())
 }
 
@@ -294,9 +348,13 @@ fn write_canvas_xz(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()> {
 ///
 /// Returns an error if JSON serialization or xz compression fails.
 #[cfg(test)]
+
 pub fn save_canvas_to_bytes_xz(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
+
     let mut compressed = Vec::new();
+
     write_canvas_xz(canvas, &mut compressed)?;
+
     Ok(compressed)
 }
 
@@ -314,8 +372,11 @@ pub fn save_canvas_to_bytes_xz(canvas: &Canvas) -> anyhow::Result<Vec<u8>> {
 ///
 /// Returns an error if the file cannot be created, or if JSON serialization
 /// or xz compression fails.
+
 pub fn save_canvas_to_path_xz(canvas: &Canvas, path: &Path) -> anyhow::Result<()> {
+
     let file = std::fs::File::create(path)?;
+
     write_canvas_xz(canvas, file)
 }
 
@@ -325,6 +386,7 @@ pub fn save_canvas_to_path_xz(canvas: &Canvas, path: &Path) -> anyhow::Result<()
 /// allowing the export implementation to be injected from the application
 /// layer. The default implementation [`DefaultExportStrategy`] handles all
 /// 13 supported image formats.
+
 pub trait ExportStrategy: Send + Sync {
     /// Write `premultiplied_rgba` to the file at `path`.
     ///
@@ -341,6 +403,7 @@ pub trait ExportStrategy: Send + Sync {
     /// # Errors
     ///
     /// Returns an error if the file cannot be created or the image encoder fails.
+
     fn export(
         &self,
         premultiplied_rgba: &[u8],
@@ -353,6 +416,7 @@ pub trait ExportStrategy: Send + Sync {
 /// Default export strategy supporting all 13 formats by detecting the
 /// target format from the file path extension.
 #[derive(Debug)]
+
 pub struct DefaultExportStrategy;
 
 impl ExportStrategy for DefaultExportStrategy {
@@ -363,14 +427,17 @@ impl ExportStrategy for DefaultExportStrategy {
         height: u32,
         path: &Path,
     ) -> anyhow::Result<()> {
+
         let Some(format) = image::ImageFormat::from_extension(
             path.extension().and_then(|ext| ext.to_str()).unwrap_or(""),
         ) else {
+
             anyhow::bail!(
                 "Cannot determine image format from path: {}",
                 path.display()
             );
         };
+
         export_as_image(premultiplied_rgba, width, height, path, format)
     }
 }
@@ -395,6 +462,7 @@ impl ExportStrategy for DefaultExportStrategy {
 /// # Errors
 ///
 /// Returns an error if the file cannot be created or the image encoder fails.
+
 pub fn export_as_image(
     premultiplied_rgba: &[u8],
     mut width: u32,
@@ -402,30 +470,44 @@ pub fn export_as_image(
     path: &Path,
     format: image::ImageFormat,
 ) -> anyhow::Result<()> {
+
     let total_pixels = (width * height) as usize;
+
     if total_pixels == 0 {
+
         anyhow::bail!("cannot export an image with zero pixels");
     }
+
     let premultiplied: &[Color32] = bytemuck::cast_slice(premultiplied_rgba);
+
     let is_jpeg = format == image::ImageFormat::Jpeg;
 
     let mut raw_output = vec![0u8; total_pixels * 4];
 
     const CHUNK_BYTES: usize = 4096;
+
     const PIXELS_PER_CHUNK: usize = CHUNK_BYTES / 4;
+
     raw_output
         .par_chunks_mut(CHUNK_BYTES)
         .enumerate()
         .for_each(|(chunk_idx, chunk)| {
+
             let base_pixel = chunk_idx * PIXELS_PER_CHUNK;
+
             for (j, pixel) in chunk.chunks_exact_mut(4).enumerate() {
+
                 let i = base_pixel + j;
+
                 let c = premultiplied[i];
+
                 let (fr, fg, fb, fa) = if is_jpeg {
+
                     // Blend premultiplied RGBA against white background:
                     // fully transparent (a=0,r=0) -> white (255,255,255)
                     // For premultiplied over white: r' = r + (255 - a) (clamped)
                     let inv_a = 255u8.wrapping_sub(c.a());
+
                     (
                         c.r().saturating_add(inv_a),
                         c.g().saturating_add(inv_a),
@@ -433,128 +515,180 @@ pub fn export_as_image(
                         255,
                     )
                 } else {
+
                     let straight = unpremultiply(c);
+
                     (straight.r(), straight.g(), straight.b(), straight.a())
                 };
+
                 pixel[0] = fr;
+
                 pixel[1] = fg;
+
                 pixel[2] = fb;
+
                 pixel[3] = fa;
             }
         });
 
     let file = std::fs::File::create(path)?;
+
     let writer = BufWriter::new(file);
 
     // JPEG: alpha was blended against white above. Write unpremultiplied RGB
     // via a pre-allocated buffer, avoiding intermediate `Vec<u8>` growth.
     if format == image::ImageFormat::Jpeg {
+
         let mut rgb = vec![0u8; total_pixels * 3];
+
         for (i, chunk) in raw_output.chunks_exact(4).enumerate() {
+
             let o = i * 3;
+
             rgb[o] = chunk[0];
+
             rgb[o + 1] = chunk[1];
+
             rgb[o + 2] = chunk[2];
         }
+
         image::codecs::jpeg::JpegEncoder::new_with_quality(writer, JPEG_QUALITY).write_image(
             &rgb,
             width,
             height,
             image::ExtendedColorType::Rgb8,
         )?;
+
         return Ok(());
     }
 
     // Build Rgb32F for HDR directly from raw_output, skipping RgbaImage.
     if format == image::ImageFormat::Hdr {
+
         let pixel_count = (width * height) as usize;
+
         let mut float_bytes = Vec::with_capacity(pixel_count * 3 * 4);
+
         for chunk in raw_output.chunks_exact(4) {
+
             let red = f32::from(chunk[0]) / F32_COLOR_MAX;
+
             let green = f32::from(chunk[1]) / F32_COLOR_MAX;
+
             let blue = f32::from(chunk[2]) / F32_COLOR_MAX;
+
             float_bytes.extend_from_slice(&red.to_ne_bytes());
+
             float_bytes.extend_from_slice(&green.to_ne_bytes());
+
             float_bytes.extend_from_slice(&blue.to_ne_bytes());
         }
+
         let encoder = image::codecs::hdr::HdrEncoder::new(writer);
+
         encoder.write_image(
             &float_bytes,
             width,
             height,
             image::ExtendedColorType::Rgb32F,
         )?;
+
         return Ok(());
     }
 
     // Build u16 RGBA for Farbfeld directly from raw_output, skipping RgbaImage.
     if format == image::ImageFormat::Farbfeld {
+
         let pixel_count = (width * height) as usize;
+
         let mut rgba16 = Vec::with_capacity(pixel_count * 4);
+
         for chunk in raw_output.chunks_exact(4) {
+
             rgba16.push(u16::from(chunk[0]));
+
             rgba16.push(u16::from(chunk[1]));
+
             rgba16.push(u16::from(chunk[2]));
+
             rgba16.push(u16::from(chunk[3]));
         }
+
         let rgba16_bytes: &[u8] = cast_slice(&rgba16);
+
         let encoder = image::codecs::farbfeld::FarbfeldEncoder::new(writer);
+
         encoder.write_image(
             rgba16_bytes,
             width,
             height,
             image::ExtendedColorType::Rgba16,
         )?;
+
         return Ok(());
     }
 
     // ICO format has a 256×256 pixel limit — scale down via RgbaImage if needed.
     if format == image::ImageFormat::Ico && (width > 256 || height > 256) {
+
         let img = image::RgbaImage::from_raw(width, height, raw_output)
             .expect("dimensions match allocated pixel count");
+
         let scale = (256.0f64 / width.max(height) as f64).min(1.0);
+
         let new_width = (width as f64 * scale).round() as u32;
+
         let new_height = (height as f64 * scale).round() as u32;
+
         let new_width = new_width.max(1);
+
         let new_height = new_height.max(1);
+
         let img = image::imageops::resize(
             &img,
             new_width,
             new_height,
             image::imageops::FilterType::Lanczos3,
         );
+
         let (w, h) = img.dimensions();
+
         width = w;
+
         height = h;
+
         let ico_raw = img.into_raw();
+
         image::codecs::ico::IcoEncoder::new(writer).write_image(
             &ico_raw,
             width,
             height,
             image::ExtendedColorType::Rgba8,
         )?;
+
         return Ok(());
     }
 
     // GIF needs the `RgbaImage` for Frame construction.
     if format == image::ImageFormat::Gif {
+
         let img = image::RgbaImage::from_raw(width, height, raw_output)
             .expect("dimensions match allocated pixel count");
+
         let frame = image::Frame::new(img);
+
         let mut encoder = image::codecs::gif::GifEncoder::new(writer);
+
         encoder.encode_frame(frame)?;
+
         return Ok(());
     }
 
     // All other formats: write raw_output directly, no RgbaImage wrapper.
     macro_rules! export_via {
         ($encoder:expr) => {
-            $encoder.write_image(
-                &raw_output,
-                width,
-                height,
-                image::ExtendedColorType::Rgba8,
-            )
+
+            $encoder.write_image(&raw_output, width, height, image::ExtendedColorType::Rgba8)
         };
     }
 
@@ -574,6 +708,7 @@ pub fn export_as_image(
             export_via!(image::codecs::openexr::OpenExrEncoder::new(writer))?
         }
         _ => {
+
             anyhow::bail!("Unsupported export format: {format:?}");
         }
     }
@@ -597,38 +732,51 @@ pub fn export_as_image(
 /// not recognized by the `image` crate.
 /// Maximum allowed image dimension for import — prevents OOM from
 /// malicious or accidentally oversized images.
+
 const MAX_IMPORT_DIMENSION: u32 = 16384;
+
 /// Maximum megapixels for imported images.
+
 const MAX_IMPORT_MEGAPIXELS: u64 = 50_000_000;
 
 pub fn import_image_as_canvas(path: &Path) -> anyhow::Result<Canvas> {
+
     let dynamic_image = image::open(path)?;
+
     let rgba = dynamic_image.to_rgba8();
+
     let (width_u32, height_u32) = rgba.dimensions();
 
     if width_u32 > MAX_IMPORT_DIMENSION || height_u32 > MAX_IMPORT_DIMENSION {
+
         anyhow::bail!(
             "Image dimensions {width_u32}×{height_u32} exceed maximum allowed \
              ({MAX_IMPORT_DIMENSION}×{MAX_IMPORT_DIMENSION})",
         );
     }
+
     let megapixels = u64::from(width_u32) * u64::from(height_u32);
+
     if megapixels > MAX_IMPORT_MEGAPIXELS {
-        anyhow::bail!(
-            "Image has {megapixels} pixels, exceeds {MAX_IMPORT_MEGAPIXELS} pixel limit",
-        );
+
+        anyhow::bail!("Image has {megapixels} pixels, exceeds {MAX_IMPORT_MEGAPIXELS} pixel limit",);
     }
 
     let pixel_count = (width_u32 as usize) * (height_u32 as usize);
 
     let mut pixels = Vec::with_capacity(pixel_count);
+
     for pixel in rgba.pixels() {
+
         let straight = Color32::from_rgba_unmultiplied(pixel[0], pixel[1], pixel[2], pixel[3]);
+
         pixels.push(premultiply(straight));
     }
 
     let mut dirty_rect = DirtyRectList::new();
+
     dirty_rect.request_full_blend();
+
     Ok(Canvas {
         pixels: vec![Layer {
             pixels,

@@ -9,6 +9,7 @@ use crate::canvas::CurrentTool;
 
 /// Pixel-sampling strategy when scaling a stamp or brush tip to canvas size.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+
 pub enum StampSampling {
     /// Nearest-neighbour (sharp edges, pixel-art friendly).
     Nearest,
@@ -18,6 +19,7 @@ pub enum StampSampling {
 
 /// Tint mode for stamp and brush-tip rendering.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+
 pub enum StampTintMode {
     /// Use the tip's original colours.
     Original,
@@ -27,6 +29,7 @@ pub enum StampTintMode {
 
 /// Shared sampling configuration for stamp and brush-tip rendering.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+
 pub struct SamplingConfig {
     /// Pixel-sampling strategy (nearest or bilinear).
     pub sampling: StampSampling,
@@ -36,6 +39,7 @@ pub struct SamplingConfig {
 
 impl Default for SamplingConfig {
     fn default() -> Self {
+
         Self {
             sampling: StampSampling::Nearest,
             tint_mode: StampTintMode::Original,
@@ -45,6 +49,7 @@ impl Default for SamplingConfig {
 
 /// Current tool selection, color, brush radius, and stamp/brush sampling config.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+
 pub struct ToolConfiguration {
     /// The currently selected drawing tool.
     pub current_tool: CurrentTool,
@@ -73,7 +78,9 @@ pub struct ToolConfiguration {
 impl Default for ToolConfiguration {
     /// Create a default tool configuration with the Square tool selected,
     /// white color, radius 100, brush preview enabled.
+
     fn default() -> Self {
+
         Self {
             current_tool: CurrentTool::Square,
             current_color: Color32::from_rgba_premultiplied(255, 255, 255, 255),
@@ -89,5 +96,3 @@ impl Default for ToolConfiguration {
         }
     }
 }
-
-

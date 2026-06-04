@@ -17,6 +17,7 @@ use crate::canvas::Canvas;
 /// making signatures easier to read.
 ///
 /// Construct instances via [`BrushStrokeParams::builder`].
+
 pub struct BrushStrokeParams<'a> {
     /// Column of the line start point.
     pub start_x: u32,
@@ -49,6 +50,7 @@ pub struct BrushStrokeParams<'a> {
 /// Captures the invariant fields (canvas, color, layer, scratch buffers)
 /// once, then lets callers override only start/end position and
 /// alpha_overlay per line segment.
+
 pub(crate) struct BrushStrokeParamsBuilder<'a> {
     start_x: u32,
     start_y: u32,
@@ -66,6 +68,7 @@ pub(crate) struct BrushStrokeParamsBuilder<'a> {
 
 impl<'a> BrushStrokeParams<'a> {
     /// Start building with the stroke-invariant fields.
+
     pub(crate) fn builder(
         canvas: &'a mut Canvas,
         color: Color32,
@@ -75,6 +78,7 @@ impl<'a> BrushStrokeParams<'a> {
         drag_processed: &'a mut [u32],
         drag_stamp_value: u32,
     ) -> BrushStrokeParamsBuilder<'a> {
+
         BrushStrokeParamsBuilder {
             start_x: 0,
             start_y: 0,
@@ -94,27 +98,40 @@ impl<'a> BrushStrokeParams<'a> {
 
 impl<'a> BrushStrokeParamsBuilder<'a> {
     /// Set the line start point.
+
     pub(crate) fn start(mut self, x: u32, y: u32) -> Self {
+
         self.start_x = x;
+
         self.start_y = y;
+
         self
     }
 
     /// Set the line end point.
+
     pub(crate) fn end(mut self, x: u32, y: u32) -> Self {
+
         self.end_x = x;
+
         self.end_y = y;
+
         self
     }
 
     /// Set alpha-overlay mode (default: `false`).
+
     pub(crate) fn alpha_overlay(mut self, v: bool) -> Self {
+
         self.alpha_overlay = v;
+
         self
     }
 
     /// Finalise and produce a [`BrushStrokeParams`].
+
     pub(crate) fn build(self) -> BrushStrokeParams<'a> {
+
         BrushStrokeParams {
             start_x: self.start_x,
             start_y: self.start_y,
@@ -134,6 +151,7 @@ impl<'a> BrushStrokeParamsBuilder<'a> {
 
 impl std::fmt::Debug for BrushStrokeParams<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("BrushStrokeParams")
             .field("start_x", &self.start_x)
             .field("start_y", &self.start_y)

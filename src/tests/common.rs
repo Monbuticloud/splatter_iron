@@ -27,10 +27,15 @@ use crate::undo_history::UndoHistory;
 /// Build a `MyApp` rooted at `data_dir` so persistence methods write
 /// into the temporary directory. The returned `TempDir` must stay alive
 /// for the lifetime of the app.
+
 pub fn create_test_app(data_dir: PathBuf) -> MyApp {
+
     let canvas = Canvas::new(10, 10);
+
     let pixel_count = (canvas.width * canvas.height) as usize;
+
     let (dialog_tx, dialog_rx) = mpsc::channel();
+
     let (save_tx, save_rx) = mpsc::channel();
 
     MyApp {
@@ -53,7 +58,9 @@ pub fn create_test_app(data_dir: PathBuf) -> MyApp {
 /// # Returns
 ///
 /// A pre-built `Canvas` with one fully transparent layer at 10×10 resolution.
+
 pub fn small_canvas() -> Canvas {
+
     Canvas {
         pixels: vec![Layer {
             pixels: vec![Color32::TRANSPARENT; 100],
@@ -72,7 +79,9 @@ pub fn small_canvas() -> Canvas {
 /// # Returns
 ///
 /// `Color32::from_rgba_premultiplied(255, 0, 0, 255)`.
+
 pub fn red() -> Color32 {
+
     Color32::from_rgba_premultiplied(255, 0, 0, 255)
 }
 
@@ -81,6 +90,8 @@ pub fn red() -> Color32 {
 /// # Returns
 ///
 /// `Color32::from_rgba_premultiplied(0, 0, 255, 255)`.
+
 pub fn blue() -> Color32 {
+
     Color32::from_rgba_premultiplied(0, 0, 255, 255)
 }

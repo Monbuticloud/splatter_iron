@@ -33,27 +33,43 @@ pub mod frame;
 
 // --- App identity constants ---
 /// Reverse-domain qualifier for the platform data directory.
+
 pub const APP_QUALIFIER: &str = "com";
+
 /// Organization name for the platform data directory.
+
 pub const APP_ORGANIZATION: &str = "Monbuticloud";
+
 /// Application name for the platform data directory and window title.
+
 pub const APP_NAME: &str = "SplatterIron";
 
 /// File extension for native canvas files (zstd-compressed JSON).
+
 pub const CANVAS_EXTENSION: &str = ".splattercanvas";
+
 /// File-dialog filter name for `.splattercanvas` files.
+
 pub const FILE_FILTER_NAME: &str = "SplatterCanvas";
+
 /// Default save-file name used when no path has been set.
+
 pub const DEFAULT_CANVAS_NAME: &str = "canvas.splattercanvas";
 
 /// File extension for archive files (xz-compressed JSON).
+
 pub const ARCHIVE_EXTENSION: &str = ".splatterarchive";
+
 /// File-dialog filter name for `.splatterarchive` files.
+
 pub const ARCHIVE_FILTER_NAME: &str = "SplatterArchive";
+
 /// Default export name for archive files.
+
 pub const DEFAULT_ARCHIVE_NAME: &str = "canvas.splatterarchive";
 
 /// Preset canvas sizes shown in the "New Canvas" dialog.
+
 pub(crate) const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
     ("XS", 800, 600),
     ("S", 1280, 960),
@@ -65,42 +81,52 @@ pub(crate) const NEW_CANVAS_PRESETS: &[(&str, u32, u32)] = &[
 // --- Performance constants ---
 /// Sleep duration (ms) while the window is unfocused, used by
 /// `RenderState::UnfocusedFrozen` to minimise repaint overhead.
+
 pub(crate) const UNFOCUSED_SLEEP_MILLISECONDS: u64 = 50;
 
 /// Maximum size (bytes) for deserialized config files — prevents OOM from
 /// malformed or malicious config.json files. 1 MB is generous for tool config
 /// + recent files (typically <1 KB).
+
 pub(crate) const MAX_CONFIG_SIZE: u64 = 1_048_576; // 1 MB
 
 // --- Memory warning threshold ---
 /// Threshold (in bytes) above which creating a new canvas shows a
 /// confirmation dialog. 500 MB is a safe boundary — output_rgba + one layer
 /// + blend buffer at 8000×8000 is ~768 MB.
+
 pub(crate) const MEMORY_WARNING_THRESHOLD: u64 = 500_000_000;
 
 /// Estimate the minimum memory footprint (bytes) for a canvas of the given
 /// dimensions and layer count: output_rgba (w×h×4) + each layer's pixel data
 /// (w×h×4 per layer) + blend buffer overhead (w×h×4).
 /// Pass `layer_count = 1` for a new canvas (one default layer).
+
 pub(crate) fn estimate_canvas_memory(width: u32, height: u32, layer_count: usize) -> u64 {
+
     let pixels = u64::from(width) * u64::from(height);
+
     // output_rgba + blend_buffer + each layer's pixel data
     pixels * 4 * (2 + layer_count as u64)
 }
+
 /// Repaint-interval multiplier applied when the render state is
 /// `IdleThrottled` — the normal repaint delay is multiplied by this
 /// value to reduce CPU/GPU load during idle periods.
+
 pub(crate) const REPAINT_DELAY_MULTIPLIER: u32 = 5;
 
 // --- Autosave interval ---
 /// Interval (minutes) between automatic saves of the current canvas.
 /// The autosave loop in `MyApp` checks this duration against the last
 /// autosave timestamp to decide when to trigger a background save.
+
 pub(crate) const AUTOSAVE_INTERVAL_MINUTES: u64 = 2;
 
 // --- Image import extensions ---
 /// Serialization wrapper for tool config, recent files, and UI state.
 #[derive(Debug, Serialize, Deserialize)]
+
 pub struct PersistedConfig {
     /// Tool settings (current tool, color, radius, etc.).
     pub tool_configuration: ToolConfiguration,
@@ -121,6 +147,7 @@ pub struct PersistedConfig {
 }
 
 /// File-extension list accepted by the image-import dialog (19 formats).
+
 pub const IMPORT_EXTENSIONS: &[&str] = &[
     "avif", "png", "jpg", "jpeg", "webp", "gif", "tiff", "tif", "tga", "ico", "pnm", "pgm", "ppm",
     "pbm", "pam", "qoi", "exr", "hdr", "ff",
@@ -128,6 +155,7 @@ pub const IMPORT_EXTENSIONS: &[&str] = &[
 
 /// File extension list and image format for an export target.
 #[derive(Debug)]
+
 pub struct ExportInformation {
     pub extensions: &'static [&'static str],
     #[allow(dead_code)]
@@ -135,6 +163,7 @@ pub struct ExportInformation {
 }
 
 /// Lookup table for all supported export formats.
+
 pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
     (
         "AVIF",
@@ -230,6 +259,7 @@ pub const EXPORT_FORMATS: &[(&str, ExportInformation)] = &[
 ];
 
 /// A stamp image awaiting a user-provided name before being added to the library.
+
 pub struct PendingStamp {
     pub pixels: Vec<egui::Color32>,
     pub width: u32,
@@ -241,6 +271,7 @@ pub struct PendingStamp {
 
 impl std::fmt::Debug for PendingStamp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("PendingStamp")
             .field("pixels.len", &self.pixels.len())
             .field("width", &self.width)
@@ -253,6 +284,7 @@ impl std::fmt::Debug for PendingStamp {
 
 /// Dialog-related state: open/closed flags, input values, pending confirmations.
 #[derive(Debug)]
+
 pub struct DialogState {
     /// Layer index pending deletion confirmation via modal dialog.
     pub show_delete_layer_dialog: Option<usize>,
@@ -278,7 +310,9 @@ pub struct DialogState {
 impl Default for DialogState {
     /// All dialogs closed, default canvas dimensions (2000×1500),
     /// no pending stamps, brushes, or unsaved-warning actions.
+
     fn default() -> Self {
+
         Self {
             show_delete_layer_dialog: None,
             show_new_canvas_dialog: false,
@@ -295,19 +329,23 @@ impl Default for DialogState {
 
 /// Error messages displayed in the error overlay.
 #[derive(Debug)]
+
 pub struct ErrorState {
     pub list: Vec<String>,
 }
 
 impl Default for ErrorState {
     /// Empty error list — no active errors.
+
     fn default() -> Self {
+
         Self { list: Vec::new() }
     }
 }
 
 /// Transient toast notification.
 #[derive(Debug)]
+
 pub struct ToastState {
     /// The message text and the instant it was triggered.
     pub message: Option<(String, Instant)>,
@@ -315,7 +353,9 @@ pub struct ToastState {
 
 impl Default for ToastState {
     /// No active toast notification.
+
     fn default() -> Self {
+
         Self { message: None }
     }
 }
@@ -324,6 +364,7 @@ impl Default for ToastState {
 /// unsaved changes. Stored until the user resolves the unsaved-changes
 /// warning dialog.
 #[derive(Clone, Debug)]
+
 pub enum UnsavedWarningAction {
     /// Close the application.
     Quit,
@@ -339,6 +380,7 @@ pub enum UnsavedWarningAction {
 
 /// Progress state for long-running operations.
 #[derive(Clone, Debug, PartialEq)]
+
 pub enum ProgressState {
     /// No operation in progress.
     Idle,
@@ -356,6 +398,7 @@ pub enum ProgressState {
 
 /// UI-level state that doesn't belong to any domain module.
 #[derive(Debug)]
+
 pub struct UIState {
     /// Current rendering cadence (active, throttled, or frozen).
     pub render_state: RenderState,
@@ -415,7 +458,9 @@ pub struct UIState {
 impl Default for UIState {
     /// Create a default `UIState` with idle throttled rendering,
     /// zero elapsed time, no autosaves, and no pending layer deletion.
+
     fn default() -> Self {
+
         Self {
             render_state: RenderState::IdleThrottled,
             time_elapsed: Duration::ZERO,
@@ -450,6 +495,7 @@ impl Default for UIState {
 /// The `queue` is used each frame to upload only the dirty sub-region
 /// via `wgpu::Queue::write_texture`.
 #[derive(Debug)]
+
 pub struct GpuTexture {
     /// The wgpu texture storing the canvas composite on the GPU.
     pub texture: wgpu::Texture,
@@ -462,6 +508,7 @@ pub struct GpuTexture {
 /// Top-level application state owned by eframe: document, tools, undo history,
 /// file IO, UI state, and optional wgpu GPU texture.
 #[derive(Debug)]
+
 pub struct MyApp {
     /// The edited canvas document (layers, dimensions, save path).
     pub document: Document,
@@ -502,17 +549,26 @@ impl MyApp {
     /// (no home directory) or if the operating system refuses to create
     /// either the data directory or the autosaves subdirectory (e.g.,
     /// file-system permissions).
+
     pub fn new(creation_context: &eframe::CreationContext<'_>) -> Self {
+
         use std::sync::mpsc;
+
         let (dialog_sender, dialog_receiver) = mpsc::channel();
+
         let (save_result_sender, save_result_receiver) = mpsc::channel();
+
         let canvas = Canvas::default();
+
         let pixel_count = (canvas.width * canvas.height) as usize;
 
         let project_dirs = ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME)
             .expect("Couldn't resolve app dir");
+
         let data_dir = project_dirs.data_dir().to_path_buf();
+
         std::fs::create_dir_all(&data_dir).expect("Couldn't create data dir");
+
         std::fs::create_dir_all(&data_dir.join("autosaves")).expect("Couldn't create autosave dir");
 
         // Query the device's max 2D texture dimension for the new-canvas slider.
@@ -524,19 +580,24 @@ impl MyApp {
             .unwrap_or(8192);
 
         let stamp_library: Library<StampEntry> = Library::load_from_disk(&data_dir);
+
         let brush_library: Library<BrushEntry> = Library::load_from_disk(&data_dir);
 
         let gpu_texture = creation_context
             .wgpu_render_state
             .as_ref()
             .map(|render_state| {
+
                 let width = canvas.width;
+
                 let height = canvas.height;
+
                 let size = wgpu::Extent3d {
                     width,
                     height,
                     depth_or_array_layers: 1,
                 };
+
                 let texture = render_state.device.create_texture(
                     &(wgpu::TextureDescriptor {
                         label: Some("splatter_iron_canvas"),
@@ -549,13 +610,17 @@ impl MyApp {
                         view_formats: &[],
                     }),
                 );
+
                 let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
                 let mut renderer = render_state.renderer.write();
+
                 let texture_id = renderer.register_native_texture(
                     &render_state.device,
                     &view,
                     wgpu::FilterMode::Linear,
                 );
+
                 GpuTexture {
                     texture,
                     texture_id,
@@ -571,11 +636,15 @@ impl MyApp {
                 .ok()
                 .filter(|&exists| exists)
                 .and_then(|_| {
+
                     std::fs::File::open(data_dir.join("config.json"))
                         .ok()
                         .and_then(|file| {
+
                             let limited = file.take(MAX_CONFIG_SIZE);
+
                             let p: PersistedConfig = serde_json::from_reader(limited).ok()?;
+
                             Some((
                                 p.tool_configuration,
                                 p.recent_files,
@@ -628,12 +697,16 @@ impl eframe::App for MyApp {
     /// and triggers autosave on a 2-minute interval.
     ///
     /// When the viewport is unfocused, sleeps to reduce CPU usage.
+
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+
         #[cfg(feature = "debug-snapshot")]
         debug_snapshot(&self);
+
         self.poll_file_results(ui.ctx());
 
         if self.update_render_state(ui) {
+
             return;
         }
 
@@ -645,41 +718,60 @@ impl eframe::App for MyApp {
         let is_quitting = self.show_panels(ui);
 
         self.show_error_window(ui);
+
         self.show_delete_layer_dialog(ui);
+
         self.show_large_canvas_warning(ui);
+
         self.show_new_canvas_dialog(ui);
+
         self.show_unsaved_changes_warning(ui);
+
         self.show_stamp_naming_dialog(ui);
+
         self.show_brush_naming_dialog(ui);
+
         self.show_toast(ui);
 
         // Update window title to reflect unsaved changes.
         let filename = if self.document.savefile_path.is_empty() {
+
             "Untitled"
         } else {
+
             std::path::Path::new(&self.document.savefile_path)
                 .file_name()
                 .and_then(std::ffi::OsStr::to_str)
                 .unwrap_or("Untitled")
         };
+
         let new_title = if self.document.dirty_since_last_autosave {
+
             format!("{APP_NAME} — {filename} (unsaved)")
         } else {
+
             APP_NAME.to_string()
         };
+
         if self.ui.current_title != new_title {
+
             self.ui.current_title.clone_from(&new_title);
+
             ui.send_viewport_cmd(egui::ViewportCommand::Title(new_title));
         }
 
         if self.ui.should_close {
+
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         } else if is_quitting {
+
             ui.send_viewport_cmd(egui::ViewportCommand::Close);
         }
 
         self.handle_first_frame(ui.ctx());
+
         self.handle_autosave();
+
         self.handle_config_save();
     }
 }

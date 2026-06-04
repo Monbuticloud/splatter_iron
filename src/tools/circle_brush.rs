@@ -27,6 +27,7 @@ use crate::undo::compress_and_store;
 ///
 /// Panics if `pixels.len() < canvas_width * canvas_height`.
 #[inline]
+
 fn fill_circle_impl(
     pixels: &mut [Color32],
     width: usize,
@@ -38,50 +39,71 @@ fn fill_circle_impl(
     canvas_height: u32,
     alpha_overlay: bool,
 ) {
+
     if radius == 0 {
+
         let pixel_index = (center_y as usize) * width + center_x as usize;
+
         if alpha_overlay {
+
             pixels[pixel_index] = crate::pixel::alpha_blend(pixels[pixel_index], color);
         } else {
+
             pixels[pixel_index] = color;
         }
+
         return;
     }
 
     let rsq = (radius as u64) * (radius as u64);
+
     let mut delta_x = radius;
 
     for delta_y in 0..=radius {
+
         while delta_x > 0
             && (delta_x as u64) * (delta_x as u64) + (delta_y as u64) * (delta_y as u64) > rsq
         {
+
             delta_x -= 1;
         }
+
         let span_start = center_x.saturating_sub(delta_x).min(canvas_width - 1);
+
         let span_end = (center_x + delta_x).min(canvas_width - 1);
+
         if span_start > span_end {
+
             continue;
         }
 
         let apply = |span: &mut [Color32]| {
             if alpha_overlay {
+
                 crate::pixel::alpha_blend_span(span, color);
             } else {
+
                 span.fill(color);
             }
         };
 
         // Top half row
         if let Some(y) = center_y.checked_sub(delta_y) {
+
             let row_start = (y as usize) * width;
+
             apply(&mut pixels[row_start + span_start as usize..=row_start + span_end as usize]);
         }
 
         // Bottom half (skip centre-row duplicate)
         if delta_y != 0 {
+
             let y = center_y + delta_y;
+
             if y < canvas_height {
+
                 let row_start = (y as usize) * width;
+
                 apply(&mut pixels[row_start + span_start as usize..=row_start + span_end as usize]);
             }
         }
@@ -108,6 +130,7 @@ fn fill_circle_impl(
 ///
 /// Panics if `layer >= canvas.pixels.len()`.
 #[inline]
+
 pub fn draw_circle(
     center_x: u32,
     center_y: u32,
@@ -117,14 +140,18 @@ pub fn draw_circle(
     layer: usize,
     alpha_overlay: bool,
 ) -> UndoRecord {
+
     let width = canvas.width as usize;
+
     let height = canvas.height;
 
     // Clamp center to canvas (inclusive bounds)
     let center_x = center_x.min(canvas.width.saturating_sub(1));
+
     let center_y = center_y.min(height.saturating_sub(1));
 
     if radius == 0 || center_x >= canvas.width || center_y >= height {
+
         return UndoRecord::Run {
             layer_index: layer,
             color_after: color,
@@ -137,31 +164,44 @@ pub fn draw_circle(
     }
 
     let pixels = &mut canvas.pixels[layer].pixels;
+
     let mut runs: Vec<RunSegment> = Vec::new();
+
     let mut before_pixels = Vec::new();
 
     let rsq = (radius as u64) * (radius as u64);
+
     let mut delta_x = radius;
 
     for delta_y in 0..=radius {
+
         while delta_x > 0
             && (delta_x as u64) * (delta_x as u64) + (delta_y as u64) * (delta_y as u64) > rsq
         {
+
             delta_x -= 1;
         }
+
         let span_start = center_x.saturating_sub(delta_x).min(canvas.width - 1);
+
         let span_end = (center_x + delta_x).min(canvas.width - 1);
 
         if span_start > span_end {
+
             continue;
         }
 
         // Top half row
         if let Some(y) = center_y.checked_sub(delta_y) {
+
             let row_start = (y as usize) * width;
+
             let start = row_start + span_start as usize;
+
             let end = row_start + span_end as usize + 1;
+
             let (before, length) = compress_and_store(&pixels[start..end], &mut before_pixels);
+
             runs.push(RunSegment {
                 start: start as u32,
                 length,
@@ -171,12 +211,19 @@ pub fn draw_circle(
 
         // Bottom half (skip centre-row duplicate)
         if delta_y != 0 {
+
             let y = center_y + delta_y;
+
             if y < height {
+
                 let row_start = (y as usize) * width;
+
                 let start = row_start + span_start as usize;
+
                 let end = row_start + span_end as usize + 1;
+
                 let (before, length) = compress_and_store(&pixels[start..end], &mut before_pixels);
+
                 runs.push(RunSegment {
                     start: start as u32,
                     length,
@@ -200,10 +247,15 @@ pub fn draw_circle(
     );
 
     let circle_min_x = center_x.saturating_sub(radius);
+
     let circle_min_y = center_y.saturating_sub(radius);
+
     let circle_max_x = (center_x + radius).min(canvas.width - 1);
+
     let circle_max_y = (center_y + radius).min(canvas.height - 1);
+
     let rect = DirtyRect::new(circle_min_x, circle_min_y, circle_max_x, circle_max_y);
+
     canvas.dirty_rect.add(rect);
 
     UndoRecord::Run {
@@ -234,6 +286,7 @@ pub fn draw_circle(
 /// pixel index along the stamped line is written directly into the
 /// visited buffer without a bounds check.
 #[inline]
+
 fn stamp_circle_positions(
     start_x: u32,
     start_y: u32,
@@ -246,52 +299,85 @@ fn stamp_circle_positions(
     stamp: u32,
     dirty_rect: &mut DirtyRect,
 ) {
+
     if geo_radius == 0 {
+
         let mut current_x = start_x as i32;
+
         let mut current_y = start_y as i32;
+
         let target_x = end_x as i32;
+
         let target_y = end_y as i32;
+
         let delta_x = target_x.abs_diff(current_x) as i32;
+
         let step_x = if current_x < target_x { 1 } else { -1 };
+
         let delta_y = -(target_y.abs_diff(current_y) as i32);
+
         let step_y = if current_y < target_y { 1 } else { -1 };
+
         let mut error = delta_x + delta_y;
+
         loop {
+
             if current_x >= 0
                 && (current_x as u32) < width as u32
                 && current_y >= 0
                 && (current_y as u32) < height
             {
+
                 let x = current_x as u32;
+
                 let y = current_y as u32;
+
                 visited[(y as usize) * width + x as usize] = stamp;
+
                 dirty_rect.extend(x, y);
             }
+
             if current_x == target_x && current_y == target_y {
+
                 break;
             }
+
             let error_times_two = error.saturating_mul(2);
+
             if error_times_two >= delta_y {
+
                 error += delta_y;
+
                 current_x += step_x;
             }
+
             if error_times_two <= delta_x {
+
                 error += delta_x;
+
                 current_y += step_y;
             }
         }
+
         return;
     }
 
     let mut current_x = start_x as i32;
+
     let mut current_y = start_y as i32;
+
     let target_x = end_x as i32;
+
     let target_y = end_y as i32;
 
     let delta_x = target_x.abs_diff(current_x) as i32;
+
     let step_x = if current_x < target_x { 1 } else { -1 };
+
     let delta_y = -(target_y.abs_diff(current_y) as i32);
+
     let step_y = if current_y < target_y { 1 } else { -1 };
+
     let mut error = delta_x + delta_y;
 
     let radius_squared = (geo_radius as u64) * (geo_radius as u64);
@@ -300,60 +386,99 @@ fn stamp_circle_positions(
     // min_x/max_x of already-stamped columns. This avoids re-stamping pixels
     // already covered by a previous step, reducing O(L·R²) to O(L·R).
     let mut row_min_x = vec![u32::MAX; height as usize];
+
     let mut row_max_x = vec![0u32; height as usize];
 
     loop {
+
         let geo_radius_i32 = geo_radius as i32;
+
         let circle_min_y = (current_y - geo_radius_i32).max(0) as u32;
+
         let circle_max_y = (current_y + geo_radius_i32).min(height as i32 - 1).max(0) as u32;
+
         let circle_min_x = (current_x - geo_radius_i32).max(0) as u32;
+
         let circle_max_x = (current_x + geo_radius_i32).min(width as i32 - 1).max(0) as u32;
+
         dirty_rect.extend(circle_min_x, circle_min_y);
+
         dirty_rect.extend(circle_max_x, circle_max_y);
 
         let mut cx = geo_radius_i32;
+
         for dy in 0..=geo_radius_i32 {
+
             while cx > 0 && (cx as u64) * (cx as u64) + (dy as u64) * (dy as u64) > radius_squared {
+
                 cx -= 1;
             }
 
             let span_start = (current_x - cx).max(0).min(width as i32 - 1) as usize;
+
             let span_end = (current_x + cx).max(0).min(width as i32 - 1) as usize;
+
             if span_start > span_end {
+
                 continue;
             }
 
             // Top half (center row when dy == 0)
             if dy <= current_y {
+
                 let y_top = (current_y - dy) as usize;
+
                 stamp_circle_row(
-                    y_top, span_start, span_end, width, visited, stamp,
-                    &mut row_min_x, &mut row_max_x,
+                    y_top,
+                    span_start,
+                    span_end,
+                    width,
+                    visited,
+                    stamp,
+                    &mut row_min_x,
+                    &mut row_max_x,
                 );
             }
 
             // Bottom half (skip center-row duplicate)
             if dy != 0 {
+
                 let y_bot = current_y + dy;
+
                 if y_bot < height as i32 {
+
                     stamp_circle_row(
-                        y_bot as usize, span_start, span_end, width, visited, stamp,
-                        &mut row_min_x, &mut row_max_x,
+                        y_bot as usize,
+                        span_start,
+                        span_end,
+                        width,
+                        visited,
+                        stamp,
+                        &mut row_min_x,
+                        &mut row_max_x,
                     );
                 }
             }
         }
 
         if current_x == target_x && current_y == target_y {
+
             break;
         }
+
         let error_times_two = error.saturating_mul(2);
+
         if error_times_two >= delta_y {
+
             error += delta_y;
+
             current_x += step_x;
         }
+
         if error_times_two <= delta_x {
+
             error += delta_x;
+
             current_y += step_y;
         }
     }
@@ -362,6 +487,7 @@ fn stamp_circle_positions(
 /// Stamp the span `[span_start, span_end]` for a single row, skipping pixels
 /// already covered by previous Bresenham steps via per-row span tracking.
 #[inline]
+
 fn stamp_circle_row(
     row: usize,
     span_start: usize,
@@ -372,30 +498,45 @@ fn stamp_circle_row(
     row_min_x: &mut [u32],
     row_max_x: &mut [u32],
 ) {
+
     let cur_min = row_min_x[row];
+
     let cur_max = row_max_x[row];
+
     let row_start = row * width;
 
     if cur_min == u32::MAX {
+
         // First time this row is hit — stamp the full span.
         for x in span_start..=span_end {
+
             visited[row_start + x] = stamp;
         }
+
         row_min_x[row] = span_start as u32;
+
         row_max_x[row] = span_end as u32;
     } else {
+
         // Stamp newly-covered left extension.
         if span_start < cur_min as usize {
+
             for x in span_start..cur_min as usize {
+
                 visited[row_start + x] = stamp;
             }
+
             row_min_x[row] = span_start as u32;
         }
+
         // Stamp newly-covered right extension.
         if span_end > cur_max as usize {
+
             for x in cur_max as usize..=span_end {
+
                 visited[row_start + x] = stamp;
             }
+
             row_max_x[row] = span_end as u32;
         }
     }
@@ -417,7 +558,9 @@ fn stamp_circle_row(
 ///
 /// Panics if `params.layer >= params.canvas.pixels.len()`.
 #[inline]
+
 pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoRecord {
+
     let BrushStrokeParams {
         start_x,
         start_y,
@@ -434,9 +577,11 @@ pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoR
     } = params;
 
     let width = canvas.width as usize;
+
     let height = canvas.height;
 
     let mut dirty_rect = DirtyRect::empty();
+
     stamp_circle_positions(
         start_x,
         start_y,
@@ -451,6 +596,7 @@ pub fn draw_circle_line(params: BrushStrokeParams<'_>, geo_radius: u32) -> UndoR
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
+
     let mut before_pixels = Vec::new();
 
     let runs = crate::tools::brush_common::apply_visited_runs(

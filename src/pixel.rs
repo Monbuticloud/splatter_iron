@@ -17,8 +17,11 @@ use wide::u32x4;
 use crate::canvas::LayerMode;
 
 /// Number of bytes per pixel in RGBA output buffers.
+
 pub const BYTES_PER_PIXEL: usize = 4;
+
 /// Maximum `f32` value used for normalising `u8` color channels.
+
 pub const F32_COLOR_MAX: f32 = 255.0;
 
 // SIMD constant for the (value * alpha + 128) >> 8 fixed-point blend
@@ -26,6 +29,7 @@ const ROUNDING_BIAS_128: u32x4 = u32x4::splat(128);
 
 /// Per-layer information needed for compositing.
 #[derive(Clone, Copy, Debug)]
+
 pub struct LayerBlendInfo<'a> {
     /// Premultiplied-alpha RGBA pixels for this layer.
     pub pixels: &'a [Color32],
@@ -44,15 +48,24 @@ pub struct LayerBlendInfo<'a> {
 ///
 /// * `color` — Premultiplied-alpha color to convert.
 #[inline]
+
 pub fn unpremultiply(color: Color32) -> Color32 {
+
     let alpha = color.a();
+
     if alpha == 0 || alpha == 255 {
+
         return color;
     }
+
     let alpha_u32 = alpha as u32;
+
     let red = (((color.r() as u32) * 255) / alpha_u32).min(255) as u8;
+
     let green = (((color.g() as u32) * 255) / alpha_u32).min(255) as u8;
+
     let blue = (((color.b() as u32) * 255) / alpha_u32).min(255) as u8;
+
     Color32::from_rgba_premultiplied(red, green, blue, alpha)
 }
 
@@ -69,23 +82,29 @@ pub fn unpremultiply(color: Color32) -> Color32 {
 ///
 /// * `color` — Straight-alpha color to convert to premultiplied format.
 #[inline]
+
 pub const fn premultiply(color: Color32) -> Color32 {
+
     let alpha = color.a();
 
     // Fully opaque — no change needed
     if alpha == 255 {
+
         return color;
     }
 
     // Fully transparent — return transparent
     if alpha == 0 {
+
         return Color32::TRANSPARENT;
     }
 
     // Multiply each channel by alpha with correct rounding
     // Uses (value * alpha + 128) * 257 >> 16  (fixed-point division by 255)
     let red = ((((color.r() as u32) * (alpha as u32) + 128) * 257) >> 16) as u8;
+
     let green = ((((color.g() as u32) * (alpha as u32) + 128) * 257) >> 16) as u8;
+
     let blue = ((((color.b() as u32) * (alpha as u32) + 128) * 257) >> 16) as u8;
 
     Color32::from_rgba_premultiplied(red, green, blue, alpha)
@@ -101,21 +120,31 @@ pub const fn premultiply(color: Color32) -> Color32 {
 /// * `destination` — Background pixel (premultiplied).
 /// * `source` — Foreground pixel (premultiplied), composited over destination.
 #[inline]
+
 pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
+
     /// Blend a single color channel: `dest * inverse_alpha` with rounding.
     #[inline]
+
     const fn blend_channel(destination_channel: u32, inverse_alpha: u32) -> u32 {
+
         (destination_channel * inverse_alpha + 128) >> 8
     }
 
     let source_red = source.r() as u32;
+
     let source_green = source.g() as u32;
+
     let source_blue = source.b() as u32;
+
     let source_alpha = source.a() as u32;
 
     let dest_red = destination.r() as u32;
+
     let dest_green = destination.g() as u32;
+
     let dest_blue = destination.b() as u32;
+
     let dest_alpha = destination.a() as u32;
 
     let inverse_alpha = 255 - source_alpha;
@@ -143,7 +172,9 @@ pub const fn alpha_blend(destination: Color32, source: Color32) -> Color32 {
 /// Panics in debug builds if `bytemuck` detects an alignment or layout
 /// violation (should never happen for `Color32`).
 #[inline]
+
 pub fn alpha_blend_simd_four(dst: &mut [Color32; 4], source: Color32) {
+
     let bytes: &mut [u8; 16] = bytemuck::cast_mut(dst);
 
     // Read 4 destination pixels (R/G/B/A interleaved).
@@ -153,18 +184,21 @@ pub fn alpha_blend_simd_four(dst: &mut [Color32; 4], source: Color32) {
         bytes[8] as u32,
         bytes[12] as u32,
     ]);
+
     let dg = u32x4::new([
         bytes[1] as u32,
         bytes[5] as u32,
         bytes[9] as u32,
         bytes[13] as u32,
     ]);
+
     let db = u32x4::new([
         bytes[2] as u32,
         bytes[6] as u32,
         bytes[10] as u32,
         bytes[14] as u32,
     ]);
+
     let da = u32x4::new([
         bytes[3] as u32,
         bytes[7] as u32,
@@ -174,28 +208,43 @@ pub fn alpha_blend_simd_four(dst: &mut [Color32; 4], source: Color32) {
 
     // Constant source, splatted across all 4 lanes.
     let sr = u32x4::splat(source.r() as u32);
+
     let sg = u32x4::splat(source.g() as u32);
+
     let sb = u32x4::splat(source.b() as u32);
+
     let sa = u32x4::splat(source.a() as u32);
 
     let inv_a = u32x4::splat(255) - sa;
+
     let bias = u32x4::splat(128);
 
     let out_r = sr + ((dr * inv_a + bias) >> u32x4::splat(8));
+
     let out_g = sg + ((dg * inv_a + bias) >> u32x4::splat(8));
+
     let out_b = sb + ((db * inv_a + bias) >> u32x4::splat(8));
+
     let out_a = sa + ((da * inv_a + bias) >> u32x4::splat(8));
 
     let r_arr = out_r.to_array();
+
     let g_arr = out_g.to_array();
+
     let b_arr = out_b.to_array();
+
     let a_arr = out_a.to_array();
 
     for i in 0..4 {
+
         let o = i * 4;
+
         bytes[o] = r_arr[i] as u8;
+
         bytes[o + 1] = g_arr[i] as u8;
+
         bytes[o + 2] = b_arr[i] as u8;
+
         bytes[o + 3] = a_arr[i] as u8;
     }
 }
@@ -212,43 +261,61 @@ pub fn alpha_blend_simd_four(dst: &mut [Color32; 4], source: Color32) {
 /// * `span` — Mutable slice of premultiplied pixels to blend over.
 /// * `source` — Premultiplied source color to alpha-blend onto each pixel.
 #[inline]
+
 pub fn alpha_blend_span(span: &mut [Color32], source: Color32) {
+
     let len = span.len();
+
     let mut i = 0;
 
     // Scalar head: 0–3 pixels to reach 4-aligned index.
     let head_end = (i + 3) & !3;
+
     while i < head_end && i < len {
+
         span[i] = alpha_blend(span[i], source);
+
         i += 1;
     }
 
     // SIMD body: 4 pixels per chunk.
     let simd_end = len & !3;
+
     while i < simd_end {
+
         // SAFETY: i < len, i + 4 <= len, and the slice is 4-element aligned.
         let chunk: &mut [Color32; 4] = (&mut span[i..i + 4]).try_into().unwrap();
+
         alpha_blend_simd_four(chunk, source);
+
         i += 4;
     }
 
     // Scalar tail: remaining 0–3 pixels.
     while i < len {
+
         span[i] = alpha_blend(span[i], source);
+
         i += 1;
     }
 }
 
 /// Minimum SIMD chunk count before rayon parallelism kicks in.
+
 const PARALLEL_BLEND_THRESHOLD: usize = 256;
 
 /// Scale a single premultiplied pixel by opacity (0–255) using fixed-point.
 #[inline]
+
 const fn scale_pixel_opacity(pixel: Color32, opacity: u8) -> Color32 {
+
     if opacity == 255 {
+
         return pixel;
     }
+
     let f = opacity as u32;
+
     Color32::from_rgba_premultiplied(
         ((pixel.r() as u32 * f + 128) * 257 >> 16) as u8,
         ((pixel.g() as u32 * f + 128) * 257 >> 16) as u8,
@@ -259,10 +326,14 @@ const fn scale_pixel_opacity(pixel: Color32, opacity: u8) -> Color32 {
 
 /// Scale a single alpha value (0–255) by opacity (0–255) using fixed-point.
 #[inline]
+
 const fn scale_alpha(alpha: u8, opacity: u8) -> u8 {
+
     if opacity == 255 {
+
         return alpha;
     }
+
     ((alpha as u32 * opacity as u32 + 128) * 257 >> 16) as u8
 }
 
@@ -270,20 +341,26 @@ const fn scale_alpha(alpha: u8, opacity: u8) -> u8 {
 /// mask layer's alpha (after opacity scaling).  The mask layer's RGB content
 /// is ignored — it only contributes its alpha channel.
 #[inline]
+
 fn apply_mask_simd_chunk(
     output_chunk: &mut [u8],
     mask_pixels: &[Color32],
     mask_opacity: u8,
     pixel_base: usize,
 ) {
+
     // Read 4 accumulator pixels from output buffer as u32 channels.
     let (acc_ra, acc_ga, acc_ba, mut acc_aa) = read_accumulator(output_chunk);
 
     // Read 4 mask alpha values.
     let m0 = scale_alpha(mask_pixels[pixel_base].a(), mask_opacity) as u32;
+
     let m1 = scale_alpha(mask_pixels[pixel_base + 1].a(), mask_opacity) as u32;
+
     let m2 = scale_alpha(mask_pixels[pixel_base + 2].a(), mask_opacity) as u32;
+
     let m3 = scale_alpha(mask_pixels[pixel_base + 3].a(), mask_opacity) as u32;
+
     let mask_a = u32x4::new([m0, m1, m2, m3]);
 
     // Accumulator alpha *= mask alpha  (RGB unchanged).
@@ -295,6 +372,7 @@ fn apply_mask_simd_chunk(
 /// Blend one Normal, Clipped, or ClippedOverlap layer over the existing output
 /// accumulator with SIMD for 4 pixels.
 #[inline]
+
 fn blend_simd_chunk_over(
     output_chunk: &mut [u8],
     layer_pixels: &[Color32],
@@ -302,13 +380,17 @@ fn blend_simd_chunk_over(
     pixel_base: usize,
     clip_base: Option<(&[Color32], u8)>,
 ) {
+
     // Read 4 accumulator pixels from output buffer.
     let (mut acc_ra, mut acc_ga, mut acc_ba, mut acc_aa) = read_accumulator(output_chunk);
 
     // Load 4 layer pixels.
     let top_pixel_0 = layer_pixels[pixel_base].to_array();
+
     let top_pixel_1 = layer_pixels[pixel_base + 1].to_array();
+
     let top_pixel_2 = layer_pixels[pixel_base + 2].to_array();
+
     let top_pixel_3 = layer_pixels[pixel_base + 3].to_array();
 
     let mut top_r = u32x4::new([
@@ -317,18 +399,21 @@ fn blend_simd_chunk_over(
         top_pixel_2[0] as u32,
         top_pixel_3[0] as u32,
     ]);
+
     let mut top_g = u32x4::new([
         top_pixel_0[1] as u32,
         top_pixel_1[1] as u32,
         top_pixel_2[1] as u32,
         top_pixel_3[1] as u32,
     ]);
+
     let mut top_b = u32x4::new([
         top_pixel_0[2] as u32,
         top_pixel_1[2] as u32,
         top_pixel_2[2] as u32,
         top_pixel_3[2] as u32,
     ]);
+
     let mut top_a = u32x4::new([
         top_pixel_0[3] as u32,
         top_pixel_1[3] as u32,
@@ -338,26 +423,41 @@ fn blend_simd_chunk_over(
 
     // Apply per-layer opacity.
     if layer_opacity != 255 {
+
         let factor = u32x4::splat(layer_opacity as u32);
+
         top_r = (top_r * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
+
         top_g = (top_g * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
+
         top_b = (top_b * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
+
         top_a = (top_a * factor + ROUNDING_BIAS_128) >> u32x4::splat(8);
     }
 
     // Apply Clipped: clip all channels by base layer's alpha.
     if let Some((base_pixels, base_opacity)) = clip_base {
+
         let b0 = scale_alpha(base_pixels[pixel_base].a(), base_opacity) as u32;
+
         let b1 = scale_alpha(base_pixels[pixel_base + 1].a(), base_opacity) as u32;
+
         let b2 = scale_alpha(base_pixels[pixel_base + 2].a(), base_opacity) as u32;
+
         let b3 = scale_alpha(base_pixels[pixel_base + 3].a(), base_opacity) as u32;
+
         let base_a = u32x4::new([b0, b1, b2, b3]);
 
         let div_255 = u32x4::splat(257);
+
         let div_255_shift = u32x4::splat(16);
+
         top_r = ((top_r * base_a + ROUNDING_BIAS_128) * div_255) >> div_255_shift;
+
         top_g = ((top_g * base_a + ROUNDING_BIAS_128) * div_255) >> div_255_shift;
+
         top_b = ((top_b * base_a + ROUNDING_BIAS_128) * div_255) >> div_255_shift;
+
         top_a = ((top_a * base_a + ROUNDING_BIAS_128) * div_255) >> div_255_shift;
     }
 
@@ -365,8 +465,11 @@ fn blend_simd_chunk_over(
     let inverse_alpha = u32x4::splat(255) - top_a;
 
     acc_ra = top_r + ((acc_ra * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+
     acc_ga = top_g + ((acc_ga * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+
     acc_ba = top_b + ((acc_ba * inverse_alpha + ROUNDING_BIAS_128) >> 8);
+
     acc_aa = top_a + ((acc_aa * inverse_alpha + ROUNDING_BIAS_128) >> 8);
 
     write_accumulator(output_chunk, acc_ra, acc_ga, acc_ba, acc_aa);
@@ -374,7 +477,9 @@ fn blend_simd_chunk_over(
 
 /// Read 4 accumulator pixels from a 16-byte output chunk into u32x4 vectors.
 #[inline]
+
 fn read_accumulator(chunk: &[u8]) -> (u32x4, u32x4, u32x4, u32x4) {
+
     (
         u32x4::new([
             chunk[0] as u32,
@@ -405,16 +510,27 @@ fn read_accumulator(chunk: &[u8]) -> (u32x4, u32x4, u32x4, u32x4) {
 
 /// Write 4 u32x4 vectors back into a 16-byte output chunk.
 #[inline]
+
 fn write_accumulator(chunk: &mut [u8], r: u32x4, g: u32x4, b: u32x4, a: u32x4) {
+
     let ra = r.to_array();
+
     let ga = g.to_array();
+
     let ba = b.to_array();
+
     let aa = a.to_array();
+
     for i in 0..4 {
+
         let o = i * 4;
+
         chunk[o] = ra[i] as u8;
+
         chunk[o + 1] = ga[i] as u8;
+
         chunk[o + 2] = ba[i] as u8;
+
         chunk[o + 3] = aa[i] as u8;
     }
 }
@@ -438,6 +554,7 @@ fn write_accumulator(chunk: &mut [u8], r: u32x4, g: u32x4, b: u32x4, a: u32x4) {
 ///
 /// Panics if `output` is too small for the requested pixel range.
 #[inline]
+
 fn apply_single_layer(
     output: &mut [u8],
     info: &LayerBlendInfo,
@@ -446,6 +563,7 @@ fn apply_single_layer(
     pixel_count: usize,
     parallel: bool,
 ) {
+
     let pixel_end = pixel_start + pixel_count;
 
     let clip_base = match (info.mode, base) {
@@ -458,17 +576,27 @@ fn apply_single_layer(
     // Process a single pixel (used for scalar head and tail alignment).
     let process_pixel = |pixel_index: usize, output: &mut [u8]| match info.mode {
         LayerMode::Masked => {
+
             let mask_a = scale_alpha(info.pixels[pixel_index].a(), info.opacity);
+
             let byte_index = pixel_index * BYTES_PER_PIXEL;
+
             let acc_a = output[byte_index + 3] as u32;
+
             output[byte_index + 3] = ((acc_a * mask_a as u32 + 128) >> 8) as u8;
         }
         LayerMode::Clipped | LayerMode::ClippedOverlap | LayerMode::Normal => {
+
             let mut pixel = info.pixels[pixel_index];
+
             pixel = scale_pixel_opacity(pixel, info.opacity);
+
             if let Some((base_pixels, base_opacity)) = clip_base {
+
                 let base_a = scale_alpha(base_pixels[pixel_index].a(), base_opacity);
+
                 let f = base_a as u32;
+
                 pixel = Color32::from_rgba_premultiplied(
                     ((pixel.r() as u32 * f + 128) * 257 >> 16) as u8,
                     ((pixel.g() as u32 * f + 128) * 257 >> 16) as u8,
@@ -476,42 +604,57 @@ fn apply_single_layer(
                     ((pixel.a() as u32 * f + 128) * 257 >> 16) as u8,
                 );
             }
+
             let byte_index = pixel_index * BYTES_PER_PIXEL;
+
             let dst = Color32::from_rgba_premultiplied(
                 output[byte_index],
                 output[byte_index + 1],
                 output[byte_index + 2],
                 output[byte_index + 3],
             );
+
             let blended = alpha_blend(dst, pixel);
+
             let arr = blended.to_array();
+
             output[byte_index..byte_index + 4].copy_from_slice(&arr);
         }
     };
 
     // Scalar head: pixels before the first 4-aligned boundary.
     let aligned_start = (pixel_start + 3) & !3;
+
     let head_end = aligned_start.min(pixel_end);
+
     for pixel_index in pixel_start..head_end {
+
         process_pixel(pixel_index, output);
     }
 
     // SIMD-aligned body.
     let aligned_end = pixel_end & !3;
+
     if aligned_start < aligned_end {
+
         let simd_pixel_count = aligned_end - aligned_start;
+
         let simd_chunks = simd_pixel_count / 4;
+
         let byte_start = aligned_start * BYTES_PER_PIXEL;
+
         let aligned_output =
             &mut output[byte_start..byte_start + simd_pixel_count * BYTES_PER_PIXEL];
 
         match info.mode {
             LayerMode::Masked => {
                 if parallel && simd_chunks > PARALLEL_BLEND_THRESHOLD {
+
                     aligned_output
                         .par_chunks_mut(16)
                         .enumerate()
                         .for_each(|(ci, chunk)| {
+
                             apply_mask_simd_chunk(
                                 chunk,
                                 info.pixels,
@@ -520,7 +663,9 @@ fn apply_single_layer(
                             );
                         });
                 } else {
+
                     for (ci, chunk) in aligned_output.chunks_mut(16).enumerate() {
+
                         apply_mask_simd_chunk(
                             chunk,
                             info.pixels,
@@ -531,11 +676,14 @@ fn apply_single_layer(
                 }
             }
             LayerMode::Clipped | LayerMode::ClippedOverlap | LayerMode::Normal => {
+
                 if parallel && simd_chunks > PARALLEL_BLEND_THRESHOLD {
+
                     aligned_output
                         .par_chunks_mut(16)
                         .enumerate()
                         .for_each(|(ci, chunk)| {
+
                             blend_simd_chunk_over(
                                 chunk,
                                 info.pixels,
@@ -545,7 +693,9 @@ fn apply_single_layer(
                             );
                         });
                 } else {
+
                     for (ci, chunk) in aligned_output.chunks_mut(16).enumerate() {
+
                         blend_simd_chunk_over(
                             chunk,
                             info.pixels,
@@ -561,7 +711,9 @@ fn apply_single_layer(
 
     // Scalar tail.
     let tail_start = aligned_end.max(pixel_start);
+
     for pixel_index in tail_start..pixel_end {
+
         process_pixel(pixel_index, output);
     }
 }
@@ -573,17 +725,26 @@ fn apply_single_layer(
 /// `ClippedOverlap`.  Consecutive clipped layers all reference the same base
 /// (Photoshop-style clipping mask chain).  For `Normal` and `Masked` layers
 /// the base index is set to the layer's own index (unused).
+
 fn compute_base_indices(layers: &[LayerBlendInfo]) -> Vec<usize> {
+
     let mut bases = Vec::with_capacity(layers.len());
+
     let mut current_base = 0;
+
     for (i, info) in layers.iter().enumerate() {
+
         if info.mode == LayerMode::Clipped || info.mode == LayerMode::ClippedOverlap {
+
             bases.push(current_base);
         } else {
+
             current_base = i;
+
             bases.push(i);
         }
     }
+
     bases
 }
 
@@ -607,21 +768,26 @@ fn compute_base_indices(layers: &[LayerBlendInfo]) -> Vec<usize> {
 /// - If any layer has a different number of pixels from `layers[0]`.
 /// - If `output.len() != layers[0].pixels.len() * 4`.
 #[inline]
+
 pub fn blend_layers(layers: &[LayerBlendInfo], output: &mut [u8]) {
+
     assert!(
         !layers.is_empty(),
         "blend_layers: at least one layer required"
     );
 
     let pixel_count = layers[0].pixels.len();
+
     #[cfg(debug_assertions)]
     for (layer_index, li) in layers.iter().enumerate() {
+
         assert_eq!(
             li.pixels.len(),
             pixel_count,
             "blend_layers: layer {layer_index} length mismatch"
         );
     }
+
     assert_eq!(
         output.len(),
         pixel_count * BYTES_PER_PIXEL,
@@ -633,22 +799,30 @@ pub fn blend_layers(layers: &[LayerBlendInfo], output: &mut [u8]) {
 
     // Pre-compute base indices and find bases suppressed by ClippedOverlap.
     let base_indices = compute_base_indices(layers);
+
     let mut suppress_base = vec![false; layers.len()];
+
     for (i, info) in layers.iter().enumerate() {
+
         if info.mode == LayerMode::ClippedOverlap {
+
             suppress_base[base_indices[i]] = true;
         }
     }
 
     for (i, info) in layers.iter().enumerate() {
+
         // Skip rendering Normal layers whose RGB is hidden by ClippedOverlap.
         if suppress_base[i] && info.mode == LayerMode::Normal {
+
             continue;
         }
+
         let base = match info.mode {
             LayerMode::Clipped | LayerMode::ClippedOverlap => Some(&layers[base_indices[i]]),
             _ => None,
         };
+
         apply_single_layer(output, info, base, 0, pixel_count, true);
     }
 }
@@ -675,6 +849,7 @@ pub fn blend_layers(layers: &[LayerBlendInfo], output: &mut [u8]) {
 /// * `min_y` — Topmost row to process (inclusive).
 /// * `max_x` — Rightmost column to process (inclusive).
 /// * `max_y` — Bottommost row to process (inclusive).
+
 pub(crate) fn draw_checkerboard(
     output: &mut [u8],
     canvas_width: u32,
@@ -683,58 +858,86 @@ pub(crate) fn draw_checkerboard(
     max_x: u32,
     max_y: u32,
 ) {
+
     const CHECKER_SIZE: u32 = 8;
+
     const LIGHT: u8 = 192;
+
     const DARK: u8 = 128;
 
     let width = canvas_width as usize;
+
     for y in min_y..=max_y {
+
         let row_offset = y as usize * width;
+
         let cb_row_bit = (y / CHECKER_SIZE) & 1;
 
         let mut x = min_x;
+
         while x <= max_x {
+
             // Process 4-pixel batches. When all 4 are opaque, skip the entire
             // batch in one check (common case in composited output).
             let batch_end = (x + 3).min(max_x);
+
             let full_batch = batch_end - x == 3;
 
             if full_batch {
+
                 let bo = (row_offset + x as usize) * 4;
+
                 // Read 4 alpha bytes at offsets 3,7,11,15 and pack into u32.
                 // SAFETY: full 4-pixel batch = 16 contiguous bytes, all in bounds.
                 let a0 = output[bo + 3] as u32;
+
                 let a1 = output[bo + 7] as u32;
+
                 let a2 = output[bo + 11] as u32;
+
                 let a3 = output[bo + 15] as u32;
+
                 // 0xFF * 0x01010101 = fully opaque for all 4.
                 if a0 | a1 | a2 | a3 == 0xFF {
+
                     // All opaque — skip entire batch
                     x += 4;
+
                     continue;
                 }
             }
 
             for xp in x..=batch_end {
+
                 let i = (row_offset + xp as usize) * 4;
+
                 let alpha = output[i + 3];
+
                 if alpha == 255 {
+
                     continue;
                 }
 
                 // Checkerboard tile color at this position.
                 let cb = if ((xp / CHECKER_SIZE) & 1) ^ cb_row_bit == 0 {
+
                     LIGHT
                 } else {
+
                     DARK
                 };
 
                 // Premultiplied alpha-over composite: content over checkerboard.
                 let inv_a = 255u32 - u32::from(alpha);
+
                 let blended = ((u32::from(cb) * inv_a + 128) >> 8) as u8;
+
                 output[i] = output[i].saturating_add(blended);
+
                 output[i + 1] = output[i + 1].saturating_add(blended);
+
                 output[i + 2] = output[i + 2].saturating_add(blended);
+
                 output[i + 3] = 255;
             }
 
@@ -764,6 +967,7 @@ pub(crate) fn draw_checkerboard(
 /// Panics if any layer has fewer pixels than required by the region bounds,
 /// or if `output` is too small for the required byte range.
 #[inline]
+
 pub fn blend_region(
     layers: &[LayerBlendInfo],
     output: &mut [u8],
@@ -773,117 +977,171 @@ pub fn blend_region(
     max_x: u32,
     max_y: u32,
 ) {
+
     if layers.is_empty() {
+
         return;
     }
+
     let width = canvas_width as usize;
+
     let base_indices = compute_base_indices(layers);
+
     let mut suppress_base = vec![false; layers.len()];
+
     for (i, info) in layers.iter().enumerate() {
+
         if info.mode == LayerMode::ClippedOverlap {
+
             suppress_base[base_indices[i]] = true;
         }
     }
 
     for y in min_y..=max_y {
+
         let pixel_start = (y as usize) * width + min_x as usize;
+
         let pixel_count = (max_x - min_x + 1) as usize;
 
         for (i, info) in layers.iter().enumerate() {
+
             if suppress_base[i] && info.mode == LayerMode::Normal {
+
                 continue;
             }
+
             let base = match info.mode {
                 LayerMode::Clipped | LayerMode::ClippedOverlap => Some(&layers[base_indices[i]]),
                 _ => None,
             };
+
             apply_single_layer(output, info, base, pixel_start, pixel_count, false);
         }
     }
 }
 
 #[cfg(test)]
+
 mod tests {
+
     use super::*;
 
     // ── unpremultiply ─────────────────────────────────────────
 
     #[test]
+
     fn unpremultiply_opaque_unchanged() {
+
         let c = Color32::from_rgba_premultiplied(200, 100, 50, 255);
+
         assert_eq!(unpremultiply(c), c);
     }
 
     #[test]
+
     fn unpremultiply_transparent_unchanged() {
+
         let c = Color32::TRANSPARENT;
+
         assert_eq!(unpremultiply(c), c);
     }
 
     #[test]
+
     fn unpremultiply_semi_transparent_corrects_rgb() {
+
         // Straight: (200, 100, 50, 128) → premultiplied: (100, 50, 25, 128)
         let premul = Color32::from_rgba_premultiplied(100, 50, 25, 128);
+
         let straight = unpremultiply(premul);
+
         assert!(straight.r() >= 199 && straight.r() <= 201);
+
         assert!(straight.g() >= 99 && straight.g() <= 101);
+
         assert!(straight.b() >= 49 && straight.b() <= 51);
+
         assert_eq!(straight.a(), 128);
     }
 
     // ── premultiply ────────────────────────────────────────────
 
     #[test]
+
     fn premultiply_opaque_unchanged() {
+
         let c = Color32::from_rgba_unmultiplied(200, 100, 50, 255);
+
         assert_eq!(premultiply(c), c);
     }
 
     #[test]
+
     fn premultiply_transparent_returns_transparent() {
+
         let c = Color32::from_rgba_unmultiplied(200, 100, 50, 0);
+
         assert_eq!(premultiply(c), Color32::TRANSPARENT);
     }
 
     #[test]
+
     fn premultiply_semi_transparent_scales_rgb() {
+
         let c = Color32::from_rgba_unmultiplied(200, 100, 50, 128);
+
         let p = premultiply(c);
+
         assert!(p.r() <= 200);
+
         assert!(p.g() <= 100);
+
         assert!(p.b() <= 50);
+
         assert_eq!(p.a(), 128);
     }
 
     // ── alpha_blend ────────────────────────────────────────────
 
     #[test]
+
     fn alpha_blend_opaque_source_covers_dest() {
+
         let dest = Color32::from_rgba_premultiplied(10, 20, 30, 40);
+
         let src = Color32::from_rgba_premultiplied(200, 100, 50, 255);
+
         assert_eq!(alpha_blend(dest, src), src);
     }
 
     #[test]
+
     fn alpha_blend_transparent_source_leaves_dest_unchanged() {
+
         let dest = Color32::from_rgba_premultiplied(200, 100, 50, 255);
+
         let src = Color32::TRANSPARENT;
+
         let result = alpha_blend(dest, src);
+
         assert!(
             result.r() == 200 || result.r() == 199,
             "expected ~200, got {}",
             result.r()
         );
+
         assert!(
             result.g() == 100 || result.g() == 99,
             "expected ~100, got {}",
             result.g()
         );
+
         assert!(
             result.b() == 50 || result.b() == 49,
             "expected ~50, got {}",
             result.b()
         );
+
         assert!(
             result.a() == 255 || result.a() == 254,
             "expected ~255, got {}",
@@ -892,17 +1150,24 @@ mod tests {
     }
 
     #[test]
+
     fn alpha_blend_semi_transparent_combines() {
+
         let dest = Color32::from_rgba_premultiplied(50, 50, 50, 128);
+
         let src = Color32::from_rgba_premultiplied(200, 100, 50, 128);
+
         let result = alpha_blend(dest, src);
+
         assert_eq!(result.a(), 192);
     }
 
     // ── blend_layers ───────────────────────────────────────────
 
     /// Helper to build a `LayerBlendInfo` with Normal mode.
+
     fn normal(pixels: &[Color32], opacity: u8) -> LayerBlendInfo {
+
         LayerBlendInfo {
             pixels,
             opacity,
@@ -911,52 +1176,80 @@ mod tests {
     }
 
     #[test]
+
     fn blend_layers_single_opaque_passthrough() {
+
         let pixels = vec![
             Color32::from_rgba_premultiplied(100, 200, 50, 255),
             Color32::from_rgba_premultiplied(50, 100, 200, 255),
         ];
+
         let layers = [normal(&pixels, 255)];
+
         let mut out = vec![0u8; pixels.len() * 4];
+
         blend_layers(&layers, &mut out);
+
         assert_eq!(out.len(), pixels.len() * 4);
+
         for (i, &color) in pixels.iter().enumerate() {
+
             let arr = color.to_array();
+
             assert_eq!(out[i * 4..i * 4 + 4], arr);
         }
     }
 
     #[test]
+
     fn blend_layers_two_opaque_top_wins() {
+
         let bottom = vec![Color32::from_rgba_premultiplied(10, 20, 30, 40)];
+
         let top = vec![Color32::from_rgba_premultiplied(200, 100, 50, 255)];
+
         let layers = [normal(&bottom, 255), normal(&top, 255)];
+
         let mut out = vec![0u8; 4];
+
         blend_layers(&layers, &mut out);
+
         assert_eq!(out.as_slice(), top[0].to_array());
     }
 
     #[test]
+
     fn blend_layers_with_opacity_scales() {
+
         let bottom = vec![Color32::from_rgba_premultiplied(100, 0, 0, 255)];
+
         let top = vec![Color32::from_rgba_premultiplied(0, 200, 0, 255)];
+
         let layers = [normal(&bottom, 255), normal(&top, 128)];
+
         let mut out = vec![0u8; 4];
+
         blend_layers(&layers, &mut out);
+
         assert_eq!(out[3], 255);
+
         assert!(out[1] >= 98 && out[1] <= 102);
     }
 
     #[test]
+
     fn blend_layers_clip_down_clips_to_base_alpha() {
+
         let base = vec![
             Color32::from_rgba_premultiplied(255, 0, 0, 255),
             Color32::from_rgba_premultiplied(0, 0, 0, 0),
         ];
+
         let clipped = vec![
             Color32::from_rgba_premultiplied(0, 255, 0, 255),
             Color32::from_rgba_premultiplied(0, 255, 0, 255),
         ];
+
         let layers = [
             normal(&base, 255),
             LayerBlendInfo {
@@ -965,29 +1258,40 @@ mod tests {
                 mode: LayerMode::Clipped,
             },
         ];
+
         let mut out = vec![0u8; 8];
+
         blend_layers(&layers, &mut out);
+
         assert!(out[0] <= 1, "pixel 0 red should be ~0, got {}", out[0]);
+
         assert!(
             out[1] >= 254,
             "pixel 0 green should be ~255, got {}",
             out[1]
         );
+
         assert_eq!(out[2], 0, "pixel 0 blue");
+
         assert_eq!(out[3], 255, "pixel 0 alpha");
+
         assert_eq!(out[4..8], [0, 0, 0, 0], "pixel 1 should be transparent");
     }
 
     #[test]
+
     fn blend_layers_clipped_overlap_hides_base_rgb() {
+
         let base = vec![
             Color32::from_rgba_premultiplied(255, 0, 0, 255),
             Color32::from_rgba_premultiplied(255, 0, 0, 255),
         ];
+
         let clipped = vec![
             Color32::from_rgba_premultiplied(0, 255, 0, 255),
             Color32::from_rgba_premultiplied(0, 0, 0, 0),
         ];
+
         let layers = [
             normal(&base, 255),
             LayerBlendInfo {
@@ -996,20 +1300,30 @@ mod tests {
                 mode: LayerMode::ClippedOverlap,
             },
         ];
+
         let mut out = vec![0u8; 8];
+
         blend_layers(&layers, &mut out);
+
         // Pixel 0: base has red, clipped has green overlapping → green shows, red hidden.
         assert!(out[0] <= 1, "pixel 0 red should be hidden, got {}", out[0]);
+
         assert!(out[1] >= 254, "pixel 0 green should show, got {}", out[1]);
+
         assert_eq!(out[3], 255, "pixel 0 alpha");
+
         // Pixel 1: base has red, clipped is transparent → nothing shows.
         assert_eq!(out[4..8], [0, 0, 0, 0], "pixel 1 should be transparent");
     }
 
     #[test]
+
     fn blend_layers_mask_down_modulates_accumulator_alpha() {
+
         let bottom = vec![Color32::from_rgba_premultiplied(255, 255, 255, 255)];
+
         let mask = vec![Color32::from_rgba_premultiplied(0, 0, 0, 128)];
+
         let layers = [
             normal(&bottom, 255),
             LayerBlendInfo {
@@ -1018,8 +1332,11 @@ mod tests {
                 mode: LayerMode::Masked,
             },
         ];
+
         let mut out = vec![0u8; 4];
+
         blend_layers(&layers, &mut out);
+
         assert_eq!(
             out[0..4],
             [255, 255, 255, 128],
@@ -1029,37 +1346,52 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "blend_layers: at least one layer required")]
+
     fn blend_layers_empty_panics() {
+
         blend_layers(&[], &mut []);
     }
 
     #[test]
     #[should_panic]
+
     fn blend_layers_wrong_output_length_panics() {
+
         let pixels = vec![Color32::from_rgba_premultiplied(255, 255, 255, 255)];
+
         blend_layers(&[normal(&pixels, 255)], &mut [0u8; 3]);
     }
 
     // ── blend_region ───────────────────────────────────────────
 
     #[test]
+
     fn blend_region_empty_layers_noop() {
+
         let mut out = [0u8; 16];
+
         blend_region(&[], &mut out, 4, 0, 0, 3, 3);
+
         assert_eq!(out, [0u8; 16]);
     }
 
     #[test]
+
     fn blend_region_single_layer_writes_subset() {
+
         let pixels = vec![
             Color32::from_rgba_premultiplied(1, 0, 0, 255),
             Color32::from_rgba_premultiplied(2, 0, 0, 255),
             Color32::from_rgba_premultiplied(3, 0, 0, 255),
             Color32::from_rgba_premultiplied(4, 0, 0, 255),
         ];
+
         let mut out = vec![0u8; 16];
+
         blend_region(&[normal(&pixels, 255)], &mut out, 2, 1, 0, 1, 0);
+
         assert_eq!(out[4..8], pixels[1].to_array());
+
         assert_eq!(out[0..4], [0u8; 4]);
     }
 }

@@ -37,6 +37,7 @@ use crate::undo::UndoRecord;
 /// # Panics
 ///
 /// Panics if `params.layer >= params.canvas.pixels.len()`.
+
 pub fn draw_custom_brush_line(
     params: BrushStrokeParams<'_>,
     tip_pixels: &[Color32],
@@ -47,6 +48,7 @@ pub fn draw_custom_brush_line(
     tinted: bool,
     sampling: StampSampling,
 ) -> UndoRecord {
+
     let BrushStrokeParams {
         start_x,
         start_y,
@@ -63,29 +65,43 @@ pub fn draw_custom_brush_line(
     } = params;
 
     let output_w = radius.max(1);
+
     let spacing_multiplier = (spacing_pct as f64 / 100.0).max(0.01);
+
     let step = ((output_w as f64 * spacing_multiplier).round() as u32).max(1);
 
     let dx = end_x as i64 - start_x as i64;
+
     let dy = end_y as i64 - start_y as i64;
+
     let dist_sq = dx * dx + dy * dy;
+
     let dist = (dist_sq as f64).sqrt();
+
     let num_steps = if dist_sq == 0 {
+
         1_usize
     } else {
+
         ((dist / step as f64).ceil() as usize).max(1)
     };
 
     let mut all_runs = Vec::new();
+
     let mut all_before = Vec::new();
 
     for i in 0..num_steps {
+
         let t = if num_steps == 1 {
+
             1.0
         } else {
+
             (i as f64 + 1.0) / num_steps as f64
         };
+
         let cx = (start_x as f64 + dx as f64 * t).round() as u32;
+
         let cy = (start_y as f64 + dy as f64 * t).round() as u32;
 
         let inner_params = BrushStrokeParams {
@@ -102,6 +118,7 @@ pub fn draw_custom_brush_line(
             drag_processed,
             drag_stamp_value,
         };
+
         let record = draw_stamp_line(
             inner_params,
             tip_pixels,
@@ -111,19 +128,26 @@ pub fn draw_custom_brush_line(
             tinted,
             sampling,
         );
+
         if let UndoRecord::Run {
             runs: mut step_runs,
             before_pixels: step_before,
             ..
         } = record
         {
+
             let offset_adjust = all_before.len() as u32;
+
             for run in &mut step_runs {
+
                 if let BeforePixels::Many { offset, .. } = &mut run.before {
+
                     *offset += offset_adjust;
                 }
             }
+
             all_runs.extend(step_runs);
+
             all_before.extend(step_before);
         }
     }

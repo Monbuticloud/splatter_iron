@@ -13,6 +13,7 @@ use crate::undo_history::UndoHistory;
 /// Uses `Vec<Layer>` + dimensions instead of `Canvas` directly so the data
 /// is [`Send`] (avoids `Canvas`'s non-Send `TextureHandle` field). The UI
 /// thread reconstructs a `Canvas` from the layers when the result is polled.
+
 pub enum LoadImportResult {
     /// Canvas loaded from a `.splattercanvas` file, plus the source path.
     Loaded(Canvas, String),
@@ -28,6 +29,7 @@ pub enum LoadImportResult {
 ///
 /// Owns the load/import channel pair and separate in-flight flags for
 /// load vs. import operations.
+
 pub struct LoadImportManager {
     /// Channel sender for load/import results from background thread.
     pub load_import_sender: mpsc::Sender<LoadImportResult>,
@@ -41,6 +43,7 @@ pub struct LoadImportManager {
 
 impl std::fmt::Debug for LoadImportManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("LoadImportManager")
             .field("load_in_flight", &self.load_in_flight)
             .field("import_in_flight", &self.import_in_flight)
@@ -50,8 +53,11 @@ impl std::fmt::Debug for LoadImportManager {
 
 impl LoadImportManager {
     /// Create a new `LoadImportManager` with an internal channel pair.
+
     pub fn new() -> Self {
+
         let (load_import_sender, load_import_receiver) = mpsc::channel();
+
         Self {
             load_import_sender,
             load_import_receiver,
@@ -65,17 +71,25 @@ impl LoadImportManager {
     /// # Parameters
     ///
     /// * `path` — The file path to load.
+
     pub fn trigger_async_load(&mut self, path: PathBuf) {
+
         self.load_in_flight = true;
+
         let sender = self.load_import_sender.clone();
+
         std::thread::spawn(move || {
+
             let result = match crate::files::load_canvas_from_path(&path) {
                 Ok(canvas) => {
+
                     let save_path = path.display().to_string();
+
                     LoadImportResult::Loaded(canvas, save_path)
                 }
                 Err(error) => LoadImportResult::Failed(format!("Failed to load canvas: {error}")),
             };
+
             let _ = sender.send(result);
         });
     }
@@ -85,16 +99,22 @@ impl LoadImportManager {
     /// # Parameters
     ///
     /// * `path` — The image file path to import.
+
     pub fn trigger_async_import(&mut self, path: PathBuf) {
+
         self.import_in_flight = true;
+
         let sender = self.load_import_sender.clone();
+
         std::thread::spawn(move || {
+
             let result = match crate::files::import_image_as_canvas(&path) {
                 Ok(canvas) => {
                     LoadImportResult::Imported(canvas.pixels, canvas.width, canvas.height)
                 }
                 Err(error) => LoadImportResult::Failed(format!("Import failed: {error}")),
             };
+
             let _ = sender.send(result);
         });
     }
@@ -104,16 +124,22 @@ impl LoadImportManager {
     /// # Parameters
     ///
     /// * `path` — The file path to load.
+
     pub fn trigger_async_import_archive(&mut self, path: PathBuf) {
+
         self.load_in_flight = true;
+
         let sender = self.load_import_sender.clone();
+
         std::thread::spawn(move || {
+
             let result = match crate::files::load_canvas_from_path_xz(&path) {
                 Ok(canvas) => LoadImportResult::ArchiveImported(canvas),
                 Err(error) => {
                     LoadImportResult::Failed(format!("Failed to import archive: {error}"))
                 }
             };
+
             let _ = sender.send(result);
         });
     }
@@ -129,24 +155,35 @@ impl LoadImportManager {
     /// * `document` — The document to modify on load/import.
     /// * `undo` — Undo history to reset on load/import.
     /// * `error_list` — Error list to push failure messages into.
+
     pub fn poll_load_import_results(
         &mut self,
         document: &mut Document,
         undo: &mut UndoHistory,
         error_list: &mut Vec<String>,
     ) {
+
         while let Ok(result) = self.load_import_receiver.try_recv() {
+
             match result {
                 LoadImportResult::Loaded(mut canvas, save_path) => {
+
                     self.load_in_flight = false;
+
                     canvas.dirty_rect.request_full_blend();
+
                     document.replace_canvas(canvas, undo);
+
                     document.savefile_path = save_path;
                 }
                 LoadImportResult::Imported(layers, width, height) => {
+
                     self.import_in_flight = false;
+
                     let mut dirty_rect = crate::canvas::DirtyRectList::new();
+
                     dirty_rect.request_full_blend();
+
                     let canvas = crate::canvas::Canvas {
                         pixels: layers,
                         width,
@@ -155,16 +192,23 @@ impl LoadImportManager {
                         rendered_layers: None,
                         dirty_rect,
                     };
+
                     document.replace_canvas(canvas, undo);
                 }
                 LoadImportResult::ArchiveImported(mut canvas) => {
+
                     self.load_in_flight = false;
+
                     canvas.dirty_rect.request_full_blend();
+
                     document.replace_canvas(canvas, undo);
                 }
                 LoadImportResult::Failed(message) => {
+
                     self.load_in_flight = false;
+
                     self.import_in_flight = false;
+
                     error_list.push(message);
                 }
             }
@@ -174,6 +218,7 @@ impl LoadImportManager {
 
 impl Default for LoadImportManager {
     fn default() -> Self {
+
         Self::new()
     }
 }

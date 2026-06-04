@@ -24,6 +24,7 @@ const TEXTURE_NAME: &str = "rendered_layers";
 /// `Arc::make_mut` would trigger an expensive clone. UI code that only needs
 /// to read the canvas should skip writes when this flag is set.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+
 pub enum SaveState {
     /// No async save is running — safe to mutate the canvas via `Arc::make_mut`.
     Idle,
@@ -35,6 +36,7 @@ pub enum SaveState {
 /// path, current layer, dirty-tracking state, and a monotonically increasing
 /// layer-number counter for unique default layer names.
 #[derive(Debug)]
+
 pub struct Document {
     /// The canvas being edited (layers, dimensions, pixel data).
     /// Wrapped in `Arc` so async save can hold a reference while the UI
@@ -65,8 +67,11 @@ impl Document {
     /// # Parameters
     ///
     /// * `canvas` — The canvas to wrap.
+
     pub fn new(canvas: Canvas) -> Self {
+
         let layer_count = canvas.pixels.len();
+
         Self {
             canvas: Arc::new(canvas),
             savefile_path: String::new(),
@@ -87,14 +92,23 @@ impl Document {
     ///
     /// * `canvas` — The new canvas to use.
     /// * `undo` — Undo history to clear and resize for the new canvas.
+
     pub fn replace_canvas(&mut self, canvas: Canvas, undo: &mut UndoHistory) {
+
         let layer_count = canvas.pixels.len();
+
         self.canvas = Arc::new(canvas);
+
         self.next_layer_number = layer_count + 1;
+
         self.savefile_path.clear();
+
         self.dirty_since_last_autosave = false;
+
         undo.clear();
+
         undo.resize_visited((self.canvas.width * self.canvas.height) as usize);
+
         self.canvas_mut().dirty_rect.request_full_blend();
     }
 
@@ -102,7 +116,9 @@ impl Document {
     ///
     /// When an async save holds an `Arc<Canvas>`, this clones the canvas
     /// (COW). When no other references exist, it's a cheap `Arc::get_mut`.
+
     pub fn canvas_mut(&mut self) -> &mut Canvas {
+
         Arc::make_mut(&mut self.canvas)
     }
 
@@ -116,18 +132,26 @@ impl Document {
     ///
     /// Panics if the underlying `blend_layers` or `blend_region` encounters
     /// mismatched layer lengths or insufficient output buffer capacity.
+
     pub fn blend_to_output(&mut self) -> Option<DirtyRect> {
+
         let canvas = self.canvas_mut();
+
         let pixel_count = (canvas.width as usize) * (canvas.height as usize);
 
         if canvas.output_rgba.len() != pixel_count * RGBA_CHANNELS {
+
             // Prefer in-place resize over new allocation when capacity suffices.
             let buf = Arc::make_mut(&mut canvas.output_rgba);
+
             if buf.capacity() < pixel_count * RGBA_CHANNELS {
+
                 buf.reserve(pixel_count * RGBA_CHANNELS - buf.len());
             }
+
             buf.resize(pixel_count * RGBA_CHANNELS, 0);
         }
+
         // Collect pixel slices, opacity, and mode for visible layers only.
         let layer_data: Vec<LayerBlendInfo> = canvas
             .pixels
@@ -141,20 +165,31 @@ impl Document {
             .collect();
 
         let rects = canvas.dirty_rect.take_all();
+
         let output = Arc::make_mut(&mut canvas.output_rgba).as_mut_slice();
+
         let width = canvas.width;
+
         let height = canvas.height;
 
         let result = if rects.is_empty() {
+
             pixel::blend_layers(&layer_data, output);
+
             pixel::draw_checkerboard(output, width, 0, 0, width - 1, height - 1);
+
             Some(DirtyRect::new(0, 0, width - 1, height - 1))
         } else {
+
             let mut union_rect: Option<DirtyRect> = None;
+
             for rect in &rects {
+
                 if rect.is_empty() {
+
                     continue;
                 }
+
                 pixel::blend_region(
                     &layer_data,
                     output,
@@ -164,19 +199,17 @@ impl Document {
                     rect.max_x,
                     rect.max_y,
                 );
+
                 pixel::draw_checkerboard(
-                    output,
-                    width,
-                    rect.min_x,
-                    rect.min_y,
-                    rect.max_x,
-                    rect.max_y,
+                    output, width, rect.min_x, rect.min_y, rect.max_x, rect.max_y,
                 );
+
                 match union_rect {
                     Some(r) => union_rect = Some(r.union(rect)),
                     None => union_rect = Some(*rect),
                 }
             }
+
             union_rect
         };
 
@@ -197,14 +230,18 @@ impl Document {
     ///
     /// Panics if `dirty` coordinates exceed the texture bounds or if
     /// `output_rgba` is too small for the offset + size computation.
+
     pub fn upload_to_gpu(
         &self,
         queue: &wgpu::Queue,
         texture: &wgpu::Texture,
         dirty: &Option<DirtyRect>,
     ) {
+
         let canvas_width = self.canvas.width;
+
         let canvas_height = self.canvas.height;
+
         let (x, y, mut width, mut height) = match dirty {
             Some(r) => (r.min_x, r.min_y, r.width(), r.height()),
             None => (0, 0, canvas_width, canvas_height),
@@ -213,9 +250,12 @@ impl Document {
         // Clamp to canvas bounds to prevent wgpu validation errors from
         // dirty-rect accumulation outside the canvas.
         if width == 0 || height == 0 {
+
             return;
         }
+
         width = width.min(canvas_width.saturating_sub(x));
+
         height = height.min(canvas_height.saturating_sub(y));
 
         queue.write_texture(
@@ -247,7 +287,9 @@ impl Document {
     /// # Parameters
     ///
     /// * `ui` — The egui UI handle (used to access `load_texture`).
+
     pub fn render_to_texture(&mut self, ui: &egui::Ui) {
+
         self.blend_to_output();
 
         let image = egui::ColorImage::from_rgba_premultiplied(
@@ -256,11 +298,14 @@ impl Document {
         );
 
         let rendered = &mut self.canvas_mut().rendered_layers;
+
         match rendered {
             Some(tex) => {
+
                 tex.set(image, egui::TextureOptions::LINEAR);
             }
             None => {
+
                 *rendered = Some(ui.ctx().load_texture(
                     TEXTURE_NAME,
                     image,
@@ -281,12 +326,19 @@ impl Document {
     /// # Parameters
     ///
     /// * `undo` — Undo history to push the record onto.
+
     pub fn add_layer(&mut self, undo: &mut UndoHistory) {
+
         let layer_index = self.canvas.pixels.len();
+
         let layer_number = self.next_layer_number;
+
         self.next_layer_number += 1;
+
         let width = self.canvas.width;
+
         let height = self.canvas.height;
+
         let layer = Layer {
             pixels: vec![Color32::TRANSPARENT; (width * height) as usize],
             name: format!("Layer {layer_number}"),
@@ -294,6 +346,7 @@ impl Document {
             opacity: 255,
             mode: crate::canvas::LayerMode::Normal,
         };
+
         undo.push_undo(UndoRecord::AddLayer {
             index: layer_index,
             width: self.canvas.width,
@@ -303,11 +356,16 @@ impl Document {
             opacity: layer.opacity,
             mode: layer.mode,
         });
+
         {
+
             let canvas = self.canvas_mut();
+
             canvas.pixels.push(layer);
+
             canvas.dirty_rect.request_full_blend();
         }
+
         self.current_layer = layer_index;
     }
 
@@ -325,18 +383,25 @@ impl Document {
     ///
     /// * `index` — Index of the layer to remove.
     /// * `undo` — Undo history to push the record onto.
+
     pub fn delete_layer(&mut self, index: usize, undo: &mut UndoHistory) {
+
         let removed = self.canvas_mut().pixels.remove(index);
+
         undo.push_undo(UndoRecord::DeleteLayer {
             index,
             layer: Box::new(removed),
         });
+
         if index <= self.current_layer {
+
             self.current_layer = self.current_layer.saturating_sub(1);
         }
+
         self.current_layer = self
             .current_layer
             .min(self.canvas.pixels.len().saturating_sub(1));
+
         self.canvas_mut().dirty_rect.request_full_blend();
     }
 
@@ -352,14 +417,20 @@ impl Document {
     /// # Panics
     ///
     /// Panics if `index == 0` because there is no layer above to swap with.
+
     pub fn move_layer_up(&mut self, index: usize, undo: &mut UndoHistory) {
+
         self.current_layer = index - 1;
+
         let canvas = self.canvas_mut();
+
         canvas.pixels.swap(index, index - 1);
+
         undo.push_undo(UndoRecord::MoveLayer {
             from_index: index,
             to_index: index - 1,
         });
+
         canvas.dirty_rect.request_full_blend();
     }
 
@@ -375,14 +446,20 @@ impl Document {
     /// # Panics
     ///
     /// Panics if `index >= pixels.len() - 1` because there is no layer below.
+
     pub fn move_layer_down(&mut self, index: usize, undo: &mut UndoHistory) {
+
         self.current_layer = index + 1;
+
         let canvas = self.canvas_mut();
+
         canvas.pixels.swap(index, index + 1);
+
         undo.push_undo(UndoRecord::MoveLayer {
             from_index: index,
             to_index: index + 1,
         });
+
         canvas.dirty_rect.request_full_blend();
     }
 
@@ -391,7 +468,9 @@ impl Document {
     /// # Parameters
     ///
     /// * `index` — Index of the layer to select.
+
     pub fn select_layer(&mut self, index: usize) {
+
         self.current_layer = index;
     }
 
@@ -403,16 +482,26 @@ impl Document {
     ///
     /// * `index` — Index of the layer to modify.
     /// * `undo` — Undo history to push the record onto.
+
     pub fn toggle_layer_visible(&mut self, index: usize, undo: &mut UndoHistory) {
+
         let visible_before = self.canvas.pixels.iter().filter(|p| p.visible).count();
+
         let canvas = self.canvas_mut();
+
         if let Some(l) = canvas.pixels.get_mut(index) {
+
             if l.visible && visible_before == 1 {
+
                 return;
             }
+
             let old_visible = l.visible;
+
             let new_visible = !old_visible;
+
             l.visible = new_visible;
+
             undo.push_undo(UndoRecord::ModifyLayer {
                 index,
                 old_visible,
@@ -424,6 +513,7 @@ impl Document {
                 new_name: l.name.clone(),
                 new_mode: l.mode,
             });
+
             canvas.dirty_rect.request_full_blend();
         }
     }
@@ -437,11 +527,17 @@ impl Document {
     /// * `index` — Index of the layer to modify.
     /// * `opacity` — New opacity value (0 = transparent, 255 = opaque).
     /// * `undo` — Undo history to push the record onto.
+
     pub fn set_layer_opacity(&mut self, index: usize, opacity: u8, undo: &mut UndoHistory) {
+
         let canvas = self.canvas_mut();
+
         if let Some(l) = canvas.pixels.get_mut(index) {
+
             let old_opacity = l.opacity;
+
             l.opacity = opacity;
+
             undo.push_undo(UndoRecord::ModifyLayer {
                 index,
                 old_visible: l.visible,
@@ -453,6 +549,7 @@ impl Document {
                 new_name: l.name.clone(),
                 new_mode: l.mode,
             });
+
             canvas.dirty_rect.request_full_blend();
         }
     }
@@ -466,16 +563,22 @@ impl Document {
     /// * `index` — Index of the layer to modify.
     /// * `mode` — New compositing mode.
     /// * `undo` — Undo history to push the record onto.
+
     pub fn set_layer_mode(
         &mut self,
         index: usize,
         mode: crate::canvas::LayerMode,
         undo: &mut UndoHistory,
     ) {
+
         let canvas = self.canvas_mut();
+
         if let Some(l) = canvas.pixels.get_mut(index) {
+
             let old_mode = l.mode;
+
             l.mode = mode;
+
             undo.push_undo(UndoRecord::ModifyLayer {
                 index,
                 old_visible: l.visible,
@@ -487,6 +590,7 @@ impl Document {
                 new_name: l.name.clone(),
                 new_mode: mode,
             });
+
             canvas.dirty_rect.request_full_blend();
         }
     }
@@ -500,11 +604,17 @@ impl Document {
     /// * `index` — Index of the layer to rename.
     /// * `name` — The new name for the layer.
     /// * `undo` — Undo history to push the record onto.
+
     pub fn rename_layer(&mut self, index: usize, name: String, undo: &mut UndoHistory) {
+
         let canvas = self.canvas_mut();
+
         if let Some(l) = canvas.pixels.get_mut(index) {
+
             let old_name = l.name.clone();
+
             l.name.clone_from(&name);
+
             undo.push_undo(UndoRecord::ModifyLayer {
                 index,
                 old_visible: l.visible,

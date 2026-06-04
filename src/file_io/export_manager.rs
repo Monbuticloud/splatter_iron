@@ -13,6 +13,7 @@ use crate::files::ExportStrategy;
 /// Owns the export channel pair, the pluggable [`ExportStrategy`], and
 /// the in-flight flag. Used by the frame loop to trigger exports and
 /// poll for completions.
+
 pub struct ExportManager {
     /// Injected export strategy for writing image files.
     pub export_strategy: Arc<dyn ExportStrategy + Send + Sync>,
@@ -26,6 +27,7 @@ pub struct ExportManager {
 
 impl std::fmt::Debug for ExportManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("ExportManager")
             .field("export_in_flight", &self.export_in_flight)
             .finish()
@@ -39,8 +41,11 @@ impl ExportManager {
     ///
     /// * `export_strategy` — Strategy for writing file exports, shared via
     ///   `Arc` for cross-thread access.
+
     pub fn new(export_strategy: Arc<dyn ExportStrategy + Send + Sync>) -> Self {
+
         let (export_result_sender, export_result_receiver) = mpsc::channel();
+
         Self {
             export_strategy,
             export_result_sender,
@@ -57,6 +62,7 @@ impl ExportManager {
     /// * `width` — Image width in pixels.
     /// * `height` — Image height in pixels.
     /// * `path` — Destination file path.
+
     pub fn trigger_async_export(
         &mut self,
         premultiplied_rgba: Arc<Vec<u8>>,
@@ -64,11 +70,17 @@ impl ExportManager {
         height: u32,
         path: PathBuf,
     ) {
+
         self.export_in_flight = true;
+
         let strategy = Arc::clone(&self.export_strategy);
+
         let sender = self.export_result_sender.clone();
+
         std::thread::spawn(move || {
+
             let result = strategy.export(&premultiplied_rgba, width, height, &path);
+
             let _ = sender.send(result);
         });
     }
@@ -80,11 +92,17 @@ impl ExportManager {
     ///
     /// * `canvas` — The canvas to serialise.
     /// * `path` — Destination file path.
+
     pub fn trigger_async_export_archive(&mut self, canvas: Canvas, path: PathBuf) {
+
         self.export_in_flight = true;
+
         let sender = self.export_result_sender.clone();
+
         std::thread::spawn(move || {
+
             let result = crate::files::save_canvas_to_path_xz(&canvas, &path);
+
             let _ = sender.send(result);
         });
     }
@@ -96,14 +114,21 @@ impl ExportManager {
     /// # Parameters
     ///
     /// * `error_list` — Error list to push failure messages into.
+
     pub fn poll_export_results(&mut self, error_list: &mut Vec<String>) -> bool {
+
         if let Ok(result) = self.export_result_receiver.try_recv() {
+
             self.export_in_flight = false;
+
             if let Err(error) = result {
+
                 error_list.push(format!("Export failed: {error}"));
             }
+
             true
         } else {
+
             false
         }
     }

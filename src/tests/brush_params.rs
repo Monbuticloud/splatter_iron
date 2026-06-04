@@ -12,7 +12,9 @@ use crate::canvas::DirtyRectList;
 use crate::canvas::Layer;
 
 /// Helper: build a minimal canvas fixture.
+
 fn canvas() -> Canvas {
+
     Canvas {
         pixels: vec![Layer {
             pixels: vec![Color32::TRANSPARENT; 100],
@@ -28,9 +30,13 @@ fn canvas() -> Canvas {
 
 /// Constructing BrushStrokeParams and verifying all fields are accessible.
 #[test]
+
 fn construction_and_field_access() {
+
     let mut c = canvas();
+
     let mut visited = vec![0u32; 100];
+
     let mut drag = vec![0u32; 100];
 
     let params = BrushStrokeParams {
@@ -49,21 +55,33 @@ fn construction_and_field_access() {
     };
 
     assert_eq!(params.start_x, 1);
+
     assert_eq!(params.start_y, 2);
+
     assert_eq!(params.end_x, 5);
+
     assert_eq!(params.end_y, 6);
+
     assert_eq!(params.color, Color32::RED);
+
     assert_eq!(params.layer, 0);
+
     assert_eq!(params.stamp, 42);
+
     assert!(params.alpha_overlay);
+
     assert_eq!(params.drag_stamp_value, 7);
 }
 
 /// Builder constructs `BrushStrokeParams` with default alpha_overlay = false.
 #[test]
+
 fn builder_with_defaults() {
+
     let mut c = canvas();
+
     let mut visited = vec![0u32; 100];
+
     let mut drag = vec![0u32; 100];
 
     let params =
@@ -73,22 +91,32 @@ fn builder_with_defaults() {
             .build();
 
     assert_eq!(params.start_x, 1);
+
     assert_eq!(params.start_y, 2);
+
     assert_eq!(params.end_x, 5);
+
     assert_eq!(params.end_y, 6);
+
     assert!(
         !params.alpha_overlay,
         "default alpha_overlay should be false"
     );
+
     assert_eq!(params.stamp, 42);
+
     assert_eq!(params.drag_stamp_value, 7);
 }
 
 /// Builder accepts `alpha_overlay(true)` override.
 #[test]
+
 fn builder_with_alpha_overlay() {
+
     let mut c = canvas();
+
     let mut visited = vec![0u32; 100];
+
     let mut drag = vec![0u32; 100];
 
     let params =
@@ -103,9 +131,13 @@ fn builder_with_alpha_overlay() {
 
 /// Debug output contains key field information.
 #[test]
+
 fn debug_output() {
+
     let mut c = canvas();
+
     let mut visited = vec![0u32; 100];
+
     let mut drag = vec![0u32; 100];
 
     let params = BrushStrokeParams {
@@ -124,12 +156,16 @@ fn debug_output() {
     };
 
     let debug = format!("{params:?}");
+
     assert!(debug.contains("start_x: 0"), "debug should include start_x");
+
     assert!(debug.contains("end_y: 4"), "debug should include end_y");
+
     assert!(
         debug.contains("visited.len: 100"),
         "debug should include visited.len"
     );
+
     assert!(
         debug.contains("drag_processed.len: 100"),
         "debug should include drag_processed.len"

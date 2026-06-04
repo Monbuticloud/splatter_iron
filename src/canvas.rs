@@ -10,12 +10,16 @@ use serde::Deserialize;
 use serde::Serialize;
 
 /// Default canvas width in pixels for new documents.
+
 const DEFAULT_WIDTH: u32 = 2000;
+
 /// Default canvas height in pixels for new documents.
+
 const DEFAULT_HEIGHT: u32 = 1500;
 
 /// Determines how a layer interacts with the layer below it during compositing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+
 pub enum LayerMode {
     /// Standard alpha-over compositing — no special interaction.
     Normal,
@@ -36,6 +40,7 @@ pub enum LayerMode {
 
 impl std::fmt::Display for LayerMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         match self {
             Self::Normal => write!(f, "Normal"),
             Self::Clipped => write!(f, "Clipped (Visible)"),
@@ -46,12 +51,15 @@ impl std::fmt::Display for LayerMode {
 }
 
 /// Default layer mode for new and deserialized layers.
+
 const fn default_layer_mode() -> LayerMode {
+
     LayerMode::Normal
 }
 
 /// A single layer of pixels in the canvas.
 #[derive(Clone, Serialize, Deserialize)]
+
 pub struct Layer {
     /// Premultiplied-alpha RGBA pixels in row-major order.
     pub pixels: Vec<Color32>,
@@ -71,6 +79,7 @@ pub struct Layer {
 
 impl std::fmt::Debug for Layer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("Layer")
             .field("pixels.len", &self.pixels.len())
             .field("name", &self.name)
@@ -82,18 +91,24 @@ impl std::fmt::Debug for Layer {
 }
 
 /// Default visibility for new layers.
+
 const fn default_visible() -> bool {
+
     true
 }
 
 /// Default opacity for new layers (fully opaque).
+
 const fn default_opacity() -> u8 {
+
     255
 }
 
 impl Default for Layer {
     /// Creates an empty, visible, fully opaque, Normal-mode layer with no name.
+
     fn default() -> Self {
+
         Self {
             pixels: Vec::new(),
             name: String::new(),
@@ -106,6 +121,7 @@ impl Default for Layer {
 
 /// Axis-aligned bounding box of a modified region on the canvas.
 #[derive(Clone, Copy, Default, Debug, PartialEq)]
+
 pub struct DirtyRect {
     /// Minimum column index (inclusive) of the dirty region.
     pub min_x: u32,
@@ -119,7 +135,9 @@ pub struct DirtyRect {
 
 impl DirtyRect {
     /// Create a `DirtyRect` with given bounds.
+
     pub const fn new(min_x: u32, min_y: u32, max_x: u32, max_y: u32) -> Self {
+
         Self {
             min_x,
             min_y,
@@ -129,7 +147,9 @@ impl DirtyRect {
     }
 
     /// Create an empty rect that expands on the first `extend` call.
+
     pub const fn empty() -> Self {
+
         Self {
             min_x: u32::MAX,
             min_y: u32::MAX,
@@ -139,15 +159,22 @@ impl DirtyRect {
     }
 
     /// Expand the rect to include `(x, y)`.
+
     pub fn extend(&mut self, x: u32, y: u32) {
+
         self.min_x = self.min_x.min(x);
+
         self.min_y = self.min_y.min(y);
+
         self.max_x = self.max_x.max(x);
+
         self.max_y = self.max_y.max(y);
     }
 
     /// Merge with another rect.
+
     pub fn union(&self, other: &Self) -> Self {
+
         Self {
             min_x: self.min_x.min(other.min_x),
             min_y: self.min_y.min(other.min_y),
@@ -157,33 +184,45 @@ impl DirtyRect {
     }
 
     /// Returns `true` when the rect covers no pixels (either dimension is inverted).
+
     pub const fn is_empty(&self) -> bool {
+
         self.min_x > self.max_x || self.min_y > self.max_y
     }
 
     /// Number of columns in the rect, or `0` if empty.
+
     pub const fn width(&self) -> u32 {
+
         if self.is_empty() {
+
             0
         } else {
+
             self.max_x - self.min_x + 1
         }
     }
 
     /// Number of rows in the rect, or `0` if empty.
+
     pub const fn height(&self) -> u32 {
+
         if self.is_empty() {
+
             0
         } else {
+
             self.max_y - self.min_y + 1
         }
     }
 }
 
 /// Minimum gap between two dirty rects before they are merged (in pixels).
+
 const DIRTY_RECT_PROXIMITY: u32 = 16;
 
 /// Maximum number of dirty rects before merging all into one bounding box.
+
 const DIRTY_RECT_MAX_COUNT: usize = 8;
 
 /// A list of dirty rectangles that tracks each dirty region individually,
@@ -194,6 +233,7 @@ const DIRTY_RECT_MAX_COUNT: usize = 8;
 /// layer add/delete/move). \[`take_all`\] returns a single full-canvas rect when
 /// a full blend was requested.
 #[derive(Clone, Default, Debug)]
+
 pub struct DirtyRectList {
     rects: Vec<DirtyRect>,
     needs_full_blend: bool,
@@ -201,7 +241,9 @@ pub struct DirtyRectList {
 
 impl DirtyRectList {
     /// Create an empty list.
+
     pub fn new() -> Self {
+
         Self {
             rects: Vec::new(),
             needs_full_blend: false,
@@ -209,7 +251,9 @@ impl DirtyRectList {
     }
 
     /// Request a full-canvas re-blend on the next frame.
+
     pub fn request_full_blend(&mut self) {
+
         self.needs_full_blend = true;
     }
 
@@ -219,19 +263,29 @@ impl DirtyRectList {
     /// is ≤ [`DIRTY_RECT_PROXIMITY`] pixels. If the total exceeds
     /// [`DIRTY_RECT_MAX_COUNT`], all rects are merged into one.
     /// Clears the full-blend request since an incremental rect is being added.
+
     pub fn add(&mut self, rect: DirtyRect) {
+
         if rect.is_empty() {
+
             return;
         }
+
         self.needs_full_blend = false;
 
         let mut merged = rect;
+
         let mut i = 0;
+
         while i < self.rects.len() {
+
             if rects_overlap_or_touch(&self.rects[i], &merged, DIRTY_RECT_PROXIMITY) {
+
                 merged = merged.union(&self.rects[i]);
+
                 self.rects.swap_remove(i);
             } else {
+
                 i += 1;
             }
         }
@@ -239,20 +293,29 @@ impl DirtyRectList {
         self.rects.push(merged);
 
         if self.rects.len() > DIRTY_RECT_MAX_COUNT {
+
             self.merge_all();
         }
     }
 
     /// Merge all tracked rects into a single bounding box.
+
     pub fn merge_all(&mut self) {
+
         if self.rects.is_empty() {
+
             return;
         }
+
         let mut unified = DirtyRect::empty();
+
         for rect in &self.rects {
+
             unified = unified.union(rect);
         }
+
         self.rects.clear();
+
         self.rects.push(unified);
     }
 
@@ -261,35 +324,51 @@ impl DirtyRectList {
     /// If a full-blend was requested (via \[`request_full_blend`\]), returns
     /// an empty list — the caller should blend the full canvas instead.
     /// Also clears the full-blend flag.
+
     pub fn take_all(&mut self) -> Vec<DirtyRect> {
+
         let rects = std::mem::take(&mut self.rects);
+
         self.needs_full_blend = false;
+
         rects
     }
 
     /// Returns `true` when no rects are tracked and no full blend is requested.
+
     pub fn is_empty(&self) -> bool {
+
         self.rects.is_empty() && !self.needs_full_blend
     }
 
     /// Returns `true` if any rects are tracked or a full blend was requested.
+
     pub fn needs_reblend(&self) -> bool {
+
         !self.rects.is_empty() || self.needs_full_blend
     }
 
     /// Clear all tracked rects and reset the full-blend flag.
     #[cfg(test)]
+
     pub fn clear(&mut self) {
+
         self.rects.clear();
+
         self.needs_full_blend = false;
     }
 }
 
 /// Returns `true` if two dirty rects overlap or are within `proximity` pixels.
+
 fn rects_overlap_or_touch(a: &DirtyRect, b: &DirtyRect, proximity: u32) -> bool {
+
     let a_min_x = a.min_x.saturating_sub(proximity);
+
     let a_min_y = a.min_y.saturating_sub(proximity);
+
     let a_max_x = a.max_x.saturating_add(proximity);
+
     let a_max_y = a.max_y.saturating_add(proximity);
 
     !(a_max_x < b.min_x || a_min_x > b.max_x || a_max_y < b.min_y || a_min_y > b.max_y)
@@ -298,6 +377,7 @@ fn rects_overlap_or_touch(a: &DirtyRect, b: &DirtyRect, proximity: u32) -> bool 
 /// The core canvas data: a list of layers, dimensions, output RGBA buffer,
 /// GPU texture state, and a flag to request re-rendering.
 #[derive(Clone, Serialize, Deserialize)]
+
 pub struct Canvas {
     /// Ordered list of layers from bottom (index 0) to top.
     pub pixels: Vec<Layer>,
@@ -321,6 +401,7 @@ pub struct Canvas {
 
 impl std::fmt::Debug for Canvas {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("Canvas")
             .field("pixels", &self.pixels)
             .field("height", &self.height)
@@ -333,8 +414,11 @@ impl std::fmt::Debug for Canvas {
 
 impl Default for Canvas {
     /// Create a default 2000×1500 canvas with a single transparent layer.
+
     fn default() -> Self {
+
         let pixel_count = (DEFAULT_WIDTH * DEFAULT_HEIGHT) as usize;
+
         let layers: Vec<Layer> = vec![Layer {
             pixels: vec![Color32::TRANSPARENT; pixel_count],
             name: "Layer 1".to_string(),
@@ -342,6 +426,7 @@ impl Default for Canvas {
             opacity: 255,
             mode: LayerMode::Normal,
         }];
+
         Self {
             pixels: layers,
             height: DEFAULT_HEIGHT,
@@ -364,12 +449,17 @@ impl Canvas {
     /// # Panics
     ///
     /// Panics if `width * height` overflows `usize` (extremely unlikely in practice).
+
     pub fn new(width: u32, height: u32) -> Self {
+
         let pixel_count = (width as usize)
             .checked_mul(height as usize)
             .expect("Canvas dimensions overflow usize");
+
         let mut dirty_rect = DirtyRectList::new();
+
         dirty_rect.request_full_blend();
+
         Self {
             pixels: vec![Layer {
                 pixels: vec![Color32::TRANSPARENT; pixel_count],
@@ -389,6 +479,7 @@ impl Canvas {
 
 /// The shape used by a drawing or erasing tool.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+
 pub enum ToolKind {
     /// Rectangular brush/eraser footprint.
     Square,
@@ -398,6 +489,7 @@ pub enum ToolKind {
 
 /// The drawing tool currently selected in the UI.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+
 pub enum CurrentTool {
     /// Draw solid rectangles by dragging.
     Square,
@@ -420,6 +512,7 @@ pub enum CurrentTool {
 /// Desired rendering cadence: active wake for fast repaints,
 /// idle throttled for slow repaints, or frozen when viewport is unfocused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+
 pub enum RenderState {
     /// Full rendering — canvas redraws every frame (active interaction).
     ActiveWake(Duration),

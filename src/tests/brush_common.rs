@@ -5,11 +5,17 @@ use crate::tools::brush_common::apply_visited_runs;
 
 /// `apply_visited_runs` with no visited pixels returns an empty run list.
 #[test]
+
 fn no_visited_pixels_returns_empty() {
+
     let mut pixels = vec![Color32::TRANSPARENT; 100];
+
     let dirty = DirtyRect::new(0, 0, 9, 9);
+
     let mut visited = vec![0u32; 100];
+
     let mut drag = vec![0u32; 100];
+
     let mut buf = Vec::new();
 
     let runs = apply_visited_runs(
@@ -24,16 +30,23 @@ fn no_visited_pixels_returns_empty() {
         0,
         &mut buf,
     );
+
     assert!(runs.is_empty());
 }
 
 /// `apply_visited_runs` with all pixels visited captures the correct runs.
 #[test]
+
 fn all_visited_produces_runs() {
+
     let mut pixels = vec![Color32::TRANSPARENT; 4];
+
     let dirty = DirtyRect::new(0, 0, 1, 1);
+
     let mut visited = vec![1u32; 4];
+
     let mut drag = vec![0u32; 4];
+
     let mut buf = Vec::new();
 
     let runs = apply_visited_runs(
@@ -48,18 +61,27 @@ fn all_visited_produces_runs() {
         0,
         &mut buf,
     );
+
     assert_eq!(runs.len(), 2, "one run per row");
+
     assert_eq!(pixels.iter().filter(|p| **p == Color32::RED).count(), 4);
 }
 
 /// `apply_visited_runs` with alpha-overlay blends correctly.
 #[test]
+
 fn alpha_overlay_blends() {
+
     let mut pixels = vec![Color32::from_rgba_premultiplied(255, 0, 0, 255); 4];
+
     let dirty = DirtyRect::new(0, 0, 1, 1);
+
     let mut visited = vec![1u32; 4];
+
     let mut drag = vec![0u32; 4];
+
     let mut buf = Vec::new();
+
     let overlay = Color32::from_rgba_premultiplied(0, 0, 255, 128);
 
     let runs = apply_visited_runs(
@@ -74,7 +96,9 @@ fn alpha_overlay_blends() {
         1,
         &mut buf,
     );
+
     assert!(!runs.is_empty());
+
     // Every pixel should have been modified (blended)
     assert!(
         pixels
@@ -85,12 +109,18 @@ fn alpha_overlay_blends() {
 
 /// `apply_visited_runs` skips already processed pixels in alpha-overlay mode.
 #[test]
+
 fn alpha_overlay_skips_processed() {
+
     let mut pixels = vec![Color32::TRANSPARENT; 4];
+
     let dirty = DirtyRect::new(0, 0, 1, 1);
+
     let mut visited = vec![1u32; 4];
+
     let mut drag = vec![1u32; 4]; // all already processed
     let mut buf = Vec::new();
+
     let overlay = Color32::RED;
 
     let runs = apply_visited_runs(
@@ -105,5 +135,6 @@ fn alpha_overlay_skips_processed() {
         1,
         &mut buf,
     );
+
     assert!(runs.is_empty(), "all pixels already processed");
 }

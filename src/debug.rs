@@ -14,6 +14,8 @@ use crate::app::MyApp;
 /// # Panics
 ///
 /// Panics only via the inner `dbg!` macro (no additional panics).
+
 pub fn debug_snapshot(app: &MyApp) {
+
     dbg!(app);
 }

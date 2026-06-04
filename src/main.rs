@@ -26,6 +26,7 @@ mod undo_history;
 
 #[cfg(test)]
 mod tests;
+
 use std::sync::Arc;
 
 use eframe::egui_wgpu::wgpu;
@@ -36,6 +37,7 @@ use crate::app::APP_ORGANIZATION;
 use crate::app::APP_QUALIFIER;
 
 #[global_allocator]
+
 static GLOBAL: MiMalloc = MiMalloc;
 
 /// Application entry point.
@@ -53,10 +55,14 @@ static GLOBAL: MiMalloc = MiMalloc;
 /// Panics if the platform-specific data directory cannot be resolved
 /// (no home directory) or if the operating system refuses to create the
 /// data directory (e.g., file-system permissions).
+
 fn main() -> eframe::Result {
+
     let project_dirs = directories::ProjectDirs::from(APP_QUALIFIER, APP_ORGANIZATION, APP_NAME)
         .expect("Couldn't resolve app dir");
+
     let data_dir = project_dirs.data_local_dir().to_path_buf();
+
     std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
 
     use eframe::egui_wgpu::WgpuConfiguration;
@@ -68,6 +74,7 @@ fn main() -> eframe::Result {
                 wgpu_setup: eframe::egui_wgpu::WgpuSetup::CreateNew(
                     eframe::egui_wgpu::WgpuSetupCreateNew {
                         device_descriptor: Arc::new(|_adapter: &wgpu::Adapter| {
+
                             wgpu::DeviceDescriptor {
                                 label: Some("splatter_iron_device"),
                                 required_limits: wgpu::Limits {

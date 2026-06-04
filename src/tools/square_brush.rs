@@ -18,6 +18,7 @@ use crate::undo::compress_and_store;
 ///
 /// Panics if `pixels` is not large enough to cover the rectangle at the given width.
 #[inline]
+
 fn fill_square_impl(
     pixels: &mut [Color32],
     width: usize,
@@ -28,18 +29,29 @@ fn fill_square_impl(
     color: Color32,
     alpha_overlay: bool,
 ) {
+
     if alpha_overlay {
+
         for y in start_y..end_y {
+
             let row_start = (y as usize) * width;
+
             let start = row_start + (start_x as usize);
+
             let end = row_start + (end_x as usize);
+
             crate::pixel::alpha_blend_span(&mut pixels[start..end], color);
         }
     } else {
+
         for y in start_y..end_y {
+
             let row_start = (y as usize) * width;
+
             let start = row_start + (start_x as usize);
+
             let end = row_start + (end_x as usize);
+
             pixels[start..end].fill(color);
         }
     }
@@ -62,6 +74,7 @@ fn fill_square_impl(
 /// pixel index along the stamped line is written directly into the
 /// visited buffer without a bounds check.
 #[inline]
+
 fn stamp_line_positions(
     start_x: u32,
     start_y: u32,
@@ -74,39 +87,52 @@ fn stamp_line_positions(
     stamp: u32,
     dirty_rect: &mut DirtyRect,
 ) {
+
     let half_radius = brush_radius;
 
     // Per-row span tracking: each row's min_x/max_x of already-stamped columns.
     // u32::MAX / 0 = unstamped. This avoids re-stamping pixels already covered
     // by a previous Bresenham step (common case for overlapping brush footprints).
     let mut row_min_x = vec![u32::MAX; height as usize];
+
     let mut row_max_x = vec![0u32; height as usize];
 
     let mut current_x = start_x as i32;
+
     let mut current_y = start_y as i32;
+
     let target_x = end_x as i32;
+
     let target_y = end_y as i32;
 
     let delta_x = target_x.abs_diff(current_x) as i32;
+
     let step_x = if current_x < target_x { 1 } else { -1 };
+
     let delta_y = -(target_y.abs_diff(current_y) as i32);
+
     let step_y = if current_y < target_y { 1 } else { -1 };
+
     let mut error = delta_x + delta_y;
 
     loop {
+
         let brush_start_x = current_x
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((width as i32) - 1) as u32;
+
         let brush_end_x = current_x
             .saturating_add(half_radius as i32)
             .saturating_add(1)
             .max(0)
             .min(width as i32) as u32;
+
         let brush_start_y = current_y
             .saturating_sub(half_radius as i32)
             .max(0)
             .min((height as i32) - 1) as u32;
+
         let brush_end_y = current_y
             .saturating_add(half_radius as i32)
             .saturating_add(1)
@@ -114,49 +140,74 @@ fn stamp_line_positions(
             .min(height as i32) as u32;
 
         dirty_rect.extend(brush_start_x, brush_start_y);
+
         dirty_rect.extend(brush_end_x - 1, brush_end_y - 1);
 
         for y in brush_start_y..brush_end_y {
+
             let row = y as usize;
+
             let row_start = row * width;
+
             let cur_min = row_min_x[row];
+
             let cur_max = row_max_x[row];
 
             if cur_min == u32::MAX {
+
                 // First time this row is hit — stamp the full span.
                 for x in brush_start_x..brush_end_x {
+
                     visited[row_start + x as usize] = stamp;
                 }
+
                 row_min_x[row] = brush_start_x;
+
                 row_max_x[row] = brush_end_x;
             } else {
+
                 // Stamp newly-covered left extension.
                 if brush_start_x < cur_min {
+
                     for x in brush_start_x..cur_min {
+
                         visited[row_start + x as usize] = stamp;
                     }
+
                     row_min_x[row] = brush_start_x;
                 }
+
                 // Stamp newly-covered right extension.
                 if brush_end_x > cur_max {
+
                     for x in cur_max..brush_end_x {
+
                         visited[row_start + x as usize] = stamp;
                     }
+
                     row_max_x[row] = brush_end_x;
                 }
             }
         }
 
         if current_x == target_x && current_y == target_y {
+
             break;
         }
+
         let error_times_two = error.saturating_mul(2);
+
         if error_times_two >= delta_y {
+
             error += delta_y;
+
             current_x += step_x;
         }
+
         if error_times_two <= delta_x {
+
             error += delta_x;
+
             current_y += step_y;
         }
     }
@@ -183,6 +234,7 @@ fn stamp_line_positions(
 ///
 /// Panics if `layer >= canvas.pixels.len()`.
 #[inline]
+
 pub fn draw_square(
     start_x: u32,
     start_y: u32,
@@ -193,17 +245,23 @@ pub fn draw_square(
     layer: usize,
     alpha_overlay: bool,
 ) -> UndoRecord {
+
     let width = canvas.width as usize;
+
     let height = canvas.height;
 
     // Clamp once outside the hot loop
     let start_x = start_x.min(canvas.width);
+
     let end_x = end_x.min(canvas.width);
+
     let start_y = start_y.min(height);
+
     let end_y = end_y.min(height);
 
     // Early out
     if start_x >= end_x || start_y >= end_y {
+
         return UndoRecord::Run {
             layer_index: layer,
             color_after: color,
@@ -219,14 +277,19 @@ pub fn draw_square(
 
     // Capture runs (one per row) and fill in one pass
     let mut runs = Vec::with_capacity((end_y - start_y) as usize);
+
     let mut before_pixels = Vec::new();
 
     for y in start_y..end_y {
+
         let row_start = (y as usize) * width;
+
         let start = row_start + (start_x as usize);
+
         let end = row_start + (end_x as usize);
 
         let (before, length) = compress_and_store(&pixels[start..end], &mut before_pixels);
+
         runs.push(RunSegment {
             start: start as u32,
             length,
@@ -247,6 +310,7 @@ pub fn draw_square(
     );
 
     let rect = DirtyRect::new(start_x, start_y, end_x - 1, end_y - 1);
+
     canvas.dirty_rect.add(rect);
 
     UndoRecord::Run {
@@ -276,7 +340,9 @@ pub fn draw_square(
 ///
 /// Panics if `params.layer >= params.canvas.pixels.len()`.
 #[inline]
+
 pub fn draw_square_line(params: BrushStrokeParams<'_>, brush_radius: u32) -> UndoRecord {
+
     let BrushStrokeParams {
         start_x,
         start_y,
@@ -293,9 +359,11 @@ pub fn draw_square_line(params: BrushStrokeParams<'_>, brush_radius: u32) -> Und
     } = params;
 
     let width = canvas.width as usize;
+
     let height = canvas.height;
 
     let mut dirty_rect = DirtyRect::empty();
+
     stamp_line_positions(
         start_x,
         start_y,
@@ -310,6 +378,7 @@ pub fn draw_square_line(params: BrushStrokeParams<'_>, brush_radius: u32) -> Und
     );
 
     let pixels = &mut canvas.pixels[layer].pixels;
+
     let mut before_pixels = Vec::new();
 
     let runs = crate::tools::brush_common::apply_visited_runs(

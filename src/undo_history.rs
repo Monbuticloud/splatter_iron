@@ -12,13 +12,16 @@ use crate::undo::redo_apply;
 use crate::undo::undo_apply;
 
 const MAX_STROKE_STACK: usize = 1000;
+
 /// Maximum number of frames accumulated in a single drag gesture before
 /// the accumulator is force-finalised and a new one starts.
 /// Prevents unbounded memory growth during very long drag interactions.
+
 const MAX_DRAG_FRAMES: usize = 5000;
 
 /// Run segments and before-pixels from one drag frame.
 #[derive(Debug)]
+
 struct DragFrame {
     runs: Vec<RunSegment>,
     before_pixels: Vec<eframe::egui::Color32>,
@@ -26,6 +29,7 @@ struct DragFrame {
 
 /// Holds accumulated drag frames during an active drag gesture.
 #[derive(Debug)]
+
 struct DragAccumulator {
     frames: Vec<DragFrame>,
     layer_index: usize,
@@ -36,6 +40,7 @@ struct DragAccumulator {
 
 /// Manages the undo/redo history stack with a visited-stamp buffer for
 /// brush-stroke deduplication.
+
 pub struct UndoHistory {
     /// Stack of undo records, most recent at the back.
     stroke_stack: VecDeque<UndoRecord>,
@@ -55,6 +60,7 @@ pub struct UndoHistory {
 
 impl std::fmt::Debug for UndoHistory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+
         f.debug_struct("UndoHistory")
             .field("stroke_stack.len", &self.stroke_stack.len())
             .field("redo_index", &self.redo_index)
@@ -75,7 +81,9 @@ impl UndoHistory {
     /// # Parameters
     ///
     /// * `pixel_count` — Number of pixels in the canvas (size of visited buffers).
+
     pub fn new(pixel_count: usize) -> Self {
+
         Self {
             stroke_stack: VecDeque::new(),
             redo_index: 0,
@@ -103,16 +111,24 @@ impl UndoHistory {
     ///
     /// Panics if zstd compression fails (should never happen in practice;
     /// would indicate an OOM or corrupted internal state).
+
     pub fn push_undo(&mut self, record: UndoRecord) {
+
         self.stroke_stack
             .truncate(self.stroke_stack.len() - self.redo_index);
+
         self.stroke_stack.push_back(record);
+
         let last = self.stroke_stack.back_mut().expect("just pushed");
+
         last.compress_before(Self::COMPRESSION_LEVEL)
             .expect("zstd compression in push_undo");
+
         while self.stroke_stack.len() > MAX_STROKE_STACK {
+
             self.stroke_stack.pop_front();
         }
+
         self.redo_index = 0;
     }
 
@@ -133,18 +149,27 @@ impl UndoHistory {
     ///
     /// Panics if zstd compression fails (should never happen in practice;
     /// would indicate an OOM or corrupted internal state).
+
     pub fn push_undo_snapshot(&mut self, record: UndoRecord, layer: &Layer) {
+
         self.stroke_stack
             .truncate(self.stroke_stack.len() - self.redo_index);
+
         self.stroke_stack.push_back(record);
+
         let last = self.stroke_stack.back_mut().expect("just pushed");
+
         last.maybe_snapshot(layer, Self::COMPRESSION_LEVEL)
             .expect("zstd compression in push_undo_snapshot");
+
         last.compress_before(Self::COMPRESSION_LEVEL)
             .expect("zstd compression in push_undo_snapshot");
+
         while self.stroke_stack.len() > MAX_STROKE_STACK {
+
             self.stroke_stack.pop_front();
         }
+
         self.redo_index = 0;
     }
 
@@ -152,12 +177,18 @@ impl UndoHistory {
     ///
     /// Automatically wraps to 0 and resets the visited buffer when
     /// the stamp overflows past `u32::MAX`.
+
     pub fn next_stamp(&mut self) -> u32 {
+
         self.visited_stamp = self.visited_stamp.wrapping_add(1);
+
         if self.visited_stamp == 0 {
+
             self.visited.fill(0);
+
             self.visited_stamp = 1;
         }
+
         self.visited_stamp
     }
 
@@ -168,14 +199,21 @@ impl UndoHistory {
     /// # Parameters
     ///
     /// * `pixel_count` — Required number of entries in the visited buffers.
+
     pub fn resize_visited(&mut self, pixel_count: usize) {
+
         if self.visited.len() < pixel_count {
+
             self.visited = vec![0u32; pixel_count];
         }
+
         if self.drag_processed.len() < pixel_count {
+
             self.drag_processed = vec![0u32; pixel_count];
         }
+
         self.visited_stamp = 1;
+
         self.drag_stamp_value = 1;
     }
 
@@ -183,7 +221,9 @@ impl UndoHistory {
     /// value in one call so callers can pass all three to tool functions without
     /// fighting the borrow checker.
     #[inline]
+
     pub fn scratch_buffers(&mut self) -> (&mut [u32], &mut [u32], u32) {
+
         (
             &mut self.visited,
             &mut self.drag_processed,
@@ -195,10 +235,15 @@ impl UndoHistory {
     ///
     /// Resets the `drag_processed` buffer when the stamp wraps past `u32::MAX`.
     #[inline]
+
     pub fn advance_drag_stamp(&mut self) {
+
         self.drag_stamp_value = self.drag_stamp_value.wrapping_add(1);
+
         if self.drag_stamp_value == 0 {
+
             self.drag_processed.fill(0);
+
             self.drag_stamp_value = 1;
         }
     }
@@ -215,6 +260,7 @@ impl UndoHistory {
     /// * `width` — Canvas width (for row-stride computations).
     /// * `color_after` — Color applied by the drag stroke.
     /// * `is_alpha_overlay` — Whether the stroke uses alpha overlay.
+
     pub fn init_drag_accumulator(
         &mut self,
         layer_index: usize,
@@ -222,6 +268,7 @@ impl UndoHistory {
         color_after: eframe::egui::Color32,
         is_alpha_overlay: bool,
     ) {
+
         self.drag_accumulator = Some(DragAccumulator {
             frames: Vec::new(),
             layer_index,
@@ -241,33 +288,47 @@ impl UndoHistory {
     ///
     /// * `runs` — Run segments captured during the current drag frame.
     /// * `before_pixels` — Flat before-pixel buffer for this frame.
+
     pub fn extend_drag_accumulator(
         &mut self,
         runs: Vec<RunSegment>,
         before_pixels: Vec<eframe::egui::Color32>,
     ) {
+
         let Some(ref mut accumulator) = self.drag_accumulator else {
+
             return;
         };
 
         // When the frame limit is reached, flush accumulated frames as one
         // undo record and start a fresh accumulator for remaining frames.
         if accumulator.frames.len() >= MAX_DRAG_FRAMES {
+
             let layer_index = accumulator.layer_index;
+
             let _width = accumulator.width;
+
             let color_after = accumulator.color_after;
+
             let is_alpha_overlay = accumulator.is_alpha_overlay;
+
             // Swap out frames, push current frame, finalize into undo stack.
             let mut taken = Vec::with_capacity(MAX_DRAG_FRAMES.min(256));
+
             std::mem::swap(&mut taken, &mut accumulator.frames);
+
             taken.push(DragFrame {
                 runs,
                 before_pixels,
             });
+
             let record = Self::merge_frames(taken, layer_index, color_after, is_alpha_overlay);
+
             self.push_undo(record);
+
             // Reset drag stamp so fresh strokes don't collide with the archived ones.
             self.drag_stamp_value = self.drag_stamp_value.wrapping_add(1);
+
             return;
         }
 
@@ -282,23 +343,32 @@ impl UndoHistory {
     /// Frames are processed in reverse order (most recent first) so that
     /// overlapping paint regions undo correctly. `BeforePixels::Many` offsets
     /// are adjusted to point into the concatenated `before_pixels` buffer.
+
     fn merge_frames(
         frames: Vec<DragFrame>,
         layer_index: usize,
         color_after: eframe::egui::Color32,
         is_alpha_overlay: bool,
     ) -> UndoRecord {
+
         let mut all_runs = Vec::new();
+
         let mut all_before = Vec::new();
 
         for mut frame in frames.into_iter().rev() {
+
             let offset_adjust = all_before.len() as u32;
+
             for run in &mut frame.runs {
+
                 if let BeforePixels::Many { offset, .. } = &mut run.before {
+
                     *offset += offset_adjust;
                 }
             }
+
             all_runs.append(&mut frame.runs);
+
             all_before.append(&mut frame.before_pixels);
         }
 
@@ -326,14 +396,18 @@ impl UndoHistory {
     ///
     /// [`push_undo`]: Self::push_undo
     /// [`merge_frames`]: Self::merge_frames
+
     pub fn finalize_drag_accumulator(&mut self) {
+
         let Some(accumulator) = self.drag_accumulator.take() else {
+
             return;
         };
 
         // Check if the last undo record belongs to the same drag gesture
         // (created by a MAX_DRAG_FRAMES split). If so, pop and merge.
         let pop_and_merge = self.stroke_stack.back().is_some_and(|last| {
+
             matches!(
                 last,
                 UndoRecord::Run {
@@ -349,44 +423,59 @@ impl UndoHistory {
         });
 
         if pop_and_merge {
+
             let mut prior = self
                 .stroke_stack
                 .pop_back()
                 .expect("checked is_some_and above");
+
             prior.decompress_before();
+
             if let UndoRecord::Run {
                 ref mut runs,
                 ref mut before_pixels,
                 ..
             } = prior
             {
+
                 // Adjust offsets for accumulator frames and append.
                 let offset_adjust = before_pixels.len() as u32;
+
                 let mut all_before = std::mem::take(before_pixels);
+
                 let mut all_runs = std::mem::take(runs);
 
                 for mut frame in accumulator.frames.into_iter().rev() {
+
                     for run in &mut frame.runs {
+
                         if let crate::undo::BeforePixels::Many { offset, .. } = &mut run.before {
+
                             *offset += offset_adjust + all_before.len() as u32;
                         }
                     }
+
                     all_runs.append(&mut frame.runs);
+
                     all_before.append(&mut frame.before_pixels);
                 }
 
                 // Rebuild the prior record with merged data.
                 *runs = all_runs;
+
                 *before_pixels = all_before;
             }
+
             self.push_undo(prior);
         } else {
+
             let record = Self::merge_frames(
                 accumulator.frames,
                 accumulator.layer_index,
                 accumulator.color_after,
                 accumulator.is_alpha_overlay,
             );
+
             self.push_undo(record);
         }
     }
@@ -396,79 +485,104 @@ impl UndoHistory {
     /// Number of entries in the stroke stack.
     #[cfg(test)]
     #[inline]
+
     pub fn stroke_stack_len(&self) -> usize {
+
         self.stroke_stack.len()
     }
 
     /// Length of the visited buffer (number of canvas pixels).
     #[cfg(test)]
     #[inline]
+
     pub fn visited_len(&self) -> usize {
+
         self.visited.len()
     }
 
     /// Length of the drag-processed buffer.
     #[cfg(test)]
     #[inline]
+
     pub fn drag_processed_len(&self) -> usize {
+
         self.drag_processed.len()
     }
 
     /// Current visited stamp value.
     #[cfg(test)]
     #[inline]
+
     pub fn visited_stamp(&self) -> u32 {
+
         self.visited_stamp
     }
 
     /// Set the visited stamp value directly (for testing wrap behaviour).
     #[cfg(test)]
     #[inline]
+
     pub fn set_visited_stamp(&mut self, val: u32) {
+
         self.visited_stamp = val;
     }
 
     /// Current drag stamp value.
     #[cfg(test)]
     #[inline]
+
     pub fn drag_stamp_value(&self) -> u32 {
+
         self.drag_stamp_value
     }
 
     /// Set the drag stamp value directly (for testing wrap behaviour).
     #[cfg(test)]
     #[inline]
+
     pub fn set_drag_stamp_value(&mut self, val: u32) {
+
         self.drag_stamp_value = val;
     }
 
     /// `true` if every entry in the visited buffer is 0.
     #[cfg(test)]
     #[inline]
+
     pub fn visited_all_zero(&self) -> bool {
+
         self.visited.iter().all(|&v| v == 0)
     }
 
     /// Mutable reference to the drag-processed buffer (used by tests).
     #[cfg(test)]
     #[inline]
+
     pub fn drag_processed_mut(&mut self) -> &mut [u32] {
+
         &mut self.drag_processed
     }
 
     /// Clear the entire stroke stack and reset the redo index.
+
     pub fn clear(&mut self) {
+
         self.stroke_stack.clear();
+
         self.redo_index = 0;
     }
 
     /// Returns `true` if there are strokes that can be undone.
+
     pub fn can_undo(&self) -> bool {
+
         self.redo_index < self.stroke_stack.len()
     }
 
     /// Returns `true` if there are strokes that can be redone.
+
     pub fn can_redo(&self) -> bool {
+
         self.redo_index > 0
     }
 
@@ -489,19 +603,29 @@ impl UndoHistory {
     ///
     /// Panics if any undo record contains corrupt run segments (delegates to
     /// [`undo_apply`] which checks buffer bounds).
+
     pub fn undo_step(&mut self, canvas: &mut Canvas, steps_multiplier: usize) {
+
         const MAX_STEPS: usize = 100;
+
         let step_count = steps_multiplier
             .min(MAX_STEPS)
             .min(self.stroke_stack.len() - self.redo_index);
+
         for _ in 0..step_count {
+
             let index = self.stroke_stack.len() - 1 - self.redo_index;
+
             let record = &mut self.stroke_stack[index];
+
             record.decompress_before();
+
             undo_apply(canvas, record);
+
             record
                 .compress_before(Self::COMPRESSION_LEVEL)
                 .expect("zstd compression in undo_step");
+
             self.redo_index += 1;
         }
     }
@@ -520,12 +644,19 @@ impl UndoHistory {
     ///
     /// Panics if any redo record contains corrupt run segments (delegates to
     /// [`redo_apply`] which checks buffer bounds).
+
     pub fn redo_step(&mut self, canvas: &mut Canvas, steps_multiplier: usize) {
+
         const MAX_STEPS: usize = 100;
+
         let step_count = steps_multiplier.min(MAX_STEPS).min(self.redo_index);
+
         for _ in 0..step_count {
+
             let index = self.stroke_stack.len() - self.redo_index;
+
             self.redo_index -= 1;
+
             redo_apply(canvas, &self.stroke_stack[index]);
         }
     }
