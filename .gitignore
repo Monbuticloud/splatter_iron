@@ -7,3 +7,4 @@ profile.json.gz
 .DS_Store
 docs/deps
 cobertura.xml
+*.profraw
