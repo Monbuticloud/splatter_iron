@@ -2,7 +2,9 @@ edition = "2024"
 max_width = 100
 hard_tabs = false
 tab_spaces = 4
+# format_doc_comments = false
 # Use +nightly, do NOT change toolchain
 blank_lines_lower_bound = 1
+blank_lines_upper_bound = 2
 imports_granularity = "Item"
 group_imports = "StdExternalCrate"
