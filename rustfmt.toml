@@ -3,6 +3,6 @@ max_width = 100
 hard_tabs = false
 tab_spaces = 4
 # Use +nightly, do NOT change toolchain
-blank_lines_lower_bound = 2
+blank_lines_lower_bound = 1
 imports_granularity = "Item"
 group_imports = "StdExternalCrate"
