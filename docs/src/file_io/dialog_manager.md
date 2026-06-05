@@ -10,16 +10,16 @@ and dispatches results back to the UI thread through mpsc channels.
 A file-dialog action queued for execution on a background thread. The result is
 received via channel at the start of a future frame.
 
-| Variant | Description |
-| ------- | ----------- |
-| `Load` | Open dialog filtered for `.splattercanvas` files. |
-| `Save` | Save dialog with default name `canvas.splattercanvas`. |
-| `Import` | Open dialog filtered for image files (`IMPORT_EXTENSIONS`). |
+| Variant         | Description                                                   |
+| --------------- | ------------------------------------------------------------- |
+| `Load`          | Open dialog filtered for `.splattercanvas` files.             |
+| `Save`          | Save dialog with default name `canvas.splattercanvas`.        |
+| `Import`        | Open dialog filtered for image files (`IMPORT_EXTENSIONS`).   |
 | `Export(usize)` | Save dialog for the export format at `EXPORT_FORMATS[index]`. |
-| `LoadStamp` | Open dialog for image files; decodes the selection. |
-| `LoadBrush` | Open dialog for `.abr`/`.gbr` brush files; parses on thread. |
-| `ExportArchive` | Save dialog for `.splatterarchive` files. |
-| `ImportArchive` | Open dialog for `.splatterarchive` files. |
+| `LoadStamp`     | Open dialog for image files; decodes the selection.           |
+| `LoadBrush`     | Open dialog for `.abr`/`.gbr` brush files; parses on thread.  |
+| `ExportArchive` | Save dialog for `.splatterarchive` files.                     |
+| `ImportArchive` | Open dialog for `.splatterarchive` files.                     |
 
 Derives `Clone`, `Copy`, `Debug`.
 
@@ -27,27 +27,27 @@ Derives `Clone`, `Copy`, `Debug`.
 
 Message sent from the file-dialog background thread to the UI thread.
 
-| Variant | Description |
-| ------- | ----------- |
-| `Picked(PathBuf)` | User selected a file path. |
+| Variant                                       | Description                                          |
+| --------------------------------------------- | ---------------------------------------------------- |
+| `Picked(PathBuf)`                             | User selected a file path.                           |
 | `StampPixels(Vec<Color32>, u32, u32, String)` | Decoded stamp image pixels + dimensions + name stem. |
-| `BrushTips(Vec<BrushTip>)` | Parsed brush tips from an ABR/GBR file. |
-| `Error(String)` | An error occurred during a file operation. |
-| `Cancelled` | User cancelled the dialog without selecting a file. |
+| `BrushTips(Vec<BrushTip>)`                    | Parsed brush tips from an ABR/GBR file.              |
+| `Error(String)`                               | An error occurred during a file operation.           |
+| `Cancelled`                                   | User cancelled the dialog without selecting a file.  |
 
 ### `DispatchedAction`
 
 An action decoded from a dialog result that the frame loop must dispatch
 to the appropriate subsystem (save, load, import, or export).
 
-| Variant | Description |
-| ------- | ----------- |
-| `Save(PathBuf)` | Save the canvas to the given path. |
-| `Load(PathBuf)` | Load a `.splattercanvas` file. |
-| `Import(PathBuf)` | Import an image file as a new canvas. |
+| Variant                  | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| `Save(PathBuf)`          | Save the canvas to the given path.               |
+| `Load(PathBuf)`          | Load a `.splattercanvas` file.                   |
+| `Import(PathBuf)`        | Import an image file as a new canvas.            |
 | `Export(usize, PathBuf)` | Export as image; usize indexes `EXPORT_FORMATS`. |
-| `ExportArchive(PathBuf)` | Serialise and export a `.splatterarchive`. |
-| `ImportArchive(PathBuf)` | Import a `.splatterarchive` file. |
+| `ExportArchive(PathBuf)` | Serialise and export a `.splatterarchive`.       |
+| `ImportArchive(PathBuf)` | Import a `.splatterarchive` file.                |
 
 ## Structs
 
@@ -56,13 +56,13 @@ to the appropriate subsystem (save, load, import, or export).
 Manages native file dialogs on background threads. Owns the dialog-channel pair,
 the pending-action state machine, and temporary storage for loaded stamp/brush data.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `pending_file_action` | `Option<PendingFileAction>` | File action queued for the next background thread iteration. |
-| `dialog_sender` | `mpsc::Sender<DialogResult>` | Channel sender for dispatching dialog requests to the background thread. |
-| `dialog_receiver` | `mpsc::Receiver<DialogResult>` | Channel receiver for receiving dialog results on the UI thread. |
-| `loaded_stamp_data` | `Option<(Vec<Color32>, u32, u32, String)>` | Decoded stamp image data, consumed by the app frame. |
-| `loaded_brush_data` | `Option<Vec<BrushTip>>` | Parsed brush tips, consumed by the app frame. |
+| Field                 | Type                                       | Description                                                              |
+| --------------------- | ------------------------------------------ | ------------------------------------------------------------------------ |
+| `pending_file_action` | `Option<PendingFileAction>`                | File action queued for the next background thread iteration.             |
+| `dialog_sender`       | `mpsc::Sender<DialogResult>`               | Channel sender for dispatching dialog requests to the background thread. |
+| `dialog_receiver`     | `mpsc::Receiver<DialogResult>`             | Channel receiver for receiving dialog results on the UI thread.          |
+| `loaded_stamp_data`   | `Option<(Vec<Color32>, u32, u32, String)>` | Decoded stamp image data, consumed by the app frame.                     |
+| `loaded_brush_data`   | `Option<Vec<BrushTip>>`                    | Parsed brush tips, consumed by the app frame.                            |
 
 ## Methods
 
