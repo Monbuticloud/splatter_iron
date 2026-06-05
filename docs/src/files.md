@@ -14,10 +14,10 @@ fn write_canvas(canvas: &Canvas, writer: impl Write) -> anyhow::Result<()>
 
 ### Parameters
 
-| Parameter | Type             | Description                                            |
-| --------- | ---------------- | ------------------------------------------------------ |
-| `canvas`  | `&Canvas`        | The canvas to serialise                                |
-| `writer`  | `impl Write`     | Destination writer (`File`, `Vec<u8>`, etc.)           |
+| Parameter | Type         | Description                                  |
+| --------- | ------------ | -------------------------------------------- |
+| `canvas`  | `&Canvas`    | The canvas to serialise                      |
+| `writer`  | `impl Write` | Destination writer (`File`, `Vec<u8>`, etc.) |
 
 ### Errors
 
@@ -39,9 +39,9 @@ fn read_canvas(reader: impl Read) -> anyhow::Result<Canvas>
 
 ### Parameters
 
-| Parameter | Type             | Description                                              |
-| --------- | ---------------- | -------------------------------------------------------- |
-| `reader`  | `impl Read`      | Source of zstd-compressed JSON bytes (`File`, `&[u8]`)   |
+| Parameter | Type        | Description                                            |
+| --------- | ----------- | ------------------------------------------------------ |
+| `reader`  | `impl Read` | Source of zstd-compressed JSON bytes (`File`, `&[u8]`) |
 
 ### Errors
 
@@ -96,10 +96,10 @@ pub fn save_canvas_to_path(canvas: &Canvas, path: &Path) -> anyhow::Result<()>
 
 ### Parameters
 
-| Parameter | Type      | Description                  |
-| --------- | --------- | ---------------------------- |
-| `canvas`  | `&Canvas` | The canvas to serialise      |
-| `path`    | `&Path`   | Destination file path        |
+| Parameter | Type      | Description             |
+| --------- | --------- | ----------------------- |
+| `canvas`  | `&Canvas` | The canvas to serialise |
+| `path`    | `&Path`   | Destination file path   |
 
 ### Errors
 
@@ -122,9 +122,9 @@ pub fn load_canvas_from_bytes(data: &[u8]) -> anyhow::Result<Canvas>
 
 ### Parameters
 
-| Parameter | Type    | Description                             |
-| --------- | ------- | --------------------------------------- |
-| `data`    | `&[u8]` | Zstd-compressed JSON bytes              |
+| Parameter | Type    | Description                |
+| --------- | ------- | -------------------------- |
+| `data`    | `&[u8]` | Zstd-compressed JSON bytes |
 
 ### Performance notes
 
@@ -149,9 +149,9 @@ pub fn load_canvas_from_path(path: &Path) -> anyhow::Result<Canvas>
 
 ### Parameters
 
-| Parameter | Type    | Description                          |
-| --------- | ------- | ------------------------------------ |
-| `path`    | `&Path` | Path to a `.splattercanvas` file     |
+| Parameter | Type    | Description                      |
+| --------- | ------- | -------------------------------- |
+| `path`    | `&Path` | Path to a `.splattercanvas` file |
 
 ### Errors
 
