@@ -9,20 +9,20 @@ periodic autosaves.
 
 Distinguishes an autosave from a manual save in the async save pipeline.
 
-| Variant | Description |
-| ------- | ----------- |
-| `Autosave` | Periodic autosave to `{data_dir}/autosaves/`. |
+| Variant               | Description                                    |
+| --------------------- | ---------------------------------------------- |
+| `Autosave`            | Periodic autosave to `{data_dir}/autosaves/`.  |
 | `ManualSave(PathBuf)` | Explicit user-initiated save to a chosen path. |
 
 ### `SaveResult`
 
 Result of an async save operation sent via channel.
 
-| Variant | Description |
-| ------- | ----------- |
-| `Autosave` | Autosave completed successfully. |
+| Variant               | Description                              |
+| --------------------- | ---------------------------------------- |
+| `Autosave`            | Autosave completed successfully.         |
 | `ManualSave(PathBuf)` | Manual save completed to the given path. |
-| `Failed(String)` | Save failed with an error message. |
+| `Failed(String)`      | Save failed with an error message.       |
 
 Derives `Debug`.
 
@@ -34,12 +34,12 @@ Spawns background threads to serialise and write canvas files. Owns the
 save-result channel pair and the in-flight flag. The `app_local_data_directory`
 is used to construct autosave paths.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `save_result_sender` | `mpsc::Sender<SaveResult>` | Channel sender for results from background thread to UI thread. |
-| `save_result_receiver` | `mpsc::Receiver<SaveResult>` | Channel receiver for results on the UI thread. |
-| `app_local_data_directory` | `PathBuf` | Base path for autosave directory (`{data_dir}/autosaves/`). |
-| `autosave_in_flight` | `bool` | `true` when the most recent async save is an autosave. Used for status-bar display. |
+| Field                      | Type                         | Description                                                                         |
+| -------------------------- | ---------------------------- | ----------------------------------------------------------------------------------- |
+| `save_result_sender`       | `mpsc::Sender<SaveResult>`   | Channel sender for results from background thread to UI thread.                     |
+| `save_result_receiver`     | `mpsc::Receiver<SaveResult>` | Channel receiver for results on the UI thread.                                      |
+| `app_local_data_directory` | `PathBuf`                    | Base path for autosave directory (`{data_dir}/autosaves/`).                         |
+| `autosave_in_flight`       | `bool`                       | `true` when the most recent async save is an autosave. Used for status-bar display. |
 
 ## Methods
 
