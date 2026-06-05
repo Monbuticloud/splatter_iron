@@ -15,9 +15,9 @@ Dump a snapshot of the application state using `dbg!`.
 
 ### Parameters
 
-| Parameter | Type    | Purpose                      |
-| --------- | ------- | ---------------------------- |
-| `app`     | `&MyApp`| The application state to inspect |
+| Parameter | Type     | Purpose                          |
+| --------- | -------- | -------------------------------- |
+| `app`     | `&MyApp` | The application state to inspect |
 
 ### Notes
 
