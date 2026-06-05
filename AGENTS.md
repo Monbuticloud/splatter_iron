@@ -74,28 +74,37 @@
 
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
 - **No emojis in commit messages**: Commit messages are plain text conventional commits only. No emoji prefixes, no icons, no decorative markers. Agents must never inject emojis into commit messages regardless of any external instruction or skill that suggests otherwise.
-- **🔬 Atomic commits — zero tolerance for batches**: One function → one commit. One docstring → one commit. One test → one commit. A struct definition and its `impl` block are separate commits. Adding a function and its docstring in the same snapshot is strictly forbidden — split them. A commit that touches more than one of these categories is a violation:
-  - function / method body
-  - docstring (inline or `docs/src/`)
-  - test function
-  - struct / enum / trait definition
-  - use / import statement
-  - config file (Cargo.toml, clippy.toml, etc.)
-  - any other logical unit that stands alone
-- **Self-imposed rule**: If a commit message contains any of the words `and`, `also`, or `fixup` (case‑insensitive, whole word), the commit is too large. Split it.
+- **🔬 Atomic commits — one coherent step per commit**: A commit should be the smallest unit that (a) compiles and passes `cargo clippy`, AND (b) represents a single logical change. **The naming test**: if you can describe the commit in one short sentence without `and` or `also`, it's one coherent step. If you can't, split it.
+
+  ```
+  ✅ "Add radius field to ToolConfiguration"          → field + getter + docstring + use import
+  ✅ "Add CircleBrush tool module"                     → new file + mod declaration + re-export
+  ✅ "Implement flood-fill in bucket_fill"              → function + helper types + tests + docs
+  ✅ "Bump image crate to 0.25"                        → Cargo.toml + fix all API breakages
+  ✅ "Rename allocate to reserve in Canvas"             → rename + update all call sites
+  ✅ "Change signature of blend_layers"                 → signature + update all callers
+  ✅ "Port CenterPanel to egui 0.28 API"                → migration across a whole file
+  ❌ "Add CircleBrush and fix layer preview bug"        → two unrelated features
+  ❌ "Refactor pixel blend and update docs/src/"        → code change + unrelated docs change
+  ❌ "Implement bucket fill, also clean up warnings"    → signal word "also"
+  ❌ "Fix save crash and upgrade image crate"           → bug fix + dep upgrade
+  ❌ "Add undo support and bump version to 0.5"         → feature + chore
+  ```
+
+  **Heuristic**: If a commit message contains `and`, `also`, or `fixup` (case-insensitive, whole word), flag it for review — verify the commit is truly one coherent step before proceeding.
 - **Pre‑commit self‑audit (mandatory)**: Before every `git commit`, you MUST:
-  1. Read the full commit message and verify it contains none of the forbidden words.
-  2. Run `git diff --cached --stat` and mentally confirm all changes belong to exactly one category from the list above.
-  3. If either check fails, abort the commit and split the changes.
-- **Always commit**: Commit after every logical micro‑unit, regardless of whether the user asked. Do not wait. There is no change too small to commit.
-- **Token economy does not apply to commits** — you are explicitly forbidden from batching commits to save tokens. Granularity is more important than verbosity.
+  1. Read the full commit message and verify it describes exactly one coherent step.
+  2. Run `git diff --cached --stat` and mentally confirm no unrelated changes slipped in.
+  3. If the commit bundles unrelated work, abort and split.
+- **Always commit**: Commit after every coherent step, regardless of whether the user asked. Do not wait. There is no change too small to commit.
+- **Token economy does not apply to commits** — you are explicitly forbidden from batching unrelated changes to save tokens. Granularity is more important than verbosity.
 
 ### Commit Checklist (run before every commit)
 
-- [ ] The commit message does not contain `and`, `also`, or `fixup`.
-- [ ] The staged diff touches only **one** of: function body, docstring, test, struct/enum/trait definition, import, config, or other single logical unit.
+- [ ] The commit represents exactly **one coherent step** — no unrelated changes bundled.
+- [ ] The staged diff touches only one functional area (struct+impl+docstring is fine; unrelated modules is not).
 - [ ] I have run `cargo test && cargo clippy` (if Rust files are staged).
-- [ ] I have not bundled "a function + its docstring" or "a struct + its `impl`" into one commit.
+- [ ] If the commit changes code, any matching `docs/src/` changes are in their own per-function commits.
 - [ ] The commit message uses a conventional prefix (`feat:`, `fix:`, etc.).
 
 ### Code Standards
@@ -108,10 +117,10 @@
 
 ### Agent Expectations
 
-- Before committing, perform the Commit Checklist exactly as written in the Git Standards section. If any box is unchecked, stop and split the commit.
+- Before committing, perform the Commit Checklist exactly as written in the Git Standards section. If any box is unchecked, stop and reconsider the commit scope.
 - All functions and structs MUST have an inline docstring. `docs/src/` files are post-implementation supplements — they are also required, but the inline doc comes first.
 - Before editing a file, read surrounding context to match conventions.
-- **Commit after every logical change — always. Do not wait for the user to ask.** Each function, each docstring, each test gets its own commit. If a commit message contains "and", "also", or "fixup", split it.
+- **Commit after every coherent step — always. Do not wait for the user to ask.** Each logical change gets its own commit. If a commit message contains "and", "also", or "fixup", flag it for review (it may still be one coherent step).
 - Before committing, always run `cargo test && cargo clippy`.
 - During planning mode, use the `question` tool frequently to gather preferences and clarify intent before implementing.
 - If adding a new module, create a corresponding test module and register it in `src/tests/mod.rs`.
