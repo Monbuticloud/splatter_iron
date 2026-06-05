@@ -7,14 +7,14 @@ storage via PNG files + JSON index.
 
 A single stamp entry in the library.
 
-| Field             | Type                    | Purpose                                              |
-| ----------------- | ----------------------- | ---------------------------------------------------- |
-| `name`            | `String`                | User-given display name                              |
-| `filename`        | `String`                | On-disk PNG filename (relative to `stamps/` dir)     |
-| `pixels`          | `Vec<Color32>`          | Premultiplied-alpha pixel data (row-major)           |
-| `width`           | `u32`                   | Stamp image width in pixels                          |
-| `height`          | `u32`                   | Stamp image height in pixels                         |
-| `texture_handle`  | `Option<TextureHandle>` | Cached egui texture for preview rendering            |
+| Field            | Type                    | Purpose                                          |
+| ---------------- | ----------------------- | ------------------------------------------------ |
+| `name`           | `String`                | User-given display name                          |
+| `filename`       | `String`                | On-disk PNG filename (relative to `stamps/` dir) |
+| `pixels`         | `Vec<Color32>`          | Premultiplied-alpha pixel data (row-major)       |
+| `width`          | `u32`                   | Stamp image width in pixels                      |
+| `height`         | `u32`                   | Stamp image height in pixels                     |
+| `texture_handle` | `Option<TextureHandle>` | Cached egui texture for preview rendering        |
 
 ### `StampEntry::texture_id`
 
@@ -49,9 +49,9 @@ or corrupt PNG files are silently skipped.
 
 ### Parameters
 
-| Parameter  | Type     | Purpose                                          |
-| ---------- | -------- | ------------------------------------------------ |
-| `data_dir` | `&Path`  | Application data directory (parent of `stamps/`) |
+| Parameter  | Type    | Purpose                                          |
+| ---------- | ------- | ------------------------------------------------ |
+| `data_dir` | `&Path` | Application data directory (parent of `stamps/`) |
 
 ### Panics
 
@@ -68,8 +68,8 @@ be called after loading or when the egui context is available.
 
 ### Parameters
 
-| Parameter | Type             | Purpose                              |
-| --------- | ---------------- | ------------------------------------ |
+| Parameter | Type             | Purpose                               |
+| --------- | ---------------- | ------------------------------------- |
 | `ctx`     | `&egui::Context` | The egui context for texture creation |
 
 ## `StampLibrary::add`
@@ -102,6 +102,7 @@ Remove the stamp at `index` from the library, delete its PNG file, and
 persist the updated index.
 
 Selection adjusts as follows:
+
 - If the removed entry was the selected one: selects the first remaining
   entry (index 0), or clears selection if the library becomes empty.
 - If the removed entry was before the selected one: decrements the selected
@@ -115,9 +116,9 @@ No-op if `index` is out of range.
 
 ### Parameters
 
-| Parameter | Type     | Purpose                  |
-| --------- | -------- | ------------------------ |
-| `index`   | `usize`  | Index of the entry to remove |
+| Parameter | Type    | Purpose                      |
+| --------- | ------- | ---------------------------- |
+| `index`   | `usize` | Index of the entry to remove |
 
 ## `StampLibrary::select`
 
@@ -129,9 +130,9 @@ Select the stamp at `index`. No-op if `index` is out of range.
 
 ### Parameters
 
-| Parameter | Type     | Purpose                          |
-| --------- | -------- | -------------------------------- |
-| `index`   | `usize`  | Index of the stamp to select     |
+| Parameter | Type    | Purpose                      |
+| --------- | ------- | ---------------------------- |
+| `index`   | `usize` | Index of the stamp to select |
 
 ## `StampLibrary::selected_index`
 
@@ -191,6 +192,6 @@ Return a reference to the stamp at `index`, or `None`.
 
 ### Parameters
 
-| Parameter | Type     | Purpose                          |
-| --------- | -------- | -------------------------------- |
-| `index`   | `usize`  | Index of the stamp to retrieve   |
+| Parameter | Type    | Purpose                        |
+| --------- | ------- | ------------------------------ |
+| `index`   | `usize` | Index of the stamp to retrieve |
