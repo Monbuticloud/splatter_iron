@@ -8,12 +8,12 @@ mpsc channels.
 
 ## Submodules
 
-| Module | Purpose |
-| ------ | ------- |
-| `dialog_manager` | Queues native file dialogs (`rfd`) on background threads and dispatches results (`PendingFileAction` → `DialogResult` → `DispatchedAction`). |
-| `save_manager` | Async save orchestration: manual saves and periodic autosaves (`SaveKind` → `SaveResult`). |
+| Module                | Purpose                                                                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dialog_manager`      | Queues native file dialogs (`rfd`) on background threads and dispatches results (`PendingFileAction` → `DialogResult` → `DispatchedAction`).         |
+| `save_manager`        | Async save orchestration: manual saves and periodic autosaves (`SaveKind` → `SaveResult`).                                                           |
 | `load_import_manager` | Async load/import orchestration: deserialises `.splattercanvas` files, imports images, and imports `.splatterarchive` archives (`LoadImportResult`). |
-| `export_manager` | Async export orchestration: image encoding and archive serialisation via `ExportStrategy`. |
+| `export_manager`      | Async export orchestration: image encoding and archive serialisation via `ExportStrategy`.                                                           |
 
 ## Channel Topology
 
