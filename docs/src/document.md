@@ -8,14 +8,14 @@ save path, and coordinates GPU texture uploads.
 
 ### Fields
 
-| Field                       | Type     | Purpose                                             |
-| --------------------------- | -------- | --------------------------------------------------- |
-| `canvas`                    | `Arc<Canvas>` | The backing canvas behind an `Arc` for clone-on-write during async saves |
-| `savefile_path`             | `String` | Filesystem path for the last save/load operation    |
-| `current_layer`             | `usize`  | Index into `canvas.pixels` for the active layer     |
-| `dirty_since_last_autosave` | `bool`   | Whether unsaved changes exist                       |
-| `save_state`                | `SaveState` | Current save state — `Idle` or `InFlight` while an async save runs |
-| `next_layer_number`         | `usize`  | Monotonically increasing counter for default layer names (unique across add/delete cycles) |
+| Field                       | Type          | Purpose                                                                                    |
+| --------------------------- | ------------- | ------------------------------------------------------------------------------------------ |
+| `canvas`                    | `Arc<Canvas>` | The backing canvas behind an `Arc` for clone-on-write during async saves                   |
+| `savefile_path`             | `String`      | Filesystem path for the last save/load operation                                           |
+| `current_layer`             | `usize`       | Index into `canvas.pixels` for the active layer                                            |
+| `dirty_since_last_autosave` | `bool`        | Whether unsaved changes exist                                                              |
+| `save_state`                | `SaveState`   | Current save state — `Idle` or `InFlight` while an async save runs                         |
+| `next_layer_number`         | `usize`       | Monotonically increasing counter for default layer names (unique across add/delete cycles) |
 
 ### Invariants
 
@@ -137,10 +137,10 @@ pub fn upload_to_gpu(
 
 ### Parameters
 
-| Parameter | Type                            | Description                                                            |
-| --------- | ------------------------------- | ---------------------------------------------------------------------- |
-| `queue`   | `&wgpu::Queue`                  | Queue for submitting write commands to the GPU                         |
-| `texture` | `&wgpu::Texture`                | Destination GPU texture                                                |
+| Parameter | Type                 | Description                                                         |
+| --------- | -------------------- | ------------------------------------------------------------------- |
+| `queue`   | `&wgpu::Queue`       | Queue for submitting write commands to the GPU                      |
+| `texture` | `&wgpu::Texture`     | Destination GPU texture                                             |
 | `dirty`   | `&Option<DirtyRect>` | `Some(DirtyRect)` for partial upload, `None` for full canvas upload |
 
 ### Behaviour
