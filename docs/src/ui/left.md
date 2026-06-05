@@ -15,16 +15,16 @@ visual highlighting.
 
 ### Tools
 
-| Order | Tool            | `CurrentTool` variant |
-| ----- | --------------- | --------------------- |
-| 1     | Square Tool     | `Square`              |
-| 2     | Circle Tool     | `Circle`              |
-| 3     | Square Eraser   | `SquareEraser`        |
-| 4     | Circle Eraser   | `CircleEraser`        |
-| 5     | Bucket Fill     | `BucketFill`          |
-| 6     | Stamp Tool      | `Stamp`               |
-| 7     | Custom Brush    | `CustomBrush`         |
-| 8     | Pan             | `Pan`                 |
+| Order | Tool          | `CurrentTool` variant |
+| ----- | ------------- | --------------------- |
+| 1     | Square Tool   | `Square`              |
+| 2     | Circle Tool   | `Circle`              |
+| 3     | Square Eraser | `SquareEraser`        |
+| 4     | Circle Eraser | `CircleEraser`        |
+| 5     | Bucket Fill   | `BucketFill`          |
+| 6     | Stamp Tool    | `Stamp`               |
+| 7     | Custom Brush  | `CustomBrush`         |
+| 8     | Pan           | `Pan`                 |
 
 ### Visual styling
 
