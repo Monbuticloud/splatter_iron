@@ -409,7 +409,7 @@ fn blend_to_output_full_canvas_clears_reblend() {
 
     document.canvas_mut().dirty_rect.request_full_blend();
 
-    let result = document.blend_to_output();
+    let result = document.blend_to_output(8);
 
     assert_eq!(result, Some(DirtyRect::new(0, 0, 9, 9)));
 
@@ -435,7 +435,7 @@ fn blend_to_output_dirty_rect_returns_bounds() {
 
     document.canvas_mut().dirty_rect.request_full_blend();
 
-    let result = document.blend_to_output();
+    let result = document.blend_to_output(8);
 
     // DirtyRect(2,3,5,7) -> width=4, height=5
     assert_eq!(result, Some(DirtyRect::new(2, 3, 5, 7)));
@@ -461,7 +461,7 @@ fn blend_to_output_empty_dirty_rect_triggers_full_blend() {
 
     document.canvas_mut().dirty_rect.request_full_blend();
 
-    let result = document.blend_to_output();
+    let result = document.blend_to_output(8);
 
     assert_eq!(result, Some(DirtyRect::new(0, 0, 9, 9)));
 
@@ -674,7 +674,7 @@ fn blend_to_output_twice_resets_state() {
     document.canvas_mut().dirty_rect.request_full_blend();
 
     // First blend — full canvas (no dirty rects)
-    let result1 = document.blend_to_output();
+    let result1 = document.blend_to_output(8);
 
     assert_eq!(result1, Some(DirtyRect::new(0, 0, 9, 9)));
 
@@ -685,7 +685,7 @@ fn blend_to_output_twice_resets_state() {
     // Second blend — needs_full_blend was cleared, but take_all() returns
     // empty, so blend_to_output still does a full blend (no partial info).
     document.canvas_mut().dirty_rect.request_full_blend(); // force flag back on
-    let result2 = document.blend_to_output();
+    let result2 = document.blend_to_output(8);
 
     assert_eq!(result2, Some(DirtyRect::new(0, 0, 9, 9)));
 
@@ -888,7 +888,7 @@ fn blend_to_output_skips_invisible_layers() {
 
     document.canvas_mut().dirty_rect.request_full_blend();
 
-    document.blend_to_output();
+    document.blend_to_output(8);
 
     // Output should show the checkerboard pattern behind transparent areas.
     // Pixel (0,0) is a light tile: 192 × 255/256 ≈ 191, with alpha = 255.

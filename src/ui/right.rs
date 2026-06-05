@@ -108,6 +108,13 @@ impl MyApp {
                 .prefix("Grid: "),
         );
 
+        ui.add(
+            egui::DragValue::new(&mut self.tool_configuration.transparency_tile_size)
+                .range(2..=64)
+                .prefix("Transp Tile: "),
+        )
+        .on_hover_text("Checkerboard tile size for the transparency background");
+
         ui.checkbox(
             &mut self.tool_configuration.stabilization_enabled,
             "Stabilize",

@@ -69,6 +69,8 @@ pub struct ToolConfiguration {
     pub show_grid: bool,
     /// Grid spacing in canvas pixels.
     pub grid_size: u32,
+    /// Checkerboard tile size for the transparency background pattern.
+    pub transparency_tile_size: u32,
     /// Whether brush stabilization (lerped virtual cursor) is enabled.
     pub stabilization_enabled: bool,
     /// Smoothing strength for brush stabilization (0 = snappy, 100 = frozen).
@@ -91,6 +93,7 @@ impl Default for ToolConfiguration {
             brush_config: SamplingConfig::default(),
             show_grid: false,
             grid_size: 50,
+            transparency_tile_size: 8,
             stabilization_enabled: false,
             stabilization_smoothing: 30.0,
         }

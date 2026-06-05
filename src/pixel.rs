@@ -857,9 +857,8 @@ pub(crate) fn draw_checkerboard(
     min_y: u32,
     max_x: u32,
     max_y: u32,
+    tile_size: u32,
 ) {
-
-    const CHECKER_SIZE: u32 = 8;
 
     const LIGHT: u8 = 192;
 
@@ -871,7 +870,7 @@ pub(crate) fn draw_checkerboard(
 
         let row_offset = y as usize * width;
 
-        let cb_row_bit = (y / CHECKER_SIZE) & 1;
+        let cb_row_bit = (y / tile_size) & 1;
 
         let mut x = min_x;
 
@@ -919,7 +918,7 @@ pub(crate) fn draw_checkerboard(
                 }
 
                 // Checkerboard tile color at this position.
-                let cb = if ((xp / CHECKER_SIZE) & 1) ^ cb_row_bit == 0 {
+                let cb = if ((xp / tile_size) & 1) ^ cb_row_bit == 0 {
 
                     LIGHT
                 } else {

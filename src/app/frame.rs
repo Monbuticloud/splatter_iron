@@ -267,7 +267,9 @@ impl MyApp {
 
             if needs_blend {
 
-                let dirty = self.document.blend_to_output();
+                let dirty = self
+                    .document
+                    .blend_to_output(self.tool_configuration.transparency_tile_size);
 
                 if let Some(ref gpu) = self.gpu_texture {
 
@@ -277,7 +279,8 @@ impl MyApp {
             }
         } else if needs_blend || self.document.canvas.rendered_layers.is_none() {
 
-            self.document.render_to_texture(ui);
+            self.document
+                .render_to_texture(ui, self.tool_configuration.transparency_tile_size);
         }
     }
 

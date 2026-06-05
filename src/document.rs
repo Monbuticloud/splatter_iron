@@ -128,12 +128,17 @@ impl Document {
     /// or `None` if nothing was blended. When no dirty rects are tracked but a
     /// re-blend was requested (e.g. after undo/redo), the full canvas is blended.
     ///
+    /// # Parameters
+    ///
+    /// * `tile_size` — Checkerboard tile size in pixels for the transparency
+    ///   background pattern.
+    ///
     /// # Panics
     ///
     /// Panics if the underlying `blend_layers` or `blend_region` encounters
     /// mismatched layer lengths or insufficient output buffer capacity.
 
-    pub fn blend_to_output(&mut self) -> Option<DirtyRect> {
+    pub fn blend_to_output(&mut self, tile_size: u32) -> Option<DirtyRect> {
 
         let canvas = self.canvas_mut();
 
@@ -176,7 +181,7 @@ impl Document {
 
             pixel::blend_layers(&layer_data, output);
 
-            pixel::draw_checkerboard(output, width, 0, 0, width - 1, height - 1);
+            pixel::draw_checkerboard(output, width, 0, 0, width - 1, height - 1, tile_size);
 
             Some(DirtyRect::new(0, 0, width - 1, height - 1))
         } else {
@@ -201,7 +206,7 @@ impl Document {
                 );
 
                 pixel::draw_checkerboard(
-                    output, width, rect.min_x, rect.min_y, rect.max_x, rect.max_y,
+                    output, width, rect.min_x, rect.min_y, rect.max_x, rect.max_y, tile_size,
                 );
 
                 match union_rect {
@@ -287,10 +292,12 @@ impl Document {
     /// # Parameters
     ///
     /// * `ui` — The egui UI handle (used to access `load_texture`).
+    /// * `tile_size` — Checkerboard tile size in pixels for the transparency
+    ///   background pattern.
 
-    pub fn render_to_texture(&mut self, ui: &egui::Ui) {
+    pub fn render_to_texture(&mut self, ui: &egui::Ui, tile_size: u32) {
 
-        self.blend_to_output();
+        self.blend_to_output(tile_size);
 
         let image = egui::ColorImage::from_rgba_premultiplied(
             [self.canvas.width as usize, self.canvas.height as usize],
