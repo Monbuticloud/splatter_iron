@@ -6,9 +6,9 @@ history, and file-IO subsystems for eframe.
 
 ## Submodules
 
-| Module   | Purpose                                                                 |
-| -------- | ----------------------------------------------------------------------- |
-| `frame`  | Frame-lifecycle methods: poll I/O, render-state machine, GPU sync, autosave |
+| Module  | Purpose                                                                     |
+| ------- | --------------------------------------------------------------------------- |
+| `frame` | Frame-lifecycle methods: poll I/O, render-state machine, GPU sync, autosave |
 
 ## Constants, Structs & Enums
 
@@ -31,6 +31,7 @@ canvas format constants (`CANVAS_EXTENSION`, `FILE_FILTER_NAME`,
 Constructor invoked once by eframe at startup.
 
 Steps:
+
 1. Creates mpsc channels for file-dialog and save-result communication.
 2. Builds a default `Canvas` (2000×1500) and computes pixel count for undo capacity.
 3. Resolves the platform data directory via `ProjectDirs`, creates `autosaves/`.
