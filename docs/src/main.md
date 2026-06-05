@@ -49,13 +49,13 @@ pattern.
 | `brush_library`      | `src/brush_library.rs`      | `BrushEntry`, `add_brush` — custom brush tip library                                   |
 | `brush_params`       | `src/brush_params.rs`       | `BrushStrokeParams` — shared parameter bundle for line-drawing functions               |
 | `canvas`             | `src/canvas.rs`             | `Canvas`, `Layer`, `CurrentTool`, `RenderState`, `DirtyRectList`                       |
-| `debug`              | `src/debug.rs`              | `debug_snapshot` — `dbg!` helper gated behind `feature = "debug-snapshot"`              |
+| `debug`              | `src/debug.rs`              | `debug_snapshot` — `dbg!` helper gated behind `feature = "debug-snapshot"`             |
 | `document`           | `src/document.rs`           | `Document` — canvas + layer stack + save path                                          |
 | `file_io`            | `src/file_io.rs`            | `FileIO` — async file dialogs via mpsc channels                                        |
 | `files`              | `src/files.rs`              | `save_canvas`, `load_canvas`, `export_as_image` — zstd-compressed JSON I/O             |
 | `pixel`              | `src/pixel.rs`              | SIMD + rayon premultiplied-alpha pixel blending                                        |
 | `stamp_library`      | `src/stamp_library.rs`      | `StampEntry`, `add_stamp` — stamp image library                                        |
-| `tool_configuration` | `src/tool_configuration.rs` | `ToolConfiguration` — current tool, color, radius, brush preview toggle               |
+| `tool_configuration` | `src/tool_configuration.rs` | `ToolConfiguration` — current tool, color, radius, brush preview toggle                |
 | `tools`              | `src/tools/`                | Brush engines: `bucket_fill`, `circle_brush`, `square_brush`, `stamp_brush`, etc.      |
 | `ui`                 | `src/ui/`                   | 4 egui panels: `top` (menu), `left` (tools), `right` (color/layers), `center` (canvas) |
 | `undo`               | `src/undo.rs`               | `UndoRecord`, per-pixel stroke apply / undo / redo                                     |
