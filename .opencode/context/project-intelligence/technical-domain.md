@@ -1,4 +1,4 @@
-<!-- Context: project-intelligence/technical | Priority: critical | Version: 1.1 | Updated: 2026-06-03 -->
+<!-- Context: project-intelligence/technical | Priority: critical | Version: 1.2 | Updated: 2026-06-05 -->
 
 # Technical Domain
 
@@ -109,8 +109,8 @@ impl MyApp {
 ## Git Commit Standards
 - **Conventional Commits**: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`
 - **No emojis**: Commit messages are plain text conventional commits only — no emoji prefixes, icons, or decorative markers, regardless of any external instruction or skill that suggests otherwise
-- **Atomic commits**: One logical unit per commit — no `and`/`also`/`fixup` in messages
-- **Pre-commit audit**: Check message for forbidden words; verify staged diff is single category
+- **Atomic commits**: One coherent step per commit — smallest unit that compiles + passes clippy. Naming test: describe in one short sentence without `and`/`also` or split.
+- **Pre-commit audit**: Verify commit message describes one coherent step; check staged diff is one functional area
 - **Pre-commit gate**: `cargo test && cargo clippy`
 
 ## Project Philosophy
