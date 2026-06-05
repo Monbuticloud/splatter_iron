@@ -167,14 +167,14 @@ The type derives `Clone` for undo/redo snapshotting and `Serialize`/`Deserialize
 
 ### Fields
 
-| Field               | Type                    | Purpose                                                                         |
-| ------------------- | ----------------------- | ------------------------------------------------------------------------------- |
-| `pixels`            | `Vec<Layer>`            | Layer stack, bottom (index 0) to top                                            |
-| `height`            | `u32`                   | Canvas height in pixels                                                         |
-| `width`             | `u32`                   | Canvas width in pixels                                                          |
-| `rendered_layers`   | `Option<TextureHandle>` | Cached GPU texture handle for the blended composite                             |
-| `output_rgba`       | `Arc<Vec<u8>>`          | Premultiplied-alpha RGBA output buffer (width × height × 4 bytes), shared with GPU upload for zero-copy            |
-| `dirty_rect`        | `DirtyRectList`         | List of dirty regions; empty list triggers full re-blend |
+| Field             | Type                    | Purpose                                                                                                 |
+| ----------------- | ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| `pixels`          | `Vec<Layer>`            | Layer stack, bottom (index 0) to top                                                                    |
+| `height`          | `u32`                   | Canvas height in pixels                                                                                 |
+| `width`           | `u32`                   | Canvas width in pixels                                                                                  |
+| `rendered_layers` | `Option<TextureHandle>` | Cached GPU texture handle for the blended composite                                                     |
+| `output_rgba`     | `Arc<Vec<u8>>`          | Premultiplied-alpha RGBA output buffer (width × height × 4 bytes), shared with GPU upload for zero-copy |
+| `dirty_rect`      | `DirtyRectList`         | List of dirty regions; empty list triggers full re-blend                                                |
 
 ### Invariants
 
@@ -243,17 +243,17 @@ Each variant selects a different drawing primitive or operation:
 
 ### Variants
 
-| Variant        | Behaviour                                                                                                                                                                    |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Square`       | Fill axis-aligned rectangles. Dispatches to [`square_brush::draw_square`] / [`square_brush::draw_square_line`] which writes `UndoRecord` entries.                            |
-| `Circle`       | Fill circles using the midpoint circle algorithm. Dispatches to [`circle_brush::draw_circle`] / [`circle_brush::draw_circle_line`].                                          |
-| `SquareEraser` | Erase by dragging a rectangular region. Sets affected pixels to `Color32::TRANSPARENT` with a square mask.                                                                   |
-| `CircleEraser` | Erase by dragging a circular region. Sets affected pixels to `Color32::TRANSPARENT` with a circular mask.                                                                    |
-| `BucketFill`   | Flood-fill a contiguous region of similar color using a scanline algorithm. Dispatches to [`bucket_fill::draw_bucket_fill`].                                                 |
-| `Stamp`        | Stamp an external image onto the canvas. Dispatches to [`stamp_brush::draw_stamp_line`] which stamps the selected image from the [`StampLibrary`].                           |
-| `CustomBrush`  | Paint using a custom brush tip from the brush library. Dispatches to [`custom_brush::draw_custom_brush_line`] with the selected tip.                                         |
-| `Eyedropper`   | Pick a colour from the canvas at the cursor position and set it as the current colour.                                                                                       |
-| `Pan`          | Pan the canvas viewport by dragging.                                                                                                                                         |
+| Variant        | Behaviour                                                                                                                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Square`       | Fill axis-aligned rectangles. Dispatches to [`square_brush::draw_square`] / [`square_brush::draw_square_line`] which writes `UndoRecord` entries.  |
+| `Circle`       | Fill circles using the midpoint circle algorithm. Dispatches to [`circle_brush::draw_circle`] / [`circle_brush::draw_circle_line`].                |
+| `SquareEraser` | Erase by dragging a rectangular region. Sets affected pixels to `Color32::TRANSPARENT` with a square mask.                                         |
+| `CircleEraser` | Erase by dragging a circular region. Sets affected pixels to `Color32::TRANSPARENT` with a circular mask.                                          |
+| `BucketFill`   | Flood-fill a contiguous region of similar color using a scanline algorithm. Dispatches to [`bucket_fill::draw_bucket_fill`].                       |
+| `Stamp`        | Stamp an external image onto the canvas. Dispatches to [`stamp_brush::draw_stamp_line`] which stamps the selected image from the [`StampLibrary`]. |
+| `CustomBrush`  | Paint using a custom brush tip from the brush library. Dispatches to [`custom_brush::draw_custom_brush_line`] with the selected tip.               |
+| `Eyedropper`   | Pick a colour from the canvas at the cursor position and set it as the current colour.                                                             |
+| `Pan`          | Pan the canvas viewport by dragging.                                                                                                               |
 
 ### Matching
 
@@ -311,12 +311,12 @@ Layers are composited bottom-to-top by [`blend_layers()`] — later layers overl
 
 ### Fields
 
-| Field     | Type           | Purpose                                                |
-| --------- | -------------- | ------------------------------------------------------ |
-| `pixels`  | `Vec<Color32>` | Premultiplied-alpha RGBA pixels, row-major order       |
-| `name`    | `String`       | Human-readable layer name shown in the layer panel     |
-| `visible` | `bool`         | Whether the layer contributes to the composite output  |
-| `opacity` | `u8`           | Opacity multiplier (0–255) applied during compositing  |
+| Field     | Type           | Purpose                                               |
+| --------- | -------------- | ----------------------------------------------------- |
+| `pixels`  | `Vec<Color32>` | Premultiplied-alpha RGBA pixels, row-major order      |
+| `name`    | `String`       | Human-readable layer name shown in the layer panel    |
+| `visible` | `bool`         | Whether the layer contributes to the composite output |
+| `opacity` | `u8`           | Opacity multiplier (0–255) applied during compositing |
 
 ### Invariants
 
@@ -366,5 +366,3 @@ Stamp brush tool. When selected, clicking the canvas stamps an image from the St
 ## `CurrentTool::CustomBrush`
 
 Custom brush tool. When selected, uses a loaded brush tip from BrushLibrary to paint. Supports tinting and alpha overlay.
-
-
