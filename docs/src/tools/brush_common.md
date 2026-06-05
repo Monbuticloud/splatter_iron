@@ -33,17 +33,17 @@ and assembles contiguous runs.
 
 ### Parameters
 
-| Parameter         | Type             | Purpose                                               |
-| ----------------- | ---------------- | ----------------------------------------------------- |
-| `pixels`          | `&mut [Color32]` | Mutable layer pixels                                  |
-| `dirty_rect`      | `&DirtyRect`     | Bounding box of the stamped region                    |
-| `width`           | `usize`          | Canvas width in pixels                                |
-| `visited`         | `&[u32]`         | Stamp buffer marking which pixels this stroke touches |
-| `stamp`           | `u32`            | The current stamp value to match against `visited`    |
-| `color`           | `Color32`        | Colour to apply (premultiplied-alpha)                 |
-| `alpha_overlay`   | `bool`           | If true, alpha-blend instead of overwriting           |
-| `drag_processed`  | `&mut [u32]`     | Per-pixel drag-stamp buffer (for alpha-overlay dedup) |
-| `drag_stamp_value`| `u32`            | The current drag-stamp value                          |
+| Parameter          | Type             | Purpose                                               |
+| ------------------ | ---------------- | ----------------------------------------------------- |
+| `pixels`           | `&mut [Color32]` | Mutable layer pixels                                  |
+| `dirty_rect`       | `&DirtyRect`     | Bounding box of the stamped region                    |
+| `width`            | `usize`          | Canvas width in pixels                                |
+| `visited`          | `&[u32]`         | Stamp buffer marking which pixels this stroke touches |
+| `stamp`            | `u32`            | The current stamp value to match against `visited`    |
+| `color`            | `Color32`        | Colour to apply (premultiplied-alpha)                 |
+| `alpha_overlay`    | `bool`           | If true, alpha-blend instead of overwriting           |
+| `drag_processed`   | `&mut [u32]`     | Per-pixel drag-stamp buffer (for alpha-overlay dedup) |
+| `drag_stamp_value` | `u32`            | The current drag-stamp value                          |
 
 ### Returns
 
