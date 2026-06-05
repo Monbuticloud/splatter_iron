@@ -8,16 +8,17 @@ image import.
 ### `LoadImportResult`
 
 Result of an async load or import operation sent via channel. Uses `Vec<Layer>`
-+ dimensions instead of `Canvas` directly so the data is `Send` (avoids non-Send
-`TextureHandle`). The UI thread reconstructs a `Canvas` from the layers when
-polled.
 
-| Variant | Description |
-| ------- | ----------- |
-| `Loaded(Canvas, String)` | Canvas loaded from a `.splattercanvas` file, plus source path. |
-| `Imported(Vec<Layer>, u32, u32)` | Image imported as a new canvas with layers and dimensions. |
-| `ArchiveImported(Canvas)` | Canvas imported from a `.splatterarchive` file. |
-| `Failed(String)` | Operation failed with an error message. |
+- dimensions instead of `Canvas` directly so the data is `Send` (avoids non-Send
+  `TextureHandle`). The UI thread reconstructs a `Canvas` from the layers when
+  polled.
+
+| Variant                          | Description                                                    |
+| -------------------------------- | -------------------------------------------------------------- |
+| `Loaded(Canvas, String)`         | Canvas loaded from a `.splattercanvas` file, plus source path. |
+| `Imported(Vec<Layer>, u32, u32)` | Image imported as a new canvas with layers and dimensions.     |
+| `ArchiveImported(Canvas)`        | Canvas imported from a `.splatterarchive` file.                |
+| `Failed(String)`                 | Operation failed with an error message.                        |
 
 ## Structs
 
@@ -27,12 +28,12 @@ Spawns background threads to read, deserialise, and import canvas files. Owns
 the load/import channel pair and separate in-flight flags for load vs. import
 operations.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `load_import_sender` | `mpsc::Sender<LoadImportResult>` | Channel sender for results from background thread. |
-| `load_import_receiver` | `mpsc::Receiver<LoadImportResult>` | Channel receiver for results on the UI thread. |
-| `load_in_flight` | `bool` | `true` while an async load thread is running. |
-| `import_in_flight` | `bool` | `true` while an async import thread is running. |
+| Field                  | Type                               | Description                                        |
+| ---------------------- | ---------------------------------- | -------------------------------------------------- |
+| `load_import_sender`   | `mpsc::Sender<LoadImportResult>`   | Channel sender for results from background thread. |
+| `load_import_receiver` | `mpsc::Receiver<LoadImportResult>` | Channel receiver for results on the UI thread.     |
+| `load_in_flight`       | `bool`                             | `true` while an async load thread is running.      |
+| `import_in_flight`     | `bool`                             | `true` while an async import thread is running.    |
 
 ## Methods
 
