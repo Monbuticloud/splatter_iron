@@ -36,6 +36,7 @@
 - refactor duplicated `read_canvas`/`read_canvas_xz` and `write_canvas`/`write_canvas_xz` into generic functions accepting a decoder/encoder factory. (P3)(B1)(460008e)
 - `compress_and_store` double-pass on uniform runs — `slice.iter().all()` then `extend_from_slice` reads data twice; skip redundant memcpy. (P4)(B1)(e91442e)
 - `visited_stamp` wrap triggers O(pixels) fill on UI thread — reset entire visited buffer (3M+ entries) on u32 overflow, causes frame stutter. (P3)(B1)(e91442e)
+- add `config_dirty` flag to `persistence.rs` — `handle_config_save` writes `config.json` every 2min tick even when no config changed. (P3)(B1)(b9eb27f)
 
 ### Security
 
@@ -50,6 +51,12 @@
 - rectangle/ellipse shape tools — unfilled/stroked shapes with configurable border width. (P3)(B2)(460008e)
 - create ADR-0025: Error Handling Strategy — document panic-vs-Result philosophy with ADR template. (P3)(B0)(460008e)
 - `ClippedOverlap` `suppress_base` logic incorrect for >2-deep clip chains — nested clipping layers beyond 2 cause `suppress_base` to skip wrong `Normal` layers. (P3)(B1)(e91442e)
+- extract model/view helper from `apply_stroke` match arms — 4× near-identical blocks (Square/Circle/Stamp/CustomBrush) each ~30 lines; hoist shared pattern. (P2)(B1)(b9eb27f)
+- extract zoom/pan/grid code from 530-line `handle_canvas_interaction` into focused sub-functions (canvas rect, grid overlay, context menu, brush preview, etc.). (P1)(B1)(b9eb27f)
+- deduplicate stamp/brush gallery rendering in `show_left_panel` — near-identical ~70-line blocks for asset gallery, tint mode, sampling dropdown. (P2)(B1)(b9eb27f)
+- refactor `export_as_image` into per-format strategy structs — 252-line function with 5 special cases (JPEG/HDR/Farbfeld/ICO/GIF) + macro + fallback. (P2)(B1)(b9eb27f)
+- provide default methods or derive macro for `AssetEntry` trait — reduces 11-method impl to 3-5 overridable defaults. (P3)(B2)(b9eb27f)
+- split `UIState` (25 fields) into focused sub-structs — CanvasViewState, CursorState, TimelineState, OverlayState, PersistenceState, ToolUIState. (P2)(B3)(b9eb27f)
 
 ### UX
 
@@ -70,11 +77,17 @@
 - expand `docs/src/app/frame.md` (936B) to fully document frame lifecycle (poll, render state, GPU sync, autosave). (P3)(B1)(460008e)
 - fix `docs/src/pixel.md` stale function reference — `blend_pixel_range` was merged into `apply_single_layer`. (P3)(B1)(e91442e)
 - document drag accumulator `MAX_DRAG_FRAMES` split edge case — when exceeded, creates separate undo records for one drag gesture. (P3)(B1)(e91442e)
+- remove duplicate docstring block in `undo.rs:maybe_snapshot` — identical 30-line docstring appears twice (`///` lines 170-208 and 210-248). (P3)(B0)(b9eb27f)
 
 ### Standards & Cleanup
 
 - fix clippy `as` cast warnings — prioritize `u32 as f32` precision-loss (40x) and `u32 as u8` truncation (33x) to surface real overflow bugs. (P2)(B1)(e91442e)
 - `xz2` optional dependency — `.splatterarchive` format is export-only; remove if unused to cut C dep and build time. (P4)(B1)(e91442e)
+- remove stale `# type-layout` comment from `Cargo.toml:29` — archived as already-removed but still present. (P4)(B0)(b9eb27f)
+- fix "TrackingAllocator" reference in `main.rs` module docstring and `AGENTS.md`/`technical-domain.md` — `TrackingAllocator` wrapper was removed per ADR-0001; global allocator is plain `MiMalloc`. (P3)(B0)(b9eb27f)
+- replace magic range `(0..64)` with dynamic focus-id count in `top.rs:34` — brush name focus detection silently fails if >64 fields. (P3)(B1)(b9eb27f)
+- audit all ~20 `.expect()` calls — add inline justification comments or convert to `Result` (particularly `undo.rs`/`undo_history.rs` compression calls that can fail on disk-full). (P2)(B1)(b9eb27f)
+- move `#[cfg(test)]` helper methods from production modules (`undo_history.rs`, `asset_library.rs`, `canvas.rs`, `files.rs`, `undo.rs`) into `src/tests/`. (P3)(B1)(b9eb27f)
 
 ## Accepted
 
