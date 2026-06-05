@@ -11,12 +11,12 @@ Spawns background threads to encode and write exported images or archives. Owns
 the export channel pair, the pluggable `ExportStrategy`, and the in-flight flag.
 Used by the frame loop to trigger exports and poll for completions.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `export_strategy` | `Arc<dyn ExportStrategy + Send + Sync>` | Injected export strategy for writing image files. |
-| `export_result_sender` | `mpsc::Sender<anyhow::Result<()>>` | Channel sender for export results from background thread. |
-| `export_result_receiver` | `mpsc::Receiver<anyhow::Result<()>>` | Channel receiver for export results on the UI thread. |
-| `export_in_flight` | `bool` | `true` while an async export thread is running. |
+| Field                    | Type                                    | Description                                               |
+| ------------------------ | --------------------------------------- | --------------------------------------------------------- |
+| `export_strategy`        | `Arc<dyn ExportStrategy + Send + Sync>` | Injected export strategy for writing image files.         |
+| `export_result_sender`   | `mpsc::Sender<anyhow::Result<()>>`      | Channel sender for export results from background thread. |
+| `export_result_receiver` | `mpsc::Receiver<anyhow::Result<()>>`    | Channel receiver for export results on the UI thread.     |
+| `export_in_flight`       | `bool`                                  | `true` while an async export thread is running.           |
 
 ## Methods
 
